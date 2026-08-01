@@ -1,0 +1,22 @@
+{
+ "deposit": "eeg-power-anesthesia 1.0.0",
+ "status": "ACCESSIBLE (granted 2026-08-03)",
+ "size_gb": 0.82,
+ "structure": {
+  "Volunteer": "10 subjects x {_Sdb,_f,_t,_l}",
+  "OR": "44 cases x {_Sdb,_f,_t,_l,_EEGquality}",
+  "Volunteer_CNN": "btlncks.feather (model bottlenecks)"
+ },
+ "has": [
+  "multitaper spectra (dB, freq x time)",
+  "conscious/unconscious labels",
+  "BEHAVIOURAL LOC: 'the time at which the probability of response to both click and verbal cues dropped below 5%'",
+  "two drug arms: propofol TIVA vs sevoflurane (alone or after propofol induction)",
+  "per-case EEG QUALITY series (OR cases)"
+ ],
+ "lacks": [
+  "RAW EEG -- spectra only, so no non-spectral measure (irreversibility, Lempel-Ziv, PAC) can be computed",
+  "drug CONCENTRATION or dose record -- there is no pharmacology arm to add over"
+ ],
+ "verdict": "DOES NOT solve E130's blocker. That required concentration + non-EEG state + n>=60 WITH EEG; this has the state measure and the EEG but NO exposure record, so 'does the EEG add over pharmacology' -- E122's question -- cannot be asked here. eeg-gaba-anesthesia (still 403) remains the one that can. WHAT IT IS GOOD FOR, and two of these are things the programme has been missing: (1) AN EXTERNAL VALIDATION COHORT WITH A BEHAVIOURAL LABEL. LOC is defined by response probability to click and verbal cues, not by a scorer reading the EEG -- which removes the circularity caveat that sleep staging carries and that E133/E136 both had to declare. 54 cases across two drug classes. (2) A PUBLISHED INCUMBENT. The deposit exists to 'train and validate classification models for tracking unconsciousness' and the corresponding code is public. That is a Challenge C comparator of exactly the kind INCUMBENT_REGISTRY.md says every registration must clear, and we currently have only the DOSE-I vendor index. (3) A SIGNAL-QUALITY SERIES per OR case -- track H's artifact layer has no self-assessment at all, and E60 found BIS publishing numbers at SQI 5.1/100. This is the first deposit here that ships one. LIMIT TO NOTE BEFORE ANY DESIGN: spectra-only means the incumbent and the candidate are drawn from the same family, so this cohort cannot test the 'is anything non-spectral useful' question that E133 and E136 were built for."
+}
