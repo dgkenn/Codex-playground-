@@ -244,3 +244,88 @@ def rung(level, dose_times_s, dose_mg, eval_times_s, weight_kg=None, covariates=
             cnames.append(k)
         return np.hstack(cols), cnames
     raise ValueError(f"unknown rung {level}")
+
+
+# =====================================================================================================
+# COMBINED ADMINISTRATION, AND THE OTHER TWO DRUGS
+# =====================================================================================================
+# The investigator asked whether the model accounts for infusions as well as boluses. It did, separately,
+# and that was not the same as accounting for BOTH -- a patient can receive an induction bolus by hand and
+# a maintenance infusion by pump, and the two records live in different tracks. `exposure_basis` below is
+# the single entry point; it adds the two contributions, which is exact because the system is linear.
+#
+# The three anaesthesia drugs in VitalDB are NOT the same kind of problem and pretending they are would be
+# the error:
+#
+#   propofol      infusion rate (Orchestra/PPF20_RATE) and/or boluses -> needs the full PK above
+#   remifentanil  infusion rate (Orchestra/RFTN20_RATE)               -> same machinery, different potency
+#   sevoflurane   END-TIDAL concentration (Primus/EXP_SEVO)           -> NO PK AT ALL
+#
+# The last one is worth stating plainly because it is easy to get wrong in the direction of doing more
+# work than the data needs. End-tidal gas is a MEASURED concentration in equilibrium with alveolar and
+# hence arterial blood -- it is not a dose. There is nothing to integrate. All that separates it from the
+# effect site is a first-order lag, so a single exponential smoothing of the measured trace is the whole
+# model, and convolving a dose record for it would be a category error.
+
+SEVO_KE0_PER_MIN = 0.20     # order of magnitude only; see `effect_site_lag` for why the value is not
+                            # load-bearing for any rank-based statistic in this project.
+
+
+def exposure_basis(eval_times_s, bolus_times_s=None, bolus_mg=None,
+                   seg_start_s=None, seg_end_s=None, seg_rate_mg_per_s=None,
+                   half_lives_min=HALF_LIVES_MIN, weight_kg=None, allometric=False):
+    """Boluses AND infusions for one drug, summed. Either may be empty.
+
+    Superposition is exact here rather than approximate: the disposition is linear and time invariant, so
+    the response to (boluses + infusion) is the sum of the responses. That is the same property the
+    exponential-basis argument rests on, used once more.
+    """
+    import numpy as np
+    t = np.asarray(eval_times_s, dtype=float)
+    out = np.zeros((t.size, len(half_lives_min)), dtype=float)
+    if bolus_times_s is not None and len(bolus_times_s):
+        out = out + basis(bolus_times_s, bolus_mg, t, half_lives_min=half_lives_min,
+                          weight_kg=weight_kg, allometric=allometric)
+    if seg_start_s is not None and len(seg_start_s):
+        out = out + infusion_basis(seg_start_s, seg_end_s, seg_rate_mg_per_s, t,
+                                   half_lives_min=half_lives_min,
+                                   weight_kg=weight_kg, allometric=allometric)
+    return out
+
+
+def effect_site_lag(times_s, measured_concentration, ke0_per_min=SEVO_KE0_PER_MIN):
+    """First-order effect-site lag applied to a MEASURED concentration trace (end-tidal gas).
+
+    dCe/dt = ke0 (C_measured - Ce), integrated exactly across each sample interval under a zero-order hold
+    on `C_measured`, so an irregular or gappy trace is handled without a step-size assumption:
+
+        Ce(t + dt) = C + (Ce(t) - C) * exp(-ke0 * dt)
+
+    WHY THE ke0 VALUE IS NOT LOAD-BEARING HERE, which is worth knowing before anyone goes looking for a
+    published one. Every statistic this project computes on the resulting series is RANK-BASED, and the
+    lag is a causal monotone-in-history smoother: it changes the timing of the trace, not its ordering
+    within a plateau. Sensitivity to `ke0` is therefore something to REPORT by re-running at a few values,
+    not something to resolve by finding a better constant. Any experiment that turns out to depend on it
+    has found something about the lag rather than about the drug.
+    """
+    import numpy as np
+    t = np.asarray(times_s, dtype=float)
+    c = np.asarray(measured_concentration, dtype=float)
+    ok = np.isfinite(t) & np.isfinite(c)
+    if ok.sum() < 2:
+        return np.full(t.size, np.nan)
+    k = float(ke0_per_min) / 60.0
+    ce = np.full(t.size, np.nan)
+    prev_t, prev_ce = None, 0.0
+    for i in range(t.size):
+        if not ok[i]:
+            continue
+        if prev_t is None:
+            prev_ce = 0.0
+        else:
+            dt = t[i] - prev_t
+            if dt > 0:
+                prev_ce = c[i] + (prev_ce - c[i]) * np.exp(-k * dt)
+        ce[i] = prev_ce
+        prev_t = t[i]
+    return ce
