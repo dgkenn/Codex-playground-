@@ -1,0 +1,35 @@
+{
+ "gates": {
+  "G2_recordings_both_directions": 69,
+  "G2_total_recordings": 94,
+  "G2_pass": true,
+  "G1_oob_rho": 0.405095185172848,
+  "G1_pass": true,
+  "G3_negative_control": {
+   "coef": 0.010723341341406956,
+   "lo": -0.014146359532166322,
+   "hi": 0.03580462674673965
+  },
+  "G3_pass": true
+ },
+ "P1": {
+  "coef": -0.13221784299635386,
+  "lo": -0.23486369803008225,
+  "hi": -0.03626342557784483,
+  "n_recordings": 69
+ },
+ "P2_potency_units": {
+  "coef": -0.13221784299635386,
+  "lo": -0.23317956625959382,
+  "hi": -0.03307365183933423,
+  "n_recordings": 69
+ },
+ "placebo": {
+  "n": 60,
+  "mean": -0.012991911897624253,
+  "p2.5": -0.0957546983181321,
+  "p97.5": 0.0797974739331133,
+  "frac_at_least_as_negative": 0.0
+ },
+ "verdict": "(c) HYSTERESIS BEYOND EQUILIBRATION -- -0.1322 [-0.2349, -0.0363], in the predicted direction, and a randomly rolled direction label does not reproduce it (frac 0.000). A fitted 8-rate effect-site basis could not absorb this, and it is measured against MOAA/S, which the model never saw -- the identifiable version of neural inertia that Proekt & Kelz say requires exactly such a measurement."
+}
