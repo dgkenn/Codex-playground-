@@ -123,7 +123,15 @@ E150_ADDS = {
     "wpli_delta": -0.00161, "wpli_alpha_2ch": -0.00152,
 }
 MUSCLE = ("emg_index", "emg_kurtosis", "emg_beta_gamma_fraction")
-N_RECORDINGS = 42
+E150_JSON = os.path.join(RESULTS, "e150_challenge_c_rederived.json")
+# The reference cohort size is LOADED from E150's own result rather than transcribed from prose (rule 59).
+# The first version hardcoded 42, taken from E84's ledger text describing E84's held-out half; E150 in fact
+# ran on 62 recordings and 17,196 windows, so the gate refused a correct rebuild.
+try:
+    _e150 = json.load(open(E150_JSON))
+    N_RECORDINGS, N_WINDOWS = int(_e150["n_recordings"]), int(_e150["n_windows"])
+except Exception:                                                              # noqa: BLE001
+    N_RECORDINGS, N_WINDOWS = -1, -1
 N_SHIFTS = 200
 MAX_TRIES = 3000
 BASE_TOL = 0.03
@@ -177,9 +185,9 @@ def main() -> int:
     y, subj, base, cand, cands, n_rec = build()
     res = {"experiment": "E180", "n_recordings": int(n_rec), "n_windows": int(len(y)),
            "e150_adds": E150_ADDS}
-    g1 = n_rec == N_RECORDINGS
-    print(f"G1 REBUILD  {n_rec} recordings, {len(y)} windows   "
-          f"{'PASS' if g1 else '*** FAIL (expected %d)' % N_RECORDINGS}")
+    g1 = (n_rec == N_RECORDINGS) and (len(y) == N_WINDOWS)
+    print(f"G1 REBUILD  {n_rec} recordings, {len(y)} windows vs E150's own stored "
+          f"{N_RECORDINGS} / {N_WINDOWS}   {'PASS' if g1 else '*** FAIL'}")
     res["G1_pass"] = bool(g1)
     if not g1:
         res["verdict"] = "NOT-INTERPRETABLE"

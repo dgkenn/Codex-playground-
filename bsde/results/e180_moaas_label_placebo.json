@@ -1,0 +1,20 @@
+{
+  "experiment": "E180",
+  "n_recordings": 62,
+  "n_windows": 17196,
+  "e150_adds": {
+    "emg_index": -0.02478,
+    "multiscale_entropy_slope": -0.03191,
+    "relative_alpha_power": -0.03512,
+    "bis_rbr": -0.02878,
+    "whole_head_exponent": -0.01514,
+    "wpli_theta": -0.00831,
+    "emg_kurtosis": -0.0073,
+    "emg_beta_gamma_fraction": -0.00927,
+    "pac_slow_alpha": -0.00248,
+    "wpli_delta": -0.00161,
+    "wpli_alpha_2ch": -0.00152
+  },
+  "G1_pass": false,
+  "verdict": "NOT-INTERPRETABLE"
+}
