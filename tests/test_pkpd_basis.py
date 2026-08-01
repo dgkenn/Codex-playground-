@@ -119,5 +119,64 @@ class TestBasisContainsCompartmentModels(unittest.TestCase):
         self.assertGreater(tail_heavy, tail_light, "allometry did not slow the heavy patient's decay")
 
 
+@unittest.skipIf(np is None, "numpy not installed")
+class TestInfusionBasis(unittest.TestCase):
+    """The infusion kernel must agree with the bolus kernel in the limit, and must not front-load drug."""
+
+    def test_short_infusion_converges_to_a_bolus_at_the_PREDICTED_rate(self):
+        """A 100 mg dose delivered over a shrinking window must approach the instantaneous bolus, and it
+        must do so at the rate the arithmetic predicts.
+
+        THE TOLERANCE IS DERIVED, NOT CHOSEN (rule 63). An infusion over `[t0, t0+d]` is, to first order,
+        a bolus delayed by `d/2`, so for kernel rate `L` the relative error is `L*d/2` -- and the binding
+        kernel is the FASTEST one, `L = ln2 / 30 s`. A round-number threshold of 1e-3 was tried first and
+        refused a correct implementation at d = 0.5 s, where the predicted error is 1.8e-3. What actually
+        distinguishes a right closed form from a wrong one is that the error falls LINEARLY with `d`; a
+        sign error or a missing factor would not.
+        """
+        from bsde.pkpd.propofol import basis, infusion_basis, HALF_LIVES_MIN, _rates_per_s
+        ev = list(range(100, 2000, 10))
+        bol = basis([50.0], [100.0], ev)
+        scale = float(np.max(bol))
+        errs = []
+        for dur in (8.0, 4.0, 2.0, 1.0, 0.5):
+            inf = infusion_basis([50.0], [50.0 + dur], [100.0 / dur], ev)
+            errs.append(float(np.max(np.abs(inf - bol))) / scale)
+        for a, b in zip(errs, errs[1:]):
+            self.assertAlmostEqual(a / b, 2.0, delta=0.2,
+                                   msg=f"error did not halve with duration: {errs}")
+        lmax = max(_rates_per_s(HALF_LIVES_MIN))
+        predicted = lmax * 0.5 / 2.0
+        self.assertLess(errs[-1], 2.0 * predicted,
+                        f"error {errs[-1]:.2e} exceeds twice the predicted {predicted:.2e}")
+
+    def test_mass_is_conserved(self):
+        """At the moment an infusion ends, the slowest kernel must hold essentially the whole dose --
+        an infusion that lost or invented drug would show up here."""
+        from bsde.pkpd.propofol import infusion_basis, HALF_LIVES_MIN
+        slowest = (max(HALF_LIVES_MIN),)
+        end = 600.0
+        got = infusion_basis([0.0], [end], [200.0 / end], [end], half_lives_min=slowest)[0, 0]
+        # Over 600 s the 64 min kernel decays by exp(-ln2*10/64); the delivered 200 mg must be recovered
+        # to within that decay, not to within an order of magnitude.
+        self.assertGreater(got, 180.0, f"infusion lost drug: {got:.1f} mg of 200")
+        self.assertLess(got, 200.0, f"infusion invented drug: {got:.1f} mg of 200")
+
+    def test_no_look_ahead(self):
+        from bsde.pkpd.propofol import infusion_basis
+        b = infusion_basis([1000.0], [1100.0], [1.0], [0.0, 500.0, 1000.0, 1050.0, 2000.0])
+        self.assertTrue(np.all(b[:3] == 0.0), "a future infusion leaked backwards")
+        self.assertGreater(b[3].sum(), 0.0)
+
+    def test_zero_order_hold_not_linear_interpolation(self):
+        """A rate track is a HOLD. A segment must span from its own sample to the NEXT one."""
+        from bsde.pkpd.propofol import rate_track_to_segments
+        s0, s1, r = rate_track_to_segments([0.0, 60.0, 120.0], [600.0, 0.0, 300.0], t_end_s=180.0)
+        self.assertEqual(list(s0), [0.0, 120.0], "a zero-rate segment was kept, or a hold was split")
+        self.assertEqual(list(s1), [60.0, 180.0])
+        # 600 mL/h of 20 mg/mL = 12000 mg/h = 3.3333 mg/s
+        self.assertAlmostEqual(r[0], 600.0 * 20.0 / 3600.0, places=9)
+
+
 if __name__ == "__main__":
     unittest.main()

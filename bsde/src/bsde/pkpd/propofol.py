@@ -109,6 +109,89 @@ def basis(dose_times_s, dose_mg, eval_times_s, half_lives_min=HALF_LIVES_MIN,
     return out
 
 
+def infusion_basis(seg_start_s, seg_end_s, seg_rate_mg_per_s, eval_times_s,
+                   half_lives_min=HALF_LIVES_MIN, weight_kg=None, allometric=False):
+    """The same exponential basis driven by CONSTANT-RATE INFUSION SEGMENTS instead of boluses.
+
+    WHY THIS EXISTS. `basis()` takes instantaneous boluses, which is what DOSE-I records (its dose column
+    is administration in multiples of 10 mg, and the reconstructed total matches the deposit's own
+    `PROP_sum` exactly in 168 of 171 recordings, so no infusion is hiding in it). **VitalDB is different**:
+    `Orchestra/PPF20_RATE` is a syringe-pump infusion rate in mL/h, present in 145 of the 250 cases with
+    EEG features, and treating an infusion as a bolus at the segment start would front-load every gram of
+    drug. A model that cannot represent an infusion cannot be used on the deposit where most of this
+    project's anaesthesia work happens.
+
+    THE SOLUTION IS EXACT, NOT NUMERICAL. For a constant rate `R` over `[t0, t1]` and kernel exp(-L tau),
+
+        contribution(t) = R * integral over [t0, min(t, t1)] of exp(-L (t - s)) ds
+                        = (R / L) * ( exp(-L (t - min(t,t1))) - exp(-L (t - t0)) )   for t >= t0
+
+    which is closed form and has no step-size error, so an infusion and a bolus are on exactly the same
+    footing. The bolus limit is recovered as R -> D/dt with dt -> 0, which `tests/test_pkpd_basis.py`
+    checks directly rather than taking on trust.
+
+    Segments are half-open `[t0, t1)` and are NOT required to be contiguous; a gap is simply zero rate.
+    Doses after an evaluation point contribute nothing, enforced by the clamp rather than by trusting the
+    caller's ordering -- the only barrier against look-ahead in this module (rule 10).
+    """
+    import numpy as np
+    t = np.asarray(eval_times_s, dtype=float)
+    s0 = np.asarray(seg_start_s, dtype=float)
+    s1 = np.asarray(seg_end_s, dtype=float)
+    R = np.asarray(seg_rate_mg_per_s, dtype=float)
+    lam = np.asarray(_rates_per_s(half_lives_min), dtype=float)
+
+    if allometric:
+        if weight_kg is None or not np.isfinite(weight_kg) or weight_kg <= 0:
+            raise ValueError("allometric scaling needs a positive weight")
+        f = float(weight_kg) / ALLOMETRIC_REF_KG
+        R = R / (f ** ALLOMETRIC_EXP_V)
+        lam = lam * (f ** (ALLOMETRIC_EXP_CL - ALLOMETRIC_EXP_V))
+
+    out = np.zeros((t.size, lam.size), dtype=float)
+    if s0.size == 0:
+        return out
+    live = t[:, None] > s0[None, :]                     # segment has begun
+    a = t[:, None] - s0[None, :]                        # elapsed since segment start
+    b = t[:, None] - np.minimum(t[:, None], s1[None, :])  # elapsed since segment end (0 while running)
+    a = np.where(live, a, 0.0)
+    b = np.where(live, b, 0.0)
+    for k, L in enumerate(lam):
+        c = (R[None, :] / L) * (np.exp(-L * b) - np.exp(-L * a))
+        out[:, k] = np.where(live, c, 0.0).sum(axis=1)
+    return out
+
+
+def rate_track_to_segments(times_s, rate_ml_per_h, mg_per_ml=20.0, t_end_s=None):
+    """Turn a sampled pump-rate track into constant-rate segments, holding each value until the next.
+
+    VitalDB publishes `Orchestra/PPF20_RATE` as (time, value) samples of a rate that the pump holds
+    between updates -- a ZERO-ORDER HOLD, not a series of instantaneous events. Interpolating it linearly
+    or treating each sample as a bolus would both be wrong, in opposite directions.
+
+    `PPF20` is a 20 mg/mL preparation, hence the default: mL/h at 20 mg/mL is `rate * 20 / 3600` mg/s. The
+    concentration is named in the track itself rather than assumed, and it is a parameter here so that a
+    different preparation cannot be applied silently.
+
+    The final segment is closed at `t_end_s` (default: the last sample), so an infusion never runs past
+    the record.
+    """
+    import numpy as np
+    t = np.asarray(times_s, dtype=float)
+    r = np.asarray(rate_ml_per_h, dtype=float)
+    ok = np.isfinite(t) & np.isfinite(r)
+    t, r = t[ok], r[ok]
+    if t.size == 0:
+        return np.array([]), np.array([]), np.array([])
+    o = np.argsort(t)
+    t, r = t[o], r[o]
+    end = float(t_end_s) if t_end_s is not None else float(t[-1])
+    s0 = t
+    s1 = np.append(t[1:], end)
+    keep = (s1 > s0) & (r > 0)
+    return s0[keep], s1[keep], r[keep] * mg_per_ml / 3600.0
+
+
 def cumulative(dose_times_s, dose_mg, eval_times_s, weight_kg=None):
     """L0: total mg administered up to each evaluation time, per kg if a weight is given."""
     import numpy as np
