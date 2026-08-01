@@ -1,0 +1,58 @@
+{
+  "experiment": "E183",
+  "n_recordings": 62,
+  "n_windows": 17196,
+  "lag_mult": 4,
+  "traj_min": 0.3,
+  "base_tol": 0.03,
+  "G1_pass": true,
+  "G2_baseline_rho": 0.3986932948626475,
+  "G2_pass": true,
+  "G3": {
+    "halflife": 9,
+    "n": 62,
+    "lag_range": [
+      9,
+      36
+    ],
+    "pass": true
+  },
+  "donors_per_recording": 41.483870967741936,
+  "arm_S": {
+    "arm": "S",
+    "name": "small-lag shift, lags in [9, 36]",
+    "n_draws": 0,
+    "n_tries": 6000,
+    "real_baseline": 0.3986932948626475,
+    "pool_baseline_mean": NaN,
+    "label_corr_mean": NaN,
+    "status": "NOT-MATCHABLE"
+  },
+  "arm_T": {
+    "arm": "T",
+    "name": "trajectory swap between matched recordings",
+    "n_draws": 0,
+    "n_tries": 6000,
+    "real_baseline": 0.3986932948626475,
+    "pool_baseline_mean": NaN,
+    "label_corr_mean": NaN,
+    "status": "NOT-MATCHABLE"
+  },
+  "per_candidate": {
+    "emg_index": "NO-VERDICT",
+    "multiscale_entropy_slope": "NO-VERDICT",
+    "relative_alpha_power": "NO-VERDICT",
+    "bis_rbr": "NO-VERDICT",
+    "whole_head_exponent": "NO-VERDICT",
+    "wpli_theta": "NO-VERDICT",
+    "emg_kurtosis": "NO-VERDICT",
+    "emg_beta_gamma_fraction": "NO-VERDICT",
+    "pac_slow_alpha": "NO-VERDICT",
+    "wpli_delta": "NO-VERDICT",
+    "wpli_alpha_2ch": "NO-VERDICT"
+  },
+  "survives_both": [],
+  "survives_both_non_muscle": [],
+  "verdict": "NOT-MATCHABLE",
+  "why": "neither placebo could be built to match the incumbent's predictability. With E180's large-lag failure that means NO time shift and NO trajectory swap preserves MOAA/S's predictability -- its predictability lives entirely in the fine alignment. That is a finding about the deposit and it is NOT a pass for any candidate"
+}
