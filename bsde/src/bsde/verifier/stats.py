@@ -359,7 +359,8 @@ def oob_auc_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequ
     if len(diffs) < 30:
         return float("nan"), float("nan"), float("nan"), len(diffs)
     d = np.asarray(diffs, float)
-    return (float(d.mean()), float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975)), len(d))
+    return (float(d.mean()), float(np.quantile(d, alpha / 2)), float(np.quantile(d, 1 - alpha / 2)),
+            len(d))
 
 
 def within_subject_spearman(x: Sequence, z: Sequence, subject: Sequence,
@@ -464,7 +465,7 @@ def grouped_cv_predict(X: np.ndarray, y: Sequence, subject: Sequence, rng, folds
 
 def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subject: Sequence, rng,
                              stat=None, reps: int = 400, min_oob_subjects: int = 5,
-                             lam: float = 1.0) -> tuple:
+                             lam: float = 1.0, alpha: float = 0.05) -> tuple:
     """Out-of-bag bootstrap for the change in a REGRESSION error statistic from model A to model B.
 
     The regression twin of `oob_auc_increment`, and it exists for the same reason (rule 9): bootstrapping
@@ -476,6 +477,10 @@ def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subjec
     **B minus A**, so for an error statistic a NEGATIVE value means B is BETTER. That sign convention is
     the opposite of `oob_auc_increment`'s and is stated here because reading it backwards would invert a
     verdict.
+
+    `alpha` widens the returned interval for a multiplicity correction: passing 0.05/K gives the
+    Bonferroni-adjusted interval for K simultaneous comparisons. The default reproduces the previous
+    hard-coded 2.5/97.5 percentiles exactly, so no existing caller changes.
     """
     if stat is None:
         def stat(t, p):
@@ -507,4 +512,5 @@ def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subjec
     if len(diffs) < 30:
         return float("nan"), float("nan"), float("nan"), len(diffs)
     d = np.asarray(diffs, float)
-    return (float(d.mean()), float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975)), len(d))
+    return (float(d.mean()), float(np.quantile(d, alpha / 2)), float(np.quantile(d, 1 - alpha / 2)),
+            len(d))
