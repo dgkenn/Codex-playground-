@@ -1,0 +1,38 @@
+{
+  "experiment": "E174",
+  "n_trial_rows": 55799,
+  "e172_primary": 0.5176,
+  "e172_table": {
+    "mu_mean": 0.5176,
+    "mu_c3": 0.5116,
+    "mu_c4": 0.5171,
+    "mu_lateralisation": 0.496,
+    "relative_alpha_power": 0.5219,
+    "relative_delta_power": 0.4957,
+    "exponent_low": 0.4998,
+    "exponent_high": 0.4916,
+    "whole_head_exponent": 0.5129,
+    "spectral_edge_95": 0.4944,
+    "spectral_entropy": 0.4978,
+    "lempel_ziv": 0.5042
+  },
+  "one_sided_direction": "above 0.5",
+  "n_sessions": 124,
+  "n_subjects": 62,
+  "total_pairs": 12104,
+  "G1_pass": true,
+  "G2a": {
+    "mean_signed_gap": -0.06072372769332452,
+    "null_lo": -0.028676470588235293,
+    "null_hi": 0.029329147389292796,
+    "mean_abs_gap": 1.3376569729015202,
+    "pass": false
+  },
+  "G2b": {
+    "mean": 0.463106578041364,
+    "p": 0.0,
+    "pass": false
+  },
+  "verdict": "NOT-INTERPRETABLE",
+  "why": "the pairing did not remove position in the held-out sessions"
+}

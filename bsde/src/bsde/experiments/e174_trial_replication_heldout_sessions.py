@@ -110,6 +110,40 @@ ALPHA = 0.05
 Q = 0.05
 
 
+def _balanced_pairs(pairs, subj, sess_id):
+    """THE ONE REPAIR RULE 58 ALLOWS, WITH THE REASON.
+
+    E172's greedy nearest matching happened to come out directionally balanced on Stieger session 1 --
+    mean signed gap (hit index minus miss index) **+0.0009** against a flip null of [-0.0399, +0.0390] --
+    and G2(b) therefore passed there at 0.4920, p = 0.2070. **On the held-out sessions it does not.** The
+    first run of this file measured a mean signed gap of **-0.0607** against [-0.0287, +0.0293], and trial
+    index scored as a candidate came back at **0.4631, p = 0.0000**: hits sit systematically EARLIER than
+    the misses they are paired with, so the pair carries a time direction and any feature with a
+    within-session trend inherits it.
+
+    The repair is to the INSTRUMENT and not to a threshold: after the greedy match, pairs are dropped at
+    random from whichever direction is in excess until the two directions are equal in number, so the mean
+    signed gap is zero BY CONSTRUCTION rather than by luck. Nothing else moves -- same MAX_GAP, same
+    MIN_PAIRS, same statistic, same null, same one-sidedness.
+
+    **This makes E174 a slightly different instrument from E172 and that is stated rather than hidden.**
+    The same balancing is NOT retrofitted to E172, whose gate passed on its own cohort and whose recorded
+    result stands as run. If G2 fails again after this, the run is over and the failure is the result.
+    """
+    import numpy as _np
+    early = [p for p in pairs if p[0] < p[1]]
+    late = [p for p in pairs if p[0] > p[1]]
+    k = min(len(early), len(late))
+    if k == 0:
+        return []
+    rng = _np.random.default_rng(abs(hash((subj, sess_id))) % (2 ** 31))
+    early = [early[i] for i in rng.permutation(len(early))[:k]]
+    late = [late[i] for i in rng.permutation(len(late))[:k]]
+    out = early + late
+    out.sort(key=lambda p: p[0])
+    return out
+
+
 def load_holdout():
     """E172's loader, pointed at the held-out shards. Session 1 cannot leak in: it is not in these files."""
     paths = sorted(glob.glob(os.path.join(RESULTS, "stieger_holdout_trials*.csv")))
@@ -142,7 +176,7 @@ def load_holdout():
         ok = np.isfinite(res)
         if ok.sum() < E172.MIN_PAIRS:
             continue
-        pairs = E172.make_pairs(res)
+        pairs = _balanced_pairs(E172.make_pairs(res), subj, s)
         if len(pairs) < E172.MIN_PAIRS:
             continue
         cols = {c: np.array([E172._f(r.get(c, "")) for r in rr])
@@ -288,7 +322,7 @@ def main() -> int:
                 rr.sort(key=lambda r: int(float(r["trial"])))
                 cur = np.array([E172._f(r["result"]) for r in rr])
                 prev = np.concatenate([[np.nan], cur[:-1]])
-                pairs = E172.make_pairs(prev)
+                pairs = _balanced_pairs(E172.make_pairs(prev), subj, s_)
                 if len(pairs) < E172.MIN_PAIRS:
                     continue
                 cols = {c: np.array([E172._f(r.get(c, "")) for r in rr])
