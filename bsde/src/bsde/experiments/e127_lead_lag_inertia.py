@@ -43,9 +43,18 @@ series at signed lag k:
 Hysteresis puts weight at k > 0 (direction first). Indication puts weight at k < 0 (residual first).
 
     P1  THE ASYMMETRY.  A = mean_{k>0} c(k)  -  mean_{-k<0} c(k),  averaged over recordings, cluster
-        bootstrap over recordings.  **PREDICTED NEGATIVE UNDER HYSTERESIS** -- because the E126 effect is
-        itself negative (falling goes with a LOWER residual), so a hysteresis-driven c(k) is more negative
-        at positive lags. Sign convention stated here because reading it backwards inverts the verdict.
+        bootstrap over recordings.
+
+        **THE SIGN MAPPING IS READ OFF G2's INJECTION, NOT ASSERTED HERE, AND THE FIRST DRAFT OF THIS
+        REGISTRATION ASSERTED IT WRONGLY.** That draft predicted a NEGATIVE asymmetry under hysteresis
+        "because the E126 effect is itself negative (falling goes with a LOWER residual)". The inference
+        does not follow: E126's statistic is a DIFFERENCE, mean(resid|falling) - mean(resid|rising) =
+        -0.1322, and falling is direction = -1, so a lower residual at direction = -1 is a POSITIVE
+        correlation between direction and residual. Measured on these series: corr = +0.0575.
+        The verdict therefore takes the mapping from the injection -- whichever sign G2 produces when the
+        residual is a shifted copy of the direction such that DIRECTION LEADS is the sign that means
+        direction leads. The injection is calibrated on the real series' own autocorrelation, which no
+        hand-derived convention can be.
 
     P2  THE PEAK LAG.  argmin_k c(k), reported as a distribution over recordings, with the fraction of
         recordings whose minimum falls at a positive lag. A descriptive companion to P1 that does not
@@ -80,14 +89,14 @@ Rule 48: P1's interval is read FIRST. If it includes zero the placebo is NOT INF
 
 VERDICT, wrong direction FIRST and by name (rule 37, seventh occurrence in this project):
 
-    (a) A excludes zero POSITIVE -> INDICATION. The residual LEADS the direction: patients who look deeper
-        than expected subsequently have their drug withheld. E126's finding is then confounding by
+    (a) A excludes zero on the RESIDUAL-LEADS side (as calibrated by G2) -> INDICATION. Patients who look
+        deeper than expected subsequently have their drug withheld. E126's finding is then confounding by
         indication and **must be withdrawn as evidence of hysteresis**. This is the branch enumerated
         first because it is the one that costs us the finding.
     (b) A includes zero -> NOT SEPARATED. The design cannot tell the two apart on this data, and E126
         stands as an unexplained direction dependence rather than as neural inertia. NOT a vindication.
-    (c) A excludes zero NEGATIVE and beats the placebo -> DIRECTION LEADS. Consistent with hysteresis and
-        inconsistent with the clinician-response account, on the one dimension that separates them.
+    (c) A excludes zero on the DIRECTION-LEADS side and beats the placebo -> DIRECTION LEADS. Consistent
+        with hysteresis and inconsistent with the clinician-response account.
 
 CALIBRATION, before the run: (a) ~40 %, (b) ~40 %, (c) ~20 %. Indication is given the largest single share
 because it requires no new physiology, and (b) is given as much because 5 s resolution against processes
@@ -307,23 +316,36 @@ def main(argv=None) -> int:
         if aa.size:
             draws.append(float(np.mean(aa)))
     dr = np.asarray(draws, float)
-    frac = float(np.mean(dr <= coef)) if dr.size else float("nan")
+    # THE PLACEBO FRACTION IS COUNTED ON THE SIDE THE ESTIMATE ACTUALLY LIES. A fixed one-sided count
+    # returns 0.000 for a large effect of EITHER sign and would have read as a pass regardless (rule 37).
+    frac = ((float(np.mean(dr <= coef)) if coef < 0 else float(np.mean(dr >= coef)))
+            if dr.size else float("nan"))
     placebo = {"n": int(dr.size), "mean": float(dr.mean()) if dr.size else float("nan"),
                "p2.5": float(np.quantile(dr, .025)) if dr.size else float("nan"),
                "p97.5": float(np.quantile(dr, .975)) if dr.size else float("nan"),
-               "frac_at_least_as_negative": frac}
+               "frac_at_least_as_extreme_same_side": frac}
     print(f"PLACEBO rolled direction: mean {placebo['mean']:+.4f} "
-          f"[{placebo['p2.5']:+.4f}, {placebo['p97.5']:+.4f}]  frac<=real {frac:.3f}")
+          f"[{placebo['p2.5']:+.4f}, {placebo['p97.5']:+.4f}]  frac same side {frac:.3f}")
+
+    # SIGN MAPPING FROM THE INJECTION. `+4` shifts the residual so that DIRECTION LEADS.
+    dir_leads_sign = 1.0 if g2["injected_lag_+4"] > g2["injected_lag_-4"] else -1.0
+    gates["G2_direction_leads_sign"] = dir_leads_sign
+    resid_leads = (coef * dir_leads_sign) < 0
+    excludes_zero = bool(np.isfinite(lo) and (lo > 0 or hi < 0))
+    print(f"   G2 calibration: direction-leads has sign {dir_leads_sign:+.0f}; "
+          f"observed asymmetry {coef:+.4f} => "
+          f"{'RESIDUAL leads (indication)' if resid_leads else 'DIRECTION leads (hysteresis)'}")
 
     beats = bool(np.isfinite(frac) and frac <= 0.05)
     if not np.isfinite(lo):
         verdict = "ABSENT -- the asymmetry could not be estimated."
-    elif lo > 0:
-        verdict = (f"(a) INDICATION -- asymmetry {coef:+.4f} [{lo:+.4f}, {hi:+.4f}] is POSITIVE, meaning "
-                   "the RESIDUAL LEADS the direction: patients who look deeper than the pharmacology "
+    elif excludes_zero and resid_leads and beats:
+        verdict = (f"(a) INDICATION -- asymmetry {coef:+.4f} [{lo:+.4f}, {hi:+.4f}], which by G2's "
+                   f"injection calibration (direction-leads = {dir_leads_sign:+.0f}) means the "
+                   "RESIDUAL LEADS the direction: patients who look deeper than the pharmacology "
                    "predicts subsequently have their drug withheld. E126's direction dependence is "
-                   "confounding by indication and MUST BE WITHDRAWN as evidence of hysteresis.")
-    elif hi < 0 and beats:
+                   "CONFOUNDING BY INDICATION and must be WITHDRAWN as evidence of hysteresis.")
+    elif excludes_zero and (not resid_leads) and beats:
         verdict = (f"(c) DIRECTION LEADS -- asymmetry {coef:+.4f} [{lo:+.4f}, {hi:+.4f}], beating the "
                    f"rolled-direction placebo (frac {frac:.3f}). The concentration turns first and the "
                    "residual follows, which is what hysteresis requires and what the clinician-response "
