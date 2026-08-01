@@ -80,6 +80,14 @@ public struct SessionRecord: Codable, Identifiable {
     public var notes: String = ""
     /// Filename of the sample trace, if one was kept.
     public var traceFile: String?
+    /// True when this row came from the replay simulator rather than a run.
+    ///
+    /// Defaulted so existing stored sessions decode unchanged. Every consumer that computes training
+    /// load must filter on this: a synthetic run that reached the load model would inflate chronic
+    /// load, and an inflated chronic load makes the ramp governor permit a bigger week than the
+    /// athlete has actually earned. That is the failure mode where a testing convenience causes an
+    /// injury, so it is filtered at the source — see `Store.realSessions`.
+    public var simulated: Bool = false
 }
 
 public struct NightRecord: Codable, Identifiable {
@@ -204,8 +212,21 @@ public final class Store {
     public func loadPlanState() -> PlanState? { load(PlanState.self, "plan_state.json") }
     public func save(planState: PlanState) throws { try save(planState, "plan_state.json") }
 
+    /// Every session ever written, replayed ones included. Use this only for display.
     public func loadSessions() -> [SessionRecord] {
         load([SessionRecord].self, "sessions.json") ?? []
+    }
+
+    /// Sessions that actually happened.
+    ///
+    /// **This is what training load, weekly review and plan progression must read.** A simulated run
+    /// carries no physiological cost, so counting one would raise chronic load without raising
+    /// fitness, and the ramp governor would then authorise a larger week than the athlete has earned.
+    /// The filter lives here rather than at each call site because there is no call site that
+    /// legitimately wants synthetic runs in a load calculation, and a default that has to be
+    /// remembered is a default that will be forgotten.
+    public func realSessions() -> [SessionRecord] {
+        loadSessions().filter { !$0.simulated }
     }
     public func append(session: SessionRecord) throws {
         var all = loadSessions()

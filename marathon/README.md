@@ -167,6 +167,10 @@ Advisory software. Not a medical device, and it cannot detect a cardiac event.
 
 **The Python engine is complete and tested** — 477 tests, all passing.
 
+**Setup, distribution and day-one instructions are in [`docs/SETUP.md`](docs/SETUP.md).** Start there
+if you are holding a Verity Sense. The short version: putting this on an iPhone requires a Mac with
+Xcode, and there is no way around that — but the sensor is useful on day one without it.
+
 **The portable Swift target compiles and its tests pass** — 76 tests, all passing, under Swift 6.1.2
 on Linux. That is what makes the parity claim below a measured result rather than a review opinion:
 the controller's cue sequence, the signal-quality detector scores, the zone boundaries, the Minetti
@@ -197,11 +201,11 @@ To build:
 cd marathon/engine
 python -m marathon_engine.export ../ios/MarathonCoach/Resources   # required first
 cd ../ios/MarathonCoach
-swift test                     # the portable logic + parity against the engine -- 76 tests
+swift test                     # the portable logic + parity + 12 run scenarios -- 89 tests
 xcodegen generate && open MarathonCoach.xcodeproj   # the app; needs Xcode
 ```
 
-`swift test` needs no Apple SDKs and works on Linux with an open-source toolchain, which is how the 76
+`swift test` needs no Apple SDKs and works on Linux with an open-source toolchain, which is how the 89
 tests above were run. The `xcodegen` step is the one that requires a Mac.
 
 ### What exists
@@ -219,7 +223,9 @@ tests above were run. The `xcodegen` step is the one that requires a Mac.
 | Weekly review | `WeeklyReview.swift`, `WeeklyReviewService.swift` | ported; **parity verified by execution** |
 | Persistence | `Store.swift`, `PlanStore.swift` | **11 tests passing** |
 | Integrations | `HealthKitBridge.swift` (uncompiled), `SleepControllerClient.swift` (compiles) | written |
-| UI | `TodayView`, `RunView`, `ScreeningView`, `SettingsView`, `WeeklyReviewView` | written, uncompiled |
+| UI | `TodayView`, `RunView`, `ScreeningView`, `SettingsView`, `WeeklyReviewView`, `RehearsalView` | written, uncompiled |
+| Simulator | `Simulation/RunScenario.swift`, `ScenarioLibrary.swift` | **13 tests passing**; 12 scenarios |
+| Simulator (device) | `Simulation/SimulatedSources.swift` | written, uncompiled |
 
 ### Known gaps
 

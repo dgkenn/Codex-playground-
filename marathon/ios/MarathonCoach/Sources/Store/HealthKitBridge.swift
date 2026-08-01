@@ -38,6 +38,10 @@ import HealthKit
 
 public final class HealthKitBridge {
 
+    /// Moved to `SensorTypes.swift` so a non-Apple build (and the simulator) can build a payload
+    /// without HealthKit. Aliased so `HealthKitBridge.WorkoutPayload` still resolves at call sites.
+    public typealias WorkoutPayload = MarathonWorkoutPayload
+
     public enum HKError: Error, CustomStringConvertible {
         case unavailable
         case notAuthorized
@@ -192,23 +196,6 @@ public final class HealthKitBridge {
 
     // MARK: Writing a workout
 
-    public struct WorkoutPayload {
-        public let start: Date
-        public let end: Date
-        public let distanceM: Double
-        public let activeEnergyKcal: Double?
-        /// `(date, bpm)` pairs from the armband.
-        public let heartRates: [(Date, Double)]
-        public let indoor: Bool
-
-        public init(start: Date, end: Date, distanceM: Double, activeEnergyKcal: Double?,
-                    heartRates: [(Date, Double)], indoor: Bool) {
-            self.start = start; self.end = end; self.distanceM = distanceM
-            self.activeEnergyKcal = activeEnergyKcal
-            self.heartRates = heartRates; self.indoor = indoor
-        }
-    }
-
     /// Write a completed run as a real `HKWorkout`, from an iPhone, with no watch involved.
     public func save(workout p: WorkoutPayload) async throws {
         guard isAvailable else { throw HKError.unavailable }
@@ -262,5 +249,6 @@ public final class HealthKitBridge {
     public var isAvailable: Bool { false }
     public func requestAuthorization() async throws { throw HKError.unavailable }
     public func readNights(days: Int = 60) async throws -> [NightFromHealth] { throw HKError.unavailable }
+    public func save(workout p: WorkoutPayload) async throws { throw HKError.unavailable }
 #endif
 }

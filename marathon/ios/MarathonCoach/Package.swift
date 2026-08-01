@@ -24,7 +24,11 @@ let package = Package(
             exclude: ["Views", "MarathonCoachApp.swift",
                       "Sensors/VeritySensor.swift", "Sensors/AudioCoach.swift",
                       "Sensors/LocationPace.swift", "Store/HealthKitBridge.swift",
-                      "Engine/RunSession.swift"]
+                      "Engine/RunSession.swift",
+                      // Combine-dependent, so Apple-only. The scenario engine itself
+                      // (Simulation/RunScenario.swift) deliberately is not, so a whole run can be
+                      // replayed under `swift test` on any machine.
+                      "Sensors/SensorProtocols.swift", "Simulation/SimulatedSources.swift"]
         ),
         .testTarget(
             name: "MarathonCoachCoreTests",

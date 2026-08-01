@@ -55,67 +55,13 @@ import Foundation
 import CoreBluetooth
 import Combine
 
-// MARK: - Public surface
-
-public struct VerityReading {
-    public let timestamp: Date
-    public let hrBpm: Int?
-    /// Beat intervals in **milliseconds**, already unit-converted and quality-filtered.
-    public let intervalsMs: [Double]
-    public let cadenceSpm: Double?
-    public let skinContact: Bool?
-    public let batteryPercent: Int?
-    public let source: Source
-
-    public enum Source: String { case pmdPpi, heartRateService }
-}
-
-public enum VerityStatus: Equatable {
-    case bluetoothOff
-    case unauthorized
-    case scanning
-    case connecting
-    case warmingUp(secondsElapsed: Int)
-    case streaming
-    case stalled(reason: String)
-    case sdkModeSuspect(hint: String, remedy: String)
-    case disconnected(willRetry: Bool)
-
-    /// Whether the controller may act on readings from this state.
-    public var isUsable: Bool { self == .streaming }
-
-    public var userMessage: String {
-        switch self {
-        case .bluetoothOff: return "Bluetooth is off."
-        case .unauthorized: return "This app needs Bluetooth permission to reach the armband."
-        case .scanning: return "Looking for your Verity Sense…"
-        case .connecting: return "Connecting…"
-        case .warmingUp(let s):
-            return "Warming up (\(s)s). Polar takes about 25 seconds to send the first beat "
-                 + "intervals — this is normal."
-        case .streaming: return "Streaming"
-        case .stalled(let r): return "Connected but no data: \(r)"
-        case .sdkModeSuspect(let hint, let remedy): return "\(hint) \(remedy)"
-        case .disconnected(let retry):
-            return retry ? "Lost the armband — reconnecting…" : "Disconnected."
-        }
-    }
-}
-
 // MARK: - Manager
 
 public final class VeritySensor: NSObject, ObservableObject {
 
-    /// What the sensor is being used for right now. See the file header: PPI and 1 Hz heart rate are
-    /// mutually exclusive on this hardware, so this is not a preference — it is a hard choice.
-    public enum Mode: String {
-        /// Real-time coaching: 1 Hz HR from 0x180D + ACC cadence. No PPI, no beat intervals.
-        case run
-        /// Overnight / orthostatic HRV: PPI + ACC. HR updates every ~5 s, which is irrelevant here.
-        case rest
-
-        var usesPpi: Bool { self == .rest }
-    }
+    /// `SensorMode` lives in `SensorTypes.swift` so the simulator can name a mode without linking
+    /// CoreBluetooth. Aliased here because `VeritySensor.Mode` reads better at the call sites.
+    public typealias Mode = SensorMode
 
     @Published public private(set) var mode: Mode = .run
     @Published public private(set) var status: VerityStatus = .disconnected(willRetry: false)

@@ -40,30 +40,11 @@ import Foundation
 import CoreLocation
 import Combine
 
-public struct PaceSample {
-    public let timestamp: Date
-    /// Filtered speed in m/s. Nil when there is no trustworthy estimate at all.
-    public let speedMPerS: Double?
-    public let distanceM: Double
-    /// Instantaneous grade (rise/run) from altitude change, smoothed. Nil when unavailable.
-    public let grade: Double?
-    public let quality: Quality
-
-    public enum Quality: String {
-        /// GPS fix good, speed accuracy tight.
-        case good
-        /// Usable but degraded — accuracy loose, or fused with cadence.
-        case degraded
-        /// No trustworthy GPS. Speed is held/estimated from cadence.
-        case estimated
-        /// Nothing usable.
-        case unavailable
-    }
-}
-
 public final class LocationPace: NSObject, ObservableObject {
 
-    public enum Mode { case outdoor, treadmill }
+    /// `PaceMode` and `PaceSample` live in `SensorTypes.swift` so the simulator can produce pace
+    /// without linking CoreLocation. Aliased so `LocationPace.Mode` still reads correctly.
+    public typealias Mode = PaceMode
 
     @Published public private(set) var latest: PaceSample?
     @Published public private(set) var authorizationDenied = false

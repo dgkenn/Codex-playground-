@@ -456,6 +456,8 @@ class InRunController:
     _rep_paces: List[float] = field(default_factory=list, repr=False)
     _recovery_failures: int = 0
     _aborted: bool = False
+    #: How many times each sensor-degradation cue has actually been spoken this run. Capped at two.
+    _degraded_said: Dict[str, int] = field(default_factory=dict, repr=False)
 
     # ---- helpers ----------------------------------------------------------------------
 
@@ -541,7 +543,37 @@ class InRunController:
                             "volume rather than adding.", key="pain_warn", cooldown_s=600.0))
 
         # ---- 3. sensor degradation ----
-        if tick.hr_status == "cadence_lock":
+        #
+        # Capped at two mentions per fault per run. The cooldown alone would repeat a persistent
+        # fault every five minutes for the length of the run -- eight times on a long run. The
+        # message is actionable exactly twice: once to tell you, once in case you missed it. After
+        # that it is nagging about something you have already decided not to fix, and a coach you
+        # mute cannot warn you about the things that matter.
+        #
+        # Every non-ok status gets a message. An earlier version reported only ``cadence_lock`` and
+        # ``dropout``, which meant the two most insidious failures were silent: a frozen heart rate
+        # and a band that has worked loose both keep *producing numbers*, so the gate would quietly
+        # stop trusting them and the athlete would finish the run with no idea the data was junk --
+        # and no idea to reseat the strap, which is the one thing that would have fixed it.
+        #
+        # Silence is the wrong default here. A sensor fault the athlete can correct mid-run is worth
+        # interrupting for exactly once, which is what the cooldown is for.
+        degraded_key = {"frozen": "hr_frozen", "not_worn": "hr_not_worn",
+                        "cadence_lock": "cadence_lock", "dropout": "hr_dropout"}.get(tick.hr_status)
+        if degraded_key and self._degraded_said.get(degraded_key, 0) >= 2:
+            pass
+        elif tick.hr_status == "frozen":
+            cues.append(Cue(CueLevel.SESSION,
+                            "Heart rate has been stuck on the same value -- that usually means the "
+                            "strap has shifted. Guiding by pace until it recovers. Snug the band a "
+                            "little higher on your forearm.",
+                            key="hr_frozen", cooldown_s=300.0))
+        elif tick.hr_status == "not_worn":
+            cues.append(Cue(CueLevel.SESSION,
+                            "The armband looks like it is not reading your skin. Check it has not "
+                            "worked loose. Guiding by pace until it is back.",
+                            key="hr_not_worn", cooldown_s=300.0))
+        elif tick.hr_status == "cadence_lock":
             cues.append(Cue(CueLevel.SESSION,
                             "Heart rate has locked onto your step rate, so I am ignoring it and "
                             "guiding by pace. Try shifting the strap slightly and snugging it.",
@@ -599,7 +631,24 @@ class InRunController:
                             pace_txt = ""
                             if tick.speed_m_s:
                                 new_pace = speed_to_pace(max(0.5, tick.speed_m_s + correction))
-                                pace_txt = f" Try about {fmt_pace(new_pace)} per kilometre."
+                                # Two cases where naming a pace is worse than naming none.
+                                #
+                                # On a climb, pace is not the instruction -- effort is. The
+                                # grade-adjusted arithmetic is correct and still produces numbers
+                                # like "16:01 per kilometre", which is a walking pace being offered
+                                # as a running target. Nobody can act on that.
+                                #
+                                # And any target slower than about 12 min/km is slower than a brisk
+                                # walk, so the honest instruction is to walk, not to run a number.
+                                if abs(tick.grade) >= 0.03:
+                                    pace_txt = (" Do not chase a pace on this climb -- "
+                                                "back the effort off and let the pace be whatever "
+                                                "it is.")
+                                elif new_pace > 720:
+                                    pace_txt = (" That is walking pace now -- drop to a walk until "
+                                                "your heart rate comes back down.")
+                                else:
+                                    pace_txt = f" Try about {fmt_pace(new_pace)} per kilometre."
                             cues.append(Cue(CueLevel.PACE,
                                             f"Ease off -- you are heading for {hr_ss:.0f} beats and "
                                             f"this should top out around {hi:.0f}.{pace_txt}",
@@ -611,7 +660,13 @@ class InRunController:
                                         key="speed_up", cooldown_s=PACE_CUE_MIN_GAP_S))
 
         # ---- 6. pace-only fallback ----
-        elif mode == ControlMode.PACE_ONLY and self.intent.target_pace_sec_km and tick.speed_m_s:
+        elif (mode == ControlMode.PACE_ONLY and self.intent.target_pace_sec_km and tick.speed_m_s
+              and self.state not in (RunState.REP, RunState.WARMUP)):
+            # The warm-up guard was missing here while the HR branch above had it, so a session with
+            # a pace target would open by telling the athlete their warm-up jog was too slow. A
+            # warm-up is *supposed* to be slower than the session's target; correcting it is not
+            # merely noisy, it is wrong, and it lands in the first ten seconds of the run where it
+            # does the most damage to trust in everything said afterwards.
             target = self.intent.target_pace_sec_km * grade_adjusted_pace_factor(tick.grade)
             actual = speed_to_pace(tick.speed_m_s)
             tol = self.intent.pace_tolerance
@@ -627,6 +682,11 @@ class InRunController:
                                 key="speed_up", cooldown_s=PACE_CUE_MIN_GAP_S))
 
         chosen = self.scheduler.submit(cues, tick.t_s)
+        if chosen is not None and chosen.key in ("hr_frozen", "hr_not_worn", "cadence_lock",
+                                                 "hr_dropout"):
+            # Counted on *speaking*, not on generating: a cue suppressed by the scheduler was never
+            # heard, so it must not consume one of the two mentions.
+            self._degraded_said[chosen.key] = self._degraded_said.get(chosen.key, 0) + 1
         return ControlDecision(
             mode=mode, state=self.state, in_target=in_target, hr_ss_estimate=hr_ss,
             target_band=band, speed_correction_m_s=correction, cue=chosen,

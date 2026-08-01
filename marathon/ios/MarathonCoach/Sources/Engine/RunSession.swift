@@ -76,16 +76,18 @@ public final class RunSession: ObservableObject {
 
     public let runID = UUID()
 
-    private let sensor: VeritySensor
-    private let location: LocationPace
-    private let audio: AudioCoach
+    // Protocols, not concrete classes, so a replayed run can drive this exact object. See
+    // SensorProtocols.swift for why that matters more than it looks.
+    private let sensor: HeartRateSource
+    private let location: PaceSource
+    private let audio: CoachAudio
     private let store: Store
     private let controller: InRunController
     private let intent: SessionIntent
     private let profile: AthleteProfile
     private let zones: ZoneModel
     private let plannedTitle: String
-    private let health: HealthKitBridge
+    private let health: WorkoutRecorder
 
     private var timer: Timer?
     private var startedAt: Date?
@@ -117,9 +119,29 @@ public final class RunSession: ObservableObject {
     /// The gate that decides whether a heart rate may drive control at all.
     private var gate = HrGate()
 
-    public init(sensor: VeritySensor, location: LocationPace, audio: AudioCoach, store: Store,
-                health: HealthKitBridge, profile: AthleteProfile, zones: ZoneModel,
-                intent: SessionIntent, plannedTitle: String) {
+    /// `simulated` exists so the session, the trace file and the summary all know they came from a
+    /// replay. Without it a simulated run would be indistinguishable from a real one in the history,
+    /// which would quietly corrupt the training load the plan is computed from.
+    public let simulated: Bool
+
+    /// Simulated seconds per real second. Always 1 for a real run; a replay may compress so a
+    /// forty-minute session can be heard end to end in under a minute.
+    ///
+    /// This scales the *timer*, not the clock the controller sees: each tick still advances the run
+    /// by exactly one second, so every threshold expressed in seconds — the 20 s confirmation window,
+    /// the 45 s abort sustain, the 75 s cue gap — behaves identically to a real run. Speeding up the
+    /// wall clock without this property would silently make the controller more trigger-happy, and a
+    /// replay that does not behave like the real thing is worse than no replay.
+    public let timeScale: Double
+
+    public init(sensor: HeartRateSource, location: PaceSource, audio: CoachAudio, store: Store,
+                health: WorkoutRecorder, profile: AthleteProfile, zones: ZoneModel,
+                intent: SessionIntent, plannedTitle: String, simulated: Bool = false,
+                timeScale: Double = 1) {
+        self.simulated = simulated
+        // Only a replay may compress time. A real run reading its own clock at 60x would report a
+        // forty-minute session as having taken forty seconds.
+        self.timeScale = simulated ? max(1, min(120, timeScale)) : 1
         self.sensor = sensor
         self.location = location
         self.audio = audio
@@ -156,7 +178,7 @@ public final class RunSession: ObservableObject {
             .store(in: &bag)
 
         // Fixed 1 Hz decision cadence, independent of sensor arrival times. See the file header.
-        let t = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: 1.0 / timeScale, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         }
         RunLoop.main.add(t, forMode: .common)
@@ -211,7 +233,9 @@ public final class RunSession: ObservableObject {
     private func tick() {
         guard state == .running, let started = startedAt else { return }
         let now = Date()
-        elapsed = now.timeIntervalSince(started)
+        // One tick is one simulated second, whatever the timer interval. See `timeScale`.
+        elapsed = timeScale == 1 ? now.timeIntervalSince(started)
+                                 : now.timeIntervalSince(started) * timeScale
 
         // Sample HR, marking it stale rather than trusting an old value. Two seconds is generous at
         // 1 Hz and tight enough that a dropout is caught within a tick.
@@ -359,7 +383,8 @@ public final class RunSession: ObservableObject {
         // running average over calibrations rather than overwritten, because stride varies with pace and
         // one run at one pace is a narrow sample.
         if location.mode == .outdoor, let cad = meanCad, cad > 100,
-           distanceKm > 2.0, goodPaceTicks >= Int(0.8 * Double(max(1, paceTicks))) {
+           distanceKm > 2.0, goodPaceTicks >= Int(0.8 * Double(max(1, paceTicks))),
+           !simulated {   // a stride "measured" from synthetic GPS is a fabricated calibration
             let steps = cad * durationMin
             let stride = (distanceKm * 1000) / steps
             // Adult running stride is roughly 0.9-1.6 m; anything outside that is a measurement fault,
@@ -382,6 +407,15 @@ public final class RunSession: ObservableObject {
             rpe0to10: nil, hrCoverage: coverage, frozenFraction: frozenFraction,
             decoupling: decoupling, trimp: trimp)
         record.traceFile = store.traceURL(runID: runID).lastPathComponent
+        if simulated {
+            // Marked, and stripped of load. A replayed run that counted toward ACWR would inflate the
+            // chronic load the ramp governor divides by, and the plan would quietly permit a bigger
+            // week than the athlete has earned. The point of the simulator is to test the coaching,
+            // never to contribute to the training history.
+            record.notes = "SIMULATED — replayed from a scenario, not a real run. "
+            record.trimp = nil
+            record.simulated = true
+        }
         if aborted {
             record.notes = "Aborted by the safety check: \(decision?.reason ?? "unknown")."
         }
@@ -398,7 +432,7 @@ public final class RunSession: ObservableObject {
 
         // HealthKit last: it is the least important write and the most likely to fail (permissions),
         // so it must never be able to lose the session record.
-        if !hrSamples.isEmpty || distanceKm > 0 {
+        if !simulated, !hrSamples.isEmpty || distanceKm > 0 {
             let payload = HealthKitBridge.WorkoutPayload(
                 start: started, end: end, distanceM: lastPace?.distanceM ?? 0,
                 activeEnergyKcal: nil, heartRates: hrSamples,

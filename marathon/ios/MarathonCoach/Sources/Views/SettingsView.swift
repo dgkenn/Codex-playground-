@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var tokenText = ""
     @State private var tokenSaved = TokenStore.load() != nil
     @State private var exportURL: URL?
+    @State private var showRehearsal = false
 
     var body: some View {
         NavigationStack {
@@ -92,8 +93,16 @@ struct SettingsView: View {
                          + "metric.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
+
+                Section("Testing") {
+                    Button("Rehearse a run") { showRehearsal = true }
+                    Text("Play a scripted session through the real voice, without the sensor. Use it "
+                         + "to hear what a session type sounds like before you do it for real.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
             }
             .navigationTitle("Settings")
+            .sheet(isPresented: $showRehearsal) { RehearsalView() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }

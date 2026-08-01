@@ -281,6 +281,8 @@ public final class InRunController {
     private var bandWidenedBpm: Double = 0
     private var repPaces: [Double] = []
     private var aborted = false
+    /// How many times each sensor-degradation cue has actually been spoken this run. Capped at two.
+    private var degradedSaid: [String: Int] = [:]
 
     public init(zones: ZoneModel, intent: SessionIntent, hrSpeedSlope: Double = 12) {
         self.zones = zones; self.intent = intent; self.hrSpeedSlope = hrSpeedSlope
@@ -357,7 +359,32 @@ public final class InRunController {
         }
 
         // 3. Sensor degradation is reported, never acted on.
-        if tick.hrStatus == "cadence_lock" {
+        // Every non-ok status gets a message. An earlier version reported only `cadence_lock` and
+        // `dropout`, which left the two most insidious failures silent: a frozen heart rate and a
+        // band that has worked loose both keep *producing numbers*, so the gate would quietly stop
+        // trusting them and the athlete would finish the run with no idea the data was junk — and no
+        // idea to reseat the strap, which is the one thing that would have fixed it.
+        // Capped at two mentions per fault per run. The cooldown alone would repeat a persistent
+        // fault every five minutes for the whole run — eight times on a long one. The message is
+        // actionable exactly twice: once to tell you, once in case you missed it. After that it is
+        // nagging about something you have already decided not to fix, and a coach you mute cannot
+        // warn you about the things that matter.
+        let degradedKey = ["frozen": "hr_frozen", "not_worn": "hr_not_worn",
+                           "cadence_lock": "cadence_lock", "dropout": "hr_dropout"][tick.hrStatus]
+        if let k = degradedKey, (degradedSaid[k] ?? 0) >= 2 {
+            // Said enough. Silence here is deliberate.
+        } else if tick.hrStatus == "frozen" {
+            cues.append(Cue(.session,
+                            "Heart rate has been stuck on the same value — that usually means the "
+                            + "strap has shifted. Guiding by pace until it recovers. Snug the band a "
+                            + "little higher on your forearm.",
+                            key: "hr_frozen", cooldownS: 300))
+        } else if tick.hrStatus == "not_worn" {
+            cues.append(Cue(.session,
+                            "The armband looks like it is not reading your skin. Check it has not "
+                            + "worked loose. Guiding by pace until it is back.",
+                            key: "hr_not_worn", cooldownS: 300))
+        } else if tick.hrStatus == "cadence_lock" {
             cues.append(Cue(.session,
                             "Heart rate has locked onto your step rate, so I am ignoring it and "
                             + "guiding by pace. Try shifting the strap slightly and snugging it.",
@@ -415,7 +442,21 @@ public final class InRunController {
                             var paceTxt = ""
                             if let sp = tick.speedMPerS, let c = correction {
                                 let newPace = Physiology.speedToPace(mPerS: max(0.5, sp + c))
-                                paceTxt = " Try about \(Physiology.formatPace(newPace)) per kilometre."
+                                // Two cases where naming a pace is worse than naming none. On a
+                                // climb pace is not the instruction, effort is — the grade-adjusted
+                                // arithmetic is correct and still yields things like "16:01 per
+                                // kilometre", a walking pace offered as a running target. And any
+                                // target slower than 12:00/km is slower than a brisk walk, so the
+                                // honest instruction is to walk.
+                                if abs(tick.grade) >= 0.03 {
+                                    paceTxt = " Do not chase a pace on this climb — back the effort "
+                                            + "off and let the pace be whatever it is."
+                                } else if newPace > 720 {
+                                    paceTxt = " That is walking pace now — drop to a walk until your "
+                                            + "heart rate comes back down."
+                                } else {
+                                    paceTxt = " Try about \(Physiology.formatPace(newPace)) per kilometre."
+                                }
                             }
                             cues.append(Cue(.pace,
                                             "Ease off — you are heading for \(Int(ss)) beats and this "
@@ -430,7 +471,13 @@ public final class InRunController {
                     }
                 }
             }
-        } else if m == .paceOnly, let target0 = intent.targetPaceSecKm, let sp = tick.speedMPerS {
+        } else if m == .paceOnly, let target0 = intent.targetPaceSecKm, let sp = tick.speedMPerS,
+                  state != .rep, state != .warmup {
+            // The warm-up guard was missing here while the HR branch above had it, so a session with
+            // a pace target opened by telling the athlete their warm-up jog was too slow. A warm-up
+            // is supposed to be slower than the target; correcting it is wrong, and it lands in the
+            // first ten seconds of the run where it does the most damage to trust in everything said
+            // afterwards.
             let target = target0 * Physiology.gradeAdjustedPaceFactor(grade: tick.grade)
             let actual = Physiology.speedToPace(mPerS: sp)
             let tol = intent.paceTolerance
@@ -448,10 +495,15 @@ public final class InRunController {
             }
         }
 
+        let chosen = scheduler.submit(cues, now: tick.tS)
+        if let c = chosen, ["hr_frozen", "hr_not_worn", "cadence_lock", "hr_dropout"].contains(c.key) {
+            // Counted on *speaking*, not on generating: a cue the scheduler suppressed was never
+            // heard, so it must not consume one of the two mentions.
+            degradedSaid[c.key] = (degradedSaid[c.key] ?? 0) + 1
+        }
         return ControlDecision(mode: m, state: state, inTarget: inTarget, hrSteadyState: hrSS,
                                targetBand: band, speedCorrectionMPerS: correction,
-                               cue: scheduler.submit(cues, now: tick.tS), abort: false,
-                               reason: rise.kind)
+                               cue: chosen, abort: false, reason: rise.kind)
     }
 
     /// Log a completed rep and decide whether the set should be cut short.

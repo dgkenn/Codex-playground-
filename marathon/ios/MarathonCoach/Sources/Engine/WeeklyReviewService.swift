@@ -77,7 +77,7 @@ public final class WeeklyReviewService {
         let lastWeekStart = cal.date(byAdding: .day, value: -7, to: thisWeekStart) ?? now
         let bounds = (start: lastWeekStart, end: thisWeekStart)
 
-        let sessions = store.loadSessions()
+        let sessions = store.realSessions()   // never review a replayed run as if it were training
         let inWeek = sessions.filter { $0.date >= bounds.start && $0.date < bounds.end }
         let achieved = inWeek.filter(\.completed).reduce(0.0) { $0 + $1.distanceKm }
         let completed = inWeek.filter(\.completed).count
