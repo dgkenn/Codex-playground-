@@ -191,3 +191,35 @@ any is planned on.
 at mode 600, outside the repository, and appear in no committed file. **The password should be rotated**,
 because a transcript is not a secret store. The durable place for these is the Claude Code web
 environment's environment-variable settings, per `CREDENTIALS.md`.
+
+---
+
+## eeg-power-anesthesia 1.0.0 — what it can and cannot host (measured 2026-08-01, E148–E158)
+
+Extracted in full: 44 OR cases and 10 volunteers, 144,242 epochs of per-2 s spectral features, plus the
+deposit's own `Volunteer_CNN/btlncks.feather` (46,948 windows × 1,280 MobileNet bottlenecks).
+
+**The volunteer arm hosts behavioural-landmark designs; the OR arm cannot.** Every volunteer has exactly
+one behavioural LOC and one behavioural ROC, defined by response probability to click and verbal cues
+crossing 5 %, with 18–67 min of drug-free baseline. **In the OR arm, 0 of 44 cases have a conscious epoch
+adjacent to an unconscious one** — the median gap between the last conscious and the first unconscious
+epoch is **286 epochs (10 min)**, range 31–1051, because the deposit labels the whole induction-to-surgery
+window `NaN` on the stated grounds that the true LOC is unknowable retrospectively. So any design that
+needs the two states to be adjacent in time — E148's concentration-matching, E151/E152/E153's landmark
+jump — **is confined to ten subjects and cannot be replicated inside this deposit.** That is the binding
+limit on the alpha-peak result, not the statistics.
+
+**The OR arm's strength is the agent contrast and the quality series**, and its trap is case length:
+`rx_sorted_case_ids.yml` gives pure_propofol 27, mixed 16, **pure_sevo 1** (there is no sevoflurane-alone
+arm), and sevoflurane cases are nearly twice as long — median 1,740 good-quality unconscious epochs
+against 900 — which E154 measured identifying the agent at |AUC−0.5| = **0.3771**, above every feature but
+one. Any OR design must hold case length constant by construction, as E155 does with a fixed 300-epoch
+summary window.
+
+**ds004541 carries `meta_loc_s` and `meta_roc_s`** and is therefore the only other deposit here with
+landmark times — but it has **7 subjects and 101 epoch-level rows**, roughly 14 per subject, so it cannot
+support a jump statistic either.
+
+**Consequence for Challenge A.** The recovery clause is testable on exactly ten subjects anywhere this
+project can reach, and no second cohort exists for it. The Turku/Kallionpää request (within-subject LOR
+*and* ROR at constant dosing) is now supported by three independent structural findings rather than one.
