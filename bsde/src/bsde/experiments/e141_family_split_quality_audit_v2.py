@@ -184,7 +184,7 @@ def ranks(v):
     return r
 
 
-def _logit(X, y, iters=200, lam=1e-3):
+def _logit(X, y, iters=40, lam=1e-3):
     b = np.zeros(X.shape[1])
     for _ in range(iters):
         p = 1.0 / (1.0 + np.exp(-X @ b))
