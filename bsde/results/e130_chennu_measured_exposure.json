@@ -1,0 +1,124 @@
+{
+ "gates": {
+  "G1_subjects": 20,
+  "G1_rows": 78,
+  "G1_pass": true,
+  "outcome": "meta_mean_reaction_time_ms",
+  "G2_exposure_oob_rho": 0.22591778248698766,
+  "G2_n_reps_usable": 800,
+  "G2_pass": true,
+  "G3_negative_control": {
+   "mean": 0.022207876862061937,
+   "lo": -0.08964930517261296,
+   "hi": 0.2040695564319733
+  },
+  "G3_pass": true
+ },
+ "n_candidates": 17,
+ "increments": {
+  "critical_slowing_ar1": {
+   "mean": -0.11066087946333379,
+   "lo": -0.3243288103406727,
+   "hi": 0.1906799670583163,
+   "n_reps": 769
+  },
+  "emg_beta_gamma_fraction": {
+   "mean": -0.017352063766998795,
+   "lo": -0.18935929877846583,
+   "hi": 0.1723126879878566,
+   "n_reps": 770
+  },
+  "emg_index": {
+   "mean": 0.03213044524520641,
+   "lo": -0.08636227791515179,
+   "hi": 0.23831128692253623,
+   "n_reps": 777
+  },
+  "emg_kurtosis": {
+   "mean": 0.03537530516714742,
+   "lo": -0.05019511827099926,
+   "hi": 0.23622602454358357,
+   "n_reps": 778
+  },
+  "exponent_high": {
+   "mean": -0.20539773726177457,
+   "lo": -0.4692838949293729,
+   "hi": 0.1314745016440595,
+   "n_reps": 777
+  },
+  "exponent_low": {
+   "mean": -0.06897600813075223,
+   "lo": -0.3026262040523671,
+   "hi": 0.22942439672219075,
+   "n_reps": 783
+  },
+  "lempel_ziv": {
+   "mean": 0.05148082791512926,
+   "lo": -0.07094079462983864,
+   "hi": 0.28707852168687786,
+   "n_reps": 780
+  },
+  "multiscale_entropy_slope": {
+   "mean": 0.07948459688187268,
+   "lo": -0.04465656685401692,
+   "hi": 0.35621346528246534,
+   "n_reps": 781
+  },
+  "pac_slow_alpha": {
+   "mean": -0.08620300406654467,
+   "lo": -0.3158434542312934,
+   "hi": 0.19113388266859024,
+   "n_reps": 770
+  },
+  "relative_alpha_power": {
+   "mean": 0.06178725365194809,
+   "lo": -0.07398956984922685,
+   "hi": 0.3492501666076082,
+   "n_reps": 777
+  },
+  "relative_delta_power": {
+   "mean": 0.003332847572826181,
+   "lo": -0.15608088988256838,
+   "hi": 0.25825888015398635,
+   "n_reps": 788
+  },
+  "spatial_participation_ratio": {
+   "mean": -0.06429957518998662,
+   "lo": -0.2550216663630816,
+   "hi": 0.22289970312912427,
+   "n_reps": 783
+  },
+  "spectral_edge_95": {
+   "mean": -0.06555662970146155,
+   "lo": -0.2617098791752289,
+   "hi": 0.18665800023751128,
+   "n_reps": 778
+  },
+  "spectral_entropy": {
+   "mean": 0.05884239282562073,
+   "lo": -0.07380826820187336,
+   "hi": 0.3557102452175953,
+   "n_reps": 780
+  },
+  "uce_v1": {
+   "mean": 0.019288282264441688,
+   "lo": -0.140287486996446,
+   "hi": 0.26515275926370235,
+   "n_reps": 781
+  },
+  "whole_head_exponent": {
+   "mean": -0.03200342594894793,
+   "lo": -0.19012395640145846,
+   "hi": 0.14851850589271426,
+   "n_reps": 782
+  },
+  "wpli_alpha": {
+   "mean": -0.03262902378327417,
+   "lo": -0.1828178634041901,
+   "hi": 0.20273988380034924,
+   "n_reps": 778
+  }
+ },
+ "placebo": {},
+ "verdict": "(b) NO INCREMENT for any of 17 candidates over an assayed plasma concentration. The placebo is NOT INFORMATIVE (rule 48). READ WITH THE REGISTERED ASYMMETRY: E122's positive used the DEPOSIT'S OWN shipped index, and its P2 -- this project's 27 candidates against that index -- was entirely null. chennu ships no vendor index, so a null here reproduces E122's P2 rather than contradicting E122's P1, and must NOT be read as a failed replication of E122."
+}
