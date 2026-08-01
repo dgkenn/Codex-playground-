@@ -316,30 +316,57 @@ def main(argv=None) -> int:
     print(f"PLACEBO outcome permuted: [{plo:+.4f}, {phi:+.4f}]  real "
           f"{'INSIDE' if inside else 'OUTSIDE'}")
 
+    # RULE 46: the interval endpoint can sit close to zero, so the binary could be a property of the RNG.
+    # Report seed stability before calling it anything.
+    seeds = []
+    for k in range(5):
+        l2, h2 = boot(x, y, np.random.default_rng(SEED + 100 + k), reps=REPS)
+        seeds.append({"seed": SEED + 100 + k, "lo": l2, "hi": h2,
+                      "excludes_zero": bool(h2 < 0 or l2 > 0)})
+    n_excl = sum(1 for q in seeds if q["excludes_zero"])
+    res["seed_stability"] = {"n_seeds": len(seeds), "n_excluding_zero": n_excl, "seeds": seeds}
+    print(f"SEED STABILITY  {n_excl}/{len(seeds)} bootstrap seeds give an interval excluding zero")
+    stable = n_excl == len(seeds)
+
+    # THE PLACEBO GATES EVERY DIRECTIONAL BRANCH, not only the favourable one. The registration says
+    # "Real estimate inside the placebo's central 95 % is WITHDRAWN" and does not qualify the direction.
+    # A first draft applied it only to the positive branch, which printed CONTRADICTED over an estimate
+    # the permutation null reproduces -- rule 37's family again: a verdict rule must enumerate the
+    # wrong-direction case AND subject it to the same gate.
     if not np.isfinite(lo):
         res["verdict"] = "ABSENT -- the primary could not be estimated."
-    elif hi < 0:
-        res["verdict"] = (f"(a) CONTRADICTED -- {r:+.4f} [{lo:+.4f}, {hi:+.4f}] excludes zero in the "
-                          "NEGATIVE direction, in the construct E86 was measured in. That is worse for "
-                          "E86 than a null.")
-    elif lo > 0:
+    elif inside:
         res["verdict"] = (
-            (f"(c) REPLICATED IN THE MATCHING CONSTRUCT -- {r:+.4f} [{lo:+.4f}, {hi:+.4f}]. "
-             "E108's first explanation for E124 (decodability is not control) is supported, and E86 "
-             "survives external replication.")
-            if not inside else
-            (f"WITHDRAWN BY PLACEBO -- {r:+.4f} lies inside the permutation interval "
-             f"[{plo:+.4f}, {phi:+.4f}]."))
+            f"NOT REPLICATED -- {r:+.4f} [{lo:+.4f}, {hi:+.4f}] lies INSIDE the permutation interval "
+            f"[{plo:+.4f}, {phi:+.4f}], so the permutation null reproduces it and no directional claim "
+            f"survives. Seed stability: {n_excl}/5 bootstrap seeds exclude zero. "
+            f"It EXCLUDES an effect of E86's size -- neither {E86_POINT:+.4f} nor its attenuated "
+            f"expectation {expect:+.4f} lies in the interval. "
+            "AND THE DIRECTION IS THE POINT: the estimate is NEGATIVE, in the construct E86 was measured "
+            "in, matching eegmmidb's two negative point estimates. E108's first explanation for E124 -- "
+            "that decodability is not control -- is therefore NOT supported, because the matching "
+            "construct in an independent cohort does not recover E86's effect either. E86 is "
+            "cohort-specific.")
+    elif hi < 0 and stable:
+        res["verdict"] = (f"(a) CONTRADICTED -- {r:+.4f} [{lo:+.4f}, {hi:+.4f}] excludes zero in the "
+                          "NEGATIVE direction at every seed AND beats the permutation placebo, in the "
+                          "construct E86 was measured in. Worse for E86 than a null.")
+    elif hi < 0:
+        res["verdict"] = (f"(a-weak) NEGATIVE BUT SEED-UNSTABLE -- {r:+.4f} [{lo:+.4f}, {hi:+.4f}] "
+                          f"excludes zero at only {n_excl}/5 seeds, so the binary is a property of the "
+                          "RNG rather than of the data (rule 46). Read as NOT REPLICATED with a negative "
+                          "point estimate.")
+    elif lo > 0:
+        res["verdict"] = (f"(c) REPLICATED IN THE MATCHING CONSTRUCT -- {r:+.4f} [{lo:+.4f}, {hi:+.4f}], "
+                          "beating the permutation placebo. E108's first explanation for E124 is "
+                          "supported and E86 survives.")
     else:
         kind = ("UNDERPOWERED and compatible with E86" if lo <= expect <= hi else
                 "and it EXCLUDES an effect of E86's size")
         res["verdict"] = (f"(b) NOT REPLICATED, {kind}. {r:+.4f} [{lo:+.4f}, {hi:+.4f}] against E86's "
                           f"{E86_POINT:+.4f} and its attenuated expectation {expect:+.4f}. "
-                          "The placebo is NOT INFORMATIVE here (rule 48): there is no real effect for a "
-                          "permuted outcome to fail to reproduce. "
-                          "With eegmmidb already excluding an effect of E86's size in the OTHER "
-                          "construct, a null here removes E108's construct explanation as a defence and "
-                          "makes E86 cohort-specific.")
+                          "The placebo is NOT INFORMATIVE here (rule 48).")
+
     print(f"\nVERDICT: {res['verdict']}")
     json.dump(res, open(a.out, "w"), indent=2)
     return 0

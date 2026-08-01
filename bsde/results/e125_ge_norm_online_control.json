@@ -1,0 +1,84 @@
+{
+  "n_subjects": 87,
+  "gates": {
+    "G1_pass": true,
+    "G2_median_accuracy": 56.25,
+    "G2_binomial_threshold_pct": 56.50243343872123,
+    "G2_frac_above_threshold": 0.4942528735632184,
+    "G2_spread": 58.75,
+    "G2_pass": true,
+    "G3_ge_norm_median": 0.9527295,
+    "G3_ge_norm_sd": 0.06224847233577544,
+    "G3_pass": true,
+    "G4_rho_ge_norm_iaf": -0.034336954144492234,
+    "G4_iaf_vs_outcome": {
+      "rho": -0.02959830866807611,
+      "lo": -0.2424509732448786,
+      "hi": 0.1696717576729606
+    },
+    "G5_per_dataset": {
+      "A": {
+        "n": 60,
+        "rho": -0.1450402889691581
+      },
+      "B": {
+        "n": 21,
+        "rho": -0.24285714285714285
+      },
+      "C": {
+        "n": 6,
+        "rho": -0.7714285714285715
+      }
+    }
+  },
+  "primary": {
+    "rho": -0.20653204053364438,
+    "lo": -0.3920737041627178,
+    "hi": -0.0003499307428737532,
+    "n": 87,
+    "e86_point": 0.3069,
+    "attenuated_expectation": 0.24222573007103396
+  },
+  "placebo": {
+    "p2.5": -0.20693573667711598,
+    "p97.5": 0.20399276445286862,
+    "real_inside": true
+  },
+  "seed_stability": {
+    "n_seeds": 5,
+    "n_excluding_zero": 5,
+    "seeds": [
+      {
+        "seed": 20260901,
+        "lo": -0.40127487788875116,
+        "hi": -0.011725869359189286,
+        "excludes_zero": true
+      },
+      {
+        "seed": 20260902,
+        "lo": -0.39139389079244735,
+        "hi": -0.009302781220383428,
+        "excludes_zero": true
+      },
+      {
+        "seed": 20260903,
+        "lo": -0.3960701137274914,
+        "hi": -0.005830356491944296,
+        "excludes_zero": true
+      },
+      {
+        "seed": 20260904,
+        "lo": -0.39716638113290076,
+        "hi": -0.00637119997083901,
+        "excludes_zero": true
+      },
+      {
+        "seed": 20260905,
+        "lo": -0.4051022453889334,
+        "hi": -0.008544142305168756,
+        "excludes_zero": true
+      }
+    ]
+  },
+  "verdict": "NOT REPLICATED -- -0.2065 [-0.3921, -0.0003] lies INSIDE the permutation interval [-0.2069, +0.2040], so the permutation null reproduces it and no directional claim survives. Seed stability: 5/5 bootstrap seeds exclude zero. It EXCLUDES an effect of E86's size -- neither +0.3069 nor its attenuated expectation +0.2422 lies in the interval. AND THE DIRECTION IS THE POINT: the estimate is NEGATIVE, in the construct E86 was measured in, matching eegmmidb's two negative point estimates. E108's first explanation for E124 -- that decodability is not control -- is therefore NOT supported, because the matching construct in an independent cohort does not recover E86's effect either. E86 is cohort-specific."
+}
