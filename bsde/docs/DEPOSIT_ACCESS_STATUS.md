@@ -270,3 +270,39 @@ only route**:
 every one of those eighteen terms would be missed. The claim is therefore "OpenNeuro's titles and task
 labels contain no DoC EEG cohort", which is weaker than "OpenNeuro contains none" and is what the method
 supports.
+
+---
+
+## VitalDB has no awake baseline — measured, 2026-08-01
+
+The `VitalDBGridAdapter` docstring states *"Induction is still absent (`anestart` is negative in 91.8 % of
+cases)"*. **Rule 22 says a figure in a code comment is not a figure**, so it was checked against the
+extraction: across **6,437 windows from 250 cases, ZERO fall before anaesthesia start** — the earliest
+window in the whole cohort sits at +0.0 min relative to `anestart`, the median at +100.3 min, and **0 of
+250 cases** contribute a single pre-anaesthesia window. The comment understated it.
+
+**This closes a route that looked open.** VitalDB carries the two things Challenge A's constructive test
+needs almost nowhere else: a **real agent contrast** (115 clean single-agent cases, 44 propofol alone
+against 71 sevoflurane alone) and **non-EEG state markers** in the form of clinical event times
+(`anestart`, `opstart`, `aneend`) rather than a monitor-derived index. On paper that is the cohort E165
+needed. In practice the recording starts after induction, so **the conscious side of the contrast does not
+exist**: 1,410 windows are induction-to-surgery, 4,924 intra-operative, and only 103 post-`aneend` across
+all 250 cases.
+
+So the state contrast VitalDB can support is *depth within unconsciousness*, not *conscious versus
+unconscious*, and the only non-circular state variable left is BIS — which is computed from the same EEG.
+
+**The three-way gap, now measured on every reachable cohort rather than argued:**
+
+| cohort | non-EEG state label | real agent contrast | awake baseline | recovery |
+|---|---|---|---|---|
+| Krause | OAA/S (rater) | dex vs propofol, **15 clusters, nested** | yes | **no** |
+| MGH OR | conscious/unconscious, documented rule | propofol vs propofol+sevo, 25 vs 14 — **weak** | **no** (median 286-epoch gap) | no |
+| MGH volunteers | **behavioural LOC and ROC** | **one agent** | yes | **yes, 10 subjects** |
+| VitalDB | clinical event times | **yes, 44 vs 71** | **no, measured 0 of 250** | 103 windows total |
+| ds004541 | LOC/ROC times | one agent | yes | yes, **7 subjects** |
+
+**No row has three ticks.** That is the same gap behind E165's unhostable question, E148–E153's
+ten-subject ceiling and E139–E142's nested-cluster problem, and it is why
+`DATA_REQUEST_TURKU_KALLIONPAA.md` and `DATA_REQUEST_MGH_RESPONSE_PROBABILITY.md` are the programme's
+binding dependencies rather than one option among several.
