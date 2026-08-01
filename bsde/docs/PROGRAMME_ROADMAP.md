@@ -43,6 +43,31 @@ but only if ours demonstrably does not, which needs calibration slope and interc
 For a product this is not optional: substantial equivalence against the BIS predicate requires performance
 across the intended population, and a marker needing per-site recalibration is not a device.
 
+**D NOW HAS DATA — MIMIC-IV, confirmed 2026-08-03 (investigator's suggestion).** Challenge D does not
+need EEG, which I under-weighted: the transport test is the DOSE-I pharmacology model carried to a
+different population, drug set and scale. `mimiciv/3.1/icu/` is ACCESSIBLE and carries every part:
+
+| itemid | label | table | why it matters |
+|---|---|---|---|
+| 228096 | Richmond-RAS Scale | chartevents | the non-EEG state measure |
+| **228299** | **Goal** Richmond-RAS Scale | chartevents | **the clinician's TARGET depth** |
+| 222168 | Propofol | inputevents (mg) | infusion — the exact input `infusion_basis` was built for |
+| 226224 | Propofol Ingredient | ingredientevents | ingredient-level dosing |
+| 221668 / 221712 / 221744 / 225150 | midazolam, ketamine, fentanyl, dexmedetomidine | inputevents | multi-drug, so the interaction model is testable |
+
+This is the **forward** prediction D was told it must make rather than the retrodiction it started as:
+DOSE-I is bolus propofol mono-sedation against MOAA/S over minutes; MIMIC is multi-drug infusion against
+RASS over days. If the construct-match rule is right, it should say in advance whether the pharmacology
+arm transports — and E122 measured what there is to transport (out-of-bag rho 0.4595).
+
+**`Goal Richmond-RAS Scale` is the item to notice.** E127 found that E126's apparent hysteresis was
+confounding by indication — the residual LEADS the direction, because clinicians withhold drug from a
+patient who looks deeper than expected. A recorded TARGET depth is the variable that separates
+"clinician responding to observed state" from "drug effect", which DOSE-I could not do at all. **The
+confound that killed E126 is directly addressable here.**
+
+eICU-CRD 2.0 (33 tables) is also accessible as a second transport cohort.
+
 ### Challenge E — an endpoint a patient cares about, in the shadow of ENGAGES
 
 Nothing we have is top-tier, because "tracks MOAA/S better than pharmacology predicts" is an intermediate
