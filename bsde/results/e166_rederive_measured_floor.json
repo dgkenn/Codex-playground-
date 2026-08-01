@@ -237,6 +237,231 @@
       "calibration_pass": true,
       "verdict": "ADDS",
       "why": "the recorded verdict is OVERTURNED"
+    },
+    "e58": {
+      "name": "e58",
+      "n_rows": 5845,
+      "n_clusters": 247,
+      "reference": {
+        "clusters": 247,
+        "rows": 5845,
+        "note": "5,845 windows / 247 cases, joined at 100 %"
+      },
+      "recorded": "-0.195 [-0.424, +0.035] BIS units (median|err|, NEGATIVE = better)",
+      "gate_R": true,
+      "gate_A": {
+        "increment": -2.205640782675765,
+        "p": 0.0,
+        "null_mean": 0.04820380096108519,
+        "n_null": 200,
+        "pass": true
+      },
+      "increment": -0.2563713165436994,
+      "p": 0.0,
+      "null_mean": -0.007193181455113049,
+      "n_null": 500,
+      "floor": null,
+      "ladder": [
+        {
+          "rho": 0.0,
+          "p": [
+            0.8966666666666666,
+            0.19,
+            0.25
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.05,
+          "p": [
+            0.9733333333333334,
+            0.9966666666666667,
+            0.9766666666666667
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.1,
+          "p": [
+            1.0,
+            0.31,
+            1.0
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.2,
+          "p": [
+            0.9966666666666667,
+            1.0,
+            1.0
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.4,
+          "p": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "hits": 0,
+          "detected": false
+        }
+      ],
+      "calibration_pass": true,
+      "verdict": "ADDS",
+      "why": "the recorded verdict is OVERTURNED"
+    },
+    "e99": {
+      "name": "e99",
+      "n_rows": 5798,
+      "n_clusters": 247,
+      "reference": {
+        "clusters": 247,
+        "rows": 5798,
+        "note": "5,798 windows, 977 positive (16.9 %)"
+      },
+      "recorded": "-0.0306 [-0.0524, -0.0101] (AUC increment, POSITIVE = adds) -> HURTS",
+      "gate_R": true,
+      "gate_A": {
+        "increment": -0.31775410249894004,
+        "p": 0.0,
+        "null_mean": -0.01289287877562276,
+        "n_null": 200,
+        "pass": true
+      },
+      "increment": -0.020003537067125987,
+      "p": 0.0,
+      "null_mean": 0.0015185285206291007,
+      "n_null": 500,
+      "floor": 0.1,
+      "ladder": [
+        {
+          "rho": 0.0,
+          "p": [
+            0.43333333333333335,
+            0.61,
+            0.7733333333333333
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.05,
+          "p": [
+            0.30666666666666664,
+            0.1,
+            0.45
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.1,
+          "p": [
+            0.0,
+            0.006666666666666667,
+            0.0
+          ],
+          "hits": 3,
+          "detected": true
+        }
+      ],
+      "calibration_pass": true,
+      "verdict": "ADDS",
+      "why": "the recorded verdict is OVERTURNED"
+    },
+    "E130": {
+      "name": "E130",
+      "n_rows": 78,
+      "n_clusters": 20,
+      "reference": {
+        "clusters": 20,
+        "rows": 78,
+        "note": "20 subjects, 78 rows"
+      },
+      "recorded": "all 17 span zero; largest exponent_high -0.2054 [-0.4693, +0.1315] (1-rho, NEG = helps)",
+      "gate_R": true,
+      "gate_A": {
+        "increment": -0.5374915200183895,
+        "p": 0.1,
+        "null_mean": -0.3370823105172657,
+        "n_null": 200,
+        "pass": false
+      },
+      "increment": -0.23191793264022537,
+      "p": 0.006,
+      "null_mean": 0.015222539994506902,
+      "n_null": 500,
+      "floor": 0.4,
+      "ladder": [
+        {
+          "rho": 0.0,
+          "p": [
+            0.36666666666666664,
+            0.9,
+            0.21666666666666667
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.05,
+          "p": [
+            0.10333333333333333,
+            0.32,
+            0.76
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.1,
+          "p": [
+            0.5066666666666667,
+            0.49,
+            0.006666666666666667
+          ],
+          "hits": 1,
+          "detected": false
+        },
+        {
+          "rho": 0.2,
+          "p": [
+            0.09666666666666666,
+            0.0,
+            0.74
+          ],
+          "hits": 1,
+          "detected": false
+        },
+        {
+          "rho": 0.4,
+          "p": [
+            0.006666666666666667,
+            0.02,
+            0.056666666666666664
+          ],
+          "hits": 2,
+          "detected": true
+        }
+      ],
+      "calibration_pass": true,
+      "verdict": "BASELINE-DEAD",
+      "why": "GATE A failed: there was nothing to add to (rule 53)"
     }
-  }
+  },
+  "downgrade_to_absent": [],
+  "overturned": [
+    "e34",
+    "e37",
+    "e58",
+    "e99"
+  ],
+  "wrong_direction": []
 }
