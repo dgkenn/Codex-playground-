@@ -1,0 +1,2 @@
+subject,status,error,csp_auc,perm_p,perm_null_mean,n_trials,n_left,n_right,n_channels,n_perm
+S001,ok,,0.666008,0.054726,0.496833,45,23,22,64,200
