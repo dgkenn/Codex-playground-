@@ -124,7 +124,26 @@ def prepare(d):
             mine_ml = float(((s1 - s0) * rate_mg_s).sum() / MG_PER_ML)
             theirs = float(vv[m].max())
             vol_ok = abs(mine_ml - theirs) / theirs
-    return {"caseid": d["caseid"], "X": X, "y": tgt, "t": ev, "vol_rel_err": vol_ok}
+    dem = d.get("demog", {})
+
+    def _d(k):
+        try:
+            return float(dem.get(k) or "nan")
+        except ValueError:
+            return float("nan")
+    age, ht = _d("age"), _d("height")
+    sex = 1.0 if str(dem.get("sex", "")).upper().startswith("M") else 0.0
+    cov = np.array([np.log(max(wt, 1.0) / 70.0),
+                    np.log(max(age, 1.0) / 50.0) if np.isfinite(age) else 0.0,
+                    np.log(max(ht, 1.0) / 170.0) if np.isfinite(ht) else 0.0,
+                    sex], float)
+    cov[~np.isfinite(cov)] = 0.0
+    # COVARIATE ARM: each kernel column gets a copy scaled by each covariate, so the fit can learn a
+    # patient-dependent SCALE for every kernel. That is what a population PK model does, and it is fitted
+    # on TRAINING cases only -- the covariates are known before any concentration is observed, so using
+    # them leaks nothing. 8 kernels x (1 + 4 covariates) = 40 columns.
+    Xc = np.hstack([X] + [X * c for c in cov])
+    return {"caseid": d["caseid"], "X": X, "Xc": Xc, "y": tgt, "t": ev, "vol_rel_err": vol_ok}
 
 
 def varvel(reference, predicted, times_s):
@@ -166,18 +185,43 @@ def main(argv=None) -> int:
               f"90th pct {np.quantile(vols, 0.9):.4%}, {int((vols < 0.02).sum())}/{vols.size} within 2 %",
               flush=True)
 
+    # ---- STRUCTURAL VALIDATION: can the basis represent this pump's model AT ALL? ------------------
+    # This is the claim `bsde/src/bsde/pkpd/propofol.py` makes -- that an exponential basis contains any
+    # linear compartment model -- tested on a REAL TCI device driven by a REAL infusion record, rather
+    # than against the synthetic ODE integration in `tests/test_pkpd_basis.py`. It is per-case and
+    # in-sample ON PURPOSE: the question is whether the function space is right, not whether one kernel
+    # transfers between patients, and those are different questions that a single number would conflate.
+    r2 = []
+    for c in cases:
+        A = np.hstack([c["X"], np.ones((c["X"].shape[0], 1))])
+        w, *_ = np.linalg.lstsq(A, c["y"], rcond=None)
+        p = A @ w
+        r2.append(1.0 - float(((c["y"] - p) ** 2).sum()) / float(((c["y"] - c["y"].mean()) ** 2).sum()))
+    r2 = np.asarray(r2)
+    print(f"structural (per-case, in-sample) R2: median {np.median(r2):.4f}, "
+          f"p10 {np.quantile(r2, .1):.4f}, {(r2 > 0.95).sum()}/{r2.size} above 0.95", flush=True)
+
     rng = np.random.default_rng(SEED)
     order = rng.permutation(len(cases))
     fold_of = {int(i): int(k % a.folds) for k, i in enumerate(order)}
 
-    per_case, per_case_ref = [], []
+    per_case, per_case_ref, per_case_cov = [], [], []
     for f in range(a.folds):
         tr = [cases[i] for i in range(len(cases)) if fold_of[i] != f]
         te = [cases[i] for i in range(len(cases)) if fold_of[i] == f]
+        # EACH CASE COUNTS ONCE, not once per sample. Records run from 176 to 4,797 evaluation points, so
+        # an unweighted pooled fit lets one 9 hour case outvote 27 short ones and the fitted kernel serves
+        # the long tail at everyone else's expense. That is what produced MDPE -65 % with wobble only
+        # 9.4 % -- a pure SCALE error with the within-case shape intact. One repair, stated (rule 58).
         Xtr = np.vstack([c["X"] for c in tr])
         ytr = np.concatenate([c["y"] for c in tr])
+        sw = np.concatenate([np.full(c["X"].shape[0], 1.0 / c["X"].shape[0]) for c in tr])
         A = np.hstack([Xtr, np.ones((Xtr.shape[0], 1))])
-        w, *_ = np.linalg.lstsq(A, ytr, rcond=None)
+        rw = np.sqrt(sw)[:, None]
+        w, *_ = np.linalg.lstsq(A * rw, ytr * rw[:, 0], rcond=None)
+        Xctr = np.vstack([c["Xc"] for c in tr])
+        Ac = np.hstack([Xctr, np.ones((Xctr.shape[0], 1))])
+        wc, *_ = np.linalg.lstsq(Ac * rw, ytr * rw[:, 0], rcond=None)
         for c in te:
             pred = np.hstack([c["X"], np.ones((c["X"].shape[0], 1))]) @ w
             v = varvel(c["y"], pred, c["t"])
@@ -186,15 +230,17 @@ def main(argv=None) -> int:
                 per_case.append(v)
             # REFERENCE ARM (rule 40: a metric with nothing to compare against cannot fail). The naive
             # exposure this project used before -- cumulative dose, no kinetics -- scored identically.
-            cum = np.cumsum(np.gradient(np.arange(c["X"].shape[0], dtype=float)))  # placeholder, replaced
             naive = c["X"][:, -1:]                     # the SLOWEST kernel alone ~ cumulative dose
             An = np.hstack([naive, np.ones((naive.shape[0], 1))])
-            wn, *_ = np.linalg.lstsq(
-                np.hstack([np.vstack([t2["X"][:, -1:] for t2 in tr]),
-                           np.ones((Xtr.shape[0], 1))]), ytr, rcond=None)
+            An_tr = np.hstack([np.vstack([t2["X"][:, -1:] for t2 in tr]),
+                               np.ones((Xtr.shape[0], 1))])
+            wn, *_ = np.linalg.lstsq(An_tr * rw, ytr * rw[:, 0], rcond=None)
             vr = varvel(c["y"], An @ wn, c["t"])
             if vr:
                 per_case_ref.append(vr)
+            vc = varvel(c["y"], np.hstack([c["Xc"], np.ones((c["Xc"].shape[0], 1))]) @ wc, c["t"])
+            if vc:
+                per_case_cov.append(vc)
 
     def agg(rows, key):
         v = np.asarray([r[key] for r in rows if np.isfinite(r[key])], float)
@@ -202,12 +248,17 @@ def main(argv=None) -> int:
                 "p75": float(np.quantile(v, .75)), "n_cases": int(v.size)}
 
     res = {"n_cases": len(cases), "folds": a.folds,
+           "structural_per_case_r2": {"median": float(np.median(r2)),
+                                      "p10": float(np.quantile(r2, .1)),
+                                      "frac_above_0.95": float((r2 > 0.95).mean())},
            "half_lives_min": list(HALF_LIVES_MIN),
            "volume_reproduction_median_rel_err": float(np.median(vols)) if len(vols) else None,
            "full_basis": {k: agg(per_case, k) for k in
                           ("MDPE", "MDAPE", "wobble", "divergence_pct_per_h")},
            "reference_slowest_kernel_only": {k: agg(per_case_ref, k) for k in
-                                             ("MDPE", "MDAPE", "wobble", "divergence_pct_per_h")}}
+                                             ("MDPE", "MDAPE", "wobble", "divergence_pct_per_h")},
+           "basis_with_covariate_scaling": {k: agg(per_case_cov, k) for k in
+                                            ("MDPE", "MDAPE", "wobble", "divergence_pct_per_h")}}
     json.dump(res, open(a.out, "w"), indent=1)
     print(json.dumps(res, indent=1))
     return 0
