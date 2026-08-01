@@ -203,6 +203,15 @@ def fraction_at_or_below(x, base, y, subj, fam, n_surr, tag):
 
 
 def main() -> int:
+    # --family shards the run across the two pre-declared families for wall-clock only; the ladder,
+    # the bar and the verdict rule are identical either way and the shards are merged untouched.
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--family", default=None, choices=sorted(FAMILIES))
+    ap.add_argument("--out", default=OUT)
+    a = ap.parse_args()
+    fams = {a.family: FAMILIES[a.family]} if a.family else dict(FAMILIES)
+    out_path = a.out
     print("E191 — does a surrogate placebo manufacture increments? A false-positive rate, not a proxy")
     y, subj, base, cand, cands, n_rec = build()
     res = {"experiment": "E191", "n_recordings": int(n_rec), "n_windows": int(len(y)),
@@ -218,7 +227,7 @@ def main() -> int:
     res["g1_rebuild"], res["g2_incumbent_rho"] = g1, float(rho_b)
     if not (g1 and g2):
         res["verdict"], res["why"] = "NOT INTERPRETABLE", "the cohort or the incumbent gate failed"
-        json.dump(res, open(OUT, "w"), indent=2)
+        json.dump(res, open(out_path, "w"), indent=2)
         print(f"VERDICT: {res['verdict']} — {res['why']}")
         return 1
 
@@ -238,7 +247,7 @@ def main() -> int:
     print(f"   ladder top rung rho = {top}; candidates above it: {above_top or 'none'}")
     res["candidates_above_top_rung"] = above_top
 
-    for fam_name, fam in FAMILIES.items():
+    for fam_name, fam in fams.items():
         print(f"\n{'=' * 100}\nFAMILY: {fam_name}")
         fres = {"rungs": {}}
 
@@ -338,8 +347,8 @@ def main() -> int:
           "  candidates is a conditional secondary and is done in the ledger row, not here.")
 
     os.makedirs(RESULTS, exist_ok=True)
-    json.dump(res, open(OUT, "w"), indent=2)
-    print(f"\nwrote -> {OUT}")
+    json.dump(res, open(out_path, "w"), indent=2)
+    print(f"\nwrote -> {out_path}")
     return 0
 
 
