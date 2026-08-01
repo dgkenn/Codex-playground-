@@ -167,7 +167,13 @@ public final class AudioCoach: NSObject, ObservableObject {
         u.volume = 1.0
         u.preUtteranceDelay = 0
         u.postUtteranceDelay = 0
-        u.voice = AVSpeechSynthesisVoice(language: Locale.current.identifier)
+        // `Locale.current.identifier` is POSIX-style ("en_US"); AVSpeechSynthesisVoice wants BCP-47
+        // ("en-US"). The mismatch is silent -- the initialiser returns nil and the fallback voice is
+        // used -- so it would show up only as the wrong accent, which is the kind of defect that
+        // survives forever because nobody files it.
+        let tag = Locale.preferredLanguages.first ?? Locale.current.identifier.replacingOccurrences(
+            of: "_", with: "-")
+        u.voice = AVSpeechSynthesisVoice(language: tag)
             ?? AVSpeechSynthesisVoice(language: "en-GB")
         synth.speak(u)
         lastSpoken = (cue.text, Date())

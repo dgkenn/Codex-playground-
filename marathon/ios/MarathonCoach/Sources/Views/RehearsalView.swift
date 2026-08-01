@@ -75,13 +75,12 @@ struct RehearsalView: View {
                 }
 
                 if let s = session {
-                    Section("Live") {
-                        LabeledContent("Elapsed", value: String(format: "%02d:%02d",
-                                                                Int(s.elapsed) / 60, Int(s.elapsed) % 60))
-                        LabeledContent("Heart rate", value: s.hr.map { "\(Int($0)) bpm" } ?? "—")
-                        LabeledContent("Signal", value: s.hrStatus)
-                        LabeledContent("Zone", value: s.zoneState.label)
-                    }
+                    // Extracted into a child view taking @ObservedObject. Holding `session` in
+                    // @State stores the reference but never subscribes to its objectWillChange, so
+                    // the rows below would freeze at whatever the values were when the run started
+                    // — a live display that is not live, which is worse than no display because it
+                    // looks like it is working.
+                    LiveSection(session: s)
                 }
 
                 if !log.isEmpty {
@@ -100,6 +99,21 @@ struct RehearsalView: View {
                 }
             }
             .onDisappear { stop() }
+        }
+    }
+
+    private struct LiveSection: View {
+        @ObservedObject var session: RunSession
+
+        var body: some View {
+            Section("Live") {
+                LabeledContent("Elapsed",
+                               value: String(format: "%02d:%02d",
+                                             Int(session.elapsed) / 60, Int(session.elapsed) % 60))
+                LabeledContent("Heart rate", value: session.hr.map { "\(Int($0)) bpm" } ?? "—")
+                LabeledContent("Signal", value: session.hrStatus)
+                LabeledContent("Zone", value: session.zoneState.label)
+            }
         }
     }
 

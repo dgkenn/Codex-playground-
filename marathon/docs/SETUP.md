@@ -15,7 +15,38 @@ tomorrow, and it happens to be the path you suggested yourself.
 
 ---
 
-## 1. If you don't have a Mac yet
+## 1. No Mac: use the coach from a terminal
+
+The iPhone app is a port of `engine/` plus a sensor driver and a voice. So without it you lose exactly
+two things — live reading of the armband, and being talked to mid-run — and keep everything else. The
+same brain, reached through a terminal:
+
+```bash
+cd marathon/engine
+python -m marathon_engine.cli init --age 30 --hr-rest 55   # start from estimates, clearly labelled
+python -m marathon_engine.cli protocol                     # the calibration session to record
+python -m marathon_engine.cli import export.tcx --save     # your real numbers, from a Polar export
+python -m marathon_engine.cli today                        # what to do today
+python -m marathon_engine.cli week                         # the whole week
+python -m marathon_engine.cli log --minutes 32 --km 4.1 --rpe 4
+python -m marathon_engine.cli status                       # where you are, what the gates want
+python -m marathon_engine.cli review --advance             # end of week
+```
+
+State lives in `~/.marathon-coach` as plain JSON, one file per concern — readable, editable,
+backup-able, and outliving whatever code reads it.
+
+**`import` is the important one.** Polar Flow exports TCX, and TCX carries per-second heart rate and
+cumulative distance. That is enough to fit the line relating your heart rate to your speed, which is
+both the basis of every pace you are prescribed and the feedforward gain the in-run controller would
+use. It is the single most valuable thing week 1 was going to do.
+
+What TCX cannot give you, and the import says so rather than pretending otherwise: no accelerometer
+or gyroscope, so gait metrics do not run, and — if the export also lacks cadence — neither the
+cadence-lock nor the frozen-heart-rate detector can run at all. Both need evidence you were moving
+before a suspiciously steady pulse means anything.
+
+### Recording it
 
 The Verity Sense records **standalone**, with no phone involved: hold the button until it enters
 recording mode and it logs to its own internal memory, which you later sync through Polar's own Flow

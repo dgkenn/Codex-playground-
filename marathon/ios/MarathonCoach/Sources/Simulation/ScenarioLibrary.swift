@@ -180,10 +180,64 @@ public enum ScenarioLibrary {
             plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 15))
     }
 
+    // MARK: - Later phases
+
+    /// The 2000 m trial from week 5 of BASE_1 -- the first time the plan asks for a real effort.
+    ///
+    /// Worth rehearsing precisely because it is the session most likely to be run wrong: a beginner
+    /// asked for a "hard" 2000 m goes out at 800 m pace and dies. The app's job is to catch that in
+    /// the first lap, when it is still recoverable.
+    public static var timeTrial2000m: RunScenario {
+        RunScenario(
+            name: "2000 m time trial (BASE_1 week 5)",
+            summary: "Warm-up then a hard 2000 m, started 20% too fast. Checks the app catches the "
+                   + "over-pacing early enough to save the trial.",
+            intent: SessionIntent(kind: "time_trial", targetZones: [4, 5], plannedDurationS: 1800),
+            durationS: 1800,
+            intendedSpeed: { t in
+                if t < 600 { return 1.7 }                 // warm-up jog
+                if t < 720 { return 3.1 }                 // the over-eager first 400 m
+                if t < 1380 { return 2.5 }                // settles, still hard
+                return 1.5                                // cool-down
+            },
+            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.6))
+    }
+
+    /// Interval reps, where the controller manages recovery between efforts rather than within them.
+    public static var intervals: RunScenario {
+        RunScenario(
+            name: "Intervals — 5 × 3 min",
+            summary: "Hard reps with 2 min jog recoveries. Checks the app stays quiet *during* a rep "
+                   + "and judges the set on recovery instead.",
+            intent: SessionIntent(kind: "intervals", targetZones: [5], plannedDurationS: 2700),
+            durationS: 2700,
+            intendedSpeed: { t in
+                if t < 600 { return 1.75 }
+                let into = t - 600
+                if into > 1500 { return 1.6 }             // cool-down
+                let cycle = into.truncatingRemainder(dividingBy: 300)
+                return cycle < 180 ? 2.8 : 1.6            // 3 min hard, 2 min jog
+            },
+            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.5))
+    }
+
+    /// A two-hour long run, where drift is the whole story.
+    public static var longRunTwoHours: RunScenario {
+        RunScenario(
+            name: "Long run — 2 hours",
+            summary: "Steady effort with heavy cardiac drift. Checks the app explains drift once and "
+                   + "widens the band, rather than demanding a slowdown every ten minutes.",
+            intent: SessionIntent(kind: "long", targetZones: [2], plannedDurationS: 7200),
+            durationS: 7200,
+            intendedSpeed: { t in t < 300 ? 1.5 : 1.9 },
+            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.55))
+    }
+
     // MARK: - All
 
     public static var all: [RunScenario] {
         [week1WalkRun, easyRunWithDrift, easyRunStartedTooFast, tempoRun, hillyEasyRun,
+         timeTrial2000m, intervals, longRunTwoHours,
          frozenHeartRate, cadenceLock, bandFellOff, sensorDropout, gpsLostInTunnel,
          painReported, ignoredCuesToAbort]
     }
