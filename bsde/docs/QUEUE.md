@@ -2320,3 +2320,60 @@ Rule 33, recurring.
   **E81 is ABSENT** — its heart-rate positive control could not be classified, which is no power rather
   than invariance, and the anaesthesia-side muscle test E77's scope limit asked for is therefore not
   delivered.
+
+---
+
+## 2026-08-01 — three new lines, one per challenge, and Challenge C's first positive
+
+Prior state: E103/E104/E105 closed the ds005620 perturbational line (a response was delivered and
+measurable; it bought nothing, and the control that unexpectedly separated states turned out to be
+absorbed by the amplitude-complexity family). E101 was UNDETERMINED, E106 answered E86's alpha-frequency
+alternative. **Everything measured was still one axis, and Challenge C had four held-out failures of the
+same shape.**
+
+### Challenge A — a measure whose orthogonality is a THEOREM
+
+`bsde/src/bsde/features/irreversibility.py`. The autocovariance is symmetric in lag, so by
+Wiener–Khinchin **time reversal leaves the PSD — and the aperiodic exponent, every band power, spectral
+entropy, the alpha peak — exactly unchanged**. A time-asymmetry statistic can only read structure no
+spectral summary can see. The permutation form additionally uses only sample *orderings*, so it is
+invariant to any monotone amplitude transform and **cannot be muscle amplitude**, which is what E70 and
+E100 turned out to be measuring. Every window also carries a **phase-randomised surrogate** with an
+identical power spectrum, so the primary quantity is net of a control cut from the same window.
+
+Validated against analytic ground truths before any extraction: reversible processes 0.0001, sawtooth
+0.116, skewed-innovation AR(1) 0.085; surrogates of the irreversible cases collapsed to 0.0006 while
+preserving the exponent to 0.5 %.
+
+**E107** applies it to the REM question, using the same position statistic as E93/E95/E100 so the numbers
+compare directly, and carries E100's EMG gate unchanged.
+
+### Challenge B — the external replication, and why the first attempt could not run
+
+**E108** was the only route to E86's surviving qualification (BH q = 0.0920): a single pre-registered
+hypothesis in an independent cohort has a family of size one. It returned **ABSENT at G2** — median
+`imagery_auc` 0.5306 and only **16.3 %** of 104 subjects beat their own permutation null against a 20 %
+floor. The gate fired before the primary, so the hypothesis has not been peeked at and the registration
+survives.
+
+The limit is the decoder, not the deposit: the existing label uses band power in **three channels and two
+bands**. `build_eegmmidb_csp_label.py` replaces it with CSP — the canonical decoder for this contrast,
+chosen on independent grounds and not because it would pass a gate. **The 20 % floor is unchanged**, and
+if CSP still leaves fewer than 20 % decodable the answer is that eegmmidb cannot host this replication.
+CSP is fitted **inside each training fold**; `perm_null_mean` is emitted so a leak would be visible as a
+null centred above 0.5.
+
+### Challenge C — the question changed, and it worked
+
+Four held-out tests (E78, E84, E99, E90/E102) all asked *does our measure add to the incumbent?* and all
+said no. **Four failures of the same shape are a result about the question.** E109 asks instead: *where
+does BIS stop tracking the EEG?* — which has no incumbent to beat and needs no ground truth, because
+disagreement between two simultaneous readings is measurable without knowing which is right.
+
+**E109 POSITIVE.** Within-case agreement between BIS and the aperiodic exponent degrades with age:
+**+0.2592 [+0.1367, +0.3761]** over 240 cases, placebo [−0.1292, +0.1210]. Both attenuation routes bias in
+the same direction as the effect and neither explains it — range restriction and sample size correlate
+with age at +0.0555, −0.0656 and +0.0109, and the partial given all three is **+0.2490 [+0.1234,
++0.3684]**. Not paediatric (adults-only +0.2409). **It is a DISCORDANCE and not an accuracy**: this
+deposit has no ground-truth depth, so nothing shows the exponent is right where BIS is not. The successor
+needs an independent anchor — a responsiveness score, or effect-site concentration.
