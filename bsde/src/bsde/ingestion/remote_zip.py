@@ -47,6 +47,13 @@ _EOCD_SIG = b"PK\x05\x06"
 _EOCD_STRUCT = "<HHHHIIH"  # fields following the 4-byte signature
 _EOCD_FIXED_SIZE = 22  # 4-byte signature + 18 bytes of fixed fields, before the variable comment
 _ZIP64_EOCD_LOCATOR_SIG = b"PK\x06\x07"
+_ZIP64_EOCD_SIG = b"PK\x06\x06"
+_ZIP64_LOCATOR_STRUCT = "<IQI"       # disk with zip64 EOCD, offset of zip64 EOCD, total disks
+_ZIP64_EOCD_STRUCT = "<QHHIIQQQQ"    # size-of-record, ver made, ver needed, disk, cd disk,
+                                     # entries-this-disk, entries-total, cd size, cd offset
+_ZIP64_SENTINEL_32 = 0xFFFFFFFF
+_ZIP64_SENTINEL_16 = 0xFFFF
+_ZIP64_EXTRA_ID = 0x0001
 
 _CD_SIG = b"PK\x01\x02"
 _CD_STRUCT = "<HHHHHHIIIHHHHHII"  # fields following the 4-byte signature
@@ -90,16 +97,43 @@ def parse_eocd(tail: bytes) -> Dict[str, Any]:
     (_disk_num, _cd_disk, _n_entries_this_disk, n_entries, cd_size, cd_offset,
      comment_len) = struct.unpack_from(_EOCD_STRUCT, tail, idx + 4)
 
-    if _ZIP64_EOCD_LOCATOR_SIG in tail[:idx]:
+    # ---- Zip64 -----------------------------------------------------------------------------------
+    # An archive over 4 GiB (or with over 65535 entries) writes 0xFFFF / 0xFFFFFFFF sentinels into the
+    # 32-bit EOCD fields and puts the real values in a Zip64 EOCD record, located via a 20-byte locator
+    # that sits immediately before the EOCD. Reading the sentinel as a real offset would seek to 4 GiB
+    # into the file and misparse silently, which is why this used to refuse outright. The Dreyer BCI
+    # database (27.5 GB, one zip) is the archive that made implementing it worthwhile.
+    zip64 = None
+    loc = tail.rfind(_ZIP64_EOCD_LOCATOR_SIG, 0, idx)
+    if loc != -1:
+        _disk, z64_offset, _total_disks = struct.unpack_from(_ZIP64_LOCATOR_STRUCT, tail, loc + 4)
+        # The Zip64 EOCD normally sits just before its own locator, so it is usually already in `tail`.
+        # Locate it by signature rather than by arithmetic on an absolute offset we may not have.
+        z64 = tail.rfind(_ZIP64_EOCD_SIG, 0, loc)
+        if z64 != -1:
+            (_rec_size, _vm, _vn, _dn, _cdd, _n_disk, n64, cds64,
+             cdo64) = struct.unpack_from(_ZIP64_EOCD_STRUCT, tail, z64 + 4)
+            zip64 = dict(n_entries=n64, cd_size=cds64, cd_offset=cdo64)
+        else:
+            # Not in the tail window; the caller must fetch it. Report the offset rather than guess.
+            return dict(n_entries=n_entries, cd_size=cd_size, cd_offset=cd_offset,
+                        comment_len=comment_len, eocd_offset_in_tail=idx,
+                        zip64_eocd_offset=z64_offset, needs_zip64_fetch=True)
+
+    if zip64 is not None:
+        # Only the sentinel fields are overridden. A field that carries a real 32-bit value is authoritative
+        # and must NOT be replaced -- some writers emit a Zip64 record while leaving valid 32-bit fields.
+        if n_entries == _ZIP64_SENTINEL_16:
+            n_entries = zip64["n_entries"]
+        if cd_size == _ZIP64_SENTINEL_32:
+            cd_size = zip64["cd_size"]
+        if cd_offset == _ZIP64_SENTINEL_32:
+            cd_offset = zip64["cd_offset"]
+    elif n_entries == _ZIP64_SENTINEL_16 or cd_size == _ZIP64_SENTINEL_32 or cd_offset == _ZIP64_SENTINEL_32:
         raise NotImplementedError(
-            "Zip64 End Of Central Directory locator (PK\\x06\\x07) found before the EOCD record -- this "
-            "archive uses Zip64 and this reader does not implement it. Reading it with the 32-bit EOCD "
-            "fields would silently misread the central directory offset/size.")
-    if n_entries == 0xFFFF or cd_size == 0xFFFFFFFF or cd_offset == 0xFFFFFFFF:
-        raise NotImplementedError(
-            "EOCD record carries a Zip64 sentinel value (0xFFFF or 0xFFFFFFFF) in an entry-count/size/"
-            "offset field -- the real value lives in a Zip64 EOCD record this reader does not implement. "
-            "This 3.69 GB archive does not need Zip64; a >4 GiB one would.")
+            "EOCD record carries a Zip64 sentinel value (0xFFFF or 0xFFFFFFFF) but no Zip64 EOCD locator "
+            "was found before it -- the archive is malformed, and reading the sentinel as a real value "
+            "would seek 4 GiB into the file and misparse silently.")
 
     return dict(n_entries=n_entries, cd_size=cd_size, cd_offset=cd_offset,
                 comment_len=comment_len, eocd_offset_in_tail=idx)
@@ -128,6 +162,28 @@ def parse_central_directory(cd: bytes) -> List[Dict[str, Any]]:
 
         name_start = pos + _CD_FIXED_SIZE
         name = cd[name_start:name_start + fname_len].decode("utf-8", errors="replace")
+
+        # ZIP64 EXTRA FIELD (id 0x0001). Sizes and the local-header offset are each promoted to 64 bits
+        # ONLY when the 32-bit field holds the sentinel, and they appear in the extra field in a fixed
+        # order with only the promoted ones present -- so the fields must be consumed in that order
+        # rather than read at fixed positions. Getting this wrong reads a member's offset as its size.
+        if _ZIP64_SENTINEL_32 in (compress_size, uncompress_size, local_header_offset):
+            ex_start = name_start + fname_len
+            ex = cd[ex_start:ex_start + extra_len]
+            ep = 0
+            while ep + 4 <= len(ex):
+                hid, hsz = struct.unpack_from("<HH", ex, ep)
+                body = ex[ep + 4:ep + 4 + hsz]
+                if hid == _ZIP64_EXTRA_ID:
+                    bp = 0
+                    if uncompress_size == _ZIP64_SENTINEL_32 and bp + 8 <= len(body):
+                        uncompress_size = struct.unpack_from("<Q", body, bp)[0]; bp += 8
+                    if compress_size == _ZIP64_SENTINEL_32 and bp + 8 <= len(body):
+                        compress_size = struct.unpack_from("<Q", body, bp)[0]; bp += 8
+                    if local_header_offset == _ZIP64_SENTINEL_32 and bp + 8 <= len(body):
+                        local_header_offset = struct.unpack_from("<Q", body, bp)[0]; bp += 8
+                    break
+                ep += 4 + hsz
 
         out.append(dict(name=name, compress_size=compress_size, uncompress_size=uncompress_size,
                          local_header_offset=local_header_offset, method=method, crc32=crc32))

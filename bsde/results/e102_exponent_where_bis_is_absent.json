@@ -1,0 +1,32 @@
+{
+  "n_rows": 6007,
+  "n_cases_seen": 250,
+  "gates": {
+    "G1_cases": 101,
+    "G1_pass": true,
+    "G2_dropped_for_degeneracy": 149,
+    "G2_pass": true,
+    "G3_restricted": {
+      "n_cases": 0
+    },
+    "G3_pass": false,
+    "G4_emg_median_absent": 0.2573323675,
+    "G4_emg_median_present": 0.3810230005
+  },
+  "primary": {
+    "D": 0.2063358255093481,
+    "lo": 0.08751691938022971,
+    "hi": 0.32793823015984347,
+    "n_cases": 101,
+    "rho_absent": -0.0939616112685393,
+    "rho_present": -0.3002974367778874,
+    "equivalence_margin": 0.1501487183889437
+  },
+  "placebo": {
+    "lo": 0.08118270338340118,
+    "hi": 0.28220528233460745,
+    "n_draws": 500,
+    "inside": true
+  },
+  "verdict": "WITHDRAWN BY PLACEBO -- a contiguous random split of the same windows reproduces D, so this is about position in time, not about whether the monitor was publishing"
+}
