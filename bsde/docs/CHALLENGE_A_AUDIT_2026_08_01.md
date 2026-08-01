@@ -146,7 +146,7 @@ work. It was never turned back on the numbers already in hand.
 
 ## New error-catalogue rule
 
-> **67. When the exposure is nested inside the cluster, the effective n is the number of CLUSTERS, and a
+> **69. When the exposure is nested inside the cluster, the effective n is the number of CLUSTERS, and a
 > row-level null inflates significance by orders of magnitude — measured here at 178×.** Enumerate the
 > cluster-level assignments and quote the null's 95th percentile *before* quoting any legibility. Three
 > experiments were designed around a confound in a statistic that turned out to be noise, and the cost of
@@ -161,4 +161,4 @@ work. It was never turned back on the numbers already in hand.
 2. **The Turku request is now the blocking dependency**, not one option among several: two agents *and*
    recovery, within subject, is the only configuration that tests the brief as written.
 3. **Every legibility in this repo computed on a between-subject contrast needs the cluster-level null.**
-   The check is cheap and it is now rule 67.
+   The check is cheap and it is now rule 69.

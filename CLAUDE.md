@@ -882,3 +882,22 @@ unverified on GitHub.
     columns into a new file's constants is a cohort decision disguised as bookkeeping.** Load the prior
     result's JSON and select from it in code, so the columns you did not use are visible in the diff — or,
     at minimum, transcribe every arm and drop the unused ones explicitly.
+
+### I. Added 2026-08-01 (BSDE, from the E139–E142 Challenge A audit)
+
+69. **WHEN THE EXPOSURE IS NESTED INSIDE THE CLUSTER, THE EFFECTIVE n IS THE NUMBER OF CLUSTERS, AND A
+    ROW-LEVEL NULL INFLATES SIGNIFICANCE BY ORDERS OF MAGNITUDE — MEASURED HERE AT 178×.** On the Krause
+    deposit a patient is either a dexmedetomidine patient or a propofol patient, never both, so the
+    drug-identity contrast has **15 independent units, not 115 blocks**. **E35** and **E36** computed
+    block-level AUCs as though the blocks were independent. Enumerating all C(15,7) = 6,435 patient
+    labellings exactly (**E142**), only 2 of 12 features clear the null, the mean 95th percentile of that
+    null is **0.2791** — above every phase feature's entire observed value — and E36's family gap of
+    +0.0913 has exact **p = 0.0914**. The phase family's celebrated low leakage is **absence of power, not
+    measured absence**, which is the discrimination-versus-equivalence error
+    `REFERENCE_AGAINST_ALL_THREE.md` had already diagnosed for future designs and never applied to numbers
+    already in hand. **Enumerate the cluster-level assignments and quote the null's 95th percentile before
+    quoting any legibility.** Three experiments (E139, E140, E141) were designed around a confound in a
+    statistic that turned out to be noise; the check that would have prevented all three costs one
+    `math.comb`. Corollary, and it is the reusable part: **a placebo probe of pure noise measures the
+    floor, so run one whenever a gate threshold is being chosen** — E141's GATE N was set at 0.05 when the
+    floor was 0.084, which is how the whole thing surfaced.
