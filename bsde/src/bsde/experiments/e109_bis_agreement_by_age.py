@@ -70,6 +70,12 @@ GATES -- G3 is the one most likely to fire and it is the whole methodological ri
         the monitor. So: the within-case SD of BIS and of the exponent are correlated with age and
         REPORTED, and the primary is re-run as a PARTIAL correlation given both. **If the partial loses
         the interval, the unrestricted estimate is withdrawn**, because it is then a range effect.
+        **The same attenuation arrives by a second route that has nothing to do with range: SAMPLE SIZE.**
+        A within-case correlation estimated from fewer windows is noisier and therefore attenuated toward
+        zero, so if older patients have shorter records their `agree_c` drifts up for a purely statistical
+        reason. `log(n_windows)` is therefore a third adjuster in the same partial, and the count is
+        correlated with age and reported. Both routes attenuate in the SAME direction as the predicted
+        effect, which is what makes them dangerous rather than merely untidy.
     G4  ARTEFACT AND QUALITY. Median `emg_index` and `meta_sqi` per case correlated with age and reported.
         These are NOT adjusted for: SQI is the monitor's own confidence and EMG is partly what BIS
         suppresses, so conditioning on either is conditioning on the mechanism under study (rule 13).
@@ -226,17 +232,20 @@ def main() -> int:
     print("   (agreement is NEGATIVE when the two track each other, so POSITIVE here = worse with age)")
 
     # ---- G3 RANGE RESTRICTION ---------------------------------------------------------------------
-    Z = np.column_stack([sd_b, sd_e])
+    Z = np.column_stack([sd_b, sd_e, np.log(np.asarray(nwin, float))])
     pr = partial_spearman(agree, age, Z)
     pr_lo, pr_hi = ci([partial_spearman(agree[i], age[i], Z[i])
                        for i in (rng.integers(0, agree.size, agree.size) for _ in range(REPS))])
     g3 = bool(np.isfinite(pr_lo) and not (pr_lo <= 0.0 <= pr_hi) and (pr * point) > 0)
+    nw = np.asarray(nwin, float)
     res["gates"]["G3"] = {"rho_sdBIS_age": spearman(sd_b, age), "rho_sdExp_age": spearman(sd_e, age),
+                          "rho_nwindows_age": spearman(nw, age),
                           "partial": pr, "lo": pr_lo, "hi": pr_hi, "pass": g3}
-    print(f"G3 range      rho(sd BIS, age) {spearman(sd_b, age):+.4f}   "
-          f"rho(sd exponent, age) {spearman(sd_e, age):+.4f}")
-    print(f"              PARTIAL given both spreads: {pr:+.4f} [{pr_lo:+.4f}, {pr_hi:+.4f}]  "
-          f"{'survives' if g3 else 'DOES NOT SURVIVE'}")
+    print(f"G3 attenuation  rho(sd BIS, age) {spearman(sd_b, age):+.4f}   "
+          f"rho(sd exponent, age) {spearman(sd_e, age):+.4f}   "
+          f"rho(n_windows, age) {spearman(nw, age):+.4f}")
+    print(f"                PARTIAL given both spreads AND log n_windows: {pr:+.4f} "
+          f"[{pr_lo:+.4f}, {pr_hi:+.4f}]  {'survives' if g3 else 'DOES NOT SURVIVE'}")
 
     # ---- G4 ARTEFACT AND QUALITY, reported never adjusted (rule 13) -------------------------------
     res["gates"]["G4"] = {"rho_sqi_age": spearman(sqi, age), "rho_emg_age": spearman(emg, age),
@@ -273,8 +282,8 @@ def main() -> int:
         v = "WITHDRAWN BY PLACEBO -- shuffling age reproduces the estimate."
     elif not g3:
         v = ("WITHDRAWN BY G3 -- the estimate does not survive adjustment for how wide a range of BIS and "
-             "of exponent each case actually spans, so it is a range-restriction effect and not a "
-             "statement about the monitor.")
+             "of exponent each case actually spans and for how many windows it contributes, so it is an "
+             "attenuation effect and not a statement about the monitor.")
     elif point < 0:
         v = ("AGREEMENT IMPROVES WITH AGE -- BIS tracks the raw EEG BETTER in older patients, which "
              "contradicts the motivation for this experiment and needs explaining before any use.")
