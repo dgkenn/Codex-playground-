@@ -1,6 +1,68 @@
 {
- "E133_sleep": {
-  "error": "IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed"
+ "E133  Challenge A, sleep-EDFx irreversibility": {
+  "G2": {
+   "observed": 0.9313592595095725,
+   "pass": true,
+   "stored": 0.9293
+  },
+  "G3": {
+   "floor": 0.2,
+   "rates": {
+    "0.1": 0.35,
+    "0.2": 0.95,
+    "0.3": 1.0,
+    "0.4": 1.0
+   }
+  },
+  "n_candidates": 6,
+  "n_clusters": 142,
+  "n_rows": 563,
+  "placebo_fired": [],
+  "primary": {
+   "frontal_incr": {
+    "helps": false,
+    "increment": -0.0002987749024938591,
+    "p": 0.5473333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.9146666666666666
+   },
+   "frontal_irr3": {
+    "helps": false,
+    "increment": -0.0003341250711059729,
+    "p": 0.998,
+    "p_holm": 1.0,
+    "placebo_p": 0.4686666666666667
+   },
+   "frontal_irr4": {
+    "helps": false,
+    "increment": -0.00020595466604955703,
+    "p": 0.9993333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.6746666666666666
+   },
+   "posterior_incr": {
+    "helps": false,
+    "increment": -0.0005981054068519009,
+    "p": 0.228,
+    "p_holm": 1.0,
+    "placebo_p": 0.48733333333333334
+   },
+   "posterior_irr3": {
+    "helps": false,
+    "increment": -0.0005709156406209503,
+    "p": 0.8593333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.8273333333333334
+   },
+   "posterior_irr4": {
+    "helps": false,
+    "increment": -0.0006504708825562089,
+    "p": 0.8933333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.51
+   }
+  },
+  "winners": []
  },
  "E134  Challenge B, Dreyer SMR predictor": {
   "G2": {
