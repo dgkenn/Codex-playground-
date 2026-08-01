@@ -276,9 +276,10 @@ def main(argv=None) -> int:
             return {"n_blocks": int(v.size), "median": float("nan"),
                     "lo": float("nan"), "hi": float("nan")}
         med = float(np.median(v))
-        lo, hi = cluster_bootstrap_ci(lambda idx: float(np.median(v[idx])), s,
-                                      np.random.default_rng(SEED + 1), reps=2000)
-        return {"n_blocks": int(v.size), "median": med, "lo": float(lo), "hi": float(hi)}
+        lo, hi, n_ok = cluster_bootstrap_ci(lambda idx: float(np.median(v[idx])), s,
+                                            np.random.default_rng(SEED + 1), reps=2000)
+        return {"n_blocks": int(v.size), "median": med, "lo": float(lo), "hi": float(hi),
+                "n_boot_ok": int(n_ok)}
 
     ctrl = summarise(CONTROL)
     gates["G2_positive_control"] = ctrl
