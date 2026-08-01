@@ -216,10 +216,28 @@ def main(argv=None) -> int:
 
     subs = [s for i, s in enumerate(eegmmidb.subjects()) if i % a.of == a.shard]
     out_path = os.path.abspath(a.out)
+    # ONE WRITER PER FILE (rule 56). Four shards previously appended to this single path. Subjects
+    # partition cleanly by `i % of`, so no row was duplicated or torn -- but the file kept the HEADER of a
+    # superseded 11-column run while the shards wrote 15 columns, so every reader mis-parsed it silently.
+    # Sharded runs now write `<out>.s<k>.csv` and readers take the shard set.
+    if a.of > 1:
+        root, ext = os.path.splitext(out_path)
+        out_path = f"{root}.s{a.shard}{ext}"
     done = set()
-    if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
-        with open(out_path, newline="") as fh:
-            done = {r["subject"] for r in csv.DictReader(fh)}
+    import glob as _glob
+    root, ext = os.path.splitext(os.path.abspath(a.out))
+    for p in {out_path, *_glob.glob(f"{root}.s*{ext}"), f"{root}{ext}"}:
+        if not os.path.exists(p) or os.path.getsize(p) == 0:
+            continue
+        with open(p, newline="") as fh:
+            rd = csv.DictReader(fh)
+            # A file whose header is not the current FIELDS is from a superseded definition and its rows
+            # must be re-derived, never carried forward (rule 2). Refuse it rather than parse it.
+            if list(rd.fieldnames or []) != FIELDS:
+                print(f"   IGNORING {os.path.basename(p)}: stale header "
+                      f"({len(rd.fieldnames or [])} columns, expected {len(FIELDS)})", flush=True)
+                continue
+            done |= {r["subject"] for r in rd}
     todo = [s for s in subs if s not in done]
     if a.limit:
         todo = todo[:a.limit]
