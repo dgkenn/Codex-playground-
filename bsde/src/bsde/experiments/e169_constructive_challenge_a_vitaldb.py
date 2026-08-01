@@ -90,6 +90,15 @@ SCOPE. Linear combinations, one deposit, spectra plus one connectivity column, t
 anaesthesia rather than consciousness. A negative bounds the linear case in this family; it says nothing
 about non-linear representations or about families this deposit lacks.
 
+POST-REGISTRATION NOTE, ADDED BEFORE THE FIRST RUN AND BEFORE ANY VALUE WAS READ. The scope line above
+says "spectra plus one connectivity column". **There is no connectivity column.** `wpli_alpha` is
+0-of-3,043 finite in the agentprobe shards -- the same all-NaN column E157 scored at p = 0.0000 before
+`screen_candidates` existed -- so the feature list is screened at import and the run works on TEN spectral
+measures. The first version required every feature finite in both the deep and light blocks WITHOUT
+screening, which emptied the cohort to zero cases and read as "no eligible cases" rather than as a dead
+column (rules 5, 14, 74). The scope sentence is left as registered and corrected here rather than
+rewritten.
+
     python bsde/src/bsde/experiments/e169_constructive_challenge_a_vitaldb.py [--perm N]
 """
 from __future__ import annotations
@@ -119,7 +128,33 @@ AGENTS = os.path.join(RESULTS, "vitaldb_agents.csv")
 OUT = os.path.join(RESULTS, "e169_constructive_challenge_a_vitaldb.json")
 SEED = 20260801
 
-FEATURES = list(CANDIDATES)
+def _live_features():
+    """E161's candidate list with dead columns dropped and NAMED (rules 14, 74).
+
+    `wpli_alpha` is 0-of-3043 finite in the agentprobe shards -- the same all-NaN column that E157 scored
+    at p = 0.0000 before `screen_candidates` existed. Requiring every feature finite in both the deep and
+    light blocks without screening first emptied the cohort to ZERO cases, which is exactly the silent
+    failure rule 5 warns about: the filter looked like an absence of eligible cases and was a dead column.
+    """
+    import csv as _csv
+    import glob as _glob
+    from bsde.verifier.stats import screen_candidates as _screen
+    cols = {c: [] for c in CANDIDATES}
+    for p_ in sorted(_glob.glob(SHARDS)):
+        for r in _csv.DictReader(open(p_, newline="")):
+            if r.get("status") != "ok":
+                continue
+            if (r.get("meta_agents_present") or "").strip() not in ("propofol", "sevoflurane"):
+                continue
+            for c in CANDIDATES:
+                cols[c].append(_f(r.get(c, "")))
+    usable, dropped = _screen(cols)
+    for c, why in dropped.items():
+        print(f"   dropped feature: {c} ({why})")
+    return [c for c in CANDIDATES if c in usable]
+
+
+FEATURES = _live_features()
 LAMBDAS = (0.0, 0.5, 1.0, 2.0, 4.0, 8.0)
 MIN_PER_ARM = 40
 MIN_WINDOWS = 9

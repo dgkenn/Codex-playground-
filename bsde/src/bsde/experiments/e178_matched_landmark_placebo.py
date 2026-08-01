@@ -126,13 +126,35 @@ def build(which):
     return recs, xi[m], xp[m], y[m], grp[m], HORIZON_S, INCUMBENT, PRIMARY, m
 
 
-def fake_label(recs, horizon, rng, mask):
+def _n_blocks(v):
+    """How many separate positive runs the real label has in this recording."""
+    v = np.asarray(v, float) > 0.5
+    return int(np.sum(v[1:] & ~v[:-1]) + (1 if v.size and v[0] else 0))
+
+
+def fake_label(recs, horizon, rng, mask, match_count=False):
+    """One fake landmark per recording (E34's and E170's construction), or `match_count` of them.
+
+    **WHY `match_count` EXISTS, AND IT IS ARITHMETIC RATHER THAN A REACTION TO A RESULT.** A single fake
+    landmark labels `horizon` samples positive out of a recording's ~550 conscious windows, so its base
+    rate is structurally ~0.11. E37's real label -- "time to the NEXT loss <= 60 s", which a recording with
+    several losses satisfies several times -- has a base rate of 0.217. **A one-landmark placebo therefore
+    CANNOT reach the real base rate, and the matched arm was unbuildable as first written**, before any
+    draw was scored and independent of what the numbers turned out to be. Placing as many fake landmarks
+    as the recording has real transitions matches the base rate by construction and is the more faithful
+    destruction anyway: it preserves how many transitions there are and destroys only where they sit.
+
+    ARM A IS NOT AFFECTED. It keeps the single-landmark construction, because it is the like-for-like test
+    e34 failed and that comparison is the one that decides e37.
+    """
     out = []
     for r in recs:
         n = len(r["y"])
-        cut = int(n * float(rng.uniform(0.2, 0.9)))
         fy = np.zeros(n)
-        fy[max(0, cut - horizon):cut] = 1.0
+        k = max(1, _n_blocks(r["y"])) if match_count else 1
+        for _ in range(k):
+            cut = int(n * float(rng.uniform(0.2, 0.9)))
+            fy[max(0, cut - horizon):cut] = 1.0
         out.append(fy)
     return np.concatenate(out)[mask]
 
@@ -162,8 +184,12 @@ def run_arm(name, which, matched):
     cap = MAX_TRIES if matched else UNMATCHED_DRAWS
     while len(draws) < target_n and tries < cap:
         tries += 1
-        fy = fake_label(recs, horizon, rng, mask)
+        fy = fake_label(recs, horizon, rng, mask, match_count=matched)
         if len(np.unique(fy)) < 2:
+            continue
+        # base rate is free to compute; screening on it BEFORE the cross-fit is pure efficiency and
+        # changes no threshold
+        if matched and abs(float(fy.mean()) - real_rate) > BASE_RATE_TOL:
             continue
         inc, base, rate = increment_and_base(xi, xp, fy, grp, SEED + 3000 + tries)
         if not np.isfinite(inc):
