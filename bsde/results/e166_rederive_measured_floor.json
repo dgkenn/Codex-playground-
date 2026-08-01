@@ -178,6 +178,65 @@
       "calibration_pass": true,
       "verdict": "ADDS",
       "why": "the recorded verdict is OVERTURNED"
+    },
+    "e37": {
+      "name": "e37",
+      "n_rows": 38684,
+      "n_clusters": 70,
+      "reference": {
+        "clusters": 70,
+        "rows": 38684,
+        "note": "70 recordings, base rate 21.7 %"
+      },
+      "recorded": "P3b not met (AUC increment, POSITIVE = adds)",
+      "gate_R": true,
+      "gate_A": {
+        "increment": -0.21230018132242895,
+        "p": 0.0,
+        "null_mean": -0.010859073413361866,
+        "n_null": 200,
+        "pass": true
+      },
+      "increment": -0.0073721399987555225,
+      "p": 0.0,
+      "null_mean": 0.0018327733545152889,
+      "n_null": 500,
+      "floor": 0.1,
+      "ladder": [
+        {
+          "rho": 0.0,
+          "p": [
+            0.17333333333333334,
+            0.35333333333333333,
+            0.05333333333333334
+          ],
+          "hits": 0,
+          "detected": false
+        },
+        {
+          "rho": 0.05,
+          "p": [
+            0.45,
+            0.0,
+            0.4066666666666667
+          ],
+          "hits": 1,
+          "detected": false
+        },
+        {
+          "rho": 0.1,
+          "p": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "hits": 3,
+          "detected": true
+        }
+      ],
+      "calibration_pass": true,
+      "verdict": "ADDS",
+      "why": "the recorded verdict is OVERTURNED"
     }
   }
 }
