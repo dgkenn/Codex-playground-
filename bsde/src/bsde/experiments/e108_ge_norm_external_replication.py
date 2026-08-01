@@ -142,7 +142,23 @@ def boot(x, y, rng, reps=REPS):
     return ci([spearman(x[i], y[i]) for i in (rng.integers(0, n, n) for _ in range(reps))])
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    """Parameterised ONLY so a successor can swap the decoder without copying this file (rule 20).
+
+    Every default below equals the module constant it replaces, so an argument-free call is byte-identical
+    to the registered E108 run. The successor E124 changes `--bci`, `--outcome` and `--out` and nothing
+    else -- in particular NOT `MIN_SUBJECTS`, not G2's `median > 0.5` or `frac_sig >= 0.20`, and not the
+    placebo. Rule 58: change the instrument, never the threshold that just failed.
+    """
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--bci", default=globals()["BCI"])
+    ap.add_argument("--outcome", default=globals()["OUTCOME"])
+    ap.add_argument("--perm-column", default="perm_p")
+    ap.add_argument("--out", default=globals()["OUT"])
+    a = ap.parse_args(argv)
+    BCI, OUTCOME, OUT, PERM = a.bci, a.outcome, a.out, a.perm_column
+
     for p in (GRAPH, BCI):
         if not os.path.exists(p):
             print(f"ABSENT: {p}")
@@ -165,7 +181,7 @@ def main() -> int:
     x = np.array([gmean(s, PRIMARY) for s in subs])
     y = np.array([_f(out[s][OUTCOME]) for s in subs])
     iaf = np.array([gmean(s, "iaf") for s in subs])
-    pp = np.array([_f(out[s].get("perm_p", "")) for s in subs])
+    pp = np.array([_f(out[s].get(PERM, "")) for s in subs])
     ok = np.isfinite(x) & np.isfinite(y)
     x, y, iaf, pp = x[ok], y[ok], iaf[ok], pp[ok]
     subs = [s for s, k in zip(subs, ok) if k]
