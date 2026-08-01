@@ -67,6 +67,26 @@ over with a bespoke multi-drug model this project invents.
 
 ---
 
+## 2.4 CORRECTION to an earlier claim in this document
+
+An earlier version of §2.2 and §5 stated that this project "has been using `INSP_SEVO`/`INSP_DES` --
+inspired concentration" and that this "affects the volatile arm of E110, E112, E113, E118 and E120".
+**That is wrong and is withdrawn.**
+
+`join_vitaldb_agents.py` maps `mac` to **`Primus/MAC`** -- the anaesthesia monitor's own computed MAC,
+which the gas analyser derives from END-TIDAL concentration -- and every experiment listed uses `mac` for
+its volatile arm (verified: E110 line 105, E112 line 117, E113 line 159, E118 line 175). `insp_sevo` and
+`insp_des` were extracted into the agents table and **never consumed by any analysis**.
+
+So no reported result used inspired concentration and none needs revisiting on that ground.
+
+What remains true, and is a smaller point: `EXP_SEVO`/`EXP_DES` were not extracted at all, and having them
+is still worth doing -- not to correct an error, but because the monitor's MAC is a device-computed
+composite whose exact derivation the deposit does not state, and end-tidal lets that be verified and
+lets agent-specific MAC fractions be computed independently rather than accepted.
+
+---
+
 ## 3. A scoping correction to E120
 
 E120 recorded, correctly for its own 250-case subset, that there was *no midazolam and no vecuronium*.
@@ -219,7 +239,7 @@ figures. Nothing derived from the EEG.
 | a reviewer will say | the answer that has to already be in the paper |
 |---|---|
 | "your PK model is unvalidated in this population" | Eleveld is general-purpose and prospectively evaluated (**41982180**); we additionally reproduce the pump's Ce from infusion rate alone and report Varvel metrics |
-| "you used inspired, not end-tidal, volatile concentration" | fixed — `EXP_SEVO`/`EXP_DES`, present in the same cases |
+| "you used inspired, not end-tidal, volatile concentration" | we did not — the volatile arm used the monitor's `Primus/MAC`, which is derived from end-tidal (§2.4). `EXP_SEVO`/`EXP_DES` are now extracted so the monitor's composite can be verified rather than trusted |
 | "you ignored co-administered drugs" | remifentanil and fentanyl modelled; midazolam, vecuronium, bolus propofol reported with prevalence; what remains unmodelled is listed |
 | "your covariates are dirty" | the §4 audit is in the supplement with per-field discard counts |
 | "you invented an interaction model" | we did not; common potency scale, Minto/Bouillon for the one measured pair |
