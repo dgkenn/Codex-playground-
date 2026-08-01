@@ -1,0 +1,497 @@
+{
+ "G1": {
+  "n_drug_blocks": 203,
+  "n_sleep_blocks": 6359,
+  "n_unresp_blocks": 115,
+  "pass": false,
+  "patients_both": {
+   "dex": 7,
+   "prop": 8
+  }
+ },
+ "G2": {
+  "median_feature_drug_leg": 0.12091404358353508,
+  "pass": false,
+  "quality_drug_leg": 0.2565072639225181
+ },
+ "G3": {
+  "drug_feature": "allEnvCorr",
+  "drug_frac": 0.003,
+  "drug_obs": 0.3532082324455206,
+  "pass": true,
+  "state_feature": "NmlzCmplx",
+  "state_frac": 0.0,
+  "state_obs": 0.39199604743083005
+ },
+ "G4": {
+  "dropped": [],
+  "n_features": 12
+ },
+ "P1": {
+  "ci": [
+   -0.14541800846704678,
+   0.261380364125173
+  ],
+  "family_diff": 0.08881554610656027,
+  "verdict": "VOID -- a gate failed"
+ },
+ "P1_lambda": {
+  "AvgAlpha": {
+   "ci": [
+    -0.14802092225036376,
+    0.26585526871235665
+   ],
+   "drug_leg": 0.09927360774818395,
+   "family": "AMPLITUDE",
+   "lambda": 0.11307817090794259,
+   "n_ok": 999,
+   "state_leg": 0.21235177865612653
+  },
+  "AvgDelta": {
+   "ci": [
+    -0.16616161746076796,
+    0.37720190740973786
+   ],
+   "drug_leg": 0.17705811138014527,
+   "family": "AMPLITUDE",
+   "lambda": 0.14319880561590215,
+   "n_ok": 1000,
+   "state_leg": 0.3202569169960474
+  },
+  "AvgGamma": {
+   "ci": [
+    -0.2863377284250967,
+    0.3246554004265399
+   ],
+   "drug_leg": 0.14255447941888622,
+   "family": "AMPLITUDE",
+   "lambda": 0.10112140990917706,
+   "n_ok": 1000,
+   "state_leg": 0.24367588932806328
+  },
+  "EffDim": {
+   "ci": [
+    -0.21418121869940124,
+    0.3449505349674428
+   ],
+   "drug_leg": 0.2699757869249395,
+   "family": "AMPLITUDE",
+   "lambda": 0.06638784943869691,
+   "n_ok": 1000,
+   "state_leg": 0.3363636363636364
+  },
+  "NmlzCmplx": {
+   "ci": [
+    -0.15163324294454084,
+    0.2604577211730322
+   ],
+   "drug_leg": 0.3477602905569007,
+   "family": "AMPLITUDE",
+   "lambda": 0.04423575687392933,
+   "n_ok": 1000,
+   "state_leg": 0.39199604743083005
+  },
+  "allEnvCorr": {
+   "ci": [
+    -0.1515920355642022,
+    0.23017725286578233
+   ],
+   "drug_leg": 0.3532082324455206,
+   "family": "AMPLITUDE",
+   "lambda": 0.032167261625625665,
+   "n_ok": 1000,
+   "state_leg": 0.38537549407114624
+  },
+  "allwPLI": {
+   "ci": [
+    -0.0514187185793223,
+    0.3867210794968035
+   ],
+   "drug_leg": 0.07899515738498786,
+   "family": "PHASE",
+   "lambda": 0.2674475303620477,
+   "n_ok": 1000,
+   "state_leg": 0.34644268774703557
+  },
+  "backwPLI": {
+   "ci": [
+    -0.23415093779677107,
+    0.2861139998798209
+   ],
+   "drug_leg": 0.19309927360774815,
+   "family": "PHASE",
+   "lambda": 0.03328412560173799,
+   "n_ok": 999,
+   "state_leg": 0.22638339920948614
+  },
+  "frontalAlpha": {
+   "ci": [
+    -0.10763926201909173,
+    0.32162071104485357
+   ],
+   "drug_leg": 0.09456168831168832,
+   "family": "AMPLITUDE",
+   "lambda": 0.22638425763425762,
+   "n_ok": 998,
+   "state_leg": 0.32094594594594594
+  },
+  "frontalDelta": {
+   "ci": [
+    -0.07755022278176615,
+    0.3844849209009673
+   ],
+   "drug_leg": 0.09009740259740262,
+   "family": "AMPLITUDE",
+   "lambda": 0.2469296244296244,
+   "n_ok": 999,
+   "state_leg": 0.337027027027027
+  },
+  "frontwPLI": {
+   "ci": [
+    -0.07715664132963307,
+    0.3942600020725269
+   ],
+   "drug_leg": 0.05841404358353519,
+   "family": "PHASE",
+   "lambda": 0.2751827943611288,
+   "n_ok": 999,
+   "state_leg": 0.333596837944664
+  },
+  "longwPLI": {
+   "ci": [
+    -0.027623296968465803,
+    0.3892238809485912
+   ],
+   "drug_leg": 0.09170702179176748,
+   "family": "PHASE",
+   "lambda": 0.26609930231890444,
+   "n_ok": 1000,
+   "state_leg": 0.3578063241106719
+  }
+ },
+ "P2": {
+  "best": {
+   "amp": "AvgDelta",
+   "drug_leg": 0.021791767554479424,
+   "lambda": 0.33769439845342575,
+   "phase": "longwPLI",
+   "state_leg": 0.3594861660079052
+  },
+  "grid": [
+   {
+    "amp": "EffDim",
+    "drug_leg": 0.3746973365617433,
+    "lambda": -0.017681526285063476,
+    "phase": "frontwPLI",
+    "state_leg": 0.35701581027667983
+   },
+   {
+    "amp": "EffDim",
+    "drug_leg": 0.3728813559322034,
+    "lambda": -0.04047028873852754,
+    "phase": "backwPLI",
+    "state_leg": 0.33241106719367586
+   },
+   {
+    "amp": "EffDim",
+    "drug_leg": 0.30659806295399517,
+    "lambda": 0.12996320186813926,
+    "phase": "longwPLI",
+    "state_leg": 0.4365612648221344
+   },
+   {
+    "amp": "EffDim",
+    "drug_leg": 0.3308111380145279,
+    "lambda": 0.10268688570088713,
+    "phase": "allwPLI",
+    "state_leg": 0.433498023715415
+   },
+   {
+    "amp": "NmlzCmplx",
+    "drug_leg": 0.4243341404358354,
+    "lambda": -0.04913651197733737,
+    "phase": "frontwPLI",
+    "state_leg": 0.375197628458498
+   },
+   {
+    "amp": "NmlzCmplx",
+    "drug_leg": 0.4349273607748184,
+    "lambda": -0.043227756031735454,
+    "phase": "backwPLI",
+    "state_leg": 0.39169960474308296
+   },
+   {
+    "amp": "NmlzCmplx",
+    "drug_leg": 0.3925544794188862,
+    "lambda": 0.05161548105542213,
+    "phase": "longwPLI",
+    "state_leg": 0.44416996047430835
+   },
+   {
+    "amp": "NmlzCmplx",
+    "drug_leg": 0.40980629539951574,
+    "lambda": 0.03950200499574119,
+    "phase": "allwPLI",
+    "state_leg": 0.44930830039525693
+   },
+   {
+    "amp": "allEnvCorr",
+    "drug_leg": 0.4046610169491526,
+    "lambda": -0.06602465331278895,
+    "phase": "frontwPLI",
+    "state_leg": 0.3386363636363636
+   },
+   {
+    "amp": "allEnvCorr",
+    "drug_leg": 0.42766343825665865,
+    "lambda": -0.09762391256495906,
+    "phase": "backwPLI",
+    "state_leg": 0.3300395256916996
+   },
+   {
+    "amp": "allEnvCorr",
+    "drug_leg": 0.34745762711864403,
+    "lambda": 0.01420245193273939,
+    "phase": "longwPLI",
+    "state_leg": 0.3616600790513834
+   },
+   {
+    "amp": "allEnvCorr",
+    "drug_leg": 0.3686440677966102,
+    "lambda": -0.005402961077242585,
+    "phase": "allwPLI",
+    "state_leg": 0.3632411067193676
+   },
+   {
+    "amp": "AvgDelta",
+    "drug_leg": 0.14679176755447942,
+    "lambda": 0.16249676999492768,
+    "phase": "frontwPLI",
+    "state_leg": 0.3092885375494071
+   },
+   {
+    "amp": "AvgDelta",
+    "drug_leg": 0.041464891041162244,
+    "lambda": 0.27711218405765203,
+    "phase": "backwPLI",
+    "state_leg": 0.3185770750988143
+   },
+   {
+    "amp": "AvgDelta",
+    "drug_leg": 0.021791767554479424,
+    "lambda": 0.33769439845342575,
+    "phase": "longwPLI",
+    "state_leg": 0.3594861660079052
+   },
+   {
+    "amp": "AvgDelta",
+    "drug_leg": 0.06719128329297819,
+    "lambda": 0.2918008115686819,
+    "phase": "allwPLI",
+    "state_leg": 0.35899209486166006
+   },
+   {
+    "amp": "AvgAlpha",
+    "drug_leg": 0.12136803874092017,
+    "lambda": 0.12981773201006797,
+    "phase": "frontwPLI",
+    "state_leg": 0.25118577075098814
+   },
+   {
+    "amp": "AvgAlpha",
+    "drug_leg": 0.17917675544794187,
+    "lambda": 0.001554469848500828,
+    "phase": "backwPLI",
+    "state_leg": 0.1807312252964427
+   },
+   {
+    "amp": "AvgAlpha",
+    "drug_leg": 0.06809927360774815,
+    "lambda": 0.2275529003052953,
+    "phase": "longwPLI",
+    "state_leg": 0.29565217391304344
+   },
+   {
+    "amp": "AvgAlpha",
+    "drug_leg": 0.053268765133171914,
+    "lambda": 0.22439921905655136,
+    "phase": "allwPLI",
+    "state_leg": 0.27766798418972327
+   },
+   {
+    "amp": "AvgGamma",
+    "drug_leg": 0.032687651331719136,
+    "lambda": 0.27561274392519786,
+    "phase": "frontwPLI",
+    "state_leg": 0.308300395256917
+   },
+   {
+    "amp": "AvgGamma",
+    "drug_leg": 0.09231234866828086,
+    "lambda": 0.231403066351482,
+    "phase": "backwPLI",
+    "state_leg": 0.32371541501976286
+   },
+   {
+    "amp": "AvgGamma",
+    "drug_leg": 0.0714285714285714,
+    "lambda": 0.29882834556747606,
+    "phase": "longwPLI",
+    "state_leg": 0.37025691699604746
+   },
+   {
+    "amp": "AvgGamma",
+    "drug_leg": 0.06628329297820823,
+    "lambda": 0.30259022480835307,
+    "phase": "allwPLI",
+    "state_leg": 0.3688735177865613
+   },
+   {
+    "amp": "frontalDelta",
+    "drug_leg": 0.049918831168831224,
+    "lambda": 0.3306217093717093,
+    "phase": "frontwPLI",
+    "state_leg": 0.38054054054054054
+   },
+   {
+    "amp": "frontalDelta",
+    "drug_leg": 0.03977272727272729,
+    "lambda": 0.2857678132678132,
+    "phase": "backwPLI",
+    "state_leg": 0.3255405405405405
+   },
+   {
+    "amp": "frontalDelta",
+    "drug_leg": 0.08076298701298701,
+    "lambda": 0.2655883643383643,
+    "phase": "longwPLI",
+    "state_leg": 0.3463513513513513
+   },
+   {
+    "amp": "frontalDelta",
+    "drug_leg": 0.0625,
+    "lambda": 0.3000675675675676,
+    "phase": "allwPLI",
+    "state_leg": 0.3625675675675676
+   },
+   {
+    "amp": "frontalAlpha",
+    "drug_leg": 0.05722402597402598,
+    "lambda": 0.30372191997192,
+    "phase": "frontwPLI",
+    "state_leg": 0.360945945945946
+   },
+   {
+    "amp": "frontalAlpha",
+    "drug_leg": 0.12094155844155852,
+    "lambda": 0.15892330642330632,
+    "phase": "backwPLI",
+    "state_leg": 0.27986486486486484
+   },
+   {
+    "amp": "frontalAlpha",
+    "drug_leg": 0.13230519480519476,
+    "lambda": 0.18958669708669718,
+    "phase": "longwPLI",
+    "state_leg": 0.32189189189189193
+   },
+   {
+    "amp": "frontalAlpha",
+    "drug_leg": 0.12581168831168832,
+    "lambda": 0.19851263601263602,
+    "phase": "allwPLI",
+    "state_leg": 0.32432432432432434
+   }
+  ],
+  "max_single_lambda": 0.2751827943611288,
+  "median_lambda": 0.17604173354081243,
+  "n_composites": 32,
+  "verdict": "VOID -- a gate failed"
+ },
+ "P3": {
+  "n": 12,
+  "n_sleep_patients": 15,
+  "rho_transfer_vs_neg_drug_leg": -0.2447552447552448,
+  "transfer_auc": {
+   "AvgAlpha": 0.4781482418416393,
+   "AvgDelta": 0.8451132175612466,
+   "AvgGamma": 0.7003883870775732,
+   "EffDim": 0.7770658174729542,
+   "NmlzCmplx": 0.7978809839139298,
+   "allEnvCorr": 0.7499428083907481,
+   "allwPLI": 0.6272781655034896,
+   "backwPLI": 0.4943516713540969,
+   "frontalAlpha": 0.6028988468064505,
+   "frontalDelta": 0.8700025734338331,
+   "frontwPLI": 0.6904488524476322,
+   "longwPLI": 0.6363416219004677
+  },
+  "verdict": "VOID -- a gate failed"
+ },
+ "deposit": "krause_dexprosleep",
+ "electrode_arm": "scalp",
+ "experiment": "E139",
+ "scope_limit": "No recovery blocks exist in this deposit (0 of 27 patients have an awake block after the last unresponsive block), so this tests LOSS across anaesthetics only. Challenge A's 'and recovery' clause is untested here and untestable on any reachable deposit that also has two agents.",
+ "secondary_subdural": {
+  "AvgAlpha": {
+   "drug_leg": 0.44999999999999996,
+   "lambda": -0.08828124999999998,
+   "state_leg": 0.36171875
+  },
+  "AvgDelta": {
+   "drug_leg": 0.20714285714285718,
+   "lambda": -0.02620535714285721,
+   "state_leg": 0.18093749999999997
+  },
+  "AvgGamma": {
+   "drug_leg": 0.28714285714285714,
+   "lambda": -0.23964285714285716,
+   "state_leg": 0.04749999999999999
+  },
+  "EffDim": {
+   "drug_leg": 0.2671428571428571,
+   "lambda": 0.17957589285714293,
+   "state_leg": 0.44671875000000005
+  },
+  "NmlzCmplx": {
+   "drug_leg": 0.35857142857142854,
+   "lambda": 0.1004910714285715,
+   "state_leg": 0.45906250000000004
+  },
+  "allEnvCorr": {
+   "drug_leg": 0.3414285714285714,
+   "lambda": 0.1227901785714286,
+   "state_leg": 0.46421875
+  },
+  "allwPLI": {
+   "drug_leg": 0.2928571428571428,
+   "lambda": 0.062299107142857135,
+   "state_leg": 0.35515624999999995
+  },
+  "backwPLI": {
+   "drug_leg": 0.010000000000000009,
+   "lambda": 0.17421874999999998,
+   "state_leg": 0.18421875
+  },
+  "frontalAlpha": {
+   "drug_leg": 0.4842857142857143,
+   "lambda": -0.04491071428571436,
+   "state_leg": 0.43937499999999996
+  },
+  "frontalDelta": {
+   "drug_leg": 0.11571428571428566,
+   "lambda": 0.14834821428571432,
+   "state_leg": 0.2640625
+  },
+  "frontwPLI": {
+   "drug_leg": 0.4642857142857143,
+   "lambda": 0.01805803571428566,
+   "state_leg": 0.48234374999999996
+  },
+  "longwPLI": {
+   "drug_leg": 0.3085714285714286,
+   "lambda": 0.03611607142857143,
+   "state_leg": 0.34468750000000004
+  }
+ }
+}
