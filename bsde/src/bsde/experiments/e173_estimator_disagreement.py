@@ -189,9 +189,13 @@ def simulate(n_clusters, rows_per_cluster, base_rate, beta_extra, rng):
     subj, base, extra, y = [], [], [], []
     for c in range(n_clusters):
         n = max(3, int(rng.poisson(rows_per_cluster)))
-        u = rng.normal()                                   # a cluster-level shift, as real cohorts have
+        # TWO INDEPENDENT cluster-level shifts. The first draft gave `extra` a 0.5 * u loading on the
+        # SAME shift that drives `base`, and `y` depends on `base` -- so at beta_extra = 0 the "noise"
+        # column still carried information about y through u, and every estimator called it real in
+        # 100 % of replicates. A noise control that is not noise cannot disqualify anything (rule 40).
+        u, v = rng.normal(), rng.normal()
         b = rng.normal(size=n) + u
-        e = rng.normal(size=n) + 0.5 * u
+        e = rng.normal(size=n) + v
         lin = 1.0 * b + beta_extra * e
         p = 1.0 / (1.0 + np.exp(-(lin - np.quantile(lin, 1 - base_rate))))
         subj.append(np.full(n, f"s{c}"))

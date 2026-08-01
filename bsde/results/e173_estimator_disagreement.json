@@ -34,71 +34,71 @@
   "arm2": {
     "signal": {
       "2": {
-        "mean": 0.036400247743149414,
+        "mean": 0.04141489941317326,
         "frac_positive": 1.0,
         "n": 40
       },
       "3": {
-        "mean": 0.036684993626076315,
+        "mean": 0.041150582210793415,
         "frac_positive": 1.0,
         "n": 40
       },
       "5": {
-        "mean": 0.0366698646621099,
+        "mean": 0.041229218878889105,
         "frac_positive": 1.0,
         "n": 40
       },
       "10": {
-        "mean": 0.03669358721107176,
+        "mean": 0.041355348730940336,
         "frac_positive": 1.0,
         "n": 40
       },
       "20": {
-        "mean": 0.036691459894684315,
+        "mean": 0.041419584620304706,
         "frac_positive": 1.0,
         "n": 40
       },
       "bootstrap_oob": {
-        "mean": 0.036487288219333364,
+        "mean": 0.04131922717781451,
         "frac_positive": 1.0,
         "n": 40
       }
     },
     "noise": {
       "2": {
-        "mean": 0.008100120792137431,
-        "frac_positive": 1.0,
+        "mean": -0.00036975229539344955,
+        "frac_positive": 0.325,
         "n": 40
       },
       "3": {
-        "mean": 0.008192457095629676,
-        "frac_positive": 1.0,
+        "mean": -0.00013884397472261055,
+        "frac_positive": 0.4,
         "n": 40
       },
       "5": {
-        "mean": 0.008212543802184424,
-        "frac_positive": 1.0,
+        "mean": -0.0002485770995224068,
+        "frac_positive": 0.275,
         "n": 40
       },
       "10": {
-        "mean": 0.008222957195781044,
-        "frac_positive": 1.0,
+        "mean": -0.00027768613854179113,
+        "frac_positive": 0.25,
         "n": 40
       },
       "20": {
-        "mean": 0.008226238721239537,
-        "frac_positive": 1.0,
+        "mean": -0.00025029293407126396,
+        "frac_positive": 0.25,
         "n": 40
       },
       "bootstrap_oob": {
-        "mean": 0.007559476515698063,
-        "frac_positive": 1.0,
+        "mean": -0.0005252456814898966,
+        "frac_positive": 0.125,
         "n": 40
       }
     }
   },
-  "G3_pass": false,
-  "crossfit_recovers": false,
+  "G3_pass": true,
+  "crossfit_recovers": true,
   "bootstrap_recovers": false,
   "real_sweep_crosses_zero": false,
   "verdict": "NOT-REPRODUCED",

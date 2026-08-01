@@ -974,3 +974,41 @@ unverified on GitHub.
     cohort already exists, the two should agree, and here they differed by a factor of two.
     Related to rule 40 and rule 63, and distinct from both: the bar was neither unfailable by construction
     nor a round number, it was a real measurement of the wrong thing.
+
+### J. Added 2026-08-01 (BSDE, from the E166–E173 re-derivation programme)
+
+76. **A DESIGN MATRIX WITHOUT AN INTERCEPT IS A DIFFERENT MODEL, AND IT CAN REVERSE THE SIGN OF AN
+    INCREMENT — SO THE REQUIREMENT MUST BE ENFORCED IN CODE, NEVER IN A DOCSTRING.** `oob_auc_increment`
+    fits an IRLS logistic that carries no intercept of its own, and its docstring said so: *"`Xa` and `Xb`
+    must already include an intercept column."* **E99 passed `[BIS]` and `[BIS, exponent]` bare.** Both
+    models were therefore fitted through the origin, and the experiment printed
+    **-0.0306 [-0.0524, -0.0101]** and logged the verdict **HURTS** — "the exponent is variance the model
+    spends capacity on and does not generalise." Reproduced exactly a session later: the same call without
+    the intercept gives -0.0320 [-0.0544, -0.0111]; **with** it, on the identical 5,798 windows, 247 cases
+    and 977 positives, it gives **+0.0168 [+0.0049, +0.0269]**, and every arm of E99's own design then
+    returns ADDS while its negative control stays null. Three independent estimators agree (+0.0160,
+    +0.0162, +0.0235) and a 50–95 % training-fraction sweep never leaves +0.017…+0.023.
+    **What makes this worth a rule is not the arithmetic but the shape of the failure.** The wrong sign
+    was not implausible — it came with a written mechanistic story, an interval excluding zero, and a
+    passing negative control, and it survived a whole ledger row and a consolidation document. A
+    convention that a caller must satisfy, and that fails SILENTLY and PLAUSIBLY when they do not, is a
+    defect in the callee. `stats.py` now **raises** when a design's first column is not a constant.
+    Corollary that generalises past intercepts: **any helper with a precondition it does not check will
+    eventually be called wrong, and the cost is proportional to how reasonable the wrong answer looks.**
+    Grep for every caller when you find one — here it was two of eight, both from the same copied template.
+
+77. **A NEGATIVE CONTROL BUILT TO BE INDEPENDENT MUST BE MEASURED FOR INDEPENDENCE — A SHARED LATENT IS
+    INVISIBLE IN THE CODE THAT CONSTRUCTS IT.** E173's synthetic arm existed to disqualify estimators: one
+    system where an added column genuinely carries signal, one where it is pure noise. The noise column was
+    written as `e = normal(n) + 0.5 * u` where `u` was the cluster-level shift *also driving the baseline*,
+    and the outcome depended on the baseline. So the "noise" column carried real information about the
+    outcome through `u`, and **every scheme at every training fraction called it a real addition in 100 %
+    of replicates.** The construction reads as independent — a fresh normal draw per row — and is not.
+    Two independent shifts fixed it and the same schemes then land at 25-40 % positive.
+    **The check is one line and belongs beside the construction: correlate the negative control with the
+    outcome, in the units the estimator will see, and assert it is null.** A control that fires on
+    everything looks like a working control right up until it is the thing certifying your result.
+    Related and worth stating separately: with the control repaired, the cluster bootstrap called a genuine
+    null "positive" in only **12 %** of replicates against the cross-fits' 25-40 %, i.e. it is biased
+    slightly toward HURTS — the exact direction of the error rule 76 describes, and a reason to prefer
+    cross-fitting when the sign is what is at stake.
