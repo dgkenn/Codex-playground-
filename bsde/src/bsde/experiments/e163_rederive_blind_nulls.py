@@ -121,16 +121,15 @@ def build_e134():
 
     Rule 59 warns against hand-copying a SUBSET of a prior result; the whole build is copied here and the
     reproduction gate on the incumbent rho is what verifies the transcription."""
-    sys.path.insert(0, os.path.join(HERE))
-    from bsde.ingestion.runner import _read_shards                              # noqa: E402
+    sys.path.insert(0, HERE)
+    from e129_blankertz_replication import _read_shards                         # noqa: E402
+    from e125_ge_norm_online_control import load_performance                     # noqa: E402
     R = os.path.join(RESULTS)
     smr = {r["subject"]: r for r in _read_shards(os.path.join(R, "dreyer_smr.csv"))}
     graph = {}
     for r in _read_shards(os.path.join(R, "dreyer_graph.csv")):
         graph.setdefault(r["subject"], []).append(r)
-    perf = {}
-    for r in csv.DictReader(open(os.path.join(R, "dreyer_performance.csv"), newline="")):
-        perf[r["subject"]] = r
+    perf = load_performance()
     subs = sorted(set(smr) & set(graph) & set(perf))
 
     def gmean(s, k):
@@ -154,10 +153,13 @@ def build_e133():
     sys.path.insert(0, HERE)
     import e133_irreversibility_increment as E133
     irr, five, spectral = E133.load()
-    keys = sorted(set(irr) & set(five))
+    # The six irreversibility candidates, named explicitly. `irr` also carries a `*_surr` phase-randomised
+    # column for each -- those are the NULL the measure was built against and E133 carries them as columns,
+    # never as predictors -- and its dict picks up one header-shaped key that must not become a cohort row.
+    icols = ["frontal_irr3", "frontal_irr4", "frontal_incr",
+             "posterior_irr3", "posterior_irr4", "posterior_incr"]
+    keys = sorted(k for k in (set(irr) & set(five)) if k[0] != "subject")
     y, subj, S, I = [], [], [], []
-    icols = sorted(c for c in next(iter(irr.values()))
-                   if c not in ("subject", "label", "recording_id", "status", "error"))
     order = {"W": 0, "N1": 1, "N2": 2, "N3": 3}
     for k in keys:
         lab = k[1]

@@ -1,0 +1,11 @@
+{
+ "E133_sleep": {
+  "error": "IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed"
+ },
+ "E134_dreyer": {
+  "error": "ImportError: cannot import name '_read_shards' from 'bsde.ingestion.runner' (/home/user/Codex-playground-/bsde/src/bsde/ingestion/runner.py)"
+ },
+ "experiment": "E163",
+ "perms": 1500,
+ "verdict": "NO VERDICT -- neither arm could be built"
+}
