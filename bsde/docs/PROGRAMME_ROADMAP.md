@@ -29,6 +29,30 @@ construct matches and fails when it does not, and construct match is specifiable
 and tested *prospectively* that is a methods contribution which explains a literature-wide replication
 failure rather than adding one more measure to it.
 
+> ### THE RULE WAS TESTED PROSPECTIVELY AND IT IS REFUTED — E160 and E162, 2026-08-01
+>
+> `CHALLENGE_D_PREREGISTRATION.md` committed the forward prediction while the extraction was still
+> streaming: five of six axes mismatched, therefore **out-of-bag rho below +0.25**. The DOSE-I exposure
+> ladder carried to 123,728 RASS observations from 4,000 MIMIC-IV ICU stays reproduces **to within 0.01 at
+> every rung** — L0 +0.1872 against +0.1755, L2 **+0.4293** against +0.4263, L0→L2 gain +0.2421 against
+> +0.2508. Both the primary and the sharper secondary fail.
+>
+> Two alternative explanations were tested before the verdict was allowed to stand. **Time is refuted**
+> (`hours_in` alone +0.0695, and it adds nothing to the model). **Clinical intent looked decisive and was
+> not**: the most-recent sedation goal correlates with the *previous* RASS in the same stay at +0.5549, so
+> it is a collider — conditioning on it drags the cumulative-dose rung from +0.19 to +0.55 by importing the
+> outcome. Adjusting instead for the stay's **first** charted goal, which is near pre-exposure, leaves the
+> ladder unchanged at L2 **+0.4289**, gain +0.2330 (E162).
+>
+> **So a pharmacology model built for bolus propofol in day-case endoscopy, scored against a 1–5 observer
+> scale over twenty minutes, transports essentially intact to multi-drug infusion in critically ill ICU
+> patients scored on RASS over days.** The paragraph above is retained because it is what the programme
+> believed and why Challenge D was posed, but the rule it proposes does not survive its first forward test
+> and must not be cited as a finding. What the four retrodicted observations have in common is something
+> narrower than "construct match", and naming it is open work.
+>
+> Full record in `CONSOLIDATION_2026_08_01.md` §4.
+
 **The rule is currently a RETRODICTION over four observations.** `CLAUDE.md`'s cadence section is explicit
 that a finding which explains the existing set is worth little until it makes a falsifiable forward
 prediction. So D's first act must be to state, in advance, which of a set of untested cohort pairs will
