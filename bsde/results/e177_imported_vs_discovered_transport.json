@@ -1,0 +1,107 @@
+{
+  "experiment": "E177",
+  "arms": {
+    "alpha_prom": {
+      "origin": "IMPORTED",
+      "direction": 1,
+      "source": "Blankertz et al. 2010; replicated by E129 on Dreyer's 87 subjects"
+    },
+    "ge_norm": {
+      "origin": "DISCOVERED",
+      "direction": 1,
+      "source": "selected inside Stieger by E86; already negative here at E124"
+    },
+    "iaf": {
+      "origin": "DISCOVERED",
+      "direction": 1,
+      "source": "selected inside Stieger by E106"
+    }
+  },
+  "n_feature_subjects": 105,
+  "G1": {
+    "csp_auc": {
+      "n": 101,
+      "observed_var": 0.03574877944719466,
+      "noise_var": 0.007407407407407406,
+      "ratio": 4.82608522537128,
+      "mean": 0.6394028415841585,
+      "sd": 0.18907347631858534,
+      "pass": true,
+      "why": "observed between-subject variance must exceed 1.5x per-subject estimation noise"
+    },
+    "imagery_auc": {
+      "n": 104,
+      "observed_var": 0.021541352817029638,
+      "noise_var": 0.007410720201417874,
+      "ratio": 2.906782638063732,
+      "mean": 0.5120320500755283,
+      "sd": 0.14676972718183282,
+      "pass": true,
+      "why": "observed between-subject variance must exceed 1.5x per-subject estimation noise"
+    }
+  },
+  "primary_label": "csp_auc",
+  "results": {
+    "csp_auc": {
+      "alpha_prom": {
+        "n": 101,
+        "rho": 0.2939281867346108,
+        "p_one_sided": 0.0015,
+        "null_p95": 0.1642132852555712,
+        "null_p05": -0.1636984187770047,
+        "carries": true,
+        "origin": "IMPORTED"
+      },
+      "ge_norm": {
+        "n": 101,
+        "rho": -0.1326072396380458,
+        "p_one_sided": 0.903,
+        "null_p95": 0.1635059262756854,
+        "null_p05": -0.16759195091412843,
+        "carries": false,
+        "origin": "DISCOVERED"
+      },
+      "iaf": {
+        "n": 101,
+        "rho": 0.10105269562561355,
+        "p_one_sided": 0.1415,
+        "null_p95": 0.1601452836195571,
+        "null_p05": -0.1683585327151196,
+        "carries": false,
+        "origin": "DISCOVERED"
+      }
+    },
+    "imagery_auc": {
+      "alpha_prom": {
+        "n": 104,
+        "rho": 0.22207640841609685,
+        "p_one_sided": 0.0115,
+        "null_p95": 0.15641745829033546,
+        "null_p05": -0.16385476941463106,
+        "carries": true,
+        "origin": "IMPORTED"
+      },
+      "ge_norm": {
+        "n": 104,
+        "rho": 0.031106381067867613,
+        "p_one_sided": 0.3585,
+        "null_p95": 0.15750706184600544,
+        "null_p05": -0.1551675483119096,
+        "carries": false,
+        "origin": "DISCOVERED"
+      },
+      "iaf": {
+        "n": 104,
+        "rho": 0.16879767566165013,
+        "p_one_sided": 0.049,
+        "null_p95": 0.1660030433522353,
+        "null_p05": -0.15263308633252964,
+        "carries": true,
+        "origin": "DISCOVERED"
+      }
+    }
+  },
+  "verdict": "SUPPORTED",
+  "why": "alpha_prom carries in Blankertz's published direction and neither Stieger-discovered measure does. This is ONE forward success against five retrodictions, and the rule may be cited only with that count attached",
+  "forward_tests_so_far": 1
+}

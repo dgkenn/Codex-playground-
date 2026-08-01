@@ -1,0 +1,397 @@
+{
+  "experiment": "E171",
+  "n_recordings": 171,
+  "n_windows": 237403,
+  "dropped": {},
+  "target": "MOAAS",
+  "panel": [
+    "rel_delta1",
+    "rel_theta",
+    "rel_alpha",
+    "rel_beta1",
+    "rel_gamma",
+    "SEF95",
+    "MF",
+    "PE31",
+    "WSMF30",
+    "sync_alpha",
+    "sync_theta"
+  ],
+  "G1_pass": true,
+  "G2": {
+    "panel": {
+      "spearman": 0.5114985358562004,
+      "null_p95": 0.03996615239637619,
+      "p": 0.0,
+      "pass": true
+    },
+    "SEF95": {
+      "spearman": 0.2737403413083061,
+      "null_p95": 0.01286077073580261,
+      "p": 0.0,
+      "pass": true
+    },
+    "PE31": {
+      "spearman": 0.4497347313618338,
+      "null_p95": 0.006686292220312486,
+      "p": 0.0,
+      "pass": true
+    }
+  },
+  "stratifications": {
+    "age": {
+      "sizes": {
+        "age_high": 83553,
+        "age_low": 73501,
+        "age_mid": 80349
+      },
+      "arms": {
+        "panel": {
+          "slope_spread": 0.1115463869230724,
+          "table": {
+            "age_high": {
+              "slope": 1.038826697052174,
+              "intercept": -0.18069394282305926,
+              "n_rec": 57,
+              "n_win": 83553,
+              "estimable": true
+            },
+            "age_low": {
+              "slope": 0.9903339621023746,
+              "intercept": 0.1635685471154152,
+              "n_rec": 57,
+              "n_win": 73501,
+              "estimable": true
+            },
+            "age_mid": {
+              "slope": 0.9272803101291016,
+              "intercept": 0.11393360026536062,
+              "n_rec": 57,
+              "n_win": 80349,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.3062712797247626,
+          "placebo_p": 0.704,
+          "above_placebo": false,
+          "n_placebo": 500
+        },
+        "SEF95": {
+          "slope_spread": 0.6061380311126962,
+          "table": {
+            "age_high": {
+              "slope": 0.8592535249911619,
+              "intercept": 0.28011829879654776,
+              "n_rec": 57,
+              "n_win": 83553,
+              "estimable": true
+            },
+            "age_low": {
+              "slope": 1.345156720721357,
+              "intercept": -0.6260795197188737,
+              "n_rec": 57,
+              "n_win": 73501,
+              "estimable": true
+            },
+            "age_mid": {
+              "slope": 0.7390186896086609,
+              "intercept": 0.4642164504649459,
+              "n_rec": 57,
+              "n_win": 80349,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.7644917673133129,
+          "placebo_p": 0.156,
+          "above_placebo": false,
+          "n_placebo": 500
+        },
+        "PE31": {
+          "slope_spread": 0.36195604041532503,
+          "table": {
+            "age_high": {
+              "slope": 0.8951326865304181,
+              "intercept": 0.1630482591616048,
+              "n_rec": 57,
+              "n_win": 83553,
+              "estimable": true
+            },
+            "age_low": {
+              "slope": 1.2570887269457431,
+              "intercept": -0.3749536331236096,
+              "n_rec": 57,
+              "n_win": 73501,
+              "estimable": true
+            },
+            "age_mid": {
+              "slope": 0.9204565944461326,
+              "intercept": 0.10458900543514425,
+              "n_rec": 57,
+              "n_win": 80349,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.44072024131287757,
+          "placebo_p": 0.144,
+          "above_placebo": false,
+          "n_placebo": 500
+        }
+      }
+    },
+    "sex": {
+      "sizes": {
+        "F": 91253,
+        "M": 146150
+      },
+      "arms": {
+        "panel": {
+          "slope_spread": 0.1967257202553987,
+          "table": {
+            "F": {
+              "slope": 0.8555012489032459,
+              "intercept": 0.14317609023057704,
+              "n_rec": 71,
+              "n_win": 91253,
+              "estimable": true
+            },
+            "M": {
+              "slope": 1.0522269691586446,
+              "intercept": -0.008895148188175665,
+              "n_rec": 100,
+              "n_win": 146150,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.22295940967371675,
+          "placebo_p": 0.086,
+          "above_placebo": false,
+          "n_placebo": 500
+        },
+        "SEF95": {
+          "slope_spread": 0.016681883876649817,
+          "table": {
+            "F": {
+              "slope": 0.9666032866961501,
+              "intercept": -0.04531395286871978,
+              "n_rec": 71,
+              "n_win": 91253,
+              "estimable": true
+            },
+            "M": {
+              "slope": 0.9499214028195003,
+              "intercept": 0.1672578103136324,
+              "n_rec": 100,
+              "n_win": 146150,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.5121368225383568,
+          "placebo_p": 0.954,
+          "above_placebo": false,
+          "n_placebo": 500
+        },
+        "PE31": {
+          "slope_spread": 0.2943758053351625,
+          "table": {
+            "F": {
+              "slope": 0.8191667374982089,
+              "intercept": 0.22586931039888236,
+              "n_rec": 71,
+              "n_win": 91253,
+              "estimable": true
+            },
+            "M": {
+              "slope": 1.1135425428333714,
+              "intercept": -0.1405560706893787,
+              "n_rec": 100,
+              "n_win": 146150,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.3129477915182718,
+          "placebo_p": 0.068,
+          "above_placebo": false,
+          "n_placebo": 500
+        }
+      }
+    },
+    "asa": {
+      "sizes": {
+        "ASA1-2": 159704,
+        "ASA3+": 77699
+      },
+      "arms": {
+        "panel": {
+          "slope_spread": 0.023746893012391856,
+          "table": {
+            "ASA1-2": {
+              "slope": 0.9655322700176228,
+              "intercept": 0.10414410567758134,
+              "n_rec": 118,
+              "n_win": 159704,
+              "estimable": true
+            },
+            "ASA3+": {
+              "slope": 0.9892791630300146,
+              "intercept": -0.05079563982076154,
+              "n_rec": 53,
+              "n_win": 77699,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.2370741855801638,
+          "placebo_p": 0.85,
+          "above_placebo": false,
+          "n_placebo": 500
+        },
+        "SEF95": {
+          "slope_spread": 0.14767431609918635,
+          "table": {
+            "ASA1-2": {
+              "slope": 0.9130756294911088,
+              "intercept": 0.16624198309401822,
+              "n_rec": 118,
+              "n_win": 159704,
+              "estimable": true
+            },
+            "ASA3+": {
+              "slope": 1.0607499455902951,
+              "intercept": -0.10906010763492581,
+              "n_rec": 53,
+              "n_win": 77699,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.5844284696964467,
+          "placebo_p": 0.65,
+          "above_placebo": false,
+          "n_placebo": 500
+        },
+        "PE31": {
+          "slope_spread": 0.12575986049162913,
+          "table": {
+            "ASA1-2": {
+              "slope": 1.0484674683694246,
+              "intercept": -0.04449091588845708,
+              "n_rec": 118,
+              "n_win": 159704,
+              "estimable": true
+            },
+            "ASA3+": {
+              "slope": 0.9227076078777955,
+              "intercept": 0.05760824881103478,
+              "n_rec": 53,
+              "n_win": 77699,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.3571927925882897,
+          "placebo_p": 0.466,
+          "above_placebo": false,
+          "n_placebo": 500
+        }
+      }
+    },
+    "bmi": {
+      "sizes": {
+        "bmi_high": 75489,
+        "bmi_low": 76647,
+        "bmi_mid": 85267
+      },
+      "arms": {
+        "panel": {
+          "slope_spread": 0.22937237562636525,
+          "table": {
+            "bmi_high": {
+              "slope": 0.8839527699434393,
+              "intercept": 0.20864928543513658,
+              "n_rec": 57,
+              "n_win": 75489,
+              "estimable": true
+            },
+            "bmi_low": {
+              "slope": 1.1133251455698046,
+              "intercept": -0.10501488011908865,
+              "n_rec": 57,
+              "n_win": 76647,
+              "estimable": true
+            },
+            "bmi_mid": {
+              "slope": 0.9249731212951245,
+              "intercept": 0.07486747291117912,
+              "n_rec": 57,
+              "n_win": 85267,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.3062712797247626,
+          "placebo_p": 0.228,
+          "above_placebo": false,
+          "n_placebo": 500
+        },
+        "SEF95": {
+          "slope_spread": 0.8580672825256495,
+          "table": {
+            "bmi_high": {
+              "slope": 0.9873716071967152,
+              "intercept": 0.05733952261802382,
+              "n_rec": 57,
+              "n_win": 75489,
+              "estimable": true
+            },
+            "bmi_low": {
+              "slope": 1.3763937843160317,
+              "intercept": -0.6154449875858802,
+              "n_rec": 57,
+              "n_win": 76647,
+              "estimable": true
+            },
+            "bmi_mid": {
+              "slope": 0.5183265017903822,
+              "intercept": 0.8300731524467667,
+              "n_rec": 57,
+              "n_win": 85267,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.7644917673133129,
+          "placebo_p": 0.024,
+          "above_placebo": true,
+          "n_placebo": 500
+        },
+        "PE31": {
+          "slope_spread": 0.3176803324689722,
+          "table": {
+            "bmi_high": {
+              "slope": 0.8433490990658884,
+              "intercept": 0.2810149660299025,
+              "n_rec": 57,
+              "n_win": 75489,
+              "estimable": true
+            },
+            "bmi_low": {
+              "slope": 1.1610294315348606,
+              "intercept": -0.22453741390689053,
+              "n_rec": 57,
+              "n_win": 76647,
+              "estimable": true
+            },
+            "bmi_mid": {
+              "slope": 0.9574378075604436,
+              "intercept": 0.0402172743473511,
+              "n_rec": 57,
+              "n_win": 85267,
+              "estimable": true
+            }
+          },
+          "placebo_p95": 0.44072024131287757,
+          "placebo_p": 0.222,
+          "above_placebo": false,
+          "n_placebo": 500
+        }
+      }
+    }
+  },
+  "verdict": "OURS-MORE-STABLE",
+  "why": "the panel's slope spread is below SEF95's in ['bmi']; this is the first calibrated comparison this project has produced and it must be replicated before it is used"
+}
