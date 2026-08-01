@@ -1,0 +1,14 @@
+{
+  "n_subjects": 104,
+  "gates": {
+    "G1_pass": true,
+    "G2_median_auc": 0.5306324110671937,
+    "G2_frac_perm_p_lt_05": 0.16346153846153846,
+    "G2_auc_spread": 0.6847826086956522,
+    "G2_pass": false,
+    "G3_ge_norm_median": 0.8553427285585192,
+    "G3_ge_norm_sd": 0.05383571352808672,
+    "G3_pass": true
+  },
+  "verdict": "ABSENT -- a precondition failed. If G2 failed there is no decodable performance for anything to predict, and that is not a null about ge_norm (rule 31)."
+}
