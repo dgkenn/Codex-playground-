@@ -167,8 +167,24 @@ def partial_spearman_on_index(a, b, idx):
 
 
 def blocks_from(table):
+    """Read the unsharded table and every shard of it as one set, keyed on (subject, stage).
+
+    The extraction runs in six shards writing to `...s<k>.csv`, and an earlier unsharded partial run wrote
+    to the base path. Rule 56: de-duplicate on the key rather than assuming one writer -- a subject-stage
+    present in two files is taken once, not twice."""
+    import glob
     import numpy as np
-    rows = list(csv.DictReader(open(table, newline="")))
+    root, ext = os.path.splitext(table)
+    rows, seen = [], set()
+    for p in [table] + sorted(glob.glob(f"{root}.s*{ext}")):
+        if not os.path.exists(p):
+            continue
+        for r in csv.DictReader(open(p, newline="")):
+            k = (r["subject"], r["label"], r.get("window_index"))
+            if k in seen:
+                continue
+            seen.add(k)
+            rows.append(r)
     by = {}
     for r in rows:
         if r.get("status") != "ok":

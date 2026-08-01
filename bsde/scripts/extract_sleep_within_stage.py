@@ -96,7 +96,14 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=OUT)
     ap.add_argument("--n-windows", type=int, default=6)
     ap.add_argument("--limit", type=int, default=0)
+    # Sharding writes to `<out>.s<k>.csv`, never to a shared path. Rule 56: two concurrent writers on one
+    # CSV produced 419 duplicated ids once in this project, and the analysis reads the shards as a set.
+    ap.add_argument("--shard", type=int, default=-1)
+    ap.add_argument("--of", type=int, default=1)
     a = ap.parse_args(argv)
+    if a.shard >= 0:
+        root, ext = os.path.splitext(a.out)
+        a.out = f"{root}.s{a.shard}{ext}"
 
     work = json.load(open(WORKLIST))
     span = a.n_windows * WINDOW_S
@@ -111,14 +118,23 @@ def main(argv=None) -> int:
         start = max(b0, min((b0 + b1) / 2.0 - span / 2.0, b1 - span))
         jobs.append({"url": r["url"], "subject": r["subject"], "label": r["label"], "start": start})
     jobs.sort(key=lambda j: (j["subject"], j["label"]))
+    if a.shard >= 0:
+        jobs = [j for i, j in enumerate(jobs) if i % a.of == a.shard]
     if a.limit:
         jobs = jobs[:a.limit]
 
     out_path = os.path.abspath(a.out)
     done = set()
-    if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+    # Every shard of this output, plus any unsharded run, counts as done work -- so a re-shard after a
+    # partial unsharded run does not redo it.
+    import glob as _glob
+    root, ext = os.path.splitext(os.path.abspath(a.out).replace(f".s{a.shard}", "") if a.shard >= 0
+                                else os.path.abspath(a.out))
+    for p in [out_path] + sorted(_glob.glob(f"{root}.s*{ext}")) + [f"{root}{ext}"]:
+        if not os.path.exists(p) or os.path.getsize(p) == 0:
+            continue
         # Rule 56: de-duplicate on the key at load, rather than trusting this was the only writer.
-        for r in csv.DictReader(open(out_path, newline="")):
+        for r in csv.DictReader(open(p, newline="")):
             done.add((r["subject"], r["label"]))
     todo = [j for j in jobs if (j["subject"], j["label"]) not in done]
     print(f"{len(jobs)} (subject, stage) blocks with a contiguous {span:.0f}s span; "
