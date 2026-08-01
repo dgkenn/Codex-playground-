@@ -38,7 +38,7 @@ EXPERIMENTS = os.path.abspath(os.path.join(HERE, "..", "src", "bsde", "experimen
 
 FIELDS = ("id", "challenge", "question", "deposit", "primary", "gates", "placebo",
           "registered_sha", "registered_date", "file", "outcome", "outcome_detail",
-          "successor_of", "instrument_changed")
+          "successor_of", "instrument_changed", "incumbent")
 
 OUTCOMES = ("registered", "gate_failed", "absent", "blocked", "withdrawn", "negative",
             "positive", "closed")
@@ -86,8 +86,12 @@ def _git(*args) -> str:
 def register(exp_id: str, challenge: str, question: str, deposit: str, primary: str,
              gates: List[str], placebo: Optional[str], file: str,
              successor_of: Optional[str] = None,
-             instrument_changed: Optional[str] = None) -> dict:
+             instrument_changed: Optional[str] = None,
+             incumbent: Optional[str] = None) -> dict:
     """Append a registration. Refuses to overwrite an existing id — the ledger is append-only.
+
+    `incumbent` names the thing the result has to beat; rule 45 records that a marker reported
+    without one is not a result, and an empty field is a defect rather than an omission.
 
     `successor_of` and `instrument_changed` exist to make the loop's one dangerous step auditable. A failed
     experiment may spawn a successor ONLY by changing the instrument, never the threshold, cohort or horizon
@@ -103,7 +107,8 @@ def register(exp_id: str, challenge: str, question: str, deposit: str, primary: 
            "primary": primary, "gates": gates, "placebo": placebo,
            "registered_sha": sha, "registered_date": date, "file": file,
            "outcome": "registered", "outcome_detail": "",
-           "successor_of": successor_of, "instrument_changed": instrument_changed}
+           "successor_of": successor_of, "instrument_changed": instrument_changed,
+           "incumbent": incumbent}
     with open(LEDGER, "a") as fh:
         fh.write(json.dumps(row, sort_keys=True) + "\n")
     return row
