@@ -79,8 +79,14 @@ GATES
     G3  L1 MUST AGREE WITH L0 IN THE VOLATILE ARM. An independently recomputed MAC fraction should track
         the monitor's own MAC closely; if it does not, the recomputation is wrong and every rung above it
         inherits the error. This is the ladder's own internal validation and it can fail.
-    G4  THE REFERENCE MUST BE ALIVE. BIS's fidelity to L0 must be clearly positive, else the exposure
-        variable itself is broken on these cases and no rung comparison means anything (E33/E61).
+    G4  THE REFERENCE IS ALIVE **AND IT GRADES EVERY RUNG.** BIS's fidelity to L0 must be clearly
+        positive, else the exposure variable is broken on these cases (E33/E61). **And beyond that: BIS
+        is a vendor depth index that certainly tracks anaesthetic depth, so if BIS's fidelity FALLS when
+        a rung elaborates the exposure, that rung has made the EXPOSURE worse -- and no candidate
+        measure's improvement at that rung can be credited.** The first draft used the reference only as
+        an aliveness check and let a single +0.0345 improvement print ELABORATION PAYS while the
+        reference degraded at the same rung in both arms. That is the reference existing in prose and not
+        in the verdict.
 
 PLACEBO: the exposure series permuted ACROSS WINDOWS WITHIN CASE, 300 draws, applied to the best rung --
 every marginal preserved, only the pairing destroyed. Primary read FIRST (rule 48).
@@ -179,14 +185,16 @@ def main() -> int:
     if not os.path.exists(PK):
         print(f"ABSENT: {PK} -- PK-input extraction has not landed")
         return 2
-    pk = {}
-    for line in open(PK):
-        try:
-            r = json.loads(line)
-        except Exception:                                                   # noqa: BLE001
-            continue
-        if r.get("status") == "ok":
-            pk[r["caseid"]] = r
+    have_pk = set()
+    with open(PK) as fh:
+        for line in fh:
+            i = line.find('"caseid"')
+            if i < 0:
+                continue
+            j = line.find('"', line.find(":", i) + 1)
+            k = line.find('"', j + 1)
+            if j > 0 and k > j:
+                have_pk.add(line[j + 1:k])
     ag = defaultdict(dict)
     for r in csv.DictReader(open(AGENTS, newline="")):
         t = _f(r.get("t_s"))
@@ -199,7 +207,7 @@ def main() -> int:
             continue
         for r in csv.DictReader(open(tb, newline="")):
             c, t = r.get("meta_caseid"), _f(r.get("meta_t_s"))
-            if not c or not math.isfinite(t) or c not in pk:
+            if not c or not math.isfinite(t) or c not in have_pk:
                 continue
             key = (c, round(t, 1))
             if key in seen:
@@ -212,21 +220,36 @@ def main() -> int:
                 row[m] = _f(r.get(m))
             per[c].append(row)
 
-    res = {"n_cases_with_pk": len(pk), "arms": {}, "gates": {}}
-    print(f"{len(pk)} cases with PK inputs; {len(per)} joined to EEG windows")
+    res = {"n_cases_with_pk": len(have_pk), "arms": {}, "gates": {}}
+    print(f"{len(have_pk)} cases with PK inputs; {len(per)} joined to EEG windows")
+
+    # stream the cache one case at a time, interpolate onto that case's grid, discard the raw traces
+    tracks_at = {}
+    with open(PK) as fh:
+        for line in fh:
+            try:
+                r = json.loads(line)
+            except Exception:                                               # noqa: BLE001
+                continue
+            c = r.get("caseid")
+            if r.get("status") != "ok" or c not in per:
+                continue
+            tt = np.array(sorted(z["t"] for z in per[c]), float)
+            keep = {}
+            for name in ("Primus/EXP_SEVO", "Primus/EXP_DES"):
+                d = r["tracks"].get(name)
+                keep[name] = interp_at(d["t"], d["v"], tt) if d else np.full(len(tt), np.nan)
+            tracks_at[c] = keep
+            r.clear()
 
     arms = defaultdict(list)
     for c, rows in per.items():
         rows.sort(key=lambda z: z["t"])
         t = np.array([z["t"] for z in rows])
-        tr = pk[c]["tracks"]
+        tr = tracks_at.get(c, {})
         age = rows[0]["age"]
-        et_sevo = interp_at(*(tr.get("Primus/EXP_SEVO", {}).get("t", []),
-                              tr.get("Primus/EXP_SEVO", {}).get("v", [])), t) \
-            if "Primus/EXP_SEVO" in tr else np.full(len(t), np.nan)
-        et_des = interp_at(*(tr.get("Primus/EXP_DES", {}).get("t", []),
-                             tr.get("Primus/EXP_DES", {}).get("v", [])), t) \
-            if "Primus/EXP_DES" in tr else np.full(len(t), np.nan)
+        et_sevo = tr.get("Primus/EXP_SEVO", np.full(len(t), np.nan))
+        et_des = tr.get("Primus/EXP_DES", np.full(len(t), np.nan))
         mac = np.array([z["mac"] for z in rows])
         ppf = np.array([z["ppf"] for z in rows])
         rft = np.array([z["rft"] for z in rows])
@@ -320,7 +343,19 @@ def main() -> int:
         res["arms"][arm] = arm_out
 
     # ---- verdict ----------------------------------------------------------------------------------
-    improved, hurt = [], []
+    # which rungs DEGRADE the reference? Those rungs are worse EXPOSURES and grade everything above them.
+    ref_worse = set()
+    ref_detail = []
+    for arm, per_m in res["arms"].items():
+        for rung, d in per_m.get(REFERENCE, {}).items():
+            if rung == "L0" or "dhi" not in d:
+                continue
+            if np.isfinite(d["dhi"]) and d["dhi"] < 0:
+                ref_worse.add((arm, rung))
+                ref_detail.append(f"{arm}/{rung} {d['delta']:+.4f}")
+    res["gates"]["G4_rungs_degrading_the_reference"] = sorted(f"{a}/{r}" for a, r in ref_worse)
+
+    improved, hurt, discredited = [], [], []
     for arm, per_m in res["arms"].items():
         for m, rungs in per_m.items():
             if m == REFERENCE:
@@ -328,8 +363,12 @@ def main() -> int:
             for rung, d in rungs.items():
                 if rung == "L0" or "dlo" not in d:
                     continue
+                # a rung whose delta is identically zero is the same exposure as L0 by construction
+                if d.get("dlo") == 0.0 and d.get("dhi") == 0.0:
+                    continue
                 if np.isfinite(d["dlo"]) and d["dlo"] > 0:
-                    improved.append(f"{arm}/{m}/{rung} +{d['delta']:.4f}")
+                    (discredited if (arm, rung) in ref_worse else improved).append(
+                        f"{arm}/{m}/{rung} {d['delta']:+.4f}")
                 if np.isfinite(d["dhi"]) and d["dhi"] < 0:
                     hurt.append(f"{arm}/{m}/{rung} {d['delta']:+.4f}")
     ref_ok = all(res["arms"].get(a, {}).get(REFERENCE, {}).get("L0", {}).get("lo", -1) > 0
@@ -340,6 +379,17 @@ def main() -> int:
     elif not ref_ok:
         v = ("ABSENT -- the reference (BIS) does not track the L0 exposure on these cases, so the exposure "
              "variable is broken here and no rung comparison is interpretable (rule 31).")
+    elif ref_worse and not improved:
+        v = ("**ELABORATION MAKES THE EXPOSURE WORSE.** BIS -- a vendor index that certainly tracks "
+             f"anaesthetic depth -- tracks the elaborated exposure LESS well at {ref_detail}, so those "
+             "rungs are worse exposure estimates, not better ones. "
+             + (f"Candidate improvements at those same rungs ({discredited}) cannot be credited and are "
+                "reported only for completeness. " if discredited else "")
+             + (f"Candidates also degrade directly: {hurt}. " if hurt else "")
+             + "Combining hypnotic and opioid the way the device already reports them does not help and "
+               "mostly hurts. This does NOT show a real PK/PD model would fail -- a properly weighted "
+               "effect-site combination is a different object from an equal-weight z-score sum -- but it "
+               "removes the assumption that more agents automatically means a better exposure.")
     elif hurt and not improved:
         v = (f"ELABORATION HURTS -- rungs above L0 track the EEG WORSE: {hurt}. A more complete exposure "
              f"adds noise rather than signal on this deposit, which argues against the PK/PD programme "
