@@ -106,7 +106,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 
 from bsde.verifier.multiplicity import holm                                    # noqa: E402
-from bsde.verifier.stats import cluster_permute, spearman                      # noqa: E402
+from bsde.verifier.stats import (cluster_permute, screen_candidates,           # noqa: E402
+                                 spearman)
 
 sys.path.insert(0, HERE)
 import e145_incumbent_where_the_label_is_reliable as E145                      # noqa: E402
@@ -154,10 +155,15 @@ def main(argv=None) -> int:
                 dx[c].append(_f(b.get(c, "")) - _f(a.get(c, "")))
     subj = np.array(subj)
     dy = np.array(dy, float)
-    dx = {c: np.array(v, float) for c, v in dx.items()}
+    # A time-invariant column has an identically zero delta in a change design, and a constant column
+    # cannot carry an association -- but it CAN reach p = 0.0000 through a NaN comparison. `age` did
+    # exactly that in the first run. Screened and named before anything is computed.
+    dx, dropped = screen_candidates({c: np.array(v, float) for c, v in dx.items()})
+    cand = sorted(dx)
+    print(f"   dropped before scoring: {dropped or 'none'}")
     K = len(cand)
     bar = 0.05 / max(K, 1)
-    out = {"experiment": "E164", "n_pairs": int(len(dy)), "n_subjects": int(len(set(subj.tolist()))),
+    out = {"experiment": "E164", "dropped": dropped, "n_pairs": int(len(dy)), "n_subjects": int(len(set(subj.tolist()))),
            "n_candidates": K, "perms": PERMS, "ceiling": CEILING}
 
     g1 = len(dy) >= MIN_PAIRS and len(set(subj.tolist())) >= MIN_SUBJ

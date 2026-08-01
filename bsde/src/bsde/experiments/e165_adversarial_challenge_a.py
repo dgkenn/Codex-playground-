@@ -199,8 +199,15 @@ def fit_w(Xs, ys, Xa, ya, lam, iters=400, lr=0.15, seed=0):
 def evaluate(cases, ids, lam, seed=0):
     """Leave-one-case-out held-out state and agent legibility for a given lam."""
     arm = np.array([cases[c]["arm"] for c in ids])
-    S = np.column_stack([ranks([cases[c][f"con_{f}"] for c in ids]) for f in FEATURES])
-    U = np.column_stack([ranks([cases[c][f"unc_{f}"] for c in ids]) for f in FEATURES])
+    # RANK JOINTLY OVER THE STACKED CONSCIOUS+UNCONSCIOUS VALUES, then split. Ranking the two blocks
+    # SEPARATELY standardises each to mean zero and therefore ANNIHILATES the conscious-vs-unconscious
+    # offset -- which is the contrast the whole file is about. The first draft did that, and G2's
+    # synthetic control caught it: held-out state legibility came back at 0.0056 on data where a state
+    # axis exists by construction. Exactly what a rule-40 capability gate is for.
+    n_ids = len(ids)
+    both = np.column_stack([ranks([cases[c][f"con_{f}"] for c in ids]
+                                  + [cases[c][f"unc_{f}"] for c in ids]) for f in FEATURES])
+    S, U = both[:n_ids], both[n_ids:]
     Xs = np.vstack([S, U])
     ys = np.concatenate([np.full(len(ids), -1.0), np.full(len(ids), 1.0)])
     ya = (arm - arm.mean()) / (arm.std() + 1e-12)

@@ -932,3 +932,28 @@ unverified on GitHub.
     gate evaluated on ONE draw cannot estimate a rate — it needs a distribution.** The corollary that
     matters for reading results: pooled out-of-fold AUCs from this design are biased low, so the
     *difference* between two representations is trustworthy where the *level* is not.
+
+73. **NORMALISING TWO GROUPS SEPARATELY ANNIHILATES THE CONTRAST BETWEEN THEM — AND ONLY A CAPABILITY
+    GATE CATCHES IT.** E165 fitted a projection to discriminate conscious from unconscious case
+    summaries, and rank-normalised the conscious block and the unconscious block **independently**. Each
+    is then mean-zero by construction, so the conscious-versus-unconscious offset — the entire quantity
+    under test — is removed before the optimiser sees it. On synthetic data built from a known
+    state-driving latent axis, held-out state legibility came back at **0.0056**; with the two blocks
+    ranked JOINTLY and then split it is **0.4323**, a factor of 77. **The fix is one line and the bug is
+    invisible in every summary statistic**: each block looks correctly standardised, the optimiser
+    converges, the output is well-formed, and the answer is noise. What caught it was rule 40's
+    capability gate — a synthetic system whose answer exists by construction, run BEFORE the real data.
+    Generalises past ranks: any per-group centring, z-scoring, quantile mapping or within-condition
+    baseline correction applied to the groups being compared destroys the comparison. **Normalise over
+    the pooled data and split afterwards, or normalise on a variable that is not the contrast.**
+
+74. **A DEFECT FIXED IN ONE FILE IS NOT FIXED — PUT THE GUARD IN THE SHARED MODULE.** The same failure
+    appeared three times in one session. E157 scored an all-NaN column at **p = 0.0000**, because
+    `nanmean(null >= nan)` counts every comparison False. E161 fixed it locally and its ledger row
+    diagnosed it. **E164 then scored a CONSTANT column** — `age`, whose within-subject change is
+    identically zero in a change design — at p = 0.0000 by the identical mechanism, because the local
+    fix was never carried across. `verifier/stats.screen_candidates` now drops columns with too few
+    finite or too few distinct values and returns them with a reason, so callers report the exclusion
+    (rule 14) instead of scoring it. The rule is not "remember to check"; it is that a check living in
+    one experiment will not be there for the next one, and this project's own record shows a diagnosis
+    written into a ledger row does not prevent a repeat.

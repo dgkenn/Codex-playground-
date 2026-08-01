@@ -466,6 +466,33 @@ def grouped_cv_predict(X: np.ndarray, y: Sequence, subject: Sequence, rng, folds
     return pred
 
 
+def screen_candidates(cols, min_finite=20, min_distinct=3):
+    """Split a candidate dict into (usable, dropped_with_reason) BEFORE any statistic is computed.
+
+    WHY THIS IS SHARED RATHER THAN FIXED PER FILE. The same defect has now appeared three times. E157
+    scored an all-NaN `wpli_alpha` at p = 0.0000 because `nanmean(null >= nan)` counts every comparison
+    False. E161 fixed it locally. E164 then scored a CONSTANT column -- `age`, whose within-subject
+    change is identically zero in a change design -- at p = 0.0000 by the same mechanism, because the
+    local fix was never carried across.
+
+    A column with almost no data, or with no variation, cannot carry an association and must be dropped
+    and NAMED rather than allowed to reach a p-value. Callers report `dropped` so the exclusion is visible
+    in the output instead of being silent (rule 14).
+    """
+    usable, dropped = {}, {}
+    for k, v in cols.items():
+        a = np.asarray(v, float)
+        fin = np.isfinite(a)
+        if fin.sum() < min_finite:
+            dropped[k] = f"only {int(fin.sum())} finite values"
+            continue
+        if len(np.unique(a[fin])) < min_distinct:
+            dropped[k] = f"only {len(np.unique(a[fin]))} distinct values"
+            continue
+        usable[k] = a
+    return usable, dropped
+
+
 def cluster_permute(col, subject, rng):
     """Permute a column ACROSS clusters, whole blocks at a time.
 
