@@ -53,6 +53,17 @@ from bsde.features.irreversibility import (increment_asymmetry,             # no
                                            phase_randomise)
 from bsde.ingestion.sleep_edfx import read_edf_window_http                  # noqa: E402
 
+
+def bandpass(x, sfreq, lo, hi, order=4):
+    """Zero-phase Butterworth band-pass. Zero-phase matters here and is not a detail: a causal filter
+    imposes its own group-delay asymmetry on the waveform, which is exactly the kind of time asymmetry
+    this module measures. `filtfilt` runs the filter forwards and backwards, so its impulse response is
+    symmetric in time and it cannot manufacture irreversibility."""
+    from scipy.signal import butter, filtfilt
+    ny = sfreq / 2.0
+    b, a = butter(order, [max(lo / ny, 1e-4), min(hi / ny, 0.99)], btype="band")
+    return filtfilt(b, a, np.asarray(x, float))
+
 WORKLIST = os.path.join(HERE, "..", "results", "sleep_edfx_five_stage_worklist.json")
 OUT = os.path.join(HERE, "..", "results", "sleep_edfx_irreversibility.csv")
 FRONTAL_LABEL, POSTERIOR_LABEL = "EEG Fpz-Cz", "EEG Pz-Oz"
@@ -67,9 +78,15 @@ FIELDS = (["recording_id", "subject", "label", "sfreq", "n_samples"]
              for suffix in ("", "_surr")])
 
 
-def measures(x, rng):
-    """Real and surrogate values for one channel. Same code path for both (rule 20)."""
+def measures(x, rng, band=None, sfreq=None):
+    """Real and surrogate values for one channel. Same code path for both (rule 20).
+
+    `band` restricts the signal before measuring. The ORDER MATTERS and is fixed here: the surrogate is
+    made from the ALREADY-FILTERED signal, so it has the filtered signal's exact power spectrum and the
+    real-minus-surrogate difference stays free of spectral content within the band."""
     x = np.asarray(x, float)
+    if band is not None and sfreq:
+        x = bandpass(x, float(sfreq), band[0], band[1])
     real = {"irr3": permutation_irreversibility(x, order=3),
             "irr4": permutation_irreversibility(x, order=4),
             "incr": increment_asymmetry(x)}
@@ -90,7 +107,14 @@ def main(argv=None) -> int:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
+    ap.add_argument("--band", default="", help="lo-hi in Hz, e.g. 0.5-12; empty = broadband")
     a = ap.parse_args(argv)
+    band = None
+    if a.band:
+        lo, hi = (float(v) for v in a.band.split("-"))
+        band = (lo, hi)
+        if a.out == OUT:
+            a.out = OUT.replace(".csv", f".band{a.band}.csv")
 
     rows = json.load(open(os.path.abspath(WORKLIST)))
     rows = [r for i, r in enumerate(rows) if i % a.of == a.shard]
@@ -125,7 +149,7 @@ def main(argv=None) -> int:
                        "label": r["label"], "sfreq": f"{float(sf):.4g}",
                        "n_samples": int(d.shape[1])}
                 for site, lab in (("frontal", FRONTAL_LABEL), ("posterior", POSTERIOR_LABEL)):
-                    real, surr = measures(d[names.index(lab)], rng)
+                    real, surr = measures(d[names.index(lab)], rng, band=band, sfreq=sf)
                     for m in MEASURES:
                         row[f"{site}_{m}"] = f"{real[m]:.8g}"
                         row[f"{site}_{m}_surr"] = f"{surr[m]:.8g}"
