@@ -76,10 +76,16 @@ GATES
         to be computed rather than asserted (rule 54: a named confound needs a line of code).
     G5  THE TWO SCORES MUST NOT BE THE SAME SCORE (rule 60). |spearman(comp1, comp2)| < 0.90 in chennu,
         else the partials are unstable and neither means anything.
-    G6  THE SIGN TRANSFER MUST HAVE WORKED. `comp1` was given its signs by a sleep analysis; it must order
-        chennu's sedation levels monotonically (higher comp1 at lighter sedation). **If it does not, the
-        a priori construction did not transfer to this deposit and the whole design is ABSENT** -- this is
-        the gate that distinguishes a genuine out-of-sample transfer from a coincidence.
+    G6  THE SIGN TRANSFER MUST HAVE WORKED. `comp1` was given its signs by a sleep analysis; it must fall
+        as anaesthetic depth rises. **If it does not, the a priori construction did not transfer to this
+        deposit and the whole design is ABSENT** -- the gate that distinguishes a genuine out-of-sample
+        transfer from a coincidence.
+        **DEPTH IS PLASMA PROPOFOL, NOT THE LEVEL INDEX, AND THE FIRST DRAFT GOT THIS WRONG.** chennu's
+        four levels are baseline / mild / moderate / RECOVERY: median plasma propofol runs
+        **0 -> 438 -> 803 -> 276 ug/L** and median n_correct runs 39 -> 37.5 -> 35 -> 38. Level 4 is
+        LIGHTER than level 3, so ordering by the level index is not ordering by depth and the first run's
+        G6 failure (-0.2396) was measuring that mislabelling rather than a failed transfer. The gate now
+        uses the recorded concentration, which is objective and monotone in depth by construction.
 
 PLACEBO, gating: `n_correct` permuted ACROSS LEVELS WITHIN SUBJECT, 2000 draws -- preserving each
 subject's set of behavioural scores and destroying only their alignment to state. Primary read FIRST
@@ -218,10 +224,11 @@ def main() -> int:
           f"{'PASS' if res['gates']['G5_pass'] else 'FAIL'}")
 
     # G6 -- did the sleep-derived signs transfer? comp1 must fall as sedation deepens
-    transfer = spearman(c1, -lvl)
-    res["gates"]["G6_rho_comp1_vs_lighter_sedation"] = transfer
+    transfer = spearman(c1, -drug)
+    res["gates"]["G6_rho_comp1_vs_lower_propofol"] = transfer
+    res["gates"]["G6_rho_comp1_vs_level_index"] = spearman(c1, -lvl)
     res["gates"]["G6_pass"] = bool(np.isfinite(transfer) and transfer > 0)
-    print(f"G6 transfer   comp1 vs LIGHTER sedation = {transfer:+.4f}  "
+    print(f"G6 transfer   comp1 vs LOWER plasma propofol = {transfer:+.4f}  "
           f"{'PASS -- the sleep-derived arousal signs transfer' if res['gates']['G6_pass'] else 'FAIL'}")
 
     rng = np.random.default_rng(SEED)
