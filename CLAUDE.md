@@ -1012,3 +1012,28 @@ unverified on GitHub.
     null "positive" in only **12 %** of replicates against the cross-fits' 25-40 %, i.e. it is biased
     slightly toward HURTS — the exact direction of the error rule 76 describes, and a reason to prefer
     cross-fitting when the sign is what is at stake.
+
+78. **A PLACEBO MUST BE MATCHED ON THE BASELINE'S HEADROOM AND THE LABEL'S BASE RATE, OR IT MEASURES
+    THOSE INSTEAD OF THE LANDMARK — AND A CALIBRATED NULL CANNOT TELL YOU THE LABEL IS THE PHENOMENON.**
+    Two lessons from one run, and the second is the larger one.
+    **E166** re-derived four increment rows to ADDS with a calibrated cluster-permutation null, a
+    measured detection floor and a rho = 0 rung that did not fire — everything the project had learned to
+    demand. **E170** then placebo-tested one of them properly, as a DISTRIBUTION over 200 fake landmarks
+    rather than E34's single draw, and it died: fake landmarks at arbitrary relative positions gave a
+    **mean increment of -0.04844 against the real -0.02180, with 83 % reaching or beating it.** A
+    permutation null answers *does this column carry information about the label I gave it*. **It is
+    silent on whether that label is the phenomenon**, and only a placebo on the LABEL can speak to that.
+    Build the label placebo at the same time as the label.
+    **The second half is a defect in the placebo itself, found by measuring it afterwards and recorded
+    without changing the verdict** (rule 58 — a gate is not re-tuned after it fires). The fake landmark
+    left the incumbent at out-of-fold AUC **0.4652** with base rate **0.097**, against the real label's
+    **0.6088** and **0.312**. An added column has more room to help when the baseline is weaker and the
+    positive class rarer, for reasons that have nothing to do with the landmark, **so the placebo was
+    harder than the real test and its firing is partly an artefact of that.** Note which way this cuts:
+    an unmatched placebo that fires can only be argued to be too HARSH, and making that argument after
+    watching it fail is exactly the move `DISCOVERY_LOOP.md` §2 forbids. The verdict stands; the
+    successor is what gets the matched placebo.
+    **The check, before the run: compute the baseline's performance and the base rate under the real
+    label AND under the placebo, and match them by rejection sampling or state that you could not.**
+    If no fake landmark can reproduce the real one's baseline predictability, that is itself a finding
+    about the landmark — and it must be reported as a limitation of the placebo, never as a pass.
