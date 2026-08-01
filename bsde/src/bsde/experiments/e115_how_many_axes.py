@@ -71,6 +71,17 @@ GATES
         between consecutive axes' scores are reported; consecutive axes must be near-orthogonal by
         construction and this is checked rather than assumed (E96's C1 was a condition satisfied
         vacuously).
+    G5  **THE PROCEDURE MUST NOT COUNT ONE AXIS AS SEVERAL, AND THIS IS THE GATE THE FIRST RUN LACKED.**
+        Deflation is LINEAR. If sixteen features are sixteen different NON-LINEAR functions of a single
+        latent state variable -- which is exactly what a battery of spectral and complexity summaries of
+        one underlying process would be -- then removing the leading linear direction leaves residual
+        stage information behind, and the procedure will report several axes where there is one.
+        So: a SYNTHETIC inventory is generated from ONE latent axis, passed through as many distinct
+        monotone non-linearities as there are real features, with matched noise, subject count and stage
+        structure, and run through the IDENTICAL pipeline. **If the one-axis synthetic also yields
+        several axes, the procedure cannot count axes and the verdict is NOT-INTERPRETABLE** whatever the
+        real data did. Rule 40: construct the input that should fail the gate and check that it does.
+
     G4  NOT A MUSCLE AXIS. `emg_index`, `emg_beta_gamma_fraction` and `emg_kurtosis` are in the inventory
         and E70/E100/E107 all found muscle driving apparent state effects. The loadings of every
         surviving axis on the three EMG features are REPORTED, and the whole procedure is re-run with
@@ -101,7 +112,11 @@ FEATURES = ["critical_slowing_ar1", "emg_beta_gamma_fraction", "emg_index", "emg
             "exponent_high", "exponent_low", "lempel_ziv", "multiscale_entropy_slope",
             "pac_slow_alpha", "relative_alpha_power", "relative_delta_power",
             "spatial_participation_ratio", "spectral_edge_95", "spectral_entropy",
-            "uce_v1", "whole_head_exponent", "wpli_alpha"]
+            "whole_head_exponent", "wpli_alpha"]
+# `uce_v1` is NOT in this inventory and its absence costs nothing: the column exists in
+# sleep_edfx_five_stage.csv but is non-finite in all 710 rows, and E92 established uce_v1 is the
+# whole-head exponent restated, which IS included. Listing a column that is empty for every row would
+# have excluded every subject via the all-finite requirement -- which is what it did on the first run.
 EMG_FEATURES = ["emg_index", "emg_beta_gamma_fraction", "emg_kurtosis"]
 MAX_AXES = 5
 FOLDS = 5
@@ -259,6 +274,73 @@ def analyse(features, label, rng_seed=SEED):
     return {"n_subjects": X3.shape[0], "axes": rows, "n_surviving": surviving, "features": features}
 
 
+def synthetic_one_axis(n_sub, n_feat, rng, noise=0.35):
+    """One latent state variable, n_feat distinct monotone non-linearities, matched shape.
+
+    The latent is the stage index itself (a real ordered state), so this control has EXACTLY one
+    state-carrying axis by construction. Any count above 1 from the pipeline on this input is the
+    pipeline's own artefact.
+    """
+    k = len(STAGES)
+    lat = np.tile(np.linspace(-1.0, 1.0, k), (n_sub, 1))
+    lat = lat + rng.normal(0, 0.10, lat.shape)              # subject-level jitter on the same axis
+    X = np.empty((n_sub, k, n_feat))
+    for j in range(n_feat):
+        # a different monotone map per feature: powers, logistic, exponential, tanh at varying gains
+        kind = j % 4
+        a = 1.0 + 0.4 * (j // 4)
+        if kind == 0:
+            f = np.sign(lat) * np.abs(lat) ** a
+        elif kind == 1:
+            f = 1.0 / (1.0 + np.exp(-a * 3.0 * lat))
+        elif kind == 2:
+            f = np.exp(a * lat)
+        else:
+            f = np.tanh(a * 2.0 * lat)
+        X[:, :, j] = f + rng.normal(0, noise, f.shape)
+    out = np.empty_like(X)
+    for s in range(n_sub):
+        M = X[s]
+        sd = M.std(axis=0)
+        sd[sd <= 0] = 1.0
+        out[s] = (M - M.mean(axis=0)) / sd
+    return out
+
+
+def count_axes(X3, rng, n_perm=N_PERM, label=""):
+    """Shared counting routine: real pipeline, permutation null, number of consecutive clearing axes."""
+    y_flat = np.tile(np.arange(len(STAGES)), X3.shape[0])
+    real = run_pipeline(X3, y_flat, rng)
+    null = []
+    for _ in range(n_perm):
+        Xp = X3.copy()
+        for s in range(Xp.shape[0]):
+            Xp[s] = Xp[s][rng.permutation(len(STAGES))]
+        null.append([a["discriminability"] for a in run_pipeline(Xp, y_flat, rng, max_axes=MAX_AXES)])
+    width = max(len(r) for r in null)
+    thr = []
+    for k in range(width):
+        vals = [r[k] for r in null if len(r) > k and np.isfinite(r[k])]
+        thr.append(float(np.quantile(vals, 0.95)) if len(vals) >= 20 else float("nan"))
+    surviving, rows = 0, []
+    for k, a in enumerate(real):
+        t = thr[k] if k < len(thr) else float("nan")
+        clears = bool(np.isfinite(a["discriminability"]) and np.isfinite(t)
+                      and a["discriminability"] > t)
+        rows.append({"axis": k + 1, "discriminability": a["discriminability"], "null_95": t,
+                     "clears": clears, "loadings": a.get("loadings")})
+        if clears and surviving == k:
+            surviving = k + 1
+    if label:
+        print(f"\n--- {label} ({X3.shape[0]} subjects, {X3.shape[2]} features) ---")
+        print(f"{'axis':>5s} {'out-of-sample D':>17s} {'null 95th':>11s}  clears")
+        for r in rows:
+            print(f"{r['axis']:>5d} {r['discriminability']:17.4f} {r['null_95']:11.4f}  "
+                  f"{'YES' if r['clears'] else 'no'}")
+        print(f"  -> {surviving} consecutive axis/axes clear the permutation null")
+    return {"axes": rows, "n_surviving": surviving}
+
+
 def main() -> int:
     if not os.path.exists(TABLE):
         print(f"ABSENT: {TABLE}")
@@ -291,9 +373,29 @@ def main() -> int:
     print(f"\nG4 muscle     |loading| fraction on the 3 EMG features, per surviving axis: "
           + ", ".join(f"{v:.1%}" for v in emg_load))
 
+    # ---- G5: can the procedure count at all? ------------------------------------------------------
+    srng = np.random.default_rng(SEED + 99)
+    syn = synthetic_one_axis(full["n_subjects"], len(FEATURES), srng)
+    syn_res = count_axes(syn, srng, n_perm=max(60, N_PERM // 4),
+                         label="G5 CONTROL -- SYNTHETIC ONE-AXIS INVENTORY (16 non-linear views of one "
+                               "latent state)")
+    res["G5_synthetic"] = syn_res
+    g5 = bool(syn_res["n_surviving"] <= 1)
+    res["gates"]["G5_pass"] = g5
+    print(f"\nG5 countable  synthetic ONE-axis inventory yields {syn_res['n_surviving']} axes  "
+          f"{'PASS -- the procedure can count' if g5 else 'FAIL -- the procedure inflates the count'}")
+
     k_full = full["n_surviving"]
     k_noemg = res["no_emg"]["n_surviving"] if res["no_emg"] else None
-    if not res["gates"]["G2_pass"]:
+    if not g5:
+        v = (f"**NOT INTERPRETABLE -- THE PROCEDURE CANNOT COUNT AXES.** A synthetic inventory built from "
+             f"ONE latent state variable, viewed through {len(FEATURES)} distinct monotone "
+             f"non-linearities, yields {syn_res['n_surviving']} axes from the identical pipeline. Linear "
+             f"deflation cannot remove a non-linearly encoded axis, so the real data's {k_full} says "
+             f"nothing about how many axes exist. The count on real data was "
+             f"{[round(a['discriminability'], 4) for a in full['axes']]} and is reported ONLY so the "
+             f"failure is auditable. Rule 40: a gate that cannot fail is not a gate, and this one could.")
+    elif not res["gates"]["G2_pass"]:
         v = ("ABSENT -- not even the leading direction separates the five sleep stages out of sample, so "
              "the inventory or the labels are broken and no count is interpretable (rule 31).")
     elif k_full <= 1:

@@ -506,6 +506,23 @@ Every rule below was paid for with a wrong result in this project.
     ABSENT and the bug would have survived into every successor. A design whose known effect is not
     tested cannot tell a null apart from a broken instrument.
 
+67. **LINEAR DEFLATION CANNOT COUNT AXES, AND A SYNTHETIC ONE-AXIS CONTROL EXPOSES IT IN ONE RUN.**
+    E115 reframed Challenge A from "is there a second axis?" (asked and answered no six times) to "how
+    many are there?", by sequentially finding the leading stage-discriminating direction, scoring it on
+    held-out SUBJECTS, deflating, and repeating until a within-subject permutation null was not cleared.
+    It returned **5 axes** at out-of-sample discriminability 0.94/0.89/0.86/0.80/0.79 against nulls of
+    ~0.02, unchanged with the EMG features removed. Every gate passed and it read as a clean positive.
+    **A synthetic inventory built from ONE latent variable, viewed through 16 distinct monotone
+    non-linearities, returned 5 axes from the same pipeline — and scored HIGHER: 0.98/0.98/0.97/0.93.**
+    The cause is structural rather than a tuning problem: **a linear projection cannot remove an axis
+    that features encode non-linearly**, so a battery of spectral and complexity summaries of one process
+    re-presents the same axis in a new linear guise at every deflation step. Any deflation-based
+    dimensionality count needs this control as its FIRST gate, and rank-based or kernel deflation is the
+    minimum fix. The generalisation is rule 40's: **before believing a count, construct a system whose
+    true count you know and check the procedure returns it.** Note also what the control bought beyond
+    the refutation — the real data decayed FASTER than the one-axis synthetic, which is weak evidence
+    toward one axis and would have been invisible without a reference system to compare against.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
