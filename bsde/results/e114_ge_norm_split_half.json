@@ -1,0 +1,56 @@
+{
+  "n_subjects": 62,
+  "gates": {
+    "G1_pass": true,
+    "G2": {
+      "split_half_rho": 0.9659036538994233,
+      "spearman_brown_reliability": 0.9826561459240661,
+      "pass": true
+    },
+    "G3": {
+      "pooled": 0.29551006018483544,
+      "lo": 0.03653647603938455,
+      "hi": 0.5208921961169449,
+      "pass": true
+    },
+    "G4": {
+      "max_abs_change": 0.05049734330538136,
+      "subject": "28",
+      "min_rho": 0.2671602326811211,
+      "max_rho": 0.3460074034902168
+    }
+  },
+  "attenuation": {
+    "shrink_factor": 0.991439270429466,
+    "predicted_half_rho": 0.29298027847422087
+  },
+  "primary": {
+    "odd": {
+      "rho": 0.2908765833144469,
+      "lo": 0.025077434464002426,
+      "hi": 0.517767117423384,
+      "consistent_with_prediction": true
+    },
+    "even": {
+      "rho": 0.29671879328145856,
+      "lo": 0.033061368386593154,
+      "hi": 0.5278952934955052,
+      "consistent_with_prediction": true
+    }
+  },
+  "placebo": {
+    "odd": [
+      -0.24137644481377957,
+      0.24734078718742902
+    ],
+    "even": [
+      -0.24585883004709022,
+      0.24822719145828606
+    ],
+    "inside": {
+      "odd": false,
+      "even": false
+    }
+  },
+  "verdict": "PASSES -- ge_norm predicts BOTH independent halves of BCI accuracy, in the same direction, at magnitudes consistent with the attenuation their reliability implies. E86 clears a test it could have failed. **This does NOT address the BH q = 0.0920 qualification**: the halves share subject, session, montage and day, so this is internal consistency and not an external replication. E108 remains the only route to that."
+}
