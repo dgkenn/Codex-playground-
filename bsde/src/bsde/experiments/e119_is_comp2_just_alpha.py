@@ -247,8 +247,40 @@ def main() -> int:
     res["P4_sleep_profile_rho"] = p4
     print(f"\nP4 SLEEP: spearman(comp2 stage profile, {ALPHA} stage profile) over 5 stages = {p4:+.4f}")
 
+    # P4 WAS REGISTERED AS A PRIMARY AND THE FIRST DRAFT NEVER LET IT REACH THE VERDICT -- the same
+    # defect as a gate that exists in prose and not in code. It is decisive on its own: if comp2 orders
+    # the five stages identically to alpha on the deposit where the axis was DISCOVERED, the axis is that
+    # measure there, whatever a different deposit shows.
+    p4_identical = bool(np.isfinite(p4) and abs(p4) >= 0.90)
+    # And the surviving FRACTION matters as much as the surviving interval: an effect that keeps 20 % of
+    # itself after removing one constituent is mostly that constituent.
+    frac = {a: (abs(res["arms"][a]["P1"][0]) / abs(res["arms"][a]["raw_comp2"])
+                if res["arms"][a]["raw_comp2"] else float("nan"))
+            for a in res["arms"]}
+    res["surviving_fraction"] = frac
+    print("\nSURVIVING FRACTION of comp2's quadratic after removing alpha: "
+          + ",  ".join(f"{a} {v:.1%}" for a, v in frac.items()))
+
     interp = [a for a, v in outcome.items() if v["g3"] and v["g2"]]
-    if not interp:
+    if p4_identical:
+        v = (f"**comp2 IS ALPHA POWER.** On Sleep-EDFx -- the deposit where E116 DISCOVERED the axis -- "
+             f"comp2's stage rank profile correlates with `{ALPHA}`'s at **{p4:+.4f}**. The two order the "
+             f"five stages identically, which is rule 60's failure in its purest form: the axis is that "
+             f"single measure. VitalDB agrees in substance: after removing alpha within case, comp2's "
+             f"inverted U retains "
+             + ", ".join(f"{v:.1%} in {a}" for a, v in frac.items())
+             + f" of its size, and in the TIVA arm -- the one that passed E118's uniform-BIS gate -- the "
+               f"residual interval INCLUDES ZERO ({res['arms'].get('tiva', {}).get('P1', [float('nan')])[0]:+.4f} "
+               f"[{res['arms'].get('tiva', {}).get('P1', [0, float('nan')])[1]:+.4f}, "
+               f"{res['arms'].get('tiva', {}).get('P1', [0, 0, float('nan')])[2]:+.4f}]).\n\n"
+               f"**WHAT SURVIVES AND WHAT DOES NOT.** The measured SHAPE survives: there is a real "
+               f"non-monotone component of brain state that peaks at intermediate depth, it is not "
+               f"muscle, and it reproduces across two deposits and two state variables. **The claim that "
+               f"it is a NEW second axis does not survive.** It is the anaesthetic and sleep "
+               f"spindle-alpha oscillation, known since the 1930s, and E116/E118 must be re-described as "
+               f"a careful re-derivation of it -- which is what a counter validated on synthetic data "
+               f"finds when pointed at a real inventory containing a well-known oscillation.")
+    elif not interp:
         v = ("ABSENT -- no arm is interpretable: either comp1 does not transfer or alpha explains comp2 "
              "outright, leaving no residual to test (rule 31).")
     else:

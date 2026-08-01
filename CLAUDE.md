@@ -523,6 +523,26 @@ Every rule below was paid for with a wrong result in this project.
     the refutation — the real data decayed FASTER than the one-axis synthetic, which is weak evidence
     toward one axis and would have been invisible without a reference system to compare against.
 
+68. **VALIDATING THAT A DISCOVERY PROCEDURE WORKS IS NOT VALIDATING THAT ITS DISCOVERY IS NEW.**
+    E116 counted the state-carrying axes in a 16-measure inventory and found **two**, surviving four
+    synthetic controls: one latent axis counted as one, two counted as two, an arch (one axis with 35 %
+    of features non-monotone in it) counted as one, and a null whose calibration had to converge. E118
+    then confirmed the second axis's predicted **inverted U** against anaesthetic depth in an independent
+    deposit, with the arousal combination curving oppositely. It read as a genuine discovery.
+    **E119 asked one question none of those controls asked — what IS it? — and the answer was alpha
+    power.** On the discovery deposit, comp2's stage rank profile correlates with `relative_alpha_power`
+    at **+1.0000**: the axis and the single measure order the five stages identically. In VitalDB the
+    inverted U retains **20 %** of itself after alpha is residualised out in one arm and **6.6 %**, with
+    an interval spanning zero, in the arm that had passed the strictest gate.
+    Every control was about the counter's ARITHMETIC — could it count correctly. None was about the
+    counted object's IDENTITY. **A dimensionality or discovery method needs a rule-60 escape check on
+    every component it reports, against the single measures already in its own inventory, and that check
+    costs one correlation.** The corollary is worth stating plainly: a well-validated search pointed at
+    an inventory containing a well-known phenomenon will find that phenomenon and present it as a
+    discovery. Related failure in the same run: **P4 was registered as a primary and the first draft
+    never let it reach the verdict**, so the file printed "NOT REDUCIBLE TO ALPHA" while a +1.0000
+    correlation sat in its own output — a gate that exists in prose and not in code, for the third time.
+
 36. **Credential precedence, third occurrence.** The sandbox exports `AWS_ACCESS_KEY_ID` as a 14-character
     `prox…` proxy token that outranks `~/.aws/credentials`, and the failure reads as `InvalidAccessKeyId` —
     indistinguishable from expiry. `common/awsenv.py` now drops it (only when it provably is not an AWS key
