@@ -15,7 +15,11 @@ each is already costing results by its absence.
 
 ### Challenge D — Calibration and transport
 
-**Transport failure is this programme's central finding and we keep filing it as a caveat.**
+**THE SECTION HEADING BELOW WAS "Transport failure is this programme's central finding and we keep filing
+it as a caveat." IT IS NO LONGER TRUE AND THE CORRECTION IS AT THE TOP RATHER THAN THE BOTTOM (rule A3).**
+Transport was tested prospectively for the first time in E160/E162 and it **succeeded**, at every rung, to
+within 0.01. What the four rows below have in common is therefore not transport failure; see the
+blockquote and the replacement candidate that follows it.
 
 | where | what happened |
 |---|---|
@@ -53,10 +57,32 @@ failure rather than adding one more measure to it.
 >
 > Full record in `CONSOLIDATION_2026_08_01.md` §4.
 
-**The rule is currently a RETRODICTION over four observations.** `CLAUDE.md`'s cadence section is explicit
-that a finding which explains the existing set is worth little until it makes a falsifiable forward
-prediction. So D's first act must be to state, in advance, which of a set of untested cohort pairs will
-transport — and then be wrong or right.
+**That prospective test has now been run, and the rule lost it.** The paragraph that used to sit here said
+the rule was a retrodiction over four observations and that D's first act must be to predict forward. D's
+first act *was* to predict forward, in `CHALLENGE_D_PREREGISTRATION.md`, and the prediction failed.
+
+#### The replacement candidate, labelled as what it is
+
+Sorting the same observations by outcome gives a cleaner split than "construct match" did:
+
+| transported | did not transport |
+|---|---|
+| the DOSE-I exposure ladder → MIMIC-IV ICU (E160, E162) | `ge_norm` / `iaf`, Stieger → eegmmidb and Dreyer (E124, E125, E131) |
+| Blankertz 2010's SMR predictor, eegmmidb → Dreyer (E129) | E43's muscle association, VitalDB frontal → Fpz-Cz/Pz-Oz (E123) |
+| | per-patient PK parameters (per-case R² 0.9990, cross-patient MDAPE 54.9 %) |
+
+**Both survivors are models specified OUTSIDE the cohort they were then tested in; every failure is a
+measure that was selected inside its own cohort.** That is winner's-curse rather than construct mismatch,
+and it predicts something different and sharper: transport should track *where the model was chosen*, not
+how similar the two settings look. E123 is the one row it does not cover — a montage change is an
+instrument change, not a selection effect — and that exception is stated rather than absorbed.
+
+**This is a RETRODICTION over five observations and is recorded here as one.** The programme has now been
+burned once by promoting exactly this kind of pattern to a finding, so it does not get cited until it has
+made a forward prediction and survived. The forward test it implies is cheap: take a measure this project
+discovered *in* a deposit and one it imported from a published source, hold the cohort pair fixed, and
+predict in advance that only the imported one carries. `QUEUE.md` should carry it as a Challenge D item;
+nothing else should reference it.
 
 The calibration half has never been touched. **Every result in this project is rank-based.** Rule 15 says
 discrimination without calibration is half a result and the missing half is the half clinicians use, and we
