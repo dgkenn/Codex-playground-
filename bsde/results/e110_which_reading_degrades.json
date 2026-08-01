@@ -1,0 +1,62 @@
+{
+  "n_cases_joined": 247,
+  "arms": {
+    "volatile": {
+      "n_cases": 92,
+      "drug": "mac",
+      "G1_pass": true,
+      "G2_median_fid_bis": 0.44684314541293946,
+      "G2_median_fid_exp": 0.28370558749815716,
+      "G2_pass": true,
+      "G4_age_span": 88.4,
+      "G4_pass": true,
+      "primary": {
+        "rho": -0.057703866960528954,
+        "lo": -0.2808081469722423,
+        "hi": 0.15454510426459941
+      },
+      "G3": {
+        "partial": -0.11869376465023995,
+        "lo": -0.3147473204077479,
+        "hi": 0.10108254560396973,
+        "pass": false
+      },
+      "placebo": {
+        "lo": -0.20227062558759612,
+        "hi": 0.19791470801288463,
+        "inside": true
+      },
+      "interval_excludes_zero": false,
+      "gates_ok": false
+    },
+    "tiva": {
+      "n_cases": 138,
+      "drug": "ppf_ce",
+      "G1_pass": true,
+      "G2_median_fid_bis": 0.29105894105894103,
+      "G2_median_fid_exp": -0.038158899923605806,
+      "G2_pass": false,
+      "G4_age_span": 71.0,
+      "G4_pass": true,
+      "primary": {
+        "rho": -0.18328542497642636,
+        "lo": -0.33377607656813296,
+        "hi": -0.011573806648112086
+      },
+      "G3": {
+        "partial": -0.2078098308257163,
+        "lo": -0.3698883860571948,
+        "hi": -0.031012428097445165,
+        "pass": true
+      },
+      "placebo": {
+        "lo": -0.17019365783158935,
+        "hi": 0.16369954496574096,
+        "inside": false
+      },
+      "interval_excludes_zero": true,
+      "gates_ok": false
+    }
+  },
+  "verdict": "NO ATTRIBUTION, AND THE REASON IS A GATE, NOT A NULL. The tiva arm's interval DOES exclude zero, but its gates failed, so the estimate is not interpretable as an attribution (rule 31). | **SUBSTANTIVE FINDING FROM G2, and it is larger than the primary**: in the tiva arm the APERIODIC EXPONENT DOES NOT TRACK THE DRUG AT ALL (median fidelity -0.0382) while BIS does (+0.2911). A difference of fidelities between a live reading and a dead one is not a comparison of two readings, which is why the gate refuses it -- but the dead reading is itself the result and must be reported as one."
+}

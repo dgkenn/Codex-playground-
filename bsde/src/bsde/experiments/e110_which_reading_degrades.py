@@ -265,17 +265,24 @@ def main() -> int:
         print(f"PLACEBO age shuffled: [{p_lo:+.4f}, {p_hi:+.4f}]  "
               f"real {'INSIDE' if inside else 'outside'}")
 
-        excl = bool(np.isfinite(lo) and not (lo <= 0.0 <= hi) and not inside
-                    and A["G1_pass"] and A["G2_pass"] and A["G4_pass"] and A["G3"]["pass"])
-        verdicts[name] = (point, excl)
+        interval_excludes = bool(np.isfinite(lo) and not (lo <= 0.0 <= hi) and not inside)
+        gates_ok = bool(A["G1_pass"] and A["G2_pass"] and A["G4_pass"] and A["G3"]["pass"])
+        A["interval_excludes_zero"] = interval_excludes
+        A["gates_ok"] = gates_ok
+        verdicts[name] = (point, interval_excludes and gates_ok, interval_excludes, gates_ok,
+                          A["G2_pass"])
         res["arms"][name] = A
 
     vals = [v for v in verdicts.values() if v is not None]
+    # a gate failure and an interval containing zero are DIFFERENT reasons and must print differently
+    dead = [n for n, v in verdicts.items() if v is not None and not v[4]]
+    blocked = [n for n, v in verdicts.items()
+               if v is not None and v[2] and not v[1]]        # interval excluded 0 but gates failed
     if len(vals) < 2:
         v = "ABSENT -- fewer than two usable arms, so the internal replication is not available."
     else:
-        signs = [np.sign(p) for p, _ in vals]
-        excls = [e for _, e in vals]
+        signs = [np.sign(p) for p, _, _, _, _ in vals]
+        excls = [e for _, e, _, _, _ in vals]
         if all(excls) and signs[0] != signs[1]:
             v = ("CONTRADICTORY -- the two drug classes point in OPPOSITE directions with both intervals "
                  "excluding zero, so this is drug-class-specific and not an age effect. Withdrawn.")
@@ -293,10 +300,24 @@ def main() -> int:
         elif all(s > 0 for s in signs) and any(excls):
             v = ("PARTIAL -- both arms point the same way but only one interval excludes zero. Suggestive "
                  "and explicitly NOT an attribution; the conjunction rule was fixed before the run.")
+        elif blocked:
+            v = (f"NO ATTRIBUTION, AND THE REASON IS A GATE, NOT A NULL. The {', '.join(blocked)} arm's "
+                 f"interval DOES exclude zero, but its gates failed, so the estimate is not "
+                 f"interpretable as an attribution (rule 31).")
         else:
-            v = ("NO ATTRIBUTION -- neither arm's interval excludes zero. E109's discordance STANDS and "
-                 "this experiment does not say which reading moved. Named in advance as the most likely "
-                 "outcome. The placebo is not informative here (rule 48).")
+            v = ("NO ATTRIBUTION -- no arm's interval excludes zero with its gates intact. E109's "
+                 "discordance STANDS and this experiment does not say which reading moved. Named in "
+                 "advance as the most likely outcome. The placebo is not informative here (rule 48).")
+    if dead:
+        v += (" | **SUBSTANTIVE FINDING FROM G2, and it is larger than the primary**: in the "
+              + ", ".join(dead) + " arm the APERIODIC EXPONENT DOES NOT TRACK THE DRUG AT ALL "
+              + "(median fidelity "
+              + ", ".join(f"{res['arms'][n]['G2_median_fid_exp']:+.4f}" for n in dead)
+              + f") while BIS does ("
+              + ", ".join(f"{res['arms'][n]['G2_median_fid_bis']:+.4f}" for n in dead)
+              + "). A difference of fidelities between a live reading and a dead one is not a comparison "
+                "of two readings, which is why the gate refuses it -- but the dead reading is itself the "
+                "result and must be reported as one.")
     res["verdict"] = v
     print(f"\nVERDICT: {v}")
     json.dump(res, open(OUT, "w"), indent=2)
