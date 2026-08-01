@@ -1,9 +1,41 @@
 {
   "experiment": "E05",
   "n_subjects_complete": 20,
-  "search_space_size": 8,
+  "search_space_size": 20,
   "analytic_dof": 1,
   "summary": {
+    "critical_slowing_ar1": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "emg_beta_gamma_fraction": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "emg_index": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "emg_kurtosis": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "exponent_gamma": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "exponent_high": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "exponent_low": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "icoh_alpha": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
     "lempel_ziv": {
       "S": 0.018611110221087454,
       "ci": [
@@ -22,6 +54,18 @@
       },
       "monotone_fraction_levels_1_3": 0.9,
       "verdict": "undetermined"
+    },
+    "lrtc_alpha": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "multiscale_entropy_slope": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "pac_slow_alpha": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
     },
     "relative_alpha_power": {
       "S": -0.16137136447252343,
@@ -60,6 +104,10 @@
       },
       "monotone_fraction_levels_1_3": 0.4,
       "verdict": "DRUG"
+    },
+    "spatial_participation_ratio": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
     },
     "spectral_edge_95": {
       "S": -0.004686033308673179,
