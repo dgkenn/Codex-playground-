@@ -121,3 +121,51 @@ the EEG as well as sevoflurane's does.** VitalDB does not carry measured plasma 
    work.
 
 Route 2 is the stronger test because it changes only the instrument, and it needs no new data.
+
+---
+
+## CORRECTION, 2026-08-02 (same day): the gap is 2.30x, not 4.6x, and the statistic was doing part of the work
+
+The "4.6 times" headline above compares 0.0912 against 0.4925. Both numbers are real, and the comparison
+between them is not clean, for two reasons found while building E224:
+
+1. **The arms were not mutually exclusive.** The sevoflurane arm (n = 70) allowed cases that also received
+   propofol; 101 of 250 VitalDB cases carry both. Recomputed on arms that are disjoint by construction —
+   propofol-only (n = 44) against sevoflurane-only (n = 86) — and on one fixed 15-column panel for both:
+
+   | statistic | propofol | sevoflurane | ratio |
+   |---|---:|---:|---:|
+   | mean over features of \|median signed rho\| | 0.1402 | 0.3225 | **2.30x** |
+   | mean over features of per-case \|rho\| | 0.2466 | 0.3663 | **1.49x** |
+
+2. **The two rows are different statistics and the difference is informative, not a nuisance.** The first
+   cancels when a feature's direction varies between patients; the second does not. That propofol's ratio
+   between them (0.1402 / 0.2466 = 0.57) is well below sevoflurane's (0.3225 / 0.3663 = 0.88) is the
+   observation E225 was registered to test: **propofol's coupling may be real per patient and inconsistent
+   in direction across patients**, which a population summary averages away.
+
+Two panel columns, `spatial_participation_ratio` and `wpli_alpha`, are non-evaluable on this table in 0 of
+130 cases and are excluded from both rows (rule 74). VitalDB is single-channel, which is why.
+
+**The direction of the finding is unchanged and the magnitude is roughly halved.** The EEG panel still
+tracks sevoflurane substantially better than propofol on a like-for-like cohort. What has to go is the
+"4.6-fold" figure, and with it the argument at the end of §"The most likely explanation is provenance"
+that a 15 % provenance effect "would have to be a thirty-fold underestimate" — against 2.30x it would have
+to be about fifteen-fold, which is still decisive but is a different sentence.
+
+### What E224 then established, with every gate passing
+
+* **Restriction of range is refuted, not merely named** (rule 54). Within-case exposure dispersion,
+  IQR/median, is **0.2217 for propofol against 0.2500 for sevoflurane — a ratio of 0.887**. Propofol is
+  titrated across nearly as wide a relative range as sevoflurane in these cases.
+* **A better exposure model buys nothing.** A ke0 sweep over eight half-lives, each a complete
+  one-compartment model driven by the recorded infusion, improves on the pump's own Ce by
+  **+0.0965 [+0.0708, +0.1215]** against a max-of-eight selection inflation **measured on matched noise at
+  +0.1155**. The gain does not exceed what picking the best of eight buys on pure noise.
+* **The sevoflurane arm is alive and the propofol arm is not.** Sevoflurane beats a circular-shift floor at
+  p < 0.0005; propofol's coupling is **not distinguishable from an exposure donated by an unrelated
+  patient** (0.2466 against a donor-mean null of 0.2253, p = 0.0650). E224 is therefore NOT INTERPRETABLE
+  by its own registered rule, because rule 48 forbids reading a null as a pass.
+
+So readings (i) exposure-model quality and (ii) restricted range are both unsupported, and the live
+question is no longer *why does the model track propofol badly* but *is there anything there to track*.
