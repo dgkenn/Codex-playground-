@@ -365,3 +365,45 @@ investigator's fields still blank.
 
 It is the only one of the three whose blocker was compute rather than access. The unclaimed sentence is
 the smoothing-window-matched ablation, and the data for it is being extracted now.
+
+---
+
+# Challenge C, re-scoped the same day — the design was wrong, the challenge is not
+
+E246 ran and returned **ABSENT** as registered, and the ABSENT carries no information. The incumbent's
+aliveness gate failed at **0.343** and the reason is structural: over 134 usable cases, the number
+carrying any valid BIS in 200 s bins from `aneend` runs **130 / 120 / 73 / 33 / 14 / 5**, while the same
+bins for the EEG measure run **134 / 134 / 134 / 134 / 121 / 71**. **The BIS sensor comes off before
+emergence completes.** Full account in `bsde/results/e246_first_pass_note.md`; catalogue rule 96 records
+that the deposit adapter's own docstring said this before the design was written.
+
+**This does NOT stop Challenge C, and it specifically does not stop it for lack of data.** What it stops
+is the design: a lead over BIS cannot be measured on a landmark BIS never reacts to. Three changes
+follow, and each is an instrument change rather than a moved threshold.
+
+1. **The landmark stops being `aneend`.** Rule 86 prefers an exposure over an observation, and VitalDB
+   carries one continuously — the anaesthetic drug record. "The agent was switched off" is precisely
+   timed, recorded for the whole case, and independent of both instruments.
+2. **The cohort restricts to cases where the monitor is present THROUGH the transition**, with the
+   exclusion reported and tested for outcome-relatedness (rule 14), because it obviously is one.
+3. **Matched false-alarm rate is calibrated per detector, not by a common z.** G2 measured BIS's
+   held-out baseline false-alarm rate at **0.000** against the candidate's **0.0448** at the identical
+   threshold: BIS in deep anaesthesia is far more stable than any EEG summary of the same signal, so a
+   shared z is not a shared operating point. Found by building the gate.
+
+**Two feasibility steps are running now, in the order rule 41 requires — probe first, register second.**
+
+* A v2 sampling plan over the full public deposit: **5,870 eligible cases, 822,166 windows** (against
+  v1's 250 and 34,866). Verified independently against the API: `/cases` 6,388 rows x 74 columns,
+  `/trks` 486,449 rows, `BIS/EEG1_WAV` on **5,871** cases, of which **5,870** carry a sane `aneend`
+  (case 4476 stores -3.69e9 and is correctly dropped).
+* A **monitor-availability probe** over all 5,866 cases carrying BIS, SQI and EEG, fetching only the
+  two 1 Hz numeric tracks and no waveform. It measures, per case, how long a valid (SQI > 0) BIS
+  reading survives relative to `aneend`. This is 20-50x cheaper than finding out by extraction — one
+  EEG track is ~9.4 MB, so a blind 5,870-case waveform pull is ~55 GB against a fixed disk allowance,
+  most of it spent on cases the successor will exclude. **The probe decides which cases are worth the
+  waveform fetch**, and its own output is the population-scale version of the availability curve above.
+
+**NOT BLOCKED ON THE INVESTIGATOR.** Challenge C is the one front that needs no access decision: VitalDB
+is fully public, the probe and the plan are running, and the successor design is determined by what the
+probe returns.
