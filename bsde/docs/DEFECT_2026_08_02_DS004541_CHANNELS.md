@@ -1,47 +1,63 @@
-# ds004541: our extraction used 62 channels where the deposit declares 58 EEG
+# ds004541: our extraction uses 62 channels where the deposit declares 58 EEG
 
-*Found 2026-08-02 by diffing two sources for the same quantity (catalogue rule 20). Verified by Opus
-against the BIDS sidecar and the channels file directly, not via a summary.*
+*Found 2026-08-02 by diffing two sources for the same quantity (catalogue rule 20). **This document was
+rewritten after the first version overstated the problem** — see "What this is NOT" below. Every fact here
+was verified by Opus against the EDF header and the deposit's own channels file, read directly.*
 
-## The discrepancy
+## What is actually in the file
 
 | source | value |
 |---|---|
-| our extraction, `bsde/results/ds004541_v2.csv` | `n_channels = 62` on **all 124** `status=ok` rows |
-| deposit's `sub-02_ses-01_task-anesthesia_eeg.json` | `EEGChannelCount: 58`, `TriggerChannelCount: 1` |
-| deposit's `sub-02_ses-01_task-anesthesia_channels.tsv` | **59 rows: 58 of type `EEG`, 1 of type `TRIG`** |
+| the EDF itself, sub-02 and sub-07 (identical) | **70 signals**: 62 at 1000 Hz, plus VEOG, HEOG, EKG, EMG, Trigger, `EDF Annotations`, M1, M2 |
+| deposit's `channels.tsv` | **59 rows: 58 typed `EEG`, 1 typed `TRIG`** |
+| our extraction | **62** channels on all 124 rows |
 
-So the extractor took **62** signals from a file the deposit describes as carrying **58 EEG channels plus
-one trigger**. At least three channels entered the panel that the deposit does not label as EEG, and the
-trigger channel is a candidate for one of them.
+Our loader (`bsde/src/bsde/ingestion/ds004541.py:49`) selects by a **negative** regex:
 
-## Why this matters and how far it reaches
+```python
+EEG_ONLY = r"^(?!VEOG|HEOG|EKG|EMG|Trigger|EDF |M1|M2)"
+```
 
-This is the failure that withdrew **E204**: an `EDF Annotations` channel passed the good-channel test
-(its standard deviation was 0.08, not zero) and its different sampling rate silently truncated every
-window. The fix there was to select channels by **exact case-insensitive membership of the 10-20 set**
-rather than by a variance heuristic — catalogue rule 61 — and the same fix has not been applied to this
-deposit's loader.
+which yields 62 = **54** of the deposit's 58 declared EEG channels (M1 and M2, the mastoids, are dropped)
+**plus 6 electrodes the deposit does not list in `channels.tsv` at all**: `F11`, `F12`, `FT11`, `FT12`
+(inferior temporal) and `Cb1`, `Cb2` (cerebellar).
 
-**Reach.** Every ds004541 number this programme has produced was computed on the 62-channel panel:
+## What this is NOT — a correction to the first version of this note
 
-* **E217** used ds004541 as one of four deposits. Its per-feature deep-minus-light effects for that
-  deposit are affected. E217's verdict was NOT INTERPRETABLE for an unrelated reason (chennu's aliveness
-  gate), and the arm it reported without chennu still includes ds004541, so those numbers inherit this.
-* The **ds004541 feasibility probe** that refused the deposit as a Challenge C cohort used
-  `spectral_edge_95` from the same table. The refusal is unlikely to reverse — the incumbent's correlation
-  with the deposit's own depth label was −0.0170 against a permutation floor of 0.1561, nowhere near the
-  boundary — but the number itself is computed on the wrong channel set and should be recomputed if the
-  deposit is ever reconsidered.
+The first version of this document, and the summary I gave with it, said three channels "the deposit does
+not label EEG" had entered the panel and called it *"the same failure mode that withdrew E204."*
+**That was wrong and it overstated the problem.** E204's defect was an `EDF Annotations` channel entering
+the panel and truncating every window through its different sampling rate. Here the loader **explicitly
+excludes** `EDF Annotations`, the trigger, and all of EOG, ECG and EMG. Nothing non-neural is in the panel
+and no sampling-rate truncation is possible — all 62 are at 1000 Hz.
 
-## What is NOT affected
+## What the real issue is, and how much it matters
 
-Nothing in Challenge A's VitalDB line, Challenge B's HEEDB line, Challenge D's capslpdb line, or E209's
-ds005620 replication. Those deposits have their own loaders and their own channel counts, and the E204 fix
-was applied to the HEEDB one.
+Two mismatches with the deposit's own declaration, both mild:
 
-## The fix, not yet applied
+1. **Six extra scalp/cerebellar electrodes** are included that the deposit does not declare. `Cb1`/`Cb2`
+   are the ones worth caring about — cerebellar sites are close to neck musculature and are a known route
+   for EMG contamination into a whole-head average.
+2. **The two mastoids are dropped**, which is a defensible choice and not a defect.
 
-Re-extract ds004541 selecting channels by `channels.tsv` type == `EEG`, which the deposit ships and which
-removes all judgement from the selection. Until then, treat every ds004541 figure as provisional and do not
-use the deposit in a new registration.
+So `whole_head_exponent` on ds004541 is an average over a slightly different electrode set than the deposit
+declares, weighted marginally toward inferior and cerebellar sites. That is a real inconsistency and it is
+**not** grounds for withdrawing anything.
+
+## The general lesson, which is the part worth keeping
+
+**The selection is an exclusion list, and catalogue rule 70 is exactly about that**: a rule that names what
+a channel may not be only excludes what someone thought of, so any electrode nobody anticipated is admitted
+by default. The deposit ships a `channels.tsv` with a `type` column — an explicit statement of what each
+channel *is*. **Selecting on `type == "EEG"` enumerates what is allowed and removes the judgement
+entirely.** That is the fix, it generalises to every BIDS deposit this project touches, and it should be
+applied to the shared loader rather than to this one file (rule 74).
+
+## Reach
+
+`E217` used ds004541 as one of four deposits; its per-feature effects there are computed on this electrode
+set. `E217`'s verdict was NOT INTERPRETABLE for an unrelated reason. The ds004541 feasibility probe that
+refused the deposit for Challenge C used `spectral_edge_95` from the same table; the refusal is not near
+the boundary (−0.0170 against a floor of 0.1561) and six electrodes will not move it. **No result is
+withdrawn on this.** Nothing in the VitalDB, HEEDB, capslpdb or ds005620 lines is affected — separate
+loaders, separate channel handling.
