@@ -1,0 +1,68 @@
+[cohort] 245 cases loaded, 134 usable around aneend, 24 panel columns
+[bis] measured effective smoothing window = 78.7 s (n=112, IQR [49.95731671858881, 136.46494399619593])
+[ladder] smoothing lengths in grid steps: {'L0': 1, 'L*': 9, 'L2': 17}
+[primary] whole_head_exponent @ L0 (w=1): n=46 median lead +0.0 s [-50.0, +10.0]
+[primary] whole_head_exponent @ L* (w=9): n=46 median lead +20.0 s [-30.0, +30.0]
+[primary] whole_head_exponent @ L2 (w=17): n=46 median lead +10.0 s [-20.0, +50.0]
+
+[gates] {
+ "G1_incumbent_alive": {
+  "frac_bis_detects_within_300s": 0.34328358208955223,
+  "pass": false
+ },
+ "G2_false_alarm_match": {
+  "bis_rate": 0.0,
+  "candidate_rate": 0.04477611940298507,
+  "ratio": Infinity,
+  "pass": false
+ },
+ "G3_capability_both_directions": {
+  "shift_+60s": {
+   "n": 36,
+   "median_lead_s": 60.0,
+   "pass": true
+  },
+  "shift_-60s": {
+   "n": 34,
+   "median_lead_s": -60.0,
+   "pass": true
+  }
+ },
+ "G4_support": {
+  "n": 46,
+  "pass": true
+ }
+}
+[placebo P1] {
+ "label": "P1 case-mismatched pairing",
+ "n_draws": 200,
+ "evaluable": true,
+ "median": 0.0,
+ "p95": 30.0,
+ "frac_reaching_observed": 0.13,
+ "fires": false,
+ "interpretation": "NOT INFORMATIVE -- the primary did not exclude zero"
+}
+[placebo P2] {
+ "label": "P2 random landmark",
+ "n_draws": 0,
+ "evaluable": false,
+ "note": "median support 0 cases against a floor of 40; the extraction covers only +/-600 s, so a displaced landmark loses most of its test span. NOT EVALUABLE is reported as such and contributes nothing to the verdict.",
+ "interpretation": "NOT INFORMATIVE -- the primary did not exclude zero",
+ "fires": false
+}
+
+VERDICT: ABSENT -- no resolvable timing difference
+
+DESCRIPTIVE SCREEN (not gated, not promotable):
+  relative_delta_power             n=  40   -135.0 s [-180.0, -105.0]
+  lempel_ziv                       n=  44   -100.0 s [-170.0, -25.0]
+  exponent_low                     n=  42    -95.0 s [-150.0, -10.0]
+  spectral_entropy                 n=  44    -95.0 s [-120.0, -15.0]
+  critical_slowing_ar1             n=  45    -10.0 s [-60.0, +30.0]
+  spectral_edge_95                 n=  45    -10.0 s [-50.0, +30.0]
+  emg_beta_gamma_fraction          n=  45     +0.0 s [-50.0, +20.0]
+  exponent_high                    n=  42     +0.0 s [-30.0, +20.0]
+  multiscale_entropy_slope         n=  43     +0.0 s [-20.0, +10.0]
+
+wrote /home/user/Codex-playground-/bsde/results/e246_matched_lead_over_bis.json

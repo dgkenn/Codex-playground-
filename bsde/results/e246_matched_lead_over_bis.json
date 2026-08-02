@@ -1,0 +1,169 @@
+{
+ "n_cases_loaded": 245,
+ "n_usable": 134,
+ "k": 3.0,
+ "primary": {
+  "L0": {
+   "n": 46,
+   "median_lead_s": 0.0,
+   "ci": [
+    -50.0,
+    10.0
+   ]
+  },
+  "L*": {
+   "n": 46,
+   "median_lead_s": 20.0,
+   "ci": [
+    -30.0,
+    30.0
+   ]
+  },
+  "L2": {
+   "n": 46,
+   "median_lead_s": 10.0,
+   "ci": [
+    -20.0,
+    50.0
+   ]
+  }
+ },
+ "bis_effective_window_s": 78.70366939803823,
+ "bis_effective_window_n": 112,
+ "bis_effective_window_iqr": [
+  49.95731671858881,
+  136.46494399619593
+ ],
+ "ladder_windows": {
+  "L0": 1,
+  "L*": 9,
+  "L2": 17
+ },
+ "direction_by_half": {
+  "n_assigned": 134,
+  "signs": [
+   -1.0
+  ]
+ },
+ "placebo_primary": {
+  "label": "P1 case-mismatched pairing",
+  "n_draws": 200,
+  "evaluable": true,
+  "median": 0.0,
+  "p95": 30.0,
+  "frac_reaching_observed": 0.13,
+  "fires": false,
+  "interpretation": "NOT INFORMATIVE -- the primary did not exclude zero"
+ },
+ "placebo_secondary": {
+  "label": "P2 random landmark",
+  "n_draws": 0,
+  "evaluable": false,
+  "note": "median support 0 cases against a floor of 40; the extraction covers only +/-600 s, so a displaced landmark loses most of its test span. NOT EVALUABLE is reported as such and contributes nothing to the verdict.",
+  "interpretation": "NOT INFORMATIVE -- the primary did not exclude zero",
+  "fires": false
+ },
+ "gates": {
+  "G1_incumbent_alive": {
+   "frac_bis_detects_within_300s": 0.34328358208955223,
+   "pass": false
+  },
+  "G2_false_alarm_match": {
+   "bis_rate": 0.0,
+   "candidate_rate": 0.04477611940298507,
+   "ratio": Infinity,
+   "pass": false
+  },
+  "G3_capability_both_directions": {
+   "shift_+60s": {
+    "n": 36,
+    "median_lead_s": 60.0,
+    "pass": true
+   },
+   "shift_-60s": {
+    "n": 34,
+    "median_lead_s": -60.0,
+    "pass": true
+   }
+  },
+  "G4_support": {
+   "n": 46,
+   "pass": true
+  }
+ },
+ "verdict": "ABSENT -- no resolvable timing difference",
+ "descriptive_screen": {
+  "critical_slowing_ar1": {
+   "n": 45,
+   "median_lead_s": -10.0,
+   "ci": [
+    -60.0,
+    30.0
+   ]
+  },
+  "emg_beta_gamma_fraction": {
+   "n": 45,
+   "median_lead_s": 0.0,
+   "ci": [
+    -50.0,
+    20.0
+   ]
+  },
+  "exponent_high": {
+   "n": 42,
+   "median_lead_s": 0.0,
+   "ci": [
+    -30.0,
+    20.0
+   ]
+  },
+  "exponent_low": {
+   "n": 42,
+   "median_lead_s": -95.0,
+   "ci": [
+    -150.0,
+    -10.0
+   ]
+  },
+  "lempel_ziv": {
+   "n": 44,
+   "median_lead_s": -100.0,
+   "ci": [
+    -170.0,
+    -25.0
+   ]
+  },
+  "multiscale_entropy_slope": {
+   "n": 43,
+   "median_lead_s": 0.0,
+   "ci": [
+    -20.0,
+    10.0
+   ]
+  },
+  "relative_delta_power": {
+   "n": 40,
+   "median_lead_s": -135.0,
+   "ci": [
+    -180.0,
+    -105.0
+   ]
+  },
+  "spectral_edge_95": {
+   "n": 45,
+   "median_lead_s": -10.0,
+   "ci": [
+    -50.0,
+    30.0
+   ]
+  },
+  "spectral_entropy": {
+   "n": 44,
+   "median_lead_s": -95.0,
+   "ci": [
+    -120.0,
+    -15.0
+   ]
+  }
+ }
+}

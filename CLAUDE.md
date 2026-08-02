@@ -1329,3 +1329,26 @@ unverified on GitHub.
     moment of registration — so a registrant sees what they are claiming to test while claiming it. The
     general rule: **when a definition is load-bearing and consulted rarely, put it in the path of the
     action it governs.** Rule 74's lesson applied to scope rather than to a numerical guard.
+
+### L. Added 2026-08-02 (BSDE, from E246)
+
+96. **READ THE ADAPTER'S OWN DOCSTRING BEFORE REGISTERING A DESIGN ON ITS DATA — THE CONSTRAINT THAT
+    KILLS THE DESIGN IS USUALLY ALREADY WRITTEN DOWN BY WHOEVER BUILT THE LOADER.** E246 registered a
+    timing experiment landmarked on VitalDB's `aneend`, comparing an EEG measure against BIS. Both of
+    its load-bearing assumptions are contradicted, in plain English, in
+    `bsde/src/bsde/ingestion/vitaldb.py`'s module docstring, which had been written by an earlier
+    session *after making and correcting the same mistake*: **"the EEG runs past `aneend` and the BIS
+    strip does not"**, and **"`aneend` is not the moment of emergence; it lags it ... windows must be
+    labelled by BIS, not by their sign relative to `aneend`."** The run then re-measured exactly that,
+    at more resolution: cases carrying any finite BIS, in 200 s bins across the emergence window, go
+    **130 / 120 / 73 / 33 / 14 / 5**, while the same bins for the EEG measure go **134 / 134 / 134 / 134
+    / 121 / 71**. The sensor comes off before emergence completes. The incumbent's aliveness gate duly
+    failed at 0.343 and the primary's ABSENT verdict says nothing about the question.
+    Rule 50's corollary says an internal record is a source like any other and must be searched before
+    claiming a finding is new. **This is the stronger, earlier version: search it before claiming a
+    design is POSSIBLE.** A deposit adapter is where every previous session's collisions with the data
+    are recorded, it is the single cheapest document in the repo to read, and reading it costs one Grep
+    against the design's landmark and incumbent by name. Corollary worth keeping separately: **the
+    capability gate passing is not a licence.** E246's G3 recovered a planted +60 s and -60 s lead
+    *exactly*, which proves the estimator works and says nothing whatever about whether the cohort can
+    answer the question — a working instrument pointed at an absent incumbent still returns a number.
