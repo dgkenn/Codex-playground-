@@ -1,0 +1,258 @@
+{
+  "experiment": "E217",
+  "features": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spatial_participation_ratio",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent",
+    "wpli_alpha"
+  ],
+  "effects": {
+    "critical_slowing_ar1": {
+      "ds005620": 0.46302915706690506,
+      "ds004541": 0.2771527661074612,
+      "sleep_edfx": 1.7075801846192564,
+      "chennu": 0.0
+    },
+    "emg_beta_gamma_fraction": {
+      "ds005620": -0.6859691215806001,
+      "ds004541": -1.17789925595671,
+      "sleep_edfx": -1.7075801846192564,
+      "chennu": 0.5630925063714242
+    },
+    "emg_index": {
+      "ds005620": -0.5659245253039951,
+      "ds004541": 0.3464409576343265,
+      "sleep_edfx": -1.6830987482806292,
+      "chennu": 0.08662961636483449
+    },
+    "emg_kurtosis": {
+      "ds005620": -0.5659245253039951,
+      "ds004541": 0.5312094683726339,
+      "sleep_edfx": -1.6215045681394176,
+      "chennu": -0.25988884909450344
+    },
+    "exponent_high": {
+      "ds005620": 1.1318490506079901,
+      "ds004541": 1.501244149748748,
+      "sleep_edfx": 1.5606915665874925,
+      "chennu": 0.3898332736417552
+    },
+    "exponent_low": {
+      "ds005620": -1.1318490506079901,
+      "ds004541": -0.3464409576343265,
+      "sleep_edfx": 1.71982090278857,
+      "chennu": -0.5197776981890069
+    },
+    "lempel_ziv": {
+      "ds005620": 1.1832967347265353,
+      "ds004541": 0.3002488299497496,
+      "sleep_edfx": -1.7075801846192564,
+      "chennu": -0.08662961636483449
+    },
+    "multiscale_entropy_slope": {
+      "ds005620": -1.3204905590426552,
+      "ds004541": 1.6398205328024789,
+      "sleep_edfx": 1.7320616209578839,
+      "chennu": -0.8662961636483448
+    },
+    "pac_slow_alpha": {
+      "ds005620": NaN,
+      "ds004541": 0.2771527661074612,
+      "sleep_edfx": -0.5630730357884286,
+      "chennu": 0.0
+    },
+    "relative_alpha_power": {
+      "ds005620": 1.0461029104104151,
+      "ds004541": -0.32334489379203807,
+      "sleep_edfx": -1.2301921760160235,
+      "chennu": 0.3032036572769207
+    },
+    "relative_delta_power": {
+      "ds005620": -0.41158147294836006,
+      "ds004541": -0.25405670226517274,
+      "sleep_edfx": 1.6830987482806292,
+      "chennu": -0.8229813554659277
+    },
+    "spatial_participation_ratio": {
+      "ds005620": 0.5316260692249651,
+      "ds004541": 0.39263308531890334,
+      "sleep_edfx": 1.0810030454262785,
+      "chennu": 0.17325923272966898
+    },
+    "spectral_edge_95": {
+      "ds005620": -0.6688198935410851,
+      "ds004541": 0.3464409576343265,
+      "sleep_edfx": -1.6953394664499428,
+      "chennu": 0.3032036572769207
+    },
+    "spectral_entropy": {
+      "ds005620": 0.3772830168693301,
+      "ds004541": -0.32334489379203807,
+      "sleep_edfx": -1.7075801846192564,
+      "chennu": -0.08662961636483449
+    },
+    "whole_head_exponent": {
+      "ds005620": 0.7888644898176901,
+      "ds004541": 1.4550520220641714,
+      "sleep_edfx": 1.71982090278857,
+      "chennu": 0.17325923272966898
+    },
+    "wpli_alpha": {
+      "ds005620": 0.9946552262918702,
+      "ds004541": -0.8083622344800951,
+      "sleep_edfx": 1.4003903088476788,
+      "chennu": 0.043314808182417244
+    }
+  },
+  "deposits": {
+    "ds005620": {
+      "n_light": 59,
+      "n_deep": 143,
+      "n_subjects": 21
+    },
+    "ds004541": {
+      "n_light": 27,
+      "n_deep": 48,
+      "n_subjects": 8
+    },
+    "sleep_edfx": {
+      "n_light": 142,
+      "n_deep": 141,
+      "n_subjects": 142
+    },
+    "chennu": {
+      "n_light": 20,
+      "n_deep": 20,
+      "n_subjects": 20
+    }
+  },
+  "header_rows_dropped": {
+    "ds005620": 0,
+    "ds004541": 0,
+    "sleep_edfx": 0,
+    "chennu": 0
+  },
+  "alive_counts": {
+    "ds005620": 12,
+    "ds004541": 5,
+    "sleep_edfx": 16,
+    "chennu": 0
+  },
+  "arms": {
+    "all_four": {
+      "deposits": [
+        "chennu",
+        "ds004541",
+        "ds005620",
+        "sleep_edfx"
+      ],
+      "n_features": 15,
+      "features_used": [
+        "critical_slowing_ar1",
+        "emg_beta_gamma_fraction",
+        "emg_index",
+        "emg_kurtosis",
+        "exponent_high",
+        "exponent_low",
+        "lempel_ziv",
+        "multiscale_entropy_slope",
+        "relative_alpha_power",
+        "relative_delta_power",
+        "spatial_participation_ratio",
+        "spectral_edge_95",
+        "spectral_entropy",
+        "whole_head_exponent",
+        "wpli_alpha"
+      ],
+      "disagreement": {
+        "critical_slowing_ar1": 0.6536732572302216,
+        "emg_beta_gamma_fraction": 0.8408852494524197,
+        "emg_index": 0.783612937070903,
+        "emg_kurtosis": 0.7715901478145557,
+        "exponent_high": 0.4664107182184741,
+        "exponent_low": 1.0735107222051394,
+        "lempel_ziv": 1.0475623170850443,
+        "multiscale_entropy_slope": 1.3992945010864504,
+        "relative_alpha_power": 0.83572736923122,
+        "relative_delta_power": 0.9662567313127581,
+        "spatial_participation_ratio": 0.33499419955070725,
+        "spectral_edge_95": 0.8364447902637954,
+        "spectral_entropy": 0.7767066361027379,
+        "whole_head_exponent": 0.6017891978203427,
+        "wpli_alpha": 0.8575450793309267
+      },
+      "rho_primary": 0.3878464462024147,
+      "pct_primary": 92.485,
+      "rho_placebo": -0.46112618949411516,
+      "pct_placebo": 4.215,
+      "one_sided_p": 0.076025,
+      "beats_placebo": true
+    },
+    "without_chennu": {
+      "deposits": [
+        "ds004541",
+        "ds005620",
+        "sleep_edfx"
+      ],
+      "n_features": 15,
+      "features_used": [
+        "critical_slowing_ar1",
+        "emg_beta_gamma_fraction",
+        "emg_index",
+        "emg_kurtosis",
+        "exponent_high",
+        "exponent_low",
+        "lempel_ziv",
+        "multiscale_entropy_slope",
+        "relative_alpha_power",
+        "relative_delta_power",
+        "spatial_participation_ratio",
+        "spectral_edge_95",
+        "spectral_entropy",
+        "whole_head_exponent",
+        "wpli_alpha"
+      ],
+      "disagreement": {
+        "critical_slowing_ar1": 0.6350485451722079,
+        "emg_beta_gamma_fraction": 0.4171658752714678,
+        "emg_index": 0.8299612063776158,
+        "emg_kurtosis": 0.8788964007909308,
+        "exponent_high": 0.18970522108132795,
+        "exponent_low": 1.202697222055103,
+        "lempel_ziv": 1.209606011002574,
+        "multiscale_entropy_slope": 1.4177456671487494,
+        "relative_alpha_power": 0.9356684243066912,
+        "relative_delta_power": 0.9524862508290854,
+        "spatial_participation_ratio": 0.2972068702535956,
+        "spectral_edge_95": 0.8335575918027596,
+        "spectral_entropy": 0.8662589668280796,
+        "whole_head_exponent": 0.39166145119539075,
+        "wpli_alpha": 0.9599815228963794
+      },
+      "rho_primary": 0.4825739192380275,
+      "pct_primary": 96.63000000000001,
+      "rho_placebo": -0.509383581417918,
+      "pct_placebo": 2.6775,
+      "one_sided_p": 0.034225,
+      "beats_placebo": true
+    }
+  },
+  "g1": true,
+  "g2": false,
+  "g3": true,
+  "g4": true,
+  "verdict": "NOT INTERPRETABLE",
+  "why": "a gate failed: G2 depth effect exists"
+}

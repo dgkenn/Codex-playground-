@@ -238,8 +238,12 @@ def main() -> int:
         alive_counts[name] = n_alive
         print(f"   {name:<12s} {n_alive} of {len(feats)} features beyond their within-deposit "
               f"permutation p95")
-    g2 = all(v >= MIN_ALIVE_FEATURES for v in alive_counts.values())
-    print(f"   {'PASS' if g2 else '*** FAIL'} (floor {MIN_ALIVE_FEATURES} per deposit)")
+    # G2 IS PER-ARM, NOT GLOBAL (catalogue rule 71). The first version tested every deposit and refused
+    # the whole file when one failed -- including the arm that does not use that deposit. Rule 71 was
+    # written for the mirror of this: a verdict branch firing on a gate passed by some OTHER arm. Both
+    # directions are the same error, which is that a gate belongs to the arm whose claim it licenses.
+    g2_arm = {}
+    print(f"   (floor {MIN_ALIVE_FEATURES} per deposit; the gate is evaluated PER ARM -- rule 71)")
 
     def disagreement(names):
         out = {}
@@ -255,6 +259,7 @@ def main() -> int:
            "header_rows_dropped": dropped_hdr, "alive_counts": alive_counts, "arms": {}}
 
     for tag, names in (("all_four", sorted(dep)), ("without_chennu", sorted(set(dep) - {"chennu"}))):
+        g2_arm[tag] = all(alive_counts[n] >= MIN_ALIVE_FEATURES for n in names)
         D = disagreement(names)
         # G4: the primary and the placebo are computed on the IDENTICAL feature set, chosen before either
         # correlation exists. E214's placebo ran on 9 features against a primary on 10 and that mismatch
@@ -287,6 +292,13 @@ def main() -> int:
     aw = res["arms"]["without_chennu"]
     g3 = bool(len(a4["features_used"]) >= MIN_FEATURES)
     g4 = bool(a4["beats_placebo"] and aw["beats_placebo"])
+    g2 = bool(g2_arm.get("all_four") and g2_arm.get("without_chennu"))
+    res["g2_per_arm"] = g2_arm
+    for tag, ok in g2_arm.items():
+        print(f"G2 [{tag}] {'PASS' if ok else '*** FAIL'}"
+              + ("" if ok else "  -- deposits failing: "
+                 + ", ".join(n for n in res['arms'][tag]['deposits']
+                             if alive_counts[n] < MIN_ALIVE_FEATURES)))
     res["g1"], res["g2"], res["g3"], res["g4"] = g1, g2, g3, g4
     print(f"\nG3 >= {MIN_FEATURES} matched features   {'PASS' if g3 else '*** FAIL'}")
     print(f"G4 matched placebo beaten in BOTH arms   {'PASS' if g4 else '*** FAIL'}")
