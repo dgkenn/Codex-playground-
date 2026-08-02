@@ -136,6 +136,8 @@ def main() -> int:
     ap.add_argument("--out", default="/tmp/eeg_probe/capslpdb_stages.csv")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--tmp", default="/tmp/capslpdb_work")
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--of", type=int, default=1)
     a = ap.parse_args()
 
     import numpy as np
@@ -146,6 +148,9 @@ def main() -> int:
     from bsde.features.spectral import BANDS
     mne.set_log_level("ERROR")
 
+    # Per-process working directory. Two concurrent copies of this script briefly shared one,
+    # which would have had each deleting the other's EDF mid-read -- rule 56, one writer.
+    a.tmp = os.path.join(a.tmp, str(os.getpid()))
     os.makedirs(a.tmp, exist_ok=True)
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
 
@@ -154,6 +159,11 @@ def main() -> int:
     recs = [r.strip()[:-4] if r.strip().endswith(".edf") else r.strip() for r in recs if r.strip()]
     if a.limit:
         recs = recs[: a.limit]
+    # The bottleneck here is the DOWNLOAD, not the DSP -- one record took 1 s of CPU in 109 s of
+    # wall clock. Sharding by position raises aggregate throughput if PhysioNet throttles per
+    # connection; each shard writes its own file and works in its own directory (rule 56).
+    if a.of > 1:
+        recs = [r for i, r in enumerate(recs) if i % a.of == a.shard]
 
     done = set()
     if os.path.exists(a.out):
