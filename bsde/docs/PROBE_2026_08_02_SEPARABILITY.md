@@ -661,19 +661,27 @@ ds004541's raw values makes any pooled-SD statistic on that column suspect regar
 this same-column risk was not separately re-checked for the chennu pairing here and is flagged, not
 resolved).
 
-**Applying the SAME two-part gate (§12.1's rule 53 + rule 16 criteria) to the referenced quantities
-themselves**, across all 45 originally-scored deposit×column combinations recomputed under
-referencing: **16 of 45 pass** (vs 14 of 45 before referencing) — a similar count, but a different
-membership. All 6 capslpdb cells that passed before still pass after (unsurprising — capslpdb's
-per-subject pairing is closest to a like-for-like reduction of the same test). Of the 8 cross-modality
-cells that passed before, only 3 still pass after referencing on their OWN referenced effect sizes
-(`chennu.exponent_high`, `chennu.pac_slow_alpha`, `ds004541.exponent_high`, plus two new cross-modality
-passes that had been sign-refused pre-referencing: `ds004541.critical_slowing_ar1` and
-`ds004541.spatial_participation_ratio` — the latter is the channel-count-flagged column from §3 and its
-pass here (dz_ref=+0.339, dz_dep=+0.709) should be read with that confound in mind, not as a clean
-transport success). `ds005620.spectral_edge_95` and `ds005620.whole_head_exponent` also newly pass on
-referenced effect sizes though they were not in the original gated 14 (they had failed the raw-scale
-magnitude gate and now clear it after per-subject pairing sharpened the within-deposit signal).
+**Applying the SAME two-part gate (§12.1's rule 53 + rule 16 criteria, magnitude and sign only — no
+ratio threshold) to the referenced quantities themselves**, across all 45 originally-scored
+deposit×column combinations recomputed under referencing: **16 of 45 pass** (vs 14 of 45 before
+referencing). All 6 capslpdb cells that passed before still pass after (unsurprising — capslpdb's
+per-subject pairing is closest to a like-for-like reduction of the same test). **Of the 8
+cross-modality cells that passed the sign/magnitude gate before, 6 still pass it after** —
+`chennu.exponent_high`, `chennu.pac_slow_alpha`, `ds004541.emg_beta_gamma_fraction`,
+`ds004541.exponent_high`, `ds004541.multiscale_entropy_slope`, `ds004541.whole_head_exponent` — and 2
+now fail (`chennu.emg_kurtosis`: dz_ref −0.751, dz_dep −0.379, below the 0.5 floor;
+`ds005620.wpli_alpha`: dz_ref +0.755, dz_dep +0.459, likewise below floor). Four cross-modality cells
+newly pass that had failed pre-referencing — `ds004541.critical_slowing_ar1`,
+`ds004541.spatial_participation_ratio` (the latter is the channel-count-flagged column from §3, and its
+pass here, dz_ref=+0.339/dz_dep=+0.709, should be read with that confound in mind, not as a clean
+transport success), `ds005620.spectral_edge_95` and `ds005620.whole_head_exponent` — giving **10 of the
+39 cross-modality cells passing sign+magnitude after referencing, against 8 before.**
+**This is the split worth naming precisely: referencing leaves MORE cross-modality cells with a
+correctly-signed, non-trivial state effect (10 vs 8) — but the ratio computed from those same cells
+does not improve on the whole (§12.2's tally: 3 improved, 5 worsened among the original 8), and not one
+of them, before or after, reaches the 0.25 deployability bar.** Passing the sign/magnitude gate answers
+"does the state effect still exist and point the right way"; it does not answer "is the between-deposit
+offset small relative to it", which is what the ratio measures and what actually matters for transport.
 
 ### 12.3 Plain statement
 
