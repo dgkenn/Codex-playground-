@@ -15,3 +15,9 @@
 *.vmrk
 *.mat
 *.dat
+
+# ds006695 sleep epochs: 118 MB of derived signal, too large for git and cheap to rebuild.
+# 19 subjects x 5 stages x 12 epochs of 30 s at 500 Hz, 3 channels, fetched by HTTP byte range.
+# Regenerate:  python bsde/scripts/ds006695_signal.py
+# The small companion index IS tracked: bsde/results/ds006695_epoch_index.csv
+ds006695_epochs.npz
