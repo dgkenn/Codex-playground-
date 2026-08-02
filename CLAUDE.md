@@ -1037,3 +1037,98 @@ unverified on GitHub.
     label AND under the placebo, and match them by rejection sampling or state that you could not.**
     If no fake landmark can reproduce the real one's baseline predictability, that is itself a finding
     about the landmark — and it must be reported as a limitation of the placebo, never as a pass.
+
+### K. Added 2026-08-02 (BSDE, from the E187–E197 placebo programme and the Challenge A repair chain)
+
+79. **STOP ARGUING ABOUT WHETHER A PLACEBO PRESERVES THE RIGHT THING AND MEASURE WHETHER IT MANUFACTURES
+    THE RESULT.** Four experiments and most of a session went into a gate asking *does this surrogate
+    preserve the candidate's autocorrelation?* — E187 with a round-number tolerance, E189 with a
+    self-referential comparison, E190 with a surrogate whose preservation is a **theorem**. All three
+    refused. **The gate was a proxy, and the quantity it stood for is directly measurable on the primary
+    statistic itself.** E191 built a ladder of pure-noise AR(1) columns spanning the real candidates'
+    measured lag-1 autocorrelation (0.678 to 0.955) and asked how often each one beats its own placebo at
+    the 5 % bar. The answer for the circular shift was **0.050 / 0.100 / 0.150 / 0.050 / 0.250** across
+    rungs 0.00 / 0.50 / 0.80 / 0.95 / 0.99 — a pure-noise column beats its own placebo 15 % of the time at
+    exactly the autocorrelation the real candidates have. That is a number no preservation argument would
+    ever have produced, and it settles in one run what three files of increasingly clever gates could not.
+    **The construction generalises to any placebo, resampling scheme or null: build a null object whose
+    NUISANCE structure matches the real thing and whose SIGNAL is known to be absent, then measure the
+    false-positive rate as a rate, not on one draw (rule 72).** A candidate is then readable only if the
+    rungs bracketing its own nuisance parameter are calibrated — which is a per-candidate licence, not a
+    global one, and it correctly refused `bis_rbr` alone at |AC1| 0.955.
+
+80. **A SURROGATE-VERSUS-SURROGATE REFERENCE CANCELS ANY BIAS THE SURROGATES SHARE, SO A GATE BUILT ON ONE
+    CAN ESSENTIALLY ONLY FAIL.** E189's preservation gate compared real-versus-surrogate |ΔAC| against
+    |ΔAC| between two INDEPENDENT surrogates of the same series, which reads as the ideal
+    self-calibrating reference and is not. Both sides of the reference carry any systematic distortion the
+    method has, so it subtracts out; the real-versus-surrogate side carries it once, undivided. Any family
+    with a downward autocorrelation bias — IAAFT through amplitude re-imposition, a circular shift through
+    its single wrap seam — therefore exceeds its own reference **at every sample size, however small the
+    bias is in absolute terms**. Measured here: real-vs-surrogate 0.025–0.069 against surrogate-vs-surrogate
+    0.014–0.036, refusing all eleven candidates **and both controls**, for a surrogate whose preservation
+    is provable. The tell was available before the run and is worth one line of algebra: **ask what the
+    reference distribution CANCELS. If it cancels the very thing the gate exists to detect, it is not a
+    reference.** Related to rule 55 (a placebo must be able to change the statistic it is a placebo for) —
+    this is the same failure moved into the gate's denominator.
+
+81. **A GATE THAT CANNOT PASS IS AS USELESS AS ONE THAT CANNOT FAIL, AND IT IS EASIER TO WRITE.** Rule 40
+    covers gates that cannot fail. E194's donor-availability gate required **every** recording to have at
+    least five donor recordings *at least as long as itself* — and there is always exactly one longest
+    recording, with nothing longer than it. It refused on its own first line, for arithmetic reasons, on
+    any cohort that could ever exist. **Before registering a gate, construct the input that should PASS it
+    and check that it does** — the mirror of rule 40's instruction, and the same one-minute cost. The
+    corrected version gates two quantities that can each go either way (1.6 % of recordings had no
+    long-enough donor, 91.9 % had at least five), which is what a threshold derived from the machinery
+    looks like (rule 63).
+
+82. **A PLACEBO WITH NOTHING TO SYNTHESISE HAS NOTHING TO DISTORT — LOOK FOR A REAL OBJECT BEFORE BUILDING
+    A FAKE ONE.** Every surrogate family in this programme exists to manufacture a column that is realistic
+    in trend, autocorrelation, marginal, drift and artefact structure. **The deposit is full of such
+    columns**: the same measure, from a different patient. A random contiguous block of another recording's
+    candidate needs no preservation gate, because nothing was preserved — nothing was altered. It carries
+    no information about the recipient's label because it came from someone else. This is the resampling
+    idea from cluster-randomised inference imported wholesale, and it took three failed gate designs to
+    think of. **When a control has to be synthetic, ask first whether the dataset already contains the
+    object you are trying to fake.** Declare what it destroys: a donor block replaces the recipient's
+    recording-level mean as well as its timing, so it is a placebo for the WHOLE association and a
+    different estimand from a timing-only one — that difference is a design choice and must be stated, not
+    discovered.
+
+83. **"THE CONFOUND IS HIDDEN" IS UNREADABLE UNTIL THE CONFOUND IS SHOWN TO BE LEGIBLE — RULE 53 FOR
+    ADVERSARIAL DESIGNS.** E193 asked whether a linear combination could keep depth discrimination while
+    dropping agent legibility below a cluster-permutation floor, and the success rule fired at
+    **lambda = 0**: state +0.4698, agent +0.0914, floor +0.1744, with **no adversarial term in the
+    objective at all**. Two readings — depth and agent are separable, or the agent was never legible in
+    this family on this cohort — and the design could not tell them apart. The second was not speculative:
+    E154 had measured the MEDIAN single feature identifying the arm at 0.1000 on the same 39 cases, with
+    only one feature and the nuisance variable `recording duration` (0.3771) above it. **An adversarial or
+    invariance design needs an ALIVENESS gate on the thing it claims to remove, run before anything is
+    fitted, and multivariate** — the confound an adversarial axis would have to hide is one legible in
+    combination, which a per-feature check misses. Without it, "removed the confound" and "the cohort had
+    no confound to remove" print identically, and only the second is true (rule 69's absence-of-power,
+    arriving from a new direction).
+
+84. **A CONTROL BUILT TO BE INSEPARABLE MUST HAVE ITS INSEPARABILITY MEASURED — RULE 77, SECOND
+    OCCURRENCE, AND THE DIAGNOSIS IS THE SAME BOTH TIMES.** E193's negative capability gate was a synthetic
+    system where "one latent drives both state and agent, so no axis can separate them". It fired, and the
+    method was right: the construction drew the state-carrying direction `ws` and the agent-carrying
+    direction `wa` as two INDEPENDENT Gaussians in eleven dimensions — near-orthogonal — and gave the state
+    contrast a constant term with no latent in it at all. Separation was not merely possible, it was easy.
+    **The system had the name of the property and not the property.** E195 sets `ws = wa` and then GATES
+    the result: |cos(ws, wa)| verified at 1.0000 against 0.1475 for the separable system, and the
+    empirical alignment between the state-contrast direction and the agent direction at 0.979 against
+    0.197. Rule 77 said this about independence; it holds identically for entanglement, for exchangeability
+    and for any structural property a control is built to have. **The check is one correlation and it goes
+    in the file, next to the construction, printed.**
+
+85. **WHEN A GATE'S VERDICT MOVES ON ONE MONTE CARLO DRAW, REPORT THE KNIFE-EDGE INSTEAD OF THE VERDICT.**
+    E191's two surrogate families returned opposite conclusions — NO FAMILY USABLE against USABLE, 10 of 11
+    licensed — and at n = 20 the Wilson lower bound crosses the nominal 0.05 between **2 hits (0.028,
+    passes) and 3 hits (0.052, fails)**. The families differed at the deciding rung by exactly one hit,
+    3/20 against 2/20. Rule 46 established this for a bootstrap interval; it applies to any rate-based
+    gate, and the arithmetic is checkable *before* the run: **compute which integer counts straddle your
+    threshold, and if adjacent integers give opposite verdicts the replicate count is too low for the
+    claim.** Raising it is the one repair rule 46 permits, because it changes no threshold, cohort or
+    estimand. What the under-resolved run licenses is the comparison of point estimates, never the binary —
+    and a verdict branch for "the families split, but their intervals overlap" must exist so a threshold
+    artefact is named rather than reported as a difference.
