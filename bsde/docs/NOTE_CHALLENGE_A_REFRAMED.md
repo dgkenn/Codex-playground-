@@ -169,3 +169,43 @@ to be about fifteen-fold, which is still decisive but is a different sentence.
 
 So readings (i) exposure-model quality and (ii) restricted range are both unsupported, and the live
 question is no longer *why does the model track propofol badly* but *is there anything there to track*.
+
+---
+
+## SECOND CORRECTION, 2026-08-02: this note's own headline is wrong, and alpha is back
+
+The title of this note says Challenge A "was never an alpha story". **E227 shows it is.** All four gates
+pass, including the control that refused E225.
+
+| arm | features clearing the donor null on CONSISTENCY | on STRENGTH |
+|---|---:|---:|
+| propofol | **12 / 15** | 3 / 15 |
+| sevoflurane | 11 / 15 | 11 / 15 |
+
+Consistency here is a resultant length, `|mean signed rho| / mean |rho|`, bounded in [0, 1], compared
+against a donor null measured per feature. The propofol arm's coupling is therefore **directionally
+reliable across patients and small in magnitude** — not absent, and not sign-scrambled. E225's
+sign-varying hypothesis is refuted by its successor.
+
+**And the direction is shared.** Of the 10 features clearing consistency in *both* arms, **9 agree in
+sign** (exact binomial p = 0.0107 against 50/50). The single disagreement:
+
+| feature | propofol mean signed rho | sevoflurane mean signed rho |
+|---|---:|---:|
+| `relative_alpha_power` | **+0.1079** | **−0.2482** |
+
+**`relative_alpha_power` is the one directional reversal in the panel**, and it is the feature this whole
+thread started from. The scan at the top of this note was right that alpha ranks only 5th on the size of
+the propofol–sevoflurane *difference* — but size of difference was the wrong statistic, because a feature
+can differ by magnitude while pointing the same way. On the question that actually distinguishes a
+biological reversal from an instrument-quality gap, alpha is not 5 of 17. **It is 1 of 1.**
+
+### What replaces this note's framing
+
+The panel-wide propofol/sevoflurane difference is **a difference of MAGNITUDE with direction preserved** —
+consistent with the exposure-quality reading, and with E224's finding that neither a better ke0 nor
+restricted range explains it. Sitting *inside* that is one feature that genuinely reverses. Those are two
+separate phenomena and this note collapsed them into one.
+
+The sentence to retire is "it was never an alpha story". The correct one is: **the whole-panel difference
+is not an alpha story, and the reversal is.**
