@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import json
 import sys
 import time
@@ -114,9 +115,20 @@ def main() -> int:
     # compute
     # ---------------------------------------------------------------------------------------------
     out_cols = ["subject", "stage", "epoch_index", "t_start_s"] + cand_names
-    fh_out = open(a.out, "w", newline="")
+    # RESUMABLE. The first version opened "w", so the process dying at epoch 819 of 1140 -- which it did,
+    # silently, after 3490 s -- cost the whole run. Existing rows are now read, de-duplicated on their key
+    # (catalogue rule 56: a resumable extractor must not assume it was the only writer) and skipped.
+    done = set()
+    if os.path.exists(a.out) and os.path.getsize(a.out) > 0:
+        with open(a.out, newline="") as fh_prev:
+            for prev in csv.DictReader(fh_prev):
+                if prev.get("subject") and prev.get("subject") != "subject":
+                    done.add(f'{prev["subject"]}__{prev["stage"]}__{prev["epoch_index"]}')
+        print(f"resuming: {len(done)} epochs already present in {a.out}", flush=True)
+    fh_out = open(a.out, "a" if done else "w", newline="")
     w = csv.DictWriter(fh_out, out_cols)
-    w.writeheader()
+    if not done:
+        w.writeheader()
 
     n_exceptions = Counter()          # candidate -> count of raised exceptions
     exception_samples = defaultdict(list)  # candidate -> up to 3 example messages
@@ -128,6 +140,8 @@ def main() -> int:
     for i, r in enumerate(rows):
         key = f'{r["subject"]}__{r["stage"]}__{r["epoch_index"]}'
         assert key in npz_keys, f"row {i}: key {key!r} from CSV not found in {a.npz}"
+        if key in done:
+            continue
         data = npz[key]
         assert data.shape[0] == int(r["n_channels"]), (
             f"{key}: array has {data.shape[0]} channels, CSV row says n_channels={r['n_channels']}"
@@ -249,7 +263,8 @@ def main() -> int:
     # ---------------------------------------------------------------------------------------------
     # VALIDATION (d)
     # ---------------------------------------------------------------------------------------------
-    import os
+    # (module-level `import os` at the top serves this function; a local re-import here would
+    # shadow it and make every earlier use in main() an UnboundLocalError.)
     out_size = os.path.getsize(a.out)
     print("\n=== VALIDATION (d): wall-clock and output size ===")
     print(f"wall-clock time: {wall_s:.1f}s ({wall_s / 60.0:.2f} min)")
