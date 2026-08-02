@@ -1,0 +1,89 @@
+{
+  "experiment": "E203",
+  "lambda": 2.0,
+  "n_cases": 115,
+  "n_sevo": 71,
+  "n_propofol": 44,
+  "features": [
+    "lempel_ziv",
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "exponent_low",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "relative_delta_power",
+    "exponent_high"
+  ],
+  "pool_target": 40000,
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "g1": true,
+  "g1b": {
+    "knn": 0.45934699103713184,
+    "null_p95": 0.1338028169014085,
+    "p": NaN,
+    "pass": true
+  },
+  "primary": {
+    "lambda": 2.0,
+    "state": 0.21304347826086956,
+    "agent": 0.023047375160051287,
+    "frac_below": {
+      "11": 0.0553,
+      "22": 0.056175,
+      "33": 0.054975
+    },
+    "pool_n": {
+      "11": 40000,
+      "22": 40000,
+      "33": 40000
+    },
+    "pool_state_gap": {
+      "11": 0.010107720226843097,
+      "22": 0.010102262759924381,
+      "33": 0.010091705103969749
+    },
+    "pool_agent_mean": {
+      "11": 0.18071529289372598,
+      "22": 0.1808345790653009,
+      "33": 0.18216506882202305
+    },
+    "frac_below_mean": 0.055483333333333336,
+    "unstable": false
+  },
+  "reference": {
+    "lambda": 0.0,
+    "state": 0.2305103969754254,
+    "agent": 0.032970550576184365,
+    "frac_below": {
+      "11": 0.0944,
+      "22": 0.09505,
+      "33": 0.09335
+    },
+    "pool_n": {
+      "11": 40000,
+      "22": 40000,
+      "33": 40000
+    },
+    "pool_state_gap": {
+      "11": 0.011370782608695715,
+      "22": 0.011325402646502896,
+      "33": 0.011388686200378133
+    },
+    "pool_agent_mean": {
+      "11": 0.1595771366837388,
+      "22": 0.15993867637644046,
+      "33": 0.16052855313700384
+    },
+    "frac_below_mean": 0.09426666666666667,
+    "unstable": false
+  },
+  "g2": true,
+  "verdict": "NOT CONFIRMED",
+  "why": "frac_below at lambda = 2.0 is 0.0555, not below 0.05 (lambda = 0 reference 0.0943). E200's cell does not reproduce on a cohort that never saw the number, and the Challenge A positive does not survive its first independent test"
+}
