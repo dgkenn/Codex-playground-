@@ -1213,3 +1213,22 @@ unverified on GitHub.
     carries only as much mechanistic information as the groups are separable on the named property alone,
     and with n = 4 against 11 that is almost none. Related to rule 60 — check what else your grouping
     variable is correlated with, before the mechanism is named (rule 50).
+90. **A DOCSTRING ASSERTING AN INVARIANT IS NOT THE INVARIANT — GREP THE ARGUMENT, NOT THE PROSE.**
+    `fit_aperiodic`'s signature defaults to `mode="loglog_ols"`. The `whole_head_exponent` family passes
+    `"loglog_robust"` explicitly (`seed.py:87`); `subband_exponents` does not (`exotic.py:295-296`), so
+    `exponent_low` and `exponent_high` are fitted by a peak-biased plain OLS while the rest of the family
+    is fitted robustly. **The candidate's own docstring states the opposite** — *"deliberately identical
+    machinery… so any difference reflects the spectrum and not the estimator"* — which is how it survived
+    review: a reader checking whether the family was consistent found a sentence saying it was.
+    Measured cost: `exponent_low` comes out roughly 26× more sensitive to a 1 Hz spectral shift than
+    `whole_head_exponent` despite an equally wide fixed band.
+    **The most consequential instance was found only by grepping every caller** (rule 76's corollary):
+    `seed.py:166` is `alpha_peak_hz_wide`'s own aperiodic fit and carries the same default, and since the
+    peak is located as a residual *after* subtracting that fit, a peak-biased baseline flattens the
+    residual the search depends on. A defect in a shared helper's DEFAULT propagates to every caller who
+    omits the argument, and those callers are invisible at the definition site.
+    **Two habits follow.** When a helper's behaviour is selected by a keyword with a default, grep every
+    call site and tabulate which ones pass it — the count of callers that rely on the default is the size
+    of the exposure. And when a docstring asserts that two things are computed identically, diff the two
+    call sites rather than believing it (rule 20, applied to a claim of sameness rather than to two
+    scripts).
