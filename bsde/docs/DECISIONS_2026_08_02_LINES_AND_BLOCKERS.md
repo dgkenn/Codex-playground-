@@ -219,3 +219,41 @@ proposed again.
 **Consequence for planning.** Challenge B is now single-sourced on Bath. A search for additional
 formal-access cohorts is running so that it is not, because a challenge resting on one pending request is
 one refusal away from closed.
+
+---
+
+## CONSTRAINT REVISED AGAIN, 2026-08-02: fully public data only
+
+The investigator now wants **publicly available data instead** of access requests. IN SCOPE: a URL that
+returns data today, with no application, committee, custodian, DUA, credentialed tier or email to anyone.
+This is stricter than the formal-access constraint recorded above and supersedes it for planning.
+
+**What it retires.** Bath (sent) and Chennu/WBIC (drafted) may still land, but **nothing is planned around
+them**. PhysioNet credentialed and restricted tiers go out of scope too, which removes
+`eeg-power-anesthesia` from consideration.
+
+### The important consequence: access was never Challenge A's or C's problem
+
+Re-reading the blockers under this constraint changes the picture for two of the three challenges, and the
+change is in our favour:
+
+* **Challenge C** needs transitions with a conventional monitor recorded alongside. **VitalDB is fully
+  public and already held**, and it records BIS. Today's feasibility probe showed the obstacle is that
+  `vitaldb_grid` samples the maintenance phase at 300 s spacing with a median of ZERO windows within
+  ±10 min of anaesthesia start. That is an **extraction-design problem, not an access problem**, and it is
+  fixed by one S3 pass at ~10 s spacing across both transitions.
+* **Challenge A** needs loss and recovery under at least two agents. VitalDB (public) has both propofol
+  and volatile arms; OpenNeuro ds004541 and ds005620 (public) have anaesthesia transitions. The obstacle
+  there was never access either — it was that no candidate has been scored on the actual acceptance
+  condition, and that the comparison is between-patient.
+
+**So under this constraint, A and C become the live challenges and B becomes the blocked one** — the
+reverse of the position an hour ago, when B had two pending requests and A and C were closed.
+
+* **Challenge B is the one with a genuine public-data gap.** Every survey so far has failed to find a
+  public deposit pairing task-free EEG with an independently-scored command-following outcome in
+  brain-injured patients. One lead has NOT yet been checked and is being checked now: **BCI datasets in
+  locked-in / ALS / severely paralysed patients**, several of which are openly downloadable through the
+  BNCI Horizon 2020 catalogue and MOABB's registry. Locked-in syndrome is command-following with MACHINE
+  scoring, which is precisely the rule-86 escape the challenge needs. If that returns nothing, Challenge B
+  has no public route and should be stated as blocked rather than repeatedly re-searched.
