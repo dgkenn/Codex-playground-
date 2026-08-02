@@ -371,3 +371,14 @@ SC4481F0-PSG@REM,SC4481F0-PSG,REM,https://physionet.org/files/sleep-edfx/1.0.0/s
 SC4481F0-PSG@W,SC4481F0-PSG,W,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4481F0-PSG.edf,13635.000,120.0,ok,,2,100,12000,,,8.75,0.04979805379
 SC4482F0-PSG@N1,SC4482F0-PSG,N1,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4482F0-PSG.edf,29205.000,120.0,ok,,2,100,12000,9.25,0.1722076006,9.25,0.1850053048
 SC4482F0-PSG@N2,SC4482F0-PSG,N2,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4482F0-PSG.edf,56460.000,120.0,ok,,2,100,12000,14.25,0.04918850968,8.25,0.08518793611
+SC4482F0-PSG@N3,SC4482F0-PSG,N3,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4482F0-PSG.edf,36600.000,120.0,ok,,2,100,12000,10.25,0.04426345205,10.25,0.05168778281
+SC4482F0-PSG@REM,SC4482F0-PSG,REM,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4482F0-PSG.edf,46440.000,120.0,ok,,2,100,12000,7,0.1707754442,9,0.124375298
+SC4482F0-PSG@W,SC4482F0-PSG,W,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4482F0-PSG.edf,14490.000,120.0,ok,,2,100,12000,14.75,0.06378416564,9.25,0.07932895222
+SC4492G0-PSG@N1,SC4492G0-PSG,N1,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4492G0-PSG.edf,33900.000,120.0,ok,,2,100,12000,7.75,0.09682988179,8,0.08194471989
+SC4492G0-PSG@N2,SC4492G0-PSG,N2,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4492G0-PSG.edf,54360.000,120.0,ok,,2,100,12000,13.75,0.07660876063,8.75,0.1502298781
+SC4492G0-PSG@N3,SC4492G0-PSG,N3,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4492G0-PSG.edf,47910.000,120.0,ok,,2,100,12000,10.25,0.05181282261,10.25,0.06004792929
+SC4492G0-PSG@REM,SC4492G0-PSG,REM,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4492G0-PSG.edf,58530.000,120.0,ok,,2,100,12000,,,8,0.07857311765
+SC4492G0-PSG@W,SC4492G0-PSG,W,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4492G0-PSG.edf,16830.000,120.0,ok,,2,100,12000,14,0.05881399016,9.25,0.08011843439
+SC4502E0-PSG@N1,SC4502E0-PSG,N1,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4502E0-PSG.edf,28995.000,120.0,ok,,2,100,12000,11.25,0.1121837034,8,0.1554810699
+SC4502E0-PSG@N2,SC4502E0-PSG,N2,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4502E0-PSG.edf,42015.000,120.0,ok,,2,100,12000,10,0.149261314,9.75,0.1640299019
+SC4502E0-PSG@N3,SC4502E0-PSG,N3,https://physionet.org/files/sleep-edfx/1.0.0/sleep-cassette/SC4502E0-PSG.edf,36840.000,120.0,ok,,2,100,12000,10.5,0.05394068268,9.5,0.06362468753
