@@ -73,7 +73,12 @@ state label ever appeared, and that is a reason to keep the deposit in view, not
 ## What carries over unchanged
 
 The **capability gate** — plant a known ±60 s lead and require the estimator to recover it — passed
-exactly in both directions in E246 (+60.0 and −60.0) and is reused verbatim. So is the **P1 placebo**,
+exactly in both directions in E246 (+60.0 and −60.0) and is reused verbatim. A second capability check,
+added after E246 ran, applies the same discipline to the *smoothing-window estimator itself*: pushing
+white noise through a KNOWN rectangular moving average and requiring the estimate back. It refuted the
+lag-1 AR(1) form E246 used (biased high by ~2×) and licensed the integrated-autocorrelation form, moving
+BIS's measured window from a withdrawn 78.7 s to **47.6 s (IQR 27.3–74.4, n = 109), an upper bound**. The
+successor takes the corrected estimator and the test that certifies it. So is the **P1 placebo**,
 case-mismatched pairing, which is rule 82's move: the control object already exists in the deposit, so
 nothing has to be synthesised and nothing has to be argued about what the synthesis preserved.
 

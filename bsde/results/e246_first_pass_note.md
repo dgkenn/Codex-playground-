@@ -24,7 +24,7 @@ Primary, `whole_head_exponent`, median per-case lead over BIS (positive = candid
 | rung | candidate smoothing | n | median lead | 95 % CI |
 |---|---|---|---|---|
 | L0 | none | 46 | +0.0 s | [−50.0, +10.0] |
-| **L\*** | **BIS's measured window (90 s)** | **46** | **+20.0 s** | **[−30.0, +30.0]** |
+| **L\*** | **BIS's measured window (90 s, from the withdrawn estimate — see below)** | **46** | **+20.0 s** | **[−30.0, +30.0]** |
 | L2 | 2× that | 46 | +10.0 s | [−20.0, +50.0] |
 
 **ABSENT** under the registered rule. The `ARTEFACT` branch did not fire, because there was no lead at
@@ -80,14 +80,26 @@ unanswerable — a working instrument pointed at an absent incumbent still retur
 
 ## Two things survive the retraction, and both are worth keeping
 
-**1. BIS's effective smoothing window, measured from its own output: 78.7 s (IQR 50.0–136.5, n = 112
-cases).** Estimated as the equivalent rectangular window of a first-order autoregressive fit to the 1 Hz
-BIS trace during deep anaesthesia, per case, pooled as a median. The published literature measures each
-monitor's **delay** by replaying identical EEG through the devices — 14–155 s across four papers (PMIDs
-16508396, 19648154, 22584557, 32040794) — but not its **averaging window**, and not from the monitor's own
-output on ordinary clinical cases. 78.7 s sits inside that delay range, which is the external consistency
-check one would want. This is a small, checkable, reusable number and nothing about E246's failure
-touches it.
+**1. BIS's effective smoothing window, measured from its own output: 47.6 s (IQR 27.3–74.4, n = 109
+cases) — an UPPER BOUND.** Estimated as the integrated autocorrelation time of the 1 Hz BIS trace during
+deep anaesthesia, per case, pooled as a median.
+
+> **Corrected after the run.** The figure first written here was **78.7 s**, from a lag-1 AR(1) fit. A
+> capability check against a KNOWN rectangular moving average on white noise (rules 23 and 40) shows that
+> estimator is biased high by about 2× — true windows of 15 / 30 / 60 / 120 s come back as 28.9 / 59.3 /
+> 114.3 / NaN, while the integrated-autocorrelation estimator returns 15.2 / 30.7 / 62.7 / 118.7. The
+> AR(1) form is exact only for a series that really is AR(1), and a moving-averaged one is not. **78.7 s
+> is withdrawn; 47.6 s replaces it.** E246's L\* rung was consequently set from a window about twice too
+> long, which does not change its verdict — that was uninterpretable for the larger reason above — but is
+> recorded because the rung was mis-set. It is an upper bound in either case: the displayed index carries
+> the device's smoothing *and* the physiology's own autocorrelation, and no estimator on the output alone
+> can separate them.
+
+The published literature measures each monitor's **delay** by replaying identical EEG through the devices
+— 14–155 s across four papers (PMIDs 16508396, 19648154, 22584557, 32040794) — but not its **averaging
+window**, and not from the monitor's own output on ordinary clinical cases. 47.6 s sits inside that delay
+range, which is the external consistency check one would want. This is a small, checkable, reusable
+number, it now has a capability test behind it, and nothing about E246's failure touches it.
 
 **2. A common z-threshold does NOT equalise two detectors' operating points, and G2 says by how much.**
 BIS's held-out baseline false-alarm rate is **0.000**; the candidate's, at the identical threshold, grid

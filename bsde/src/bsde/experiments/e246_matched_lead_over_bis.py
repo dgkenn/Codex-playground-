@@ -339,26 +339,50 @@ def fire_rate(times, series, rel, sign, k=K):
 def bis_effective_window(case):
     """Equivalent rectangular window of BIS's own smoothing, MEASURED from its 1 Hz trace.
 
-    First-order autoregression on the baseline segment: w_eff = (1 + rho) / (1 - rho) samples at 1 Hz.
-    Returns NaN when the baseline has too few valid BIS samples to estimate rho.
+    Integrated autocorrelation time on the baseline segment: 1 + 2 * sum r(k) up to the first
+    non-positive lag, in samples at 1 Hz.
+
+    **CORRECTED 2026-08-02, AFTER E246 HAD ALREADY RUN AND REPORTED A NUMBER FROM THE OLD VERSION.**
+    The first version used a lag-1 AR(1) fit, `w = (1 + rho) / (1 - rho)`. A capability check against a
+    KNOWN rectangular moving average applied to white noise (rule 40, rule 23 -- validate against an
+    independent implementation) shows that estimator is biased high by roughly a factor of two:
+
+        true window   1     15     30     60    120
+        AR(1)         1.0   28.9   59.3  114.3    nan
+        this one      1.0   15.2   30.7   62.7  118.7
+
+    The AR(1) form is exact only if the series really is AR(1), and a moving-averaged series is not.
+    E246's reported 78.7 s came from the biased estimator; the corrected figure on the same 109 cases is
+    **47.6 s (IQR 27.3-74.4)**, and E246's L* rung was therefore set from a window about twice too long.
+    That does not change E246's verdict, which was uninterpretable for an unrelated and larger reason
+    (the incumbent is absent from the window), but the number itself is corrected everywhere it appears.
+
+    LIMITATION, stated rather than buried: this measures the autocorrelation of the DISPLAYED index,
+    which carries the device's smoothing AND whatever autocorrelation the underlying physiology already
+    had. Both estimators are therefore UPPER BOUNDS on the device's own averaging window. 47.6 s is
+    quoted as such.
+
+    Returns NaN when the baseline has too few valid BIS samples.
     """
     raw = []
     for i, rl in enumerate(case["rel_aneend"]):
         if BASE_LO <= rl < BASE_HI:
             raw.extend(case["bis_raw"][i])
-    if len(raw) < 60:
+    if len(raw) < 120:
         return float("nan")
-    m = sum(raw) / len(raw)
-    num = sum((raw[i] - m) * (raw[i + 1] - m) for i in range(len(raw) - 1))
-    den = sum((x - m) ** 2 for x in raw)
+    n = len(raw)
+    m = sum(raw) / n
+    d = [x - m for x in raw]
+    den = sum(x * x for x in d)
     if den <= 0:
         return float("nan")
-    rho = num / den
-    if not (-0.99 < rho < 0.99):
-        return float("nan")
-    if rho <= 0:
-        return 1.0
-    return (1.0 + rho) / (1.0 - rho)
+    total = 0.0
+    for k in range(1, min(300, n // 3) + 1):
+        r = sum(d[i] * d[i + k] for i in range(n - k)) / den
+        if r <= 0:
+            break
+        total += r
+    return 1.0 + 2.0 * total
 
 
 # ----------------------------------------------------------------------------------------------------
