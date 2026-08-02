@@ -173,3 +173,49 @@ catalogue of 94 rules each paid for with a wrong result — the peak estimator f
 signal-free noise, band placement manufacturing a drug reversal that survived four confound experiments,
 leave-one-out concealing a zero-versus-nonzero split, a placebo unable to fire at a ceiling. That is a
 real contribution and it is the one to write up.
+
+---
+
+## STANDING CONSTRAINT, set by the investigator 2026-08-02: formal access routes only
+
+**The investigator will pursue datasets through formal access routes but will NOT cold-email authors.**
+This is a permanent constraint on data strategy, not a one-off preference, and it changes what counts as
+a live option.
+
+**IN SCOPE** — repository credentialing (PhysioNet DUA and credentialed tiers), institutional
+data-access portals with an application form, managed-access archives with a published procedure,
+registered-access schemes, and a data office or data-protection-officer inbox where that inbox is the
+record's OWN published access route.
+
+**OUT OF SCOPE** — "available from the corresponding author on reasonable request", author-mediated
+sharing, personal emails to research groups. However scientifically attractive, these are not to be
+proposed again.
+
+### What this closes, permanently
+
+* **NCT02043938** (Kuizenga / Vereecke / Struys, Groningen–Ghent) — the only study anywhere with the
+  design Challenge A needed: the same volunteers under propofol AND sevoflurane with EEG throughout. Its
+  registry states `"ipdSharing": "NO"`, so the only route was ever an author request. **Closed.** This
+  is now moot in any case, since Challenge A stopped on scientific grounds above, but it should not be
+  revisited if that line is ever reopened.
+* **Any deposit whose data-availability statement is "on reasonable request".** Several near-misses in
+  `DATA_SEARCH_2026_08_02_CROSSOVER.md` and the Challenge B probes fall here — Della Bella / Sitt's
+  237-patient DoC cohort among them. They stop being near-misses and become unavailable.
+
+### What remains open
+
+* **Bath PDoC (DOI 10.15125/BATH-01632) — request SENT 2026-08-02.** A managed-access institutional
+  repository with a published request procedure, so squarely in scope. This is now the only route to a
+  live scientific question in the programme.
+* **Chennu / WBIC** — the drafted request is addressed to `enquiries@wbic.cam.ac.uk`, which is the access
+  route quoted in the paper's own data-availability statement (PMID 25329398), i.e. an institutional data
+  office rather than an author. **In scope as drafted**, but note the draft as written also copies the
+  study authors and offers to be redirected to them; those elements should be removed before sending if
+  the constraint is to be honoured strictly.
+* **PhysioNet restricted tiers** — `eeg-power-anesthesia` (DOI 10.13026/m792-h077) needs only a signed
+  DUA with no committee review, and is in scope. Its limitation is scientific rather than procedural: it
+  ships derived multitaper spectra rather than raw EEG, so only band-power-type candidates are computable.
+
+**Consequence for planning.** Challenge B is now single-sourced on Bath. A search for additional
+formal-access cohorts is running so that it is not, because a challenge resting on one pending request is
+one refusal away from closed.
