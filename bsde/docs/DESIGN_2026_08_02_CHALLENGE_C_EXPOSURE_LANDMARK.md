@@ -89,3 +89,46 @@ each monitor's raw latency (PMIDs 16508396, 19648154, 22584557, 32040794) and ne
 or the operating point, while the seizure-detection literature treats matched-false-alarm-rate lead time
 as a norm (PMIDs 29873826, 18827312 — both verified against retrieved records). **The ablation is still
 the paper.** E246 failed to reach it; it did not show it was not worth reaching.
+
+---
+
+## The abstract, written before the experiment (investigator's standing rule)
+
+**The one sentence the line would license if it succeeded completely:**
+
+> *A spectral measure of the raw EEG reacts to anaesthetic washout a median of N seconds before BIS does,
+> and the lead survives equalising the two detectors' smoothing windows and their false-alarm rates — so
+> it reflects information the monitor does not have, not a shorter filter set more loosely.*
+
+**Draft abstract.** *Background.* Depth-of-anaesthesia indices are known to lag the EEG they are computed
+from, by 14–155 s depending on device and direction. Claims that a research measure "leads" a monitor are
+routinely made without controlling the two ways a detector can lead trivially: a shorter averaging window,
+and a threshold closer to baseline. In seizure detection, reporting lead time at a matched false-alarm
+rate is standard; in anaesthesia depth monitoring it has never been done. *Methods.* In N publicly
+available intraoperative cases (VitalDB), we timed the reaction of a raw-EEG spectral measure and of BIS
+to a landmark taken from neither instrument: the anaesthesia machine's own MAC record, at the final
+descent when the vaporiser is switched off. We measured BIS's effective averaging window from its own
+1 Hz output and smoothed the candidate up to it, and we calibrated both detectors to a common measured
+false-alarm rate on a held-out pre-transition baseline. Analysis was restricted to cases where the monitor
+remained attached through the transition, an exclusion we report and test for bias. *Results.* [N]
+*Conclusions.* [N]
+
+**What this is worth, stated honestly rather than optimistically.** If it works, this is a good methods
+paper in a monitoring journal — it would change how index-comparison claims are reported, and the
+matched-false-alarm-rate requirement generalises to every future comparison of this kind. **It is not a
+high-impact discovery**, and it should not be described as one. A lead of tens of seconds at emergence has
+a real but modest clinical reading.
+
+**The strongest single result the line can produce is arguably not the lead at all.** It is the
+availability finding, which is already measured and does not depend on E247 succeeding: over 134 cases,
+BIS carries a valid reading in 33 / 14 / 5 cases across the three 200 s bins after the charted end of
+anaesthesia, while the raw EEG carries one in 134 / 121 / 71. **The conventional monitor is largely absent
+during the period it exists to monitor.** That is a claim about clinical practice and about every study
+that has used intraoperative BIS as a reference, it needs no candidate measure at all, and the probes now
+running extend it from 134 cases to ~5,800. If E247's primary returns ABSENT, this survives it.
+
+**A pre-committed stop.** If the prior-art check now running establishes that PK/PD hysteresis (`ke0`,
+effect-site equilibration) is already the standard framework for "which index reacts to agent change
+sooner", and that two indices' equilibration constants have already been compared head-to-head on the
+same patients, then the lead question is answered in a better-established language than ours and **the
+lead half of this line stops**. The availability half does not depend on it and continues either way.
