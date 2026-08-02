@@ -318,3 +318,34 @@ pointed at the finding for four experiments,** while E228, E230, E231 and E232 t
 COHORT — patient identity, case mix, opioid — none of which could ever have detected an artefact of the
 MEASURE. Restriction and matching cannot repair a definition. The check that settled it in one run was
 available the entire time.
+
+---
+
+## The propofol null is defended, 2026-08-02 (E237 and its follow-up)
+
+E237 established that `alpha_peak_hz_wide` returns a **finite peak on pure 1/f background in 87.5 % of
+draws**. That makes VitalDB's 93 % detectability rate uninformative as evidence of real alpha, and it
+raised a specific ambiguity about the one surviving Challenge A finding: propofol's *null* peak-dose
+relationship (−0.0226, consistency 0.0970 against a null of 0.3163) could mean the peak does not move,
+or it could mean propofol windows carry too little alpha for the estimator to track anything.
+
+**Measured directly, using the anchored alpha power already cached as a peak-prominence proxy:**
+
+| arm | n | anchored alpha power, median [IQR] | peak-NaN rate |
+|---|---:|---|---:|
+| propofol | 114 | **0.1972** [0.1531, 0.2610] | 0.0696 |
+| sevoflurane | 88 | 0.1906 [0.1330, 0.2318] | 0.0725 |
+
+Cohen's *d* (sevoflurane minus propofol) = **−0.3325**, arm-permutation |p| = **0.0012**.
+
+**Propofol windows have MORE power at their own peak, not less**, and the two arms' peak-detection
+failure rates are indistinguishable (0.0696 vs 0.0725). So the propofol null is not an artefact of
+absent alpha — if anything the estimator had a better peak to track in the propofol arm and still found
+no dose relationship. The asymmetry stands: **sevoflurane slides the alpha peak downward with dose and
+propofol does not.**
+
+Two limits remain attached to that sentence. The sevoflurane half is **already published** — Hayashi
+2008 (PMID 18431119, verified against MEDLINE) reports 11.0 → 9.8 → 8.7 Hz across 1 %→2 %→3 %
+sevoflurane — and the static endpoint is independently corroborated by Shen 2026 (PMID 42131603,
+8.78 vs 10.88 Hz). Only the propofol dose-response half is unaddressed in the literature. And this is
+still a between-patient comparison; no public deposit can make it within-patient.
