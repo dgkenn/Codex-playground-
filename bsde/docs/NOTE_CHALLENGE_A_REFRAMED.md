@@ -418,3 +418,50 @@ much of that 1.6 Hz is real variation and how much is the estimator wandering on
 some of its 1.888 Hz is signal. That the arm with the real dose-driven shift shows more within-case
 scatter is a small independent corroboration of E233's A1 finding, arriving from a statistic that was
 not built to test it.
+
+---
+
+## THIRD DEFENCE FAILS TOO, AND THE ASYMMETRY IS NOT ESTABLISHED
+
+The VitalDB prominence recompute finished (6679/6679 windows, join complete, peak reproduction max
+|diff| **0.000e+00** on all 6200 comparable windows — the single finite/NaN disagreement is a window
+the original run recorded as `status=error` and the new one fetched successfully, not an estimator
+disagreement). It answers the question the previous two sections were arguing about, and the answer is
+the unwelcome one.
+
+| arm | n cases | per-case median prominence |
+|---|---:|---|
+| propofol | 113 | **1.7176** [1.5649, 1.9272] |
+| sevoflurane | 87 | **1.9457** [1.7583, 2.1259] |
+
+Sevoflurane minus propofol = **+0.2281**, arm-permutation **|p| < 0.0001**.
+
+**Propofol windows have systematically LESS prominent alpha peaks than sevoflurane windows** — which is
+exactly the confound that makes E233's propofol null uninterpretable. The estimator has less to track
+in the propofol arm, so "the peak does not move under propofol" and "there is less peak to follow under
+propofol" remain unseparated, and now with a measured difference in the direction that favours the
+second reading.
+
+**All three defences of that null have now failed**, and they failed for three different reasons:
+peak-NaN rate (invalid — availability carries no information when the detector fires on 91.5 % of
+noise); anchored alpha power (band occupancy, not prominence, under a 1/f background); and within-case
+peak scatter (propofol 1.603 Hz against sevoflurane 1.888 Hz, which I read as propofol having the more
+stable peak — but stability is not prominence, and a low-prominence peak pinned near one frequency
+produces exactly that pattern).
+
+### What Challenge A is left with
+
+**Standing:** sevoflurane's alpha peak slides downward as dose rises — mean signed within-case rho
+−0.3296, clearing its donor null at consistency 0.8204 against 0.2770. This half is unaffected by the
+prominence confound, because the effect is present rather than absent, and a less-capable estimator
+makes a real association harder to see rather than easier. **It is also the half already published**:
+Hayashi 2008 (PMID 18431119) reports 11.0 → 9.8 → 8.7 Hz across 1 %→2 %→3 % sevoflurane.
+
+**Not established:** the ASYMMETRY — that propofol differs from sevoflurane in this respect. That was
+the only novel part, and it rests on a null in an arm now shown to have significantly weaker peaks.
+
+**One caveat on the threshold, in the other direction.** Only 4.04 % of VitalDB windows pass E239's
+k = 3.5, against 14–41 % on Sleep-EDFx. That threshold was calibrated on 30 s / 128 Hz synthetic
+windows and E239 explicitly scoped that it need not transfer, so the absolute pass rate here is not
+directly readable as "4 % of windows have alpha". The BETWEEN-ARM comparison above needs no threshold
+and is the part that stands.
