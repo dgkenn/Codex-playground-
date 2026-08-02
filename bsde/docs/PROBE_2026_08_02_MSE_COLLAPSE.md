@@ -8,27 +8,33 @@ ds006695) — not a new claim about either number.*
 
 ## 0. Bottom line, stated first
 
-**The scales the implementation uses are counted in SAMPLES, and `sfreq` is deliberately unused** (it is
-kept only for API symmetry with the module's other functions). The docstring says so explicitly:
+**Reasoning from the code alone points to one bug — and a direct test in §4 shows that bug is NOT
+sufficient to explain the collapse.** Read this section together with §6 (the ranked verdict); it would be
+misleading on its own.
+
+The scales `multiscale_entropy_slope` uses are counted in SAMPLES, and `sfreq` is deliberately unused (kept
+only for API symmetry with the module's other functions). The docstring says so explicitly:
 
 > `"scale" in samples of the coarse-grained series (the standard multiscale-entropy convention counts
 > scale in samples, not seconds — `sfreq` is accepted for API consistency with the rest of this module and
 > is not otherwise used; nothing here needs a physical time unit)."`
 
-That is true to the Costa et al. (2002) convention taken in isolation, and false as an assumption once the
-same feature is compared **across two deposits sampled at different rates**. At sleep_edfx's 100 Hz the
-five scales `(1,2,4,8,16)` span coarse-graining windows of **10–160 ms**; at ds006695's 500 Hz the *same
-nominal scales* span **2–32 ms** — a fivefold-narrower and much higher-frequency window at every rung. The
-project has hit this exact bug class twice before in this same file (`critical_slowing`'s lag, fixed to be
-seconds-based; and this function's own *series length*, already fixed via `max_samples`) and the code
-comment at `exotic.py` says so:
+That is true to the Costa et al. (2002) convention taken in isolation, and looks like it should be false as
+an assumption once the same feature is compared **across two deposits sampled at different rates**. At
+sleep_edfx's 100 Hz the five scales `(1,2,4,8,16)` span coarse-graining windows of **10–160 ms**; at
+ds006695's 500 Hz the *same nominal scales* span **2–32 ms** — a fivefold-narrower and much higher-frequency
+window at every rung. The project has hit this exact bug class twice before in this same file
+(`critical_slowing`'s lag, fixed to be seconds-based; and this function's own *series length*, already fixed
+via `max_samples`), and the natural prediction from that history is that this is the third instance and the
+cause of the collapse.
 
-> `"# TWO SEPARATE RATE DEFECTS, TWO SEPARATE REMEDIES. This is the THIRD time this project has hit the
-> same bug class (Lempel-Ziv's window in seconds, multiscale entropy's series length, now this)..."`
-
-The scale parameter itself is the one instance of this bug class in `multiscale_entropy_slope` that was
-never given the seconds-based remedy. That is the leading candidate below, and it is the one the direct
-downsampling test in §4 was built to confirm or refute.
+**§4 directly tested that prediction — downsampling ds006695's raw signal from 500 Hz to 100 Hz, so the
+identical nominal scale ladder now spans the identical physical time window sleep_edfx's does — and
+discrimination did NOT recover** (AUC 0.763 native → 0.748 downsampled; |d| 0.913 → 0.916, unchanged within
+noise). **The scale-in-samples definition is still a real bug and still worth fixing**, but it is
+demonstrated here NOT to be what is suppressing `multiscale_entropy_slope`'s discrimination on ds006695. See
+§6 for the ranking this leaves, with channel montage as the best-supported remaining candidate — untested
+directly, and reported as a hypothesis, not a finding.
 
 ---
 
@@ -230,7 +236,9 @@ that fix. Below is the general code comment for the same bug class:
 `multiscale_entropy_slope`'s **series length** got this remedy (`max_samples`, deliberately capped to
 remove a duration confound). Its **scale ladder** did not: it remains samples-based, which is the standard
 literature convention for a *single-deposit* MSE analysis and is exactly the defect this comment describes
-for any *cross-rate* comparison. This is the leading candidate, tested directly in §4.
+for any *cross-rate* comparison. This looked like the leading candidate going into the direct test — **§4
+tested it and it did not recover discrimination; see §4's result and §6's ranked verdict for what that
+means.**
 
 ### (c) Tolerance `r`
 
@@ -253,9 +261,13 @@ it cannot be fully separated from (b) without a bandwidth-matched comparison thi
 Sleep_edfx: 2 channels (`Fpz-Cz`, `Pz-Oz`, referential, midline-adjacent to occipital/central regions).
 ds006695: 3 channels, all **bipolar frontal** derivations (`FP1-AFz`, `FP2-AFz`, `FF`). Neither exceeds
 `EXPENSIVE_CHANNEL_CAP = 8`, so no channel truncation occurs in either deposit — every available channel is
-used and averaged. Frontal derivations are not, on prior physiology, a poor site for slow-wave detection
-(frontal slow waves are typically prominent in N3), so montage is not an obvious candidate for suppressing a
-slow-wave-driven effect — but it was not tested directly here and is reported as **untested, not ruled out**.
+used and averaged. Frontal SITES are not, on prior physiology, a poor place for slow-wave detection (frontal
+slow waves are typically prominent in N3) — but a **bipolar derivation between two closely spaced frontal
+electrodes** is a different claim from "a frontal site": it subtracts two nearby potentials and so acts as a
+spatial high-pass filter on widespread, synchronous activity, which is a mechanism distinct from electrode
+placement alone. Not tested directly here (§4 tests sampling rate only, holding montage fixed) — but §6
+ranks this the best-supported remaining candidate once §4 refutes (b), precisely because it is the one
+difference between the deposits left unaddressed by the direct test.
 
 ---
 
@@ -272,23 +284,47 @@ candidate does (mean over the 3 channels, default scales/`m`/`r_frac`/`max_sampl
 same raw epoch from 500 Hz to 100 Hz** (factor 5, `scipy.signal.decimate(..., zero_phase=True)` — an 8th-
 order Chebyshev-I anti-alias low-pass applied before downsampling, zero-phase; no manual amplitude rescaling
 performed anywhere) and recomputed the identical function with the same nominal scales, now representing
-100 Hz. **RMS before/after downsampling** was computed as a check on amplitude, not assumed:
+100 Hz. **RMS before/after downsampling** was computed as a check on amplitude, not assumed (results below,
+raw output in `mse_probe_result.json`).
 
-*[FILLED IN BELOW ONCE THE BACKGROUND RUN COMPLETES — see `mse_probe_result.json`]*
-
-**Result** (Cohen's d and AUC, W vs N3, on the SAME 76+76 epochs before and after):
+**Result** (n=76 W, 76 N3 epochs asserted non-empty and fully finite at every stage — printed live during the
+run and in `mse_probe_result.json`; the run took 994.3 s):
 
 | | native 500 Hz | downsampled to 100 Hz |
 |---|---:|---:|
-| n (W finite / total) | — | — |
-| n (N3 finite / total) | — | — |
-| mean, W | — | — |
-| mean, N3 | — | — |
-| Cohen's d (N3−W) | — | — |
-| AUC (W vs N3) | — | — |
-| mean RMS (µV, native units) | — | — |
+| n (W finite / total) | 76 / 76 | 76 / 76 |
+| n (N3 finite / total) | 76 / 76 | 76 / 76 |
+| mean, W | −0.04070 | +0.06651 |
+| mean, N3 | +0.04508 | +0.12879 |
+| sd, W | 0.09048 | 0.06586 |
+| sd, N3 | 0.09729 | 0.07004 |
+| Cohen's d (N3−W) | **+0.9131** | **+0.9162** |
+| AUC (N3 vs W, N3=positive — matches the sign convention `PROBE_2026_08_02_SEPARABILITY.md` §15.2 uses) | **0.7632** | **0.7483** |
+| mean RMS across epochs (raw file units, offset included) | 120.451 | 117.248 |
+| RMS ratio (downsampled / native) | — | **0.9734** |
 
-**Interpretation:** *[to be completed]*
+**RMS check.** Decimating 500→100 Hz removed only **2.7 % of RMS** (120.451 → 117.248, raw units, no
+manual rescaling anywhere — `scipy.signal.decimate(..., zero_phase=True)` applies its own anti-alias filter
+and returns physical-unit samples unchanged in scale). That is itself informative: if ds006695's signal
+carried substantial power between 50 and 250 Hz, removing it would have dropped the RMS far more than 2.7 %.
+Almost all of this signal's energy already lives below 50 Hz, which argues against culprit (c) (tolerance
+`r` inflated by extra high-frequency bandwidth) being a major contributor — there was very little
+high-frequency bandwidth to begin with.
+
+**Interpretation — and this REFUTES the leading hypothesis, not confirms it.** The native-rate epoch-level
+result (AUC 0.7632) reproduces `PROBE_2026_08_02_SEPARABILITY.md` §15.2's subject-averaged AUC (0.773)
+closely, which validates this probe's method against the established number despite using a different, noisier
+unit of analysis (76 raw epochs, not 19 subject-level means of 12 epochs each). **But downsampling to 100 Hz
+— which fixes BOTH the scale-in-samples/time-window mismatch (culprit b) AND, as a side effect of
+`max_samples=4000` no longer truncating a now-3000-sample epoch, increases the real time analysed from 8 s
+to the full 30 s epoch — left the effect essentially unchanged: AUC moved from 0.7632 to 0.7483 (slightly
+WORSE, not better) and |d| moved from 0.9131 to 0.9162 (unchanged within noise).** If the scale-in-samples
+mismatch were the (sole) cause of ds006695's collapse relative to sleep_edfx's near-ceiling AUC 0.998, giving
+the identical signal the identical nominal-scale-to-physical-Hz mapping sleep_edfx enjoys — with MORE data,
+not less — should have moved discrimination substantially toward sleep_edfx's level. **It did not move at
+all in the helpful direction.** Per this project's own rule 17 ("when a fix makes the effect stronger, the
+diagnosis was wrong — a refutation, not a refinement"), read in reverse: **when the fix does not make the
+effect stronger, the diagnosis is not confirmed, and here it is contradicted.**
 
 ---
 
@@ -309,33 +345,53 @@ measurement.
 
 ## 6. Ranked verdict
 
-1. **(b) Sampling rate / samples-vs-seconds scale definition — the primary supported cause.** The scale
-   ladder is defined in samples, `sfreq` is unused, and the same nominal ladder sweeps a 5× different
-   frequency range at the two deposits' native rates — landing in delta/theta at sleep_edfx's 100 Hz and
-   in beta/gamma at ds006695's 500 Hz, in exactly the direction that would suppress a slow-wave-driven
-   discrimination at the higher rate. The project's own code comment in the same file names this precise
-   bug class as having already occurred twice, and states the general remedy (define the parameter in
-   physical units, not samples) that this function's scale ladder never received. §4 above tests this
-   directly by downsampling and re-measuring; *[the direct result, once filled in, either confirms this as
-   sufficient (discrimination recovers) or leaves it as the best-supported but not fully sufficient
-   explanation (recovers partially)]*.
-2. **(a) Scale coverage — ruled out.** Both deposits are truncated to the identical 4000-sample budget by
-   `max_samples` before any coarse-graining, so effective length per scale (4000/2000/1000/500/250) is
-   identical between deposits. This is not the mechanism.
-3. **(c) Tolerance `r` — a secondary, not fully separable, contributor.** Self-normalising by construction
-   (Costa convention), and the measured native-500 Hz stds (§3c) are plausible EEG amplitudes, not evidence
-   of runaway contamination. Cannot be fully disentangled from (b) without a bandwidth-matched control this
-   probe did not run — ranked below (b), not eliminated.
-4. **(d) Channel count / montage — untested, not ruled out.** 2 vs 3 channels, referential vs bipolar-
-   frontal, neither hits the 8-channel cap. No physiological reason to expect frontal bipolar derivations to
-   suppress slow-wave content, but this probe did not test montage in isolation (e.g. by restricting
-   sleep_edfx to a single frontal-equivalent channel) and cannot rule it out.
+**The direct test in §4 changes this ranking from what §0–§3 predicted.** Reasoning from the code and from
+this project's own prior bug history (§3b, §5) made (b) — the scale-in-samples/sampling-rate mismatch — look
+like the obvious sufficient cause. **§4 tested it directly and it is not sufficient, and the direction of
+the miss (AUC got very slightly worse, not better) is itself informative, not just "no change".**
 
-**Honest limits of this evidence.** §4's downsampling test changes *only* sampling rate, holding channel
-montage, epoch duration, and everything else about ds006695 fixed — so it is a clean test of (b) in
-isolation, but it cannot separate (b) from (c) if the anti-alias filtering incidentally also narrows the
-bandwidth feeding into `r`'s std estimate (which it will, by construction — decimation removes exactly the
-high-frequency content whose presence/absence is (b) and (c)'s shared suspect). If discrimination recovers
-after downsampling, the honest reading is "(b) and/or (c), acting together or via the same underlying
-bandwidth change — not disentangled by this test", with (b) preferred because it is the one the project's
-own prior bug history and the frequency-vs-sample-referenced contrast in §5 both point to directly.
+1. **(b) Sampling rate / samples-vs-seconds scale definition — a REAL definitional bug, DEMONSTRATED
+   INSUFFICIENT to explain the collapse.** The scale ladder genuinely is samples-based and genuinely does
+   sweep a 5× different physical-time/frequency range at the two deposits' native rates (§3b is still
+   correct as a description of the code). But giving ds006695's actual signal the identical nominal-scale-
+   to-Hz mapping sleep_edfx enjoys — via downsampling, which ALSO incidentally gave the feature 30 s of
+   signal instead of 8 s (§4, the `max_samples` truncation side effect) — left AUC at 0.748 against a
+   native 0.763, i.e. **no recovery, arguably a fractional step backward.** Whatever explains ds006695's
+   large gap to sleep_edfx's near-ceiling 0.998, it survives correcting the scale-to-Hz mismatch and
+   correcting the truncated-duration handicap simultaneously. **This rules (b) out as the (sole or primary)
+   explanation for the cross-deposit gap** — it remains worth fixing on its own terms (the same code comment
+   and regression test in §3b/§5 apply regardless of what this probe found), but it is not what is making
+   `multiscale_entropy_slope` fail specifically on ds006695.
+2. **(d) Channel count / montage — UNTESTED BY THIS PROBE, but now the best-supported remaining candidate
+   by elimination.** ds006695's 3 channels are all short-distance BIPOLAR frontal derivations
+   (`FP1-AFz`, `FP2-AFz`, `FF`); sleep_edfx's 2 channels are REFERENTIAL, one central (`Fpz-Cz`) and one
+   occipital (`Pz-Oz`), each referenced against a distant, near-neutral site. A bipolar derivation between
+   two closely spaced frontal electrodes subtracts two nearby potentials and so acts as a spatial
+   high-pass filter — it preferentially cancels widespread, spatially SYNCHRONOUS activity (exactly what
+   large-amplitude N3 slow waves are, physiologically) while a referential montage spanning a much larger
+   distance does not cancel it the same way. This would attenuate the very signal multiscale entropy needs
+   to detect a state-dependent complexity CHANGE, while leaving a spectral-SLOPE measure like
+   `whole_head_exponent` comparatively unaffected — a slope is a property of the spectrum's log-log SHAPE
+   and can survive a uniform attenuation of the signal that would blunt an entropy measure's absolute
+   sensitivity to synchronous slow-wave structure. This is offered as the mechanistically consistent
+   explanation for why `whole_head_exponent` (AUC 1.000, referential-insensitive by construction) and
+   `multiscale_entropy_slope` (AUC ~0.75–0.77, well short of sleep_edfx's 0.998) diverge on the SAME
+   montage-limited deposit — **but it was not tested directly here** (a direct test would restrict
+   sleep_edfx to one channel, or better, compare a bipolar re-derivation of sleep_edfx's own channels
+   against its referential form) and is reported as a hypothesis ranked highest by elimination, not as a
+   confirmed finding.
+3. **(a) Scale coverage — ruled out**, unchanged from §3a: both deposits hit the identical 4000-sample
+   `max_samples` budget, so effective coarse-grained length per scale is identical between deposits. Not
+   the mechanism.
+4. **(c) Tolerance `r` — weakened by the RMS check in §4, not eliminated.** Decimating 500→100 Hz removed
+   only 2.7 % of RMS, meaning ds006695's signal was already almost entirely below 50 Hz before downsampling
+   — there was very little high-frequency bandwidth for `r`'s std estimate to be inflated by in the first
+   place. This makes (c) a weak candidate on its own, independent of (b)'s refutation.
+
+**Honest summary.** The mechanism this probe was built to test — a samples-vs-seconds definitional bug,
+which is real and worth fixing regardless — is **demonstrated NOT to be the explanation for ds006695's
+collapse**, because correcting it (plus incidentally providing more data) did not recover discrimination.
+The most defensible remaining account is channel montage (bipolar frontal vs referential
+central/occipital), argued from first principles above and consistent with which candidate (spectral slope)
+survived and which (entropy) did not, but **this specific probe did not test montage directly and that
+claim should be labelled a hypothesis, not a finding**, until a montage-matched comparison is run.
