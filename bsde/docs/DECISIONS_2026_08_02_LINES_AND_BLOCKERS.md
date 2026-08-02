@@ -373,8 +373,11 @@ the smoothing-window-matched ablation, and the data for it is being extracted no
 E246 ran and returned **ABSENT** as registered, and the ABSENT carries no information. The incumbent's
 aliveness gate failed at **0.343** and the reason is structural: over 134 usable cases, the number
 carrying any valid BIS in 200 s bins from `aneend` runs **130 / 120 / 73 / 33 / 14 / 5**, while the same
-bins for the EEG measure run **134 / 134 / 134 / 134 / 121 / 71**. **The BIS sensor comes off before
-emergence completes.** Full account in `bsde/results/e246_first_pass_note.md`; catalogue rule 96 records
+bins for the EEG measure run **134 / 134 / 134 / 134 / 121 / 71**. **The monitor declares its own index
+unusable while the sensor stays attached and keeps delivering EEG** — corrected the same day; see the
+correction block in `bsde/results/e246_first_pass_note.md`, which separates *device emitting* from
+*device emitting a valid reading* over all 245 cases and finds the emitting count identical to the EEG
+count in every bin. Full account in `bsde/results/e246_first_pass_note.md`; catalogue rule 96 records
 that the deposit adapter's own docstring said this before the design was written.
 
 **This does NOT stop Challenge C, and it specifically does not stop it for lack of data.** What it stops

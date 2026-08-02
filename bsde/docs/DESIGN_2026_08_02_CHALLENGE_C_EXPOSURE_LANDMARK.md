@@ -9,9 +9,10 @@ declare.*
 
 ## Why the landmark has to change
 
-E246 landmarked on `aneend` and compared against BIS. Both halves failed together: the sensor comes off
-before emergence completes, so BIS never reacts, and `aneend` is a charted administrative time that the
-adapter's own docstring already flagged as lagging the physiological event. Detail in
+E246 landmarked on `aneend` and compared against BIS. Both halves failed together: the monitor declares
+its own index invalid through most of emergence — while the sensor stays attached and keeps delivering
+EEG — so BIS never reacts, and `aneend` is a charted administrative time that the adapter's own docstring
+already flagged as lagging the physiological event. Detail in
 `bsde/results/e246_first_pass_note.md`.
 
 Catalogue rule **86** says what to reach for instead: prefer an **exposure** — a drug record, a dose, a
@@ -122,8 +123,10 @@ a real but modest clinical reading.
 **The strongest single result the line can produce is arguably not the lead at all.** It is the
 availability finding, which is already measured and does not depend on E247 succeeding: over 134 cases,
 BIS carries a valid reading in 33 / 14 / 5 cases across the three 200 s bins after the charted end of
-anaesthesia, while the raw EEG carries one in 134 / 121 / 71. **The conventional monitor is largely absent
-during the period it exists to monitor.** That is a claim about clinical practice and about every study
+anaesthesia, while the raw EEG carries one in 134 / 121 / 71. Measured across all 245 extracted cases and
+separating *emitting* from *valid*: the device is still emitting in 169 / 121 / 71 and reads valid in
+33 / 14 / 5. **The conventional monitor is present and declaring itself unusable through the period it
+exists to monitor.** That is a claim about clinical practice and about every study
 that has used intraoperative BIS as a reference, it needs no candidate measure at all, and the probes now
 running extend it from 134 cases to ~5,800. If E247's primary returns ABSENT, this survives it.
 

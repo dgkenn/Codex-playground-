@@ -52,8 +52,26 @@ Cases carrying **any finite BIS**, and any finite `whole_head_exponent`, in 200 
 | **EEG measure** | 134 | 134 | 134 | 134 | 121 | 71 |
 
 BIS detection times, over 134 usable cases: **46 within ±300 s, 0 outside ±300 s, 88 never.** It is not
-that BIS is late. **The sensor comes off before emergence completes**, so for most cases the monitor has
-no opinion about the transition at all.
+that BIS is late. For most cases the monitor has no opinion about the transition at all.
+
+> **CORRECTION, made the same day, to the reason.** This note first said *"the sensor comes off before
+> emergence completes"*. That is wrong, and the data to refute it was already in hand. Re-measured over
+> all 245 extracted cases, separating *the device still emitting samples* from *the device emitting a
+> VALID reading* (BIS emits a literal 0.0 with the index unavailable, so validity is a positive test):
+>
+> | bin (s) | [−600,−400) | [−400,−200) | [−200,0) | [0,+200) | [+200,+400) | [+400,+600) |
+> |---|---|---|---|---|---|---|
+> | device emitting | 238 | 228 | 214 | 169 | 121 | 71 |
+> | **BIS valid (>0)** | **171** | **126** | **76** | **33** | **14** | **5** |
+> | EEG feature computable | 238 | 228 | 214 | 169 | 121 | 71 |
+>
+> The emitting count and the EEG count are **identical in every bin** — they are the same sensor and the
+> same recording. So the strip is still on and still delivering EEG while the index reads invalid: at the
+> charted end of anaesthesia only **33 of 169** cases (19.5 %) carry a valid index, and by +400–600 s
+> only **5 of 71** (7.0 %). **The monitor is not removed; it declares its own output unusable**, which is
+> the documented frontalis-EMG contamination mechanism (PMIDs 16115989, 15109199 and 37756246, all three verified) arriving
+> exactly when muscle tone returns. The two readings have different consequences and only one of them is
+> true.
 
 ## The defect, stated plainly
 

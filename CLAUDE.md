@@ -1342,8 +1342,7 @@ unverified on GitHub.
     labelled by BIS, not by their sign relative to `aneend`."** The run then re-measured exactly that,
     at more resolution: cases carrying any finite BIS, in 200 s bins across the emergence window, go
     **130 / 120 / 73 / 33 / 14 / 5**, while the same bins for the EEG measure go **134 / 134 / 134 / 134
-    / 121 / 71**. The sensor comes off before emergence completes. The incumbent's aliveness gate duly
-    failed at 0.343 and the primary's ABSENT verdict says nothing about the question.
+    / 121 / 71**. The incumbent's aliveness gate duly failed at 0.343 and the primary's ABSENT verdict says nothing about the question.
     Rule 50's corollary says an internal record is a source like any other and must be searched before
     claiming a finding is new. **This is the stronger, earlier version: search it before claiming a
     design is POSSIBLE.** A deposit adapter is where every previous session's collisions with the data
