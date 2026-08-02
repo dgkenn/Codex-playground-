@@ -85,3 +85,35 @@ These are not analytical problems and no amount of further computation touches t
 4. **Credential rotation.** Credentials were pasted into chat earlier in this programme. They were written
    only to `~/.netrc` mode 600 outside the repo and never committed, but rotation has been advised
    repeatedly and not confirmed.
+
+---
+
+## VERDICT IN, 2026-08-02: Challenge D stops as a standalone line
+
+The literature check returned **PARTIALLY PUBLISHED**, and the part that is published is the part the
+claim rested on. Verified directly against MEDLINE rather than taken on report:
+
+* **Van Calster et al. 2016, PMID 26772608** — *"we prove that moderate calibration guarantees
+  nonharmful decision making."* Moderate calibration is a far weaker condition than two sites'
+  distributions matching. That is a formal proof of the mechanism our result instantiates.
+* **Justice, Covinsky & Berlin 1999, PMID 10075620** originated the calibration/discrimination and
+  reproducibility/transportability distinctions.
+* **Debray et al. 2015, PMID 25179855** frames external validation around case-mix differences and
+  reports a model needing no extensive updating across sites of differing case-mix.
+
+**So the statistical contribution is nil.** "A threshold transports when both sites' class distributions
+straddle a common value, regardless of their means" is textbook clinical prediction modelling, proved
+seven years before this project started. E243 and E244 re-derived it on EEG without knowing it existed —
+which is precisely the failure the pre-third-experiment literature rule was added to prevent, arriving
+one experiment too late again.
+
+**What survives is narrow and real.** No EEG paper states or tests it: the harmonisation literature
+(ComBat, neuroCombat, neuroHarmonize) uniformly harmonises *then* classifies, and none asks whether
+harmonisation was necessary. So "the EEG harmonisation literature assumes an alignment step that a
+decision threshold does not require" is an unmade point — but it is a **paragraph in a methods paper,
+not a paper**, and it should be written as such.
+
+**Decision: stop Challenge D as a standalone line.** E245 finishes because it is already running and its
+numbers are the evidence for even the narrow version; nothing further is registered after it. Any
+write-up must cite Van Calster 2016 as the mechanism and claim only the EEG instantiation — presenting
+this as a new insight about transportability would be wrong on the record.
