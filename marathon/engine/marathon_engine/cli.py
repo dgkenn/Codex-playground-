@@ -206,10 +206,27 @@ def cmd_import(args: argparse.Namespace) -> int:
     p = _profile()
     age = args.age or (p["age"] if p else None)
     hr_rest = args.hr_rest or (p["hr_rest"] if p else None)
-    if age is None or hr_rest is None:
-        print("Need --age and --hr-rest the first time (there is no profile to take them from).",
-              file=sys.stderr)
+    # Only TCX and CSV need these from outside: neither format carries them. A JSON recording --
+    # what the Web Bluetooth logger writes -- has both fields in the file, and demanding them on the
+    # command line meant the one path that already knew the answer was the one that refused to run.
+    from pathlib import Path as _Path
+    head = ""
+    try:
+        with open(args.path, "r", encoding="utf-8", errors="replace") as fh:
+            head = fh.read(200).lstrip()
+    except OSError as exc:
+        print(f"Could not read {args.path}: {exc}", file=sys.stderr)
+        return 1
+    self_describing = head.startswith("{") or _Path(args.path).suffix.lower() == ".json"
+
+    if not self_describing and (age is None or hr_rest is None):
+        print("Need --age and --hr-rest for a TCX or CSV import — neither format carries them.\n"
+              "A JSON recording from the Web Bluetooth logger has both in the file and needs "
+              "neither flag.", file=sys.stderr)
         return 2
+    if self_describing:
+        age = age or 0.0
+        hr_rest = hr_rest or 0.0
 
     try:
         rec, warnings = load_any(args.path, age=age, hr_rest=hr_rest, surface=args.surface)

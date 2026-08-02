@@ -207,3 +207,79 @@ def test_unreadable_state_warns_and_falls_back_rather_than_crashing(isolated_sta
     (isolated_state / "sessions.json").write_text("{ not json")
     assert cli._sessions() == []
     assert "could not read" in capsys.readouterr().err
+
+
+# ------------------------------------------------------------------------------------------------
+# The Web Bluetooth logger's format
+# ------------------------------------------------------------------------------------------------
+
+
+def _logger_payload(n_stages=6):
+    """Exactly what tools/verity-logger.html writes: per-second HR, speed from the stage label,
+    accelerometer SD, and age/hr_rest carried in the file itself."""
+    import math
+    import random
+    from datetime import datetime, timezone
+    rng = random.Random(11)
+    samples, hr, t = [], 62.0, 0
+    plan = [(300, "warmup", None)]
+    plan += [(240, f"stage_{i + 1}", k / 3.6)
+             for i, k in enumerate([5, 6, 7, 8, 9, 10][:n_stages])]
+    plan += [(1200, "steady", 7 / 3.6)]
+    for dur, label, speed in plan:
+        for _ in range(dur):
+            v = speed if speed else 1.25
+            hr += (55 + v * 3.6 * 12 - hr) * (1 - math.exp(-1 / 45))
+            samples.append({"t_s": t, "hr_bpm": round(hr + rng.gauss(0, 1.4)),
+                            "speed_m_s": round(speed, 4) if speed else None,
+                            "accel_sd_g": round(0.30 + rng.gauss(0, 0.02), 4), "label": label})
+            t += 1
+    return {"schema_version": 1,
+            "started_at": datetime(2026, 8, 5, 7, 0, tzinfo=timezone.utc).isoformat(),
+            "age": 30, "hr_rest": 55, "samples": samples, "resting_ppi_ms": [],
+            "surface": "treadmill", "strap_position": "upper_arm",
+            "notes": "Recorded with the Web Bluetooth logger."}
+
+
+def test_logger_json_imports_without_age_flags(tmp_path, capsys):
+    """The file carries age and resting HR, so demanding them on the command line was a defect —
+    the one input format that already knew the answer was the one that refused to run."""
+    p = tmp_path / "verity-session.json"
+    p.write_text(json.dumps(_logger_payload()))
+    assert run(["import", str(p)]) == 0
+    out = capsys.readouterr().out
+    assert "PROFILE" in out
+
+
+def test_logger_json_produces_a_usable_profile(tmp_path, capsys):
+    """The whole point of the logger: a browser and an armband, and out comes a real profile."""
+    p = tmp_path / "verity-session.json"
+    p.write_text(json.dumps(_logger_payload()))
+    run(["import", str(p), "--save"])
+    out = capsys.readouterr().out
+    assert "HR vs speed" in out
+    # Generated with a 12 bpm per km/h slope; recovering it is the test.
+    import re
+    m = re.search(r"HR vs speed\s+([\d.]+) bpm per km/h", out)
+    assert m, out
+    assert 10.5 <= float(m.group(1)) <= 15.0
+
+
+def test_logger_json_gets_full_sensor_health_not_partial(tmp_path, capsys):
+    """The reason this format beats a TCX export: the accelerometer is present, so the not-worn and
+    frozen-heart-rate detectors can actually run."""
+    p = tmp_path / "verity-session.json"
+    p.write_text(json.dumps(_logger_payload()))
+    run(["import", str(p)])
+    out = capsys.readouterr().out
+    assert "PARTIAL" not in out
+    assert "verdict: good" in out
+
+
+def test_tcx_still_requires_age_and_says_why(tmp_path, capsys):
+    p = tmp_path / "run.tcx"
+    p.write_text("<TrainingCenterDatabase></TrainingCenterDatabase>")
+    assert run(["import", str(p)]) == 2
+    err = capsys.readouterr().err
+    assert "--age" in err
+    assert "neither format carries them" in err

@@ -1,0 +1,486 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verity Sense logger</title>
+
+<style>
+  :root {
+    --bg: #fbfbfa; --fg: #1a1a18; --dim: #6b6b66; --line: #e3e2de;
+    --ok: #2f7d4f; --warn: #b0741f; --bad: #a63d3d; --accent: #2c5aa0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141413; --fg:#eeedea; --dim:#96948d; --line:#2e2d2a;
+            --ok:#6fbf8b; --warn:#d9a24a; --bad:#e07a7a; --accent:#7aa5e0; }
+  }
+  :root[data-theme="dark"] {
+    --bg:#141413; --fg:#eeedea; --dim:#96948d; --line:#2e2d2a;
+    --ok:#6fbf8b; --warn:#d9a24a; --bad:#e07a7a; --accent:#7aa5e0;
+  }
+  :root[data-theme="light"] {
+    --bg:#fbfbfa; --fg:#1a1a18; --dim:#6b6b66; --line:#e3e2de;
+    --ok:#2f7d4f; --warn:#b0741f; --bad:#a63d3d; --accent:#2c5aa0;
+  }
+  body { background: var(--bg); color: var(--fg); margin: 0;
+         font: 16px/1.55 ui-sans-serif, -apple-system, system-ui, sans-serif; }
+  main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+  h1 { font-size: 1.35rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .07em;
+       color: var(--dim); margin: 2rem 0 .6rem; font-weight: 600; }
+  p { margin: .5rem 0; }
+  .sub { color: var(--dim); font-size: .9rem; margin-bottom: 1.25rem; }
+  button { font: inherit; font-size: .95rem; padding: .5rem .9rem; border-radius: 7px;
+           border: 1px solid var(--line); background: transparent; color: var(--fg);
+           cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--fg); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+          gap: .75rem; margin: 1rem 0; }
+  .tile { border: 1px solid var(--line); border-radius: 9px; padding: .7rem .8rem; }
+  .tile .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+             color: var(--dim); }
+  .tile .v { font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .tile .u { font-size: .8rem; color: var(--dim); }
+  #status { padding: .6rem .8rem; border-radius: 7px; border: 1px solid var(--line);
+            font-size: .9rem; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--line); }
+  th { color: var(--dim); font-weight: 600; font-size: .78rem; text-transform: uppercase;
+       letter-spacing: .05em; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .87em; }
+  .note { border-left: 2px solid var(--line); padding-left: .9rem; color: var(--dim);
+          font-size: .9rem; }
+  .scroll { overflow-x: auto; }
+  #unsupported { display: none; border: 1px solid var(--bad); border-radius: 9px;
+                 padding: 1rem; margin-bottom: 1.5rem; }
+  .stagebtns button { min-width: 3.5rem; }
+  .stagebtns button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+
+<main>
+  <h1>Verity Sense logger</h1>
+  <p class="sub">Streams heart rate and accelerometer straight from the armband into a file the
+  training engine reads natively. No app, no Mac, no account.</p>
+
+  <div id="unsupported">
+    <strong class="bad">This browser cannot talk to Bluetooth.</strong>
+    <p>Web Bluetooth is supported by <strong>Chrome or Edge on Windows, Linux, macOS or
+    Android</strong>. Safari does not support it on any platform, so this will not work on an iPhone
+    in Safari — use <strong>Bluefy</strong> from the App Store if the phone is all you have.</p>
+  </div>
+
+  <div id="status">Not connected.</div>
+
+  <div class="row" style="margin-top:.9rem">
+    <button id="connect" class="primary">Connect armband</button>
+    <button id="record" disabled>Start recording</button>
+    <button id="download" disabled>Download session</button>
+  </div>
+
+  <div class="grid">
+    <div class="tile"><div class="k">Heart rate</div>
+      <div><span class="v" id="hr">—</span> <span class="u">bpm</span></div></div>
+    <div class="tile"><div class="k">Elapsed</div>
+      <div><span class="v" id="elapsed">0:00</span></div></div>
+    <div class="tile"><div class="k">Samples</div>
+      <div><span class="v" id="samples">0</span></div></div>
+    <div class="tile"><div class="k">Movement</div>
+      <div><span class="v" id="accsd">—</span> <span class="u">g sd</span></div></div>
+    <div class="tile"><div class="k">Battery</div>
+      <div><span class="v" id="batt">—</span> <span class="u">%</span></div></div>
+  </div>
+
+  <h2>You</h2>
+  <div class="row">
+    <label style="font-size:.9rem;color:var(--dim)">age
+      <input id="age" type="number" min="10" max="99" value="30"
+             style="width:4.2rem;font:inherit;padding:.25rem;border-radius:5px;
+                    border:1px solid var(--line);background:transparent;color:var(--fg)"></label>
+    <label style="font-size:.9rem;color:var(--dim)">resting HR
+      <input id="hrrest" type="number" min="30" max="90" value="55"
+             style="width:4.2rem;font:inherit;padding:.25rem;border-radius:5px;
+                    border:1px solid var(--line);background:transparent;color:var(--fg)"></label>
+  </div>
+
+  <h2>Stage marking</h2>
+  <p class="sub" style="margin-bottom:.7rem">Tap when you change speed. This is what turns a
+  recording into a calibration: labelled stages give an exact heart-rate/speed fit instead of one
+  guessed from the shape of the data.</p>
+  <div class="row stagebtns" id="stages"></div>
+  <div class="row" style="margin-top:.5rem">
+    <button data-label="warmup">warm-up</button>
+    <button data-label="steady">steady block</button>
+    <label style="font-size:.9rem;color:var(--dim)">at
+      <input id="steadykmh" type="number" step="0.1" min="3" max="20" value="7"
+             style="width:4.2rem;font:inherit;padding:.25rem;border-radius:5px;
+                    border:1px solid var(--line);background:transparent;color:var(--fg)"> km/h</label>
+    <button data-label="">clear label</button>
+  </div>
+
+  <h2>Session log</h2>
+  <div class="scroll"><table id="log">
+    <thead><tr><th>t</th><th>event</th></tr></thead><tbody></tbody>
+  </table></div>
+
+  <h2>Then what</h2>
+  <p>Download the file and run:</p>
+  <p><code>python -m marathon_engine.cli import verity-session.json --save</code></p>
+  <p class="note">This format carries the accelerometer, which a Polar Flow TCX export does not. That
+  matters: without it the not-worn and frozen-heart-rate detectors cannot run at all, and sensor
+  health comes back "partial". With it you get the full check.</p>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------------------------
+// Polar Measurement Data protocol. Ported from Sources/Sensors/PolarPMD.swift, which was itself
+// ported from the hardware-tested Python in the SleepController project. Three details below are
+// wrong in most third-party implementations and are called out where they occur.
+// ---------------------------------------------------------------------------------------------
+
+const PMD_SERVICE = 'fb005c80-02e7-f387-1cad-8acd2d8df0c8';
+const PMD_CONTROL = 'fb005c81-02e7-f387-1cad-8acd2d8df0c8';
+const PMD_DATA    = 'fb005c82-02e7-f387-1cad-8acd2d8df0c8';
+const HR_SERVICE  = 'heart_rate';
+const HR_CHAR     = 'heart_rate_measurement';
+const BATT_SERVICE = 'battery_service';
+const BATT_CHAR    = 'battery_level';
+
+const MEAS_ACC = 0x02;
+const OP_START = 0x02, OP_STOP = 0x03;
+
+// Setting ids and their wire widths. CHANNELS is ONE byte, not two — encoding it as uint16 writes
+// an extra byte into every START command and misaligns the parse of every subsequent field.
+const SETTING = { sampleRate: 0x00, resolution: 0x01, range: 0x02, channels: 0x04 };
+const SETTING_WIDTH = { 0x00: 2, 0x01: 2, 0x02: 2, 0x04: 1, 0x05: 4 };
+
+// 52 Hz, 16-bit, ±8 G, ordered RANGE → SAMPLE_RATE → RESOLUTION to reproduce Polar's own verified
+// byte sequence exactly.
+const ACC_SETTINGS = [[SETTING.range, 8], [SETTING.sampleRate, 52], [SETTING.resolution, 16]];
+
+function startCommand(measurement, settings) {
+  const bytes = [OP_START, measurement];
+  for (const [id, value] of settings) {
+    bytes.push(id, 0x01);                       // setting id, then "1 value follows"
+    const width = SETTING_WIDTH[id];
+    for (let i = 0; i < width; i++) bytes.push((value >> (8 * i)) & 0xff);
+  }
+  return new Uint8Array(bytes);
+}
+
+// Compression is signalled SOLELY by bit 7 of the frame-type byte. The low seven bits are an
+// independent raw-layout id where 0/1/2 mean 8/16/24-bit uncompressed samples — so treating a
+// literal frame type of 0x02 as "delta compressed" collides with the 24-bit raw layout and silently
+// runs raw frames through the delta decoder.
+const COMPRESSED_BIT = 0x80;
+
+function parseAccFrame(view) {
+  const measurement = view.getUint8(0);
+  if (measurement !== MEAS_ACC) return null;
+  const frameType = view.getUint8(9);
+  const compressed = (frameType & COMPRESSED_BIT) !== 0;
+  const layout = frameType & 0x7f;
+  const samples = [];
+  let off = 10;
+
+  if (!compressed) {
+    const bytesPer = layout === 0 ? 1 : layout === 1 ? 2 : 3;
+    while (off + bytesPer * 3 <= view.byteLength) {
+      const xyz = [];
+      for (let c = 0; c < 3; c++) { xyz.push(readSigned(view, off, bytesPer)); off += bytesPer; }
+      samples.push(xyz);
+    }
+    return samples;
+  }
+
+  // Delta frame: reference sample, then repeated (deltaSizeBits, sampleCount, packed deltas).
+  if (layout !== 0x01) return samples;          // only the 16-bit reference layout is emitted
+  const ref = [];
+  for (let c = 0; c < 3; c++) { ref.push(readSigned(view, off, 2)); off += 2; }
+  samples.push(ref.slice());
+  let current = ref.slice();
+
+  while (off + 2 <= view.byteLength) {
+    const bits = view.getUint8(off), count = view.getUint8(off + 1);
+    off += 2;
+    if (bits === 0 || count === 0) break;
+    const totalBits = bits * 3 * count;
+    const need = Math.ceil(totalBits / 8);
+    if (off + need > view.byteLength) break;
+    let bitPos = 0;
+    for (let s = 0; s < count; s++) {
+      for (let c = 0; c < 3; c++) {
+        current[c] += readSignedBits(view, off, bitPos, bits);
+        bitPos += bits;
+      }
+      samples.push(current.slice());
+    }
+    off += need;
+  }
+  return samples;
+}
+
+function readSigned(view, offset, bytes) {
+  let v = 0;
+  for (let i = 0; i < bytes; i++) v |= view.getUint8(offset + i) << (8 * i);
+  const sign = 1 << (8 * bytes - 1);
+  return (v & sign) ? v - (1 << (8 * bytes)) : v;
+}
+
+function readSignedBits(view, byteOffset, bitPos, bits) {
+  let v = 0;
+  for (let i = 0; i < bits; i++) {
+    const p = bitPos + i;
+    const byte = view.getUint8(byteOffset + (p >> 3));
+    v |= ((byte >> (p & 7)) & 1) << i;
+  }
+  const sign = 1 << (bits - 1);
+  return (v & sign) ? v - (1 << bits) : v;
+}
+
+function parseHeartRate(view) {
+  const flags = view.getUint8(0);
+  const wide = (flags & 0x01) !== 0;
+  let off = 1;
+  const hr = wide ? view.getUint16(off, true) : view.getUint8(off);
+  off += wide ? 2 : 1;
+  if (flags & 0x08) off += 2;                   // energy expended, skipped
+  const rr = [];
+  if (flags & 0x10) {
+    while (off + 1 < view.byteLength) {
+      // RR is in 1/1024 s units, not milliseconds. Getting this wrong scales every interval by 2.3%
+      // and quietly corrupts every HRV number downstream.
+      rr.push(view.getUint16(off, true) * 1000 / 1024);
+      off += 2;
+    }
+  }
+  return { hr, rr };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Recording
+// ---------------------------------------------------------------------------------------------
+
+const state = {
+  device: null, recording: false, startedAt: null,
+  hr: null, rr: [], batt: null, label: '',
+  accWindow: [], accSd: null, steadySpeed: null,
+  perSecond: new Map(),   // second -> partial sample
+  events: [],
+};
+
+const $ = id => document.getElementById(id);
+
+function log(msg, cls) {
+  const t = state.startedAt ? fmtTime((Date.now() - state.startedAt) / 1000) : '—';
+  const row = $('log').querySelector('tbody').insertRow(0);
+  row.insertCell().textContent = t;
+  const c = row.insertCell();
+  c.textContent = msg;
+  if (cls) c.className = cls;
+}
+
+function setStatus(msg, cls) {
+  $('status').innerHTML = `<span class="${cls || ''}">${msg}</span>`;
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+}
+
+function accMagnitude(xyz) {
+  // Raw counts at ±8 G, 16-bit → g. 32768 counts full scale.
+  const g = xyz.map(v => v * 8 / 32768);
+  return Math.hypot(g[0], g[1], g[2]);
+}
+
+function tick() {
+  if (!state.recording) return;
+  const t = Math.floor((Date.now() - state.startedAt) / 1000);
+
+  // Standard deviation of accelerometer magnitude over the last second. This single number is what
+  // lets the engine tell a band that has worked loose (still reporting, arm not moving) from a
+  // genuinely steady pulse — the failure Polar warns about and skin-contact detection misses.
+  let sd = null;
+  if (state.accWindow.length > 4) {
+    const mean = state.accWindow.reduce((a, b) => a + b, 0) / state.accWindow.length;
+    sd = Math.sqrt(state.accWindow.reduce((a, b) => a + (b - mean) ** 2, 0)
+                   / state.accWindow.length);
+    state.accSd = sd;
+  }
+  state.accWindow = [];
+
+  if (state.hr != null) {
+    const speed = LABEL_SPEED_MS[state.label] ?? (state.label === 'steady' ? state.steadySpeed : null);
+    state.perSecond.set(t, {
+      t_s: t, hr_bpm: state.hr,
+      speed_m_s: speed == null ? null : Math.round(speed * 1e4) / 1e4,
+      accel_sd_g: sd == null ? null : Math.round(sd * 1e4) / 1e4,
+      label: state.label,
+    });
+    if (state.rr.length) {
+      state.perSecond.get(t).rr_ms = state.rr.map(v => Math.round(v * 10) / 10);
+      state.rr = [];
+    }
+  }
+
+  $('elapsed').textContent = fmtTime(t);
+  $('samples').textContent = state.perSecond.size;
+  $('accsd').textContent = sd == null ? '—' : sd.toFixed(3);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Connection
+// ---------------------------------------------------------------------------------------------
+
+async function connect() {
+  try {
+    setStatus('Choose "Polar Sense" in the browser dialog…');
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: 'Polar' }],
+      optionalServices: [HR_SERVICE, BATT_SERVICE, PMD_SERVICE],
+    });
+    state.device = device;
+    device.addEventListener('gattserverdisconnected', () => {
+      setStatus('Armband disconnected.', 'bad');
+      log('disconnected', 'bad');
+    });
+
+    setStatus('Connecting…');
+    const server = await device.gatt.connect();
+
+    // Heart rate first: it is the standard service, it always works, and it is the one stream the
+    // session cannot do without.
+    const hrService = await server.getPrimaryService(HR_SERVICE);
+    const hrChar = await hrService.getCharacteristic(HR_CHAR);
+    await hrChar.startNotifications();
+    hrChar.addEventListener('characteristicvaluechanged', e => {
+      const { hr, rr } = parseHeartRate(e.target.value);
+      state.hr = hr;
+      if (rr.length) state.rr.push(...rr);
+      $('hr').textContent = hr;
+    });
+    log('heart rate streaming', 'ok');
+
+    try {
+      const bs = await server.getPrimaryService(BATT_SERVICE);
+      const bc = await bs.getCharacteristic(BATT_CHAR);
+      const v = await bc.readValue();
+      state.batt = v.getUint8(0);
+      $('batt').textContent = state.batt;
+      if (state.batt < 30) log(`battery ${state.batt}% — charge before a real session`, 'warn');
+    } catch { /* battery service is optional; its absence is not a failure */ }
+
+    // Accelerometer is best-effort. Without it you still get heart rate; you lose the movement
+    // evidence the fault detectors need, and the app says so rather than pretending otherwise.
+    try {
+      const pmd = await server.getPrimaryService(PMD_SERVICE);
+      const control = await pmd.getCharacteristic(PMD_CONTROL);
+      const data = await pmd.getCharacteristic(PMD_DATA);
+      await control.startNotifications();
+      await data.startNotifications();
+      data.addEventListener('characteristicvaluechanged', e => {
+        const samples = parseAccFrame(e.target.value);
+        if (samples) for (const s of samples) state.accWindow.push(accMagnitude(s));
+      });
+      await control.writeValueWithResponse(startCommand(MEAS_ACC, ACC_SETTINGS));
+      log('accelerometer streaming at 52 Hz', 'ok');
+    } catch (err) {
+      log(`no accelerometer (${err.message}) — sensor health will be partial`, 'warn');
+    }
+
+    setStatus('Connected. Warm up for a few minutes before recording — cold skin is a common cause '
+              + 'of poor optical signal.', 'ok');
+    $('record').disabled = false;
+    $('connect').disabled = true;
+  } catch (err) {
+    setStatus(`Could not connect: ${err.message}`, 'bad');
+  }
+}
+
+function toggleRecord() {
+  if (!state.recording) {
+    state.recording = true;
+    state.startedAt = Date.now();
+    state.perSecond.clear();
+    $('record').textContent = 'Stop recording';
+    $('record').classList.remove('primary');
+    setStatus('Recording.', 'ok');
+    log('recording started', 'ok');
+  } else {
+    state.recording = false;
+    $('record').textContent = 'Start recording';
+    $('download').disabled = state.perSecond.size === 0;
+    setStatus(`Stopped. ${state.perSecond.size} samples captured.`, 'ok');
+    log('recording stopped');
+  }
+}
+
+function download() {
+  const samples = [...state.perSecond.values()].sort((a, b) => a.t_s - b.t_s);
+  // Exactly the schema marathon_engine.calibration.load_recording expects, so the file needs no
+  // conversion step — a conversion step is somewhere for units to go wrong.
+  const payload = {
+    schema_version: 1,
+    started_at: new Date(state.startedAt).toISOString(),
+    age: Number($('age').value) || 30,
+    hr_rest: Number($('hrrest').value) || 55,
+    samples: samples.map(s => ({
+      t_s: s.t_s, hr_bpm: s.hr_bpm, speed_m_s: s.speed_m_s,
+      accel_sd_g: s.accel_sd_g, label: s.label || '',
+    })),
+    resting_ppi_ms: [],
+    surface: 'treadmill',
+    strap_position: 'upper_arm',
+    notes: 'Recorded with the Web Bluetooth logger. Speed comes from the stage labels, which is '
+         + 'valid on a treadmill where speed is imposed. Outdoors it would be a fiction.',
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'verity-session.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Wiring
+// ---------------------------------------------------------------------------------------------
+
+// The protocol's stage speeds. On a treadmill the speed is imposed rather than chosen, so the label
+// IS the speed -- which is what lets this file produce a heart-rate/speed fit with no GPS at all.
+// Without a speed per sample the engine finds no stages and returns no profile: the import would
+// succeed and yield nothing, which is worse than failing.
+const STAGE_SPEEDS = [5, 6, 7, 8, 9, 10];
+const LABEL_SPEED_MS = Object.fromEntries(
+  STAGE_SPEEDS.map((kmh, i) => [`stage_${i + 1}`, kmh / 3.6]));
+const stageRow = $('stages');
+STAGE_SPEEDS.forEach((kmh, i) => {
+  const b = document.createElement('button');
+  b.textContent = `${kmh}`;
+  b.dataset.label = `stage_${i + 1}`;
+  b.title = `${kmh} km/h`;
+  stageRow.appendChild(b);
+});
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-label]');
+  if (!b) return;
+  state.label = b.dataset.label;
+  if (state.label === 'steady') state.steadySpeed = (Number($('steadykmh').value) || 7) / 3.6;
+  document.querySelectorAll('button[data-label]').forEach(x => x.classList.remove('active'));
+  if (state.label) b.classList.add('active');
+  log(state.label ? `→ ${state.label}` : 'label cleared');
+});
+
+$('connect').onclick = connect;
+$('record').onclick = toggleRecord;
+$('download').onclick = download;
+setInterval(tick, 1000);
+
+if (!navigator.bluetooth) {
+  $('unsupported').style.display = 'block';
+  $('connect').disabled = true;
+  setStatus('Web Bluetooth unavailable in this browser.', 'bad');
+}
+</script>
