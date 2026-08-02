@@ -1,0 +1,22 @@
+{
+  "experiment": "E194",
+  "n_recordings": 62,
+  "n_windows": 17196,
+  "ladder": [
+    0.0,
+    0.5,
+    0.8,
+    0.95,
+    0.99
+  ],
+  "n_reps": 20,
+  "alpha": 0.05,
+  "nominal": 0.05,
+  "placebo": "contiguous block of the same candidate from a different recording",
+  "g1_rebuild": true,
+  "g2_incumbent_rho": 0.3986932948626475,
+  "g5_min_donors": 0,
+  "g5": false,
+  "verdict": "NOT INTERPRETABLE",
+  "why": "a cohort or availability gate failed"
+}

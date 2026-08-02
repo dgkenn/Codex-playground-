@@ -74,8 +74,13 @@ G3  **ALIVENESS**: the positive control — within-recording z(MOAA/S) plus nois
 G4  a donor block must be uncorrelated with the column it replaces, below rho 0.30. Unlike the surrogate
     families this should hold trivially — it is a different patient — and it is gated because a
     trivially-passing check that is *not verified* is how E22 and E29 shipped gates that could not fail.
-G5  **DONOR AVAILABILITY**: every recording needs at least `MIN_DONORS` other recordings long enough to
-    supply a block. Reported, not assumed.
+G5  **DONOR AVAILABILITY**, two quantities that can each go either way: the fraction of recordings with
+    NO donor at least as long (ceiling 5 %, these use the declared tiling fallback) and the fraction with
+    at least `MIN_DONORS` long-enough donors (floor 90 %). The first version required EVERY recording to
+    have long-enough donors, which is **unsatisfiable for any cohort** — there is always one longest
+    recording and nothing is longer than it — so it refused on its own first line. That is rule 63's shape
+    and rule 40's mirror: a gate that cannot PASS is as useless as one that cannot fail. Corrected before
+    any candidate was scored; measured here at 1.6 % short and 91.9 % covered, median 30 donors.
 
 =========================================================================================================
 VERDICT — WRONG-DIRECTION CASES FIRST (rule 37)
@@ -129,6 +134,8 @@ CORR_MAX = 0.30
 ALPHA = 0.05
 NOMINAL = 0.05
 MIN_DONORS = 5
+MAX_SHORT_FRAC = 0.05   # recordings with NO donor at least as long; see `donor_availability`
+MIN_COVERED_FRAC = 0.90 # recordings with at least MIN_DONORS long-enough donors
 
 try:
     _e150 = json.load(open(E150_JSON))
@@ -171,10 +178,23 @@ def _donor(x, subj, rng):
 
 
 def donor_availability(subj):
+    """Donor counts per recording, and the two fractions G5 gates on.
+
+    **The first version of G5 required EVERY recording to have >= MIN_DONORS donors at least as long,
+    and that is unsatisfiable for any cohort**: there is always exactly one longest recording, and
+    nothing is longer than it. It refused on its first line, which is rule 63's shape (a threshold
+    registered without computing what the machinery can reach) and rule 40's mirror -- a gate that
+    cannot PASS is as useless as one that cannot fail. Corrected here to two quantities that can each
+    go either way: the fraction of recordings with no long-enough donor at all (which then use the
+    declared tiling fallback), and the fraction with at least MIN_DONORS.
+    """
     us = list(np.unique(subj))
     sz = {u: int((subj == u).sum()) for u in us}
     per = {u: sum(1 for v in us if v != u and sz[v] >= sz[u]) for u in us}
-    return per, int(min(per.values())) if per else 0
+    n = len(us)
+    short = sum(1 for u in us if per[u] == 0) / n
+    covered = sum(1 for u in us if per[u] >= MIN_DONORS) / n
+    return per, short, covered
 
 
 def main() -> int:
@@ -192,12 +212,13 @@ def main() -> int:
     print(f"G2 INCUMBENT ALIVE  PE31+SEF95 out-of-fold rho = {rho_b:+.4f}   {'PASS' if g2 else 'FAIL'}")
     res["g1_rebuild"], res["g2_incumbent_rho"] = g1, float(rho_b)
 
-    per, worst = donor_availability(subj)
-    g5 = bool(worst >= MIN_DONORS)
-    print(f"G5 DONOR AVAILABILITY  worst recording has {worst} donors at least as long "
-          f"(floor {MIN_DONORS}); median {int(np.median(list(per.values())))}   "
-          f"{'PASS' if g5 else '*** FAIL'}")
-    res["g5_min_donors"], res["g5"] = worst, g5
+    per, short, covered = donor_availability(subj)
+    g5 = bool(short <= MAX_SHORT_FRAC and covered >= MIN_COVERED_FRAC)
+    print(f"G5 DONOR AVAILABILITY  {short:.1%} of recordings have NO donor at least as long "
+          f"(ceiling {MAX_SHORT_FRAC:.0%}, these use the declared tiling fallback); "
+          f"{covered:.1%} have >= {MIN_DONORS} (floor {MIN_COVERED_FRAC:.0%}); "
+          f"median {int(np.median(list(per.values())))}   {'PASS' if g5 else '*** FAIL'}")
+    res["g5_short_frac"], res["g5_covered_frac"], res["g5"] = short, covered, g5
     if not (g1 and g2 and g5):
         res["verdict"], res["why"] = "NOT INTERPRETABLE", "a cohort or availability gate failed"
         json.dump(res, open(OUT, "w"), indent=2)
@@ -283,11 +304,14 @@ def main() -> int:
             x = cand[name]
             real, frac, rho_s = fraction_at_or_below(x, base, y, subj, _donor, N_SURR_REAL,
                                                      81000 + 13 * len(table))
-            dm = float("nan")
-            table[name] = {"real": real, "frac": frac, "donor_rho": rho_s,
+            dv = [increment(base, _donor(x, subj, np.random.default_rng(SEED + 91000 + i)),
+                            y, subj, SEED + 92000 + i) for i in range(30)]
+            dv = [v for v in dv if np.isfinite(v)]
+            dm = float(np.mean(dv)) if dv else float("nan")
+            table[name] = {"real": real, "frac": frac, "donor_rho": rho_s, "donor_mean": dm,
                            "withdrawn": bool(np.isfinite(frac) and frac > ALPHA),
                            "muscle": name in MUSCLE}
-            print(f"   {name:<26s} {real:>+10.5f} {dm:>11} {frac:>8.4f}  "
+            print(f"   {name:<26s} {real:>+10.5f} {dm:>+11.5f} {frac:>8.4f}  "
                   f"{'WITHDRAWN' if table[name]['withdrawn'] else 'survives'}"
                   + ("   MUSCLE" if name in MUSCLE else ""))
     res["table"] = table
