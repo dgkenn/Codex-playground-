@@ -31,6 +31,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 _CA = "/root/.ccr/ca-bundle.crt"
 _CTX = ssl.create_default_context(cafile=_CA) if os.path.exists(_CA) else None
 KBASE = "https://api.elections.kalshi.com/trade-api/v2"
+# ORDER_BASE: the v2 order-placement host DIFFERS from the public-read host (KBASE). Env-overridable so an
+# operator can point at a different order host without editing code. Public reads (orderbook, markets) still
+# go through `self.base` (KBASE) -- only order placement uses ORDER_BASE. See FIX 1 / docs.kalshi.com
+# api-reference/orders/create-order-v2.
+ORDER_BASE = os.environ.get("KALSHI_ORDER_BASE", "https://external-api.kalshi.com/trade-api/v2")
 CREDS_PATH = os.path.join(HERE, ".kalshi_creds")
 
 # --- free execution guards (only bite in bad scenarios; zero cost in normal operation) ---
@@ -305,30 +310,108 @@ class KalshiExec:
             f.write(json.dumps(rec) + "\n")
 
     @staticmethod
-    def _reconcile(resp, count):
-        """Best-effort fill reconciliation from Kalshi's create-order response (schema-tolerant). IOC orders
-        fill-or-cancel immediately, so the response's order object carries the outcome. Returns
-        (filled_count_or_None, order_status). Lets the caller record ACTUAL fills, not just what was requested
-        -- so a partial fill (book thinner than our size) doesn't silently overstate our position."""
-        o = resp.get("order", {}) if isinstance(resp, dict) else {}
-        if not isinstance(o, dict):
-            o = {}
-        filled = o.get("filled_count", o.get("filled"))
-        if filled is None and o.get("remaining_count") is not None:
-            try:
-                filled = int(count) - int(o["remaining_count"])
-            except Exception:
-                filled = None
-        return filled, o.get("status")
+    def _translate_side_price(side, price_cents):
+        """*** THE CRITICAL SEMANTIC TRANSLATION (FIX 1) ***
+
+        v2 is SINGLE-BOOK ON YES: there is no `no_price` field, and every order is expressed as a YES
+        bid ("bid") or a YES ask ("ask"). This bot only ever BUYS, so:
+
+            buy YES at P cents  ->  v2_side="bid",  v2_price = P/100          (P=52 -> "0.5200")
+            buy NO  at P cents  ->  v2_side="ask",  v2_price = (100-P)/100    (P=52 -> "0.4800")
+
+        Algebra (verify, per FIX_SPEC.md): buying NO at q pays +(1-q) if NO settles, -q if YES settles;
+        selling YES at p (== the "ask" side) pays +p if NO settles, -(1-p) if YES settles. These are the
+        SAME payout function iff p = 1-q -- i.e. "buy NO at q" and "sell YES (ask) at (1-q)" are the same
+        trade, which is exactly the translation above (`side` here is OUR intended buy side: "yes"/"no";
+        the returned `v2_side` is Kalshi's book side: "bid"/"ask").
+
+        Refuses (raises ValueError) if the translated price does not land in the open interval (0,1) --
+        a 0 or 100-cent input translates to a boundary price v2 cannot accept as a real order.
+        """
+        if side == "yes":
+            v2_side = "bid"
+            v2_price = int(price_cents) / 100.0
+        elif side == "no":
+            v2_side = "ask"
+            v2_price = (100 - int(price_cents)) / 100.0
+        else:
+            raise ValueError(f"unknown side {side!r} (expected 'yes' or 'no')")
+        if not (0.0 < v2_price < 1.0):
+            raise ValueError(f"translated price {v2_price} for side={side} price_cents={price_cents} "
+                              f"is outside the open interval (0,1) -- refusing to build the order")
+        return v2_side, v2_price
+
+    @staticmethod
+    def _parse_fill(resp, side):
+        """Parse a v2 create-order response (FIX 1). v2 response shape (POST .../portfolio/events/orders):
+            order_id string; fill_count string; remaining_count string; ts_ms int;
+            client_order_id?; average_fill_price? (string DOLLARS, present iff fill_count>0);
+            average_fee_paid? (string dollars, present iff fill_count>0)
+        (fixed-point counts/prices are STRINGS per the v2 contract -- see FIX_SPEC.md.)
+
+        Returns (filled_int_or_None, fill_vwap_c_or_None, order_status_or_None).
+
+        *** VWAP SIDE-TRANSLATION ***: `average_fill_price` is ALWAYS a YES price. If we bought NO
+        (`side == "ask"`, i.e. we called _translate_side_price with our buy-side "no"), the price we
+        effectively paid per NO contract is `1 - average_fill_price` -- convert back so fill_vwap_c stays
+        denominated in the side we actually bought (every downstream P&L calc assumes that)."""
+        if not isinstance(resp, dict):
+            return None, None, None
+        raw_fill_count = resp.get("fill_count")
+        try:
+            filled = int(round(float(raw_fill_count))) if raw_fill_count is not None else None
+        except (TypeError, ValueError):
+            filled = None
+        fill_vwap_c = None
+        if filled is not None and filled > 0:
+            afp = resp.get("average_fill_price")
+            if afp is not None:
+                try:
+                    yes_price = float(afp)
+                    paid_price = (1.0 - yes_price) if side == "ask" else yes_price
+                    fill_vwap_c = round(paid_price * 100)
+                except (TypeError, ValueError):
+                    fill_vwap_c = None
+        order_status = resp.get("status")
+        if order_status is None:
+            if filled is not None:
+                remaining = resp.get("remaining_count")
+                try:
+                    remaining_i = int(round(float(remaining))) if remaining is not None else None
+                except (TypeError, ValueError):
+                    remaining_i = None
+                if filled == 0:
+                    order_status = "no_fill"
+                elif remaining_i == 0:
+                    order_status = "filled"
+                else:
+                    order_status = "partial_or_unknown"
+        return filled, fill_vwap_c, order_status
 
     # ---- live-order plumbing (shared by buy_yes / buy_no and the one bounded retry) ----
-    def _post_order(self, order):
-        """POST one signed create-order request; returns the parsed response dict. Raises on HTTP/network
+    def _post_order(self, v2_order):
+        """POST one signed v2 create-order request; returns the parsed response dict. Raises on HTTP/network
         errors -- callers decide how to fail (buy_* logs live_error; the retry path fails CLOSED back to
-        the original zero-fill record)."""
-        path = "/trade-api/v2/portfolio/orders"
-        body = json.dumps(order).encode()
-        return _get(self.base.replace("/trade-api/v2", "") + path, timeout=10,
+        the original zero-fill record).
+
+        FIX 1: the v1 order endpoint (/trade-api/v2/portfolio/orders) returns HTTP 410 deprecated_v1_order_endpoint
+        for everyone (verified by direct probe, 2026-08-02). The replacement lives on a DIFFERENT host
+        (ORDER_BASE, not self.base/KBASE) at a DIFFERENT path:
+            POST https://external-api.kalshi.com/trade-api/v2/portfolio/events/orders
+        The signature path passed to _headers MUST be this exact new path -- signing a stale path yields 401s."""
+        path = "/trade-api/v2/portfolio/events/orders"
+        # ORDER_BASE already carries the "/trade-api/v2" prefix, and `path` MUST stay the FULL signed path
+        # (Kalshi signs timestamp+method+path including that prefix). Naive ORDER_BASE + path duplicated it
+        # -> https://external-api.kalshi.com/trade-api/v2/trade-api/v2/portfolio/events/orders (404, and the
+        # signed path no longer matches the POSTed path). Strip the prefix off the host origin so the URL we
+        # POST is exactly origin + the path we sign.
+        origin = ORDER_BASE.rstrip("/")
+        if origin.endswith("/trade-api/v2"):
+            origin = origin[: -len("/trade-api/v2")]
+        url = origin + path
+        assert url.endswith(path) and url.count("/trade-api/v2/") == 1, f"bad order URL {url}"
+        body = json.dumps(v2_order).encode()
+        return _get(url, timeout=10,
                     method="POST", data=body, headers=self._headers("POST", path))
 
     def _submit_guarded(self, ticker, side, count, price_cents, client_order_id):
@@ -341,19 +424,29 @@ class KalshiExec:
         retry order. Routing both call sites through one guarded method closes that gap structurally --
         there is no live POST path that skips _guard.
 
+        `side` here is OUR buy side ("yes"/"no"); this method translates it to Kalshi's v2 single-book
+        side ("bid"/"ask") and dollar price via _translate_side_price (FIX 1) before building the wire
+        body -- guards run on the ORIGINAL cents price/side (unchanged semantics: HARD_MAX_PRICE_CENTS
+        etc. still bound what we're willing to pay for the side we're buying).
+
         Raises _GuardBlocked(record) if refused (record is the same shape _guard/buy_* already produce).
-        Otherwise POSTs and returns (resp, order); raises urllib.error.HTTPError / other network errors
-        same as _post_order (callers decide how to handle those)."""
+        Otherwise POSTs and returns (resp, wire_order); raises ValueError if the translated price is out
+        of (0,1), or urllib.error.HTTPError / other network errors same as _post_order (callers decide
+        how to handle those)."""
         blocked = self._guard(ticker, count, price_cents)
         if blocked:
             raise _GuardBlocked(blocked)
-        price_key = "yes_price" if side == "yes" else "no_price"
-        order = {
-            "ticker": ticker, "action": "buy", "side": side,
-            "count": int(count), "type": "limit", price_key: int(price_cents),
-            "time_in_force": "immediate_or_cancel", "client_order_id": client_order_id,
+        v2_side, v2_price = self._translate_side_price(side, price_cents)
+        wire_order = {
+            "ticker": ticker,
+            "side": v2_side,
+            "count": str(int(count)),
+            "price": f"{v2_price:.4f}",
+            "time_in_force": "immediate_or_cancel",
+            "self_trade_prevention_type": "taker_at_cross",
+            "client_order_id": client_order_id,
         }
-        return self._post_order(order), order
+        return self._post_order(wire_order), wire_order
 
     def _requote_ask_cents(self, ticker, side):
         """Re-fetch the CURRENT displayed ask for one side from the PUBLIC market endpoint
@@ -408,7 +501,7 @@ class KalshiExec:
                                            "reason": f"requoted ask {ask}c > cap"}}
         retry_id = _client_order_id(ticker, side, attempt=1)
         try:
-            resp, _order = self._submit_guarded(ticker, side, count, max_price_cents, retry_id)
+            resp, wire_order = self._submit_guarded(ticker, side, count, max_price_cents, retry_id)
         except _GuardBlocked as e:
             # Not sent at all (e.g. HALT_FILE touched between the first attempt and now) -- unambiguous,
             # original zero-fill stands.
@@ -430,16 +523,18 @@ class KalshiExec:
                               "client_order_id": retry_id, "error": str(e)[:200],
                               "reason": "send outcome unknown (not an HTTP rejection) -- "
                                         "reconcile before assuming flat"}}
-        filled, ostatus = self._reconcile(resp, count)
+        filled, fill_vwap_c, ostatus = self._parse_fill(resp, wire_order["side"])
         fill_state = ("flat" if filled == 0 else "filled" if filled == count
                       else "partial" if isinstance(filled, int) else "unknown")
         # Retry succeeded (as an API call): the record's top-level fields now reflect the FINAL
         # outcome (attempt 1 filled exactly 0, so retry fill == total fill); the first attempt's
         # outcome is preserved under first_attempt. All keys are additive -> shape stays
         # backward-compatible with existing log readers.
-        return {**first_rec, "attempts": 2, "filled": filled, "order_status": ostatus,
+        return {**first_rec, "attempts": 2, "filled": filled, "fill_vwap_c": fill_vwap_c,
+                "order_status": ostatus,
                 "fill_state": fill_state, "response": resp,
                 "retry": {"attempted": True, "requote_ask_c": ask, "filled": filled,
+                          "fill_vwap_c": fill_vwap_c,
                           "order_status": ostatus, "client_order_id": retry_id},
                 "first_attempt": {"filled": first_rec.get("filled"),
                                   "order_status": first_rec.get("order_status")}}
@@ -479,10 +574,10 @@ class KalshiExec:
         try:
             # _submit_guarded re-runs _guard right before sending -- same chokepoint the retry uses, so
             # a HALT_FILE written between the guard check above and this POST still blocks the order.
-            resp, order = self._submit_guarded(ticker, "yes", count, max_price_cents, order["client_order_id"])
-            filled, ostatus = self._reconcile(resp, count)
+            resp, wire_order = self._submit_guarded(ticker, "yes", count, max_price_cents, order["client_order_id"])
+            filled, fill_vwap_c, ostatus = self._parse_fill(resp, wire_order["side"])
             r = {"status": "live", "ticker": ticker, "requested": int(count),
-                 "filled": filled, "order_status": ostatus, "response": resp}
+                 "filled": filled, "fill_vwap_c": fill_vwap_c, "order_status": ostatus, "response": resp}
             # CONFIRMED zero fill (ask moved between the runner's quote and our IOC) -> one bounded
             # retry at a fresh quote. `type(filled) is int` deliberately excludes None/unknown fill
             # state (and bool): retrying when we can't PROVE zero fill risks doubling the position.
@@ -523,10 +618,10 @@ class KalshiExec:
             return r
         try:
             # Same guarded chokepoint as buy_yes (see comment there).
-            resp, order = self._submit_guarded(ticker, "no", count, max_price_cents, order["client_order_id"])
-            filled, ostatus = self._reconcile(resp, count)
+            resp, wire_order = self._submit_guarded(ticker, "no", count, max_price_cents, order["client_order_id"])
+            filled, fill_vwap_c, ostatus = self._parse_fill(resp, wire_order["side"])
             r = {"status": "live", "ticker": ticker, "side": "no", "requested": int(count),
-                 "filled": filled, "order_status": ostatus, "response": resp}
+                 "filled": filled, "fill_vwap_c": fill_vwap_c, "order_status": ostatus, "response": resp}
             # Same bounded zero-fill retry as buy_yes (see comment there); None/unknown -> no retry.
             if type(filled) is int and filled == 0:
                 r = self._retry_once(r, ticker, "no", count, max_price_cents)

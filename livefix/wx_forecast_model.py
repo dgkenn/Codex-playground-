@@ -15,9 +15,22 @@ does NOT assume that gap is real; it just produces forecast_prob so the forward 
 can MEASURE whether forecast_prob - price actually predicts realized pnl. If the market already tracks the
 forecast tightly, there is no edge and the harness should say so.
 
-Settlement convention (mirrors kwx_runner): Kalshi temp rungs settle strictly '>' on whole degF. A rung with
-floor F, cap C settles YES iff F < settlement <= C; a cap-only rung (floor=None) is YES iff X <= C; a
-floor-only top rung (cap=None) is YES iff X > F. bracket_prob mirrors that exactly with the Normal CDF.
+Settlement convention -- DERIVED FROM DATA, 2026-08-02 (FIX 3; see FIX_SPEC.md / livefix_selftest.py for the
+full per-shape disagreement table against Kalshi's official `result` field, 616-row wx_forecast_settled.jsonl):
+    - full bracket (floor F, cap C, both set): INCLUSIVE on BOTH ends -- YES iff F <= X <= C. Kalshi's
+      bracket includes its floor. The old exclusive-floor convention (F < X <= C, "mirroring Kalshi's '>'
+      settlement") mis-scored 24.4% of full-bracket rows, every miscall the same shape (X==F, we said NO,
+      Kalshi said YES); the inclusive-floor convention drops that to 7.6% (residual is a same-week IEM
+      data-revision-lag artifact in the most recent days of the sample, NOT a boundary/convention effect --
+      see the module-level note in wx_forecast_forward._bracket_won).
+    - top rung (cap=None, floor F only): UNCHANGED, exclusive floor -- YES iff X > F. This already matched
+      best in the data (1.5% disagreement vs 13.6% for the inclusive X>=F candidate) -- do not "fix" what
+      isn't broken here.
+    - cap-only rung (floor=None, cap C only): EXCLUSIVE cap -- YES iff X < C (not X<=C). The old X<=C
+      convention mis-scored 23.4% of cap-only rows, every boundary miscall the same shape (X==C, we said
+      YES, Kalshi said NO); X<C drops that to 8.5% (again, residual is the same data-lag artifact).
+bracket_prob mirrors this exactly, via a half-degree continuity correction (see its docstring) since the
+settlement data is whole-degF.
 
 stdlib + numpy/scipy only. No credentials, no orders. TLS via the session CA bundle.
 
@@ -139,16 +152,45 @@ def forecast_for(station, date):
 
 
 def bracket_prob(lo, hi, mu, sigma):
-    """P(lo < X <= hi) under X ~ Normal(mu, sigma), mirroring Kalshi's '>' settlement:
-        - full bracket : lo=floor, hi=cap -> cdf(hi) - cdf(lo)
-        - cap-only rung: lo=None         -> cdf(hi)          (P(X <= cap))
-        - top rung     : hi=None         -> 1 - cdf(lo)      (P(X > floor))
-    (lo, hi are whole-degF strikes; we keep the plain continuous CDF -- no continuity fudge -- so the number
-    means exactly 'probability mass in the interval', which is what we compare to the yes-price.)"""
+    """P(settlement lands in the rung), under the CONTINUOUS X ~ Normal(mu, sigma), matching the
+    DATA-DERIVED discrete settlement convention (FIX 3, see module docstring):
+        - full bracket (lo, hi both set) : YES iff lo <= X_int <= hi   (inclusive both ends)
+        - cap-only rung (lo=None)        : YES iff X_int < hi          (exclusive cap)
+        - top rung (hi=None)             : YES iff X_int > lo          (exclusive floor, unchanged)
+
+    HALF-DEGREE CONTINUITY CORRECTION: the actual settlement (X_int) is a WHOLE degF integer, but we score
+    it against a continuous Normal. Naively plugging the integer discrete boundaries into the continuous
+    CDF (e.g. cdf(hi) - cdf(lo) for an inclusive bracket) would UNDER-count: the inclusive endpoint's own
+    unit-width mass needs to be attributed to this rung. The standard fix is to treat each integer k as
+    representing the continuous interval [k-0.5, k+0.5) (or the appropriate half thereof at a boundary) and
+    integrate over the UNION of those intervals for every integer this rung's discrete rule includes:
+        - full bracket [lo, hi] inclusive-inclusive -> continuous interval [lo-0.5, hi+0.5]
+          (integers lo, lo+1, ..., hi are each covered by their own +-0.5 half-open cell; those cells tile
+          the range with no gap and no overlap)
+        - cap-only, X_int < hi (integers ..., hi-2, hi-1) -> continuous interval (-inf, hi-0.5]
+          (hi itself is EXCLUDED, so the correction stops half a degree BELOW hi, not above it)
+        - top rung, X_int > lo (integers lo+1, lo+2, ...) -> continuous interval [lo+0.5, +inf)
+          (lo itself is EXCLUDED, so the correction starts half a degree ABOVE lo)
+
+    ADJACENCY CHECK (no double-count, no gap): two consecutive full brackets [lo, lo+1] and [lo+2, lo+3]
+    (Kalshi's brackets are 2 whole degrees wide, e.g. floor=97/cap=98 then floor=99/cap=100) map to
+    continuous intervals [lo-0.5, lo+1.5] and [lo+1.5, lo+3.5] -- they meet EXACTLY at lo+1.5 with zero
+    overlap and zero gap. A top rung with floor=lo+3 immediately above that ladder maps to
+    [lo+3.5, +inf), which again picks up exactly where the last full bracket's continuous interval left
+    off. So the half-degree shift is consistent across the whole ladder, not just within one rung.
+    """
     if sigma <= 0:
         sigma = 1e-6
-    plo = norm.cdf(lo, mu, sigma) if lo is not None else 0.0
-    phi = norm.cdf(hi, mu, sigma) if hi is not None else 1.0
+    if lo is not None and hi is not None:
+        lo_b, hi_b = lo - 0.5, hi + 0.5          # full bracket: inclusive both ends
+    elif lo is None and hi is not None:
+        lo_b, hi_b = None, hi - 0.5              # cap-only: exclusive cap
+    elif hi is None and lo is not None:
+        lo_b, hi_b = lo + 0.5, None              # top rung: exclusive floor (unchanged shape)
+    else:
+        lo_b, hi_b = None, None                  # no bound at all (shouldn't occur) -> unconstrained
+    plo = norm.cdf(lo_b, mu, sigma) if lo_b is not None else 0.0
+    phi = norm.cdf(hi_b, mu, sigma) if hi_b is not None else 1.0
     return float(max(0.0, min(1.0, phi - plo)))
 
 
