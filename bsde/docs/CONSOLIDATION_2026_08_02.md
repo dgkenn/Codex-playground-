@@ -37,18 +37,36 @@ their own placebo at a 5 % bar, on a ladder spanning the real candidates' measur
 **Then the answer reversed on resolution, and the reversal was predicted before the data.** At n = 20 both
 families looked broken; at n = 60 (E197) they are at nominal:
 
-    rung             0.00    0.50    0.80    0.95    0.99
-    circular shift   0.067   0.100   0.017   0.000   0.067    -> licenses 11 of 11
-    donor            0.067   0.067   0.017   0.017   0.050    -> licenses 10 of 11
-    pooled below 0.95:  shift 0.046 [0.026, 0.080] | donor 0.042 [0.023, 0.075]
+    rung             0.00    0.50    0.80    0.95    0.99      pooled <= 0.95
+    iaaft            0.067   0.083   0.017   0.000   0.033(G4)  0.042 [0.023, 0.075]
+    circular shift   0.067   0.100   0.017   0.000   0.067      0.046 [0.026, 0.080]
+    donor            0.067   0.067   0.017   0.017   0.050(G4)  0.042 [0.023, 0.075]
 
 At n = 20 the Wilson bound crosses nominal between 2 hits and 3, so adjacent integers gave opposite
 verdicts (**catalogue rule 85**). E191's and E194's refusals were logged *as* Monte Carlo artefacts at the
 time they were logged, on the arithmetic alone — which is the one thing that makes the reversal readable
 rather than embarrassing.
 
-**Where it stands:** the IAAFT arm of E197 is still running. Once it lands, E187's table is licensable for
-the candidates the ladder covers, and Challenge C has its first readable incremental result on DOSE-I.
+**E197 returned FAMILIES AGREE** — the registered prediction. All three families hold nominal at every
+rung bracketing the real candidates, and **no pair has non-overlapping Wilson intervals at any rung**, so
+the E191 split was a threshold artefact and the registered DISAGREE branch, which required separated
+intervals, correctly did not fire. Rung 0.99 is refused for two families at G4 (their surrogates stop
+decorrelating, rho 0.358 and 0.325) rather than on its rate, so only `bis_rbr` is unlicensed.
+
+**The conditional secondary, declared at registration, can now be read.** Of the ten jointly licensed
+candidates, **eight survive at fraction 0.0000** — surrogate means +0.0005 to +0.0051 against real
+increments to −0.0333 — and **five of those are non-muscle**:
+
+    multiscale_entropy_slope  −0.02769      whole_head_exponent  −0.01664
+    relative_alpha_power      −0.03331      wpli_theta           −0.00828
+    pac_slow_alpha            −0.00157
+
+Two withdraw (`wpli_delta` 0.0550, `wpli_alpha_2ch` 0.0850) and `bis_rbr` is unlicensed. **E187's own
+verdict stays NOT-INTERPRETABLE as registered** — it is not overturned, it is bypassed: what E197 licenses
+is the *method*, and E187's gate was measuring a proxy that rule 80 shows could only ever fail.
+
+That is Challenge C's first licensed incremental result on DOSE-I, and it cost four experiments to reach
+because the first three were gating on the wrong quantity.
 
 **The other lasting product is E194's placebo**, which needs no preservation gate because nothing is
 altered: a real contiguous block of the same measure from a different patient (**catalogue rule 82**). It
@@ -160,8 +178,9 @@ E91's recommendation**, which was scored on a binary contrast where saturation i
 
 ## 5. What the next session should do first
 
-1. **Read E197's IAAFT arm** and, if it agrees with the other two families, license E187's table for the
-   covered candidates. That is Challenge C's first readable result and it is one command away.
+1. **Done** — E197 returned FAMILIES AGREE and E187's table is licensed for ten candidates, eight
+   surviving, five of them non-muscle. Challenge C's open question is now *replication*, not licensing:
+   the five non-muscle survivors have been tested on one deposit with one placebo family.
 2. **Run E204** once `/tmp/eeg_probe/heedb_cmd_follow.s*.csv` has accumulated. Registered before the data;
    the prediction is ADDS at 0.02–0.06 AUC, and a null would be a serious negative rather than a quiet one.
 3. **Do not re-run the Challenge A sweep.** E203 closed it. A successor needs a *cohort*, not another
