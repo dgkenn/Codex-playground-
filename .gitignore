@@ -38,6 +38,10 @@ scratchpad/
 # Regenerable with `python bsde/scripts/extract_vitaldb_pk_inputs.py` (resumable), so it is a cache, not
 # a result. It exceeded the remote's push limit at 282 MB with only half the cases fetched.
 bsde/results/vitaldb_pk_inputs.jsonl
+# Sharded form of the same cache, same reason. Regenerable, resumable:
+#   for i in 0 1 2 3; do python bsde/scripts/extract_vitaldb_pk_inputs.py --shard $i --of 4 \
+#     --out bsde/results/vitaldb_pk_inputs.s$i.jsonl & done
+bsde/results/vitaldb_pk_inputs.s*.jsonl
 
 # MIMIC-IV extraction outputs: credentialed patient-derived data, never committed (CLAUDE.md)
 bsde/results/mimic_*.csv
