@@ -1,0 +1,109 @@
+{
+  "fp_by_k": {
+    "1.0": 0.95,
+    "1.5": 0.82,
+    "10.0": 0.0,
+    "10.5": 0.0,
+    "11.0": 0.0,
+    "11.5": 0.0,
+    "12.0": 0.0,
+    "2.0": 0.515,
+    "2.5": 0.255,
+    "3.0": 0.06999999999999999,
+    "3.5": 0.024999999999999998,
+    "4.0": 0.004999999999999999,
+    "4.5": 0.0,
+    "5.0": 0.0,
+    "5.5": 0.0,
+    "6.0": 0.0,
+    "6.5": 0.0,
+    "7.0": 0.0,
+    "7.5": 0.0,
+    "8.0": 0.0,
+    "8.5": 0.0,
+    "9.0": 0.0,
+    "9.5": 0.0
+  },
+  "gates": {
+    "G1": true,
+    "G2": true,
+    "G3": true
+  },
+  "k": 3.5,
+  "p1_gated_fp_heldout": 0.02,
+  "p2_detect_at_ref": 1.0,
+  "p3_sleep_edfx": {
+    "N1": {
+      "detect": 0.9577464788732394,
+      "frac_at_top_2hz": 0.16911764705882354,
+      "median_peak": 9.25,
+      "n": 142
+    },
+    "N2": {
+      "detect": 0.9929577464788732,
+      "frac_at_top_2hz": 0.723404255319149,
+      "median_peak": 13.5,
+      "n": 142
+    },
+    "N3": {
+      "detect": 0.9788732394366197,
+      "frac_at_top_2hz": 0.5827338129496403,
+      "median_peak": 13.0,
+      "n": 142
+    },
+    "REM": {
+      "detect": 0.9154929577464789,
+      "frac_at_top_2hz": 0.1076923076923077,
+      "median_peak": 8.625,
+      "n": 142
+    },
+    "W": {
+      "detect": 0.647887323943662,
+      "frac_at_top_2hz": 0.11956521739130435,
+      "median_peak": 8.75,
+      "n": 142
+    }
+  },
+  "seed": 20260802,
+  "sensitivity": {
+    "0.04": {
+      "detect_gated": 0.058333333333333334,
+      "detect_ungated": 0.95,
+      "err_gated": 3.1002201259244906,
+      "err_ungated": 2.3914205501074575
+    },
+    "0.08": {
+      "detect_gated": 0.325,
+      "detect_ungated": 0.9916666666666667,
+      "err_gated": 0.04943112569410246,
+      "err_ungated": 0.075755629569084
+    },
+    "0.15": {
+      "detect_gated": 0.9666666666666667,
+      "detect_ungated": 1.0,
+      "err_gated": 0.06423489290484063,
+      "err_ungated": 0.06606480133422643
+    },
+    "0.3": {
+      "detect_gated": 1.0,
+      "detect_ungated": 1.0,
+      "err_gated": 0.05553738217015258,
+      "err_ungated": 0.05553738217015258
+    },
+    "0.6": {
+      "detect_gated": 1.0,
+      "detect_ungated": 1.0,
+      "err_gated": 0.07272784168663904,
+      "err_ungated": 0.07272784168663904
+    },
+    "1.2": {
+      "detect_gated": 1.0,
+      "detect_ungated": 1.0,
+      "err_gated": 0.06401870185171621,
+      "err_ungated": 0.06401870185171621
+    }
+  },
+  "ungated_fp_calibration": 0.95,
+  "ungated_fp_heldout": 0.915,
+  "verdict": "REPAIR VALIDATED -- false positives fall from 0.915 to 0.020 on held-out signal-free input while detection at amplitude 0.3 stays at 1.000 and accuracy is unchanged; recommended for adoption, with the affected claims to be enumerated first"
+}
