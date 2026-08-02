@@ -1,0 +1,44 @@
+{
+  "experiment": "E219",
+  "n_records": 86,
+  "n_points": 344,
+  "n_records_all": 106,
+  "incumbent_rho": -0.6643954495724735,
+  "incumbent_floor": 0.10251196311984821,
+  "not_testable": [
+    "wpli_theta",
+    "pac_slow_alpha",
+    "multiscale_entropy_slope"
+  ],
+  "results": {
+    "whole_head_exponent": {
+      "increment": -0.009373539741751591,
+      "ci": [
+        -0.02503228891140035,
+        0.0011258882886371446
+      ],
+      "call": "absent"
+    },
+    "relative_alpha_power": {
+      "increment": 0.006205388041327198,
+      "ci": [
+        -0.01670707390561745,
+        0.03749539798670287
+      ],
+      "call": "absent"
+    },
+    "NOISE_CONTROL": {
+      "increment": -0.0014924836591873047,
+      "ci": [
+        -0.017700099763443954,
+        0.00418935208042652
+      ],
+      "call": "absent"
+    }
+  },
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "verdict": "ABSENT",
+  "why": "no tested survivor adds to the incumbent on this deposit"
+}
