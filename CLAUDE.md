@@ -1232,3 +1232,23 @@ unverified on GitHub.
     of the exposure. And when a docstring asserts that two things are computed identically, diff the two
     call sites rather than believing it (rule 20, applied to a claim of sameness rather than to two
     scripts).
+91. **A GATE WRITTEN AS "SOME DRAW MUST FAIL" IS NOT A GATE, AND A SYNTHETIC CONTROL THAT IS TOO EASY
+    CERTIFIES NOTHING.** E237 asked whether a known estimator defect corrupts `alpha_peak_hz_wide`. It
+    returned a perfect pass — monotone at Spearman +1.0000, zero inversions, OLS and robust agreeing to
+    **0.0000 Hz at every one of 17 frequencies**. That perfection was the tell. The synthetic
+    oscillation was so far above the background that any peak-picker nails it, so the test never
+    challenged the estimator; an SNR sweep run immediately afterwards put the cliff at amplitude ~0.08,
+    where the two fits diverge and error rises to 0.34–0.46 Hz. **A control that passes at every point
+    with zero error has not measured a tolerance, it has measured that the case was easy.** Sweep the
+    difficulty until the thing breaks, and report where.
+    **The gate failure is the more embarrassing half.** G3 required that a pure 1/f background return
+    NaN, coded as `frac > 0.0` — that SOME draw refuse. Measured properly, the estimator returns a
+    finite "peak" on pure noise in **87.5 %** of draws, and the gate passed on the remaining 12.5 %.
+    That is rule 40 committed inside a file whose docstring cites rule 40. **A rate gate must name the
+    rate**, and the consequence here was not cosmetic: a 93 % peak-detectability rate on real data had
+    been read as 93 % of windows carrying an alpha peak, when it is indistinguishable from what the
+    estimator produces from noise.
+    **The general form, worth more than the instance:** when an instrument fires on nearly everything,
+    its *availability* carries no information, so any gate built on availability (rule 32's stratum
+    check included) is measuring the instrument's eagerness rather than the phenomenon. Measure the
+    false-positive rate of a detector on signal-free input BEFORE using its detection rate as evidence.
