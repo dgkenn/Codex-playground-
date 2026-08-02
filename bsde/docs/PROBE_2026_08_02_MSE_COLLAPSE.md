@@ -196,7 +196,25 @@ fixed-in-samples scale ladder examine a frequency band where sleep depth barely 
 while sleep_edfx's ladder (at the same nominal scales) reaches into the band where it modulates it enormously.
 
 This project has already written down the general form of this bug, in the same file, for a different
-parameter (`critical_slowing`'s autocorrelation lag):
+parameter (`critical_slowing`'s autocorrelation lag) — and has a **regression test that measured the size
+of the effect for the closest analogous quantity in this project, at 100 Hz specifically**:
+
+```python
+# bsde/tests/test_exotic_features.py:246
+def test_critical_slowing_is_invariant_to_sampling_rate():
+    """THE REGRESSION THAT MATTERS, and the third instance of one bug class in this project.
+    ...
+    100 Hz IS IN THIS LIST DELIBERATELY. It is Sleep-EDF's rate, it is the lowest this project reads, and it
+    is the case the first fix silently skipped. Measured pre-fix spread across 100-5000 Hz was 0.237
+    (100 Hz -> 0.709, everything else -> 0.946 on identical dynamics); post-fix it is 0.018.
+    """
+```
+
+That is the **same measure family** (an entropy/autocorrelation-style statistic with a samples-based
+internal parameter) breaking in the same direction this probe suspects: the 100 Hz case behaved like an
+outlier relative to 250/500/5000 Hz on **identical underlying dynamics** (`resample_poly` of one base
+series), before the lag was redefined in seconds. `multiscale_entropy_slope`'s scale ladder was never given
+that fix. Below is the general code comment for the same bug class:
 
 ```python
     # TWO SEPARATE RATE DEFECTS, TWO SEPARATE REMEDIES. This is the THIRD time this project has hit the
