@@ -120,3 +120,32 @@ delivers is the magnitude, on 5,866 public cases, with a placebo landmark that i
 A successor should register P2 alone, with a floor it can meet given a valid-index arm of ~170, and should
 say in advance that the interesting comparison is categorical (anaesthesia type, emergency status), where
 the counts are larger, rather than continuous.
+
+---
+
+## 8. Why there is no E249, and why that is the honest answer
+
+§7 recommends "a successor that registers P2 alone, with a floor it can meet". **I am not writing one, and
+the reason is worth stating rather than quietly dropping the recommendation.**
+
+P2's numbers are now known — case duration at SMD +0.3172 [+0.1579, +0.4662], spinal 0 of 66, sedation
+0 of 17, emergency 0.0519 against elective 0.0772. A registration written *after* seeing them and run on
+*the same rows* would be confirmatory in form and exploratory in fact. That is the precise shape rule 30
+and `DISCOVERY_LOOP.md` §2 forbid, and lowering the arm-size floor from 200 to something 170 can clear
+would be doing it while looking at the number that failed.
+
+The alternatives were checked and none works:
+
+* **A held-out split of the same deposit** does not help — the pooled result has been seen, so no subset
+  of it is naive.
+* **The 2,613 mixed-agent VitalDB cases** are not held out; every eligible case was already in E247.
+* **Another deposit** is what a confirmatory test needs, and a six-archive public sweep (PhysioNet 712
+  projects, OpenNeuro 447 EEG datasets, Zenodo, OSF, Dryad, Figshare) found no fully public deposit
+  carrying a conventional monitor's index through a transition at all.
+
+**So P2 is blocked on the same object as the rest of this line: a deposit where monitoring continues into
+recovery.** Zenodo `1168447` (Oxford, ultra-slow induction *and* emergence, "data available on request")
+is the one candidate found where that is plausible, and confirming P2 is a second reason to want it
+beyond settling §6's end-of-record limitation.
+
+Until then P2 stands as it is written above: **reported, labelled descriptive, and not claimed.**

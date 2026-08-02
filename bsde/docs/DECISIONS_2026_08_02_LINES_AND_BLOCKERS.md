@@ -492,3 +492,219 @@ is now low-yield and I am not recommending more of it.
    yours to make, not mine, and it changes what the result means: it would test whether a candidate
    reproduces the monitor's or the pharmacology's behaviour, not whether it tracks consciousness. I would
    report it as such.
+
+---
+
+# CHALLENGE A REOPENED — the investigator relaxed criterion (c), and it is runnable
+
+*Logged as a CHANGE OF ACCEPTABLE EVIDENCE, made by the investigator, before any result was seen. It is
+recorded here rather than absorbed silently because a criterion that moves after a line has failed looks
+identical, in a git history, to a goalpost being moved — and the only thing that distinguishes them is
+whether the change was written down at the time and what it was known to cost.*
+
+**What changed.** Challenge A's criterion (c) previously required a state label that is neither a
+depth-of-anaesthesia monitor nor the drug record. The investigator has relaxed it. Criteria (a) two
+agents and (b) loss AND recovery are unchanged.
+
+**What that costs, stated before the design rather than after the result.** Relaxing (c) admits two
+obvious labels and each is circular for *this particular* challenge:
+
+* **the drug record** (MAC, propofol effect-site concentration) makes "tracks state" and "follows the
+  drug" the same quantity — and Challenge A's entire statistic is the separation between them;
+* **BIS** is computed from the same EEG a candidate is computed from, so the label and the candidate
+  share the measurement act (rules 28 and 86).
+
+So the relaxation is used for a **third** label that the old criterion had also excluded but that is
+neither of those, and is better than both here.
+
+## The label: ventilation state, from the airway record
+
+Under controlled ventilation the measured respiratory rate (`Primus/RR_CO2`) equals the ventilator's set
+rate (`Primus/SET_RR_IPPV`) **exactly**; when the patient breathes for themselves the two diverge. That
+makes controlled-versus-spontaneous a clean, continuously recorded binary that is independent of the
+agent's identity and independent of the cortical EEG.
+
+**Measured on a balanced 30-case sample across the three single-agent arms, before any design:**
+
+| quantity | result |
+|---|---|
+| both tracks finite | 0.93–0.99 of the record |
+| median \|RR − set RR\| in deep maintenance (−3600 to −1800 s) | **0.0 in every case** |
+| separated in [0, +900] s about `aneend` | **1.00 in 26 of 30**; 2 cases never (stayed ventilated) |
+| separated in the same window about a mid-case **placebo** landmark | **0.000–0.089**, median 0.0 |
+| **early separation (loss direction), cases with early coverage** | **19 of 19**, median fraction 0.238 |
+| time of first agreement (spontaneous → controlled) | median ≈ 500 s into the record |
+| last agreement relative to `aneend` (controlled → spontaneous) | mostly **−130 to −1000 s** |
+
+Two things follow and both matter. **The loss direction is captured** — recordings begin while the patient
+is still breathing spontaneously and converge to controlled ventilation a few minutes in, so both
+transitions sit inside a single case. And the ventilation landmark is **better timed than `aneend`**,
+which it precedes by 2–17 minutes; `aneend` is the charted administrative time that E246 already
+established lags the physiological event.
+
+## Cohort — this is the part that was missing
+
+`BIS/EEG1_WAV` + `Primus/MAC` + `Primus/RR_CO2` + `Primus/SET_RR_IPPV`: **5,566 cases**, of which
+**sevoflurane 1,474, desflurane 460, propofol TCI 996** carry exactly one agent track, plus 2,613 mixed.
+
+Set that against **E154's own projection**, which is the reason this matters rather than a nice-to-have.
+E154 measured the cluster-level drug-legibility null at a 95th percentile of **0.1904 with 39 clusters**,
+against **0.2791 at Krause's 15**, a ratio of 0.68 against the 0.62 that pure sample size predicts — so
+the floor scales as √n and E154 concluded that resolving leakage at 0.10 needs **roughly 140 clusters**,
+adding: *"no public deposit this project has found comes close."*
+
+VitalDB has 460–1,474 patients per single-agent arm. At √n scaling the floor lands near **0.03**. The
+minimisation half of Challenge A — **which a later check the same day found is NO LONGER SAFE TO CALL
+UNCLAIMED; see "E248's framing is CORRECTED" below before relying on this sentence** — becomes
+measurable for the first time in this project.
+
+## What must be carried into the design, not discovered later
+
+1. **E154's confound will still be here and will be worse with more power.** Recording duration
+   identified the agent at **0.3771**, above every feature; sevoflurane cases are systematically longer.
+   The successor must summarise over **fixed-length windows at fixed offsets from the ventilation
+   transition**, identical for every case, so recording length cannot enter, and must run duration
+   through the identical path as a placebo and require candidates to beat it.
+2. **The state label is a BEHAVIOURAL OUTPUT, at the brainstem, and it is not consciousness.** Brief 01
+   exists to separate arousal, cognitive processing, command-following and behavioural output; this
+   measures the last of them. Any result says "tracks loss and recovery of a behavioural output across
+   agents", which is weaker than the briefed construct. **That weakening is what relaxing (c) bought and
+   it belongs in the abstract, not in a limitations paragraph.**
+3. **Exclusions are outcome-related** (rule 14): the ~7 % of cases that never resume spontaneous
+   ventilation in the window are ones that stayed ventilated, and they are not a random sample.
+
+## Challenge B is NOT reopened by this
+
+Relaxing (c) is a Challenge A criterion about state labels. Challenge B's outcome is **command-following**,
+which is a behavioural assessment by definition — there is no monitor-derived or drug-derived proxy for
+"the patient followed an instruction", and rule 92's finding stands: the only reliably live incumbent is
+one that shares a measurement act with the outcome. **Challenge B remains stopped and remains blocked on
+the Bath request.**
+
+## E248, written abstract-first before the design is registered
+
+**The one sentence the line would license if it succeeded completely:**
+
+> *A single EEG representation tracks loss and recovery of spontaneous ventilation equally well under
+> sevoflurane, desflurane and propofol while carrying less information about which agent was used than
+> any measure currently in clinical use — and the reduction is verified against a patient-level
+> permutation null on a cohort large enough to resolve it.*
+
+**Draft abstract.** *Background.* Processed EEG depth-of-anaesthesia indices are known to behave
+differently under different anaesthetic agents, and that failure is well documented. What has not been
+attempted is the converse: treating agent-identifiability as a quantity to be actively minimised while
+state-tracking is preserved. **[WITHDRAWN the same day — PMID 41385421 applies domain-adversarial
+training with cross-anaesthetic evaluation and the abstract does not say whether the adversarial domain
+was drug or subject. See "E248's framing is CORRECTED" below. The draft abstract in this section is
+superseded by the revised sentence there and is kept only so the correction is auditable.]** Attempts to measure it have been limited by cohort size — the patient-level
+permutation null for a leakage statistic scales as √n, and in the largest cohort previously available to
+us (39 patients) the null's own 95th percentile sat at 0.19, above every candidate's observed value.
+*Methods.* In N public intraoperative cases (VitalDB) with exactly one anaesthetic agent recorded
+(sevoflurane, desflurane, propofol), we labelled brain state from the airway record — measured
+respiratory rate against the ventilator's set rate, which separates controlled from spontaneous
+ventilation and moves in both directions within a single case — and computed a panel of EEG measures over
+fixed-length windows at fixed offsets from each ventilation transition, identical for every case so that
+recording length cannot enter the summary. State legibility and agent legibility were each scored against
+patient-level permutation nulls, with recording duration carried through the identical path as a placebo.
+*Results.* [N] *Conclusions.* [N]
+
+**What is deliberately NOT claimed, written before the numbers exist.** The label is ventilation state:
+a **behavioural output, at the brainstem**. It is not consciousness, not command-following, and not
+cognitive processing — the three things Brief 01 exists to separate from behavioural output. Any result
+is a statement about tracking a brainstem behavioural transition, and the abstract above says so in its
+first result clause or it is misleading.
+
+**The honest ceiling.** If the minimisation half works, this is a genuinely new framing with a number
+behind it and a cohort large enough to support it — a strong methods-and-measurement paper, and the basis
+for a claim the project has been trying to earn since Brief 01. If only the state-tracking half works, it
+is a re-demonstration of something already known and is not worth writing up on its own.
+
+**Pre-committed stops.**
+1. If the literature check now running finds agent-invariance already used as a construction objective in
+   EEG anaesthesia, the minimisation framing is claimed and **the line stops** — the state-tracking half
+   alone does not justify it.
+2. If recording duration's agent legibility is not brought below the candidates' by the fixed-window
+   design, E154's confound has survived and **the verdict is VOID, not negative** (rule 31).
+3. If the patient-level permutation null's 95th percentile does not fall materially below 0.19 at this
+   cohort size, the measurement is no better resolved than before and the line stops for the same reason
+   E154 gave.
+
+---
+
+## E248's framing is CORRECTED before it is registered — half of it is published, and the stop partly fires
+
+*The literature check I pre-committed to has returned. Both decisive records were pulled and read by Opus
+from efetch output, not taken from the subagent. The abstract written above is wrong in its first half
+and has to be replaced rather than defended.*
+
+### HALF 1 — "tracks loss and recovery across anaesthetics" — is PUBLISHED, with a better label than ours
+
+**PMID 31326088** — Ramaswamy et al., *British Journal of Anaesthesia* 2019, "Novel **drug-independent**
+sedation level estimation based on machine learning of quantitative frontal electroencephalogram features
+in healthy volunteers." Verified verbatim from the abstract: **102 healthy volunteers across three agents**
+(propofol 36, sevoflurane 36, dexmedetomidine 30), state labelled by **MOAA/S** — the behavioural scale
+that criterion (c) originally demanded and that we have just relaxed away — 44 QEEG features, elastic-net.
+Per-drug AUC **0.97 / 0.74 / 0.77**; the **drug-independent** system **0.83**. The paper's own conclusion
+is that "the sedation-level estimator maintained a high performance for predicting MOAA/S independent of
+the drug used."
+
+That is Challenge A's first half, done, in a specialty journal, six years ago, on a **stronger** label than
+the ventilation state we were about to substitute for it. **Our version of that half would be a weaker
+replication and it must be presented as one, or not at all.**
+
+### HALF 2 — the minimisation framing — is NO LONGER SAFE TO CALL UNCLAIMED
+
+**PMID 41385421** — Jeong et al., *IEEE J Biomed Health Inform* 2025, "EEG-based **Cross-subject**
+Prediction for Consciousness State Transitions under Sedation using a Deep Learning Framework." Verified
+from the abstract: the framework incorporates "**domain-adversarial training** for robust classification",
+is evaluated on propofol and midazolam, "demonstrated strong cross anesthetic generalizability... when
+evaluated across propofol and midazolam in external validation", and claims to identify "robust and
+**drug-independent** EEG signatures".
+
+**The decisive detail is not in the record.** The title says *cross-subject*, and the abstract describes
+cross-anaesthetic performance as **evaluated in external validation** rather than as an adversarial
+objective — which reads as an adversarial term on SUBJECT identity with agent transfer measured
+afterwards. If that reading is right, the minimisation framing survives. If the adversarial domain label
+was the DRUG, the framing is claimed and this line's novelty goes with it. The paper is IEEE, has no PMC
+record, and the abstract cannot settle it.
+
+**So my pre-committed stop fires in the form it was written for, but on a fact I cannot verify.** I am
+not going to lawyer it into a pass, and I am also not going to fire a stop on an unverified reading —
+that is the same error, in the other direction, that I correctly refused to make on the Krause cell
+earlier today. **What changes now, unconditionally, is the claim: the minimisation framing is no longer
+described as unclaimed anywhere in this project's documents.**
+
+### What is left, and it is narrower and still worth doing
+
+Neither paper **measures how much agent identity a representation carries.** Ramaswamy compares pooled
+against per-drug AUC — a performance comparison, not a leakage statistic. Jeong reports transfer accuracy.
+Neither quotes a leakage value against a null, and this project already knows why that is hard: **E154
+measured the patient-level permutation null's 95th percentile at 0.1904 with 39 clusters, above every
+candidate's observed value, and concluded that resolving leakage at 0.10 needs ~140 clusters.**
+
+VitalDB gives **1,474 / 460 / 996** single-agent patients. That is the resolution nobody has had.
+
+**The revised sentence, replacing the one written earlier today:**
+
+> *Frontal EEG measures carry agent identity at |AUC − 0.5| = X, measured at matched behavioural state
+> against a patient-level permutation null on ~2,900 patients — a resolution an order of magnitude finer
+> than any previous estimate — so the drug-independent estimators already in the literature are [or are
+> not] carrying agent information they do not report.*
+
+It is two-sided and decision-relevant either way, which is the property to want. A **large** leakage is a
+direct, quantified criticism of every "drug-independent" estimator including Ramaswamy's. A **small** one
+says the invariance problem is smaller than the field assumes. Neither outcome is a null.
+
+**This is a measurement, not a discovery, and it is a smaller claim than the one written this morning.**
+It is stated that way here so that no later document can quietly re-inflate it.
+
+### Consequences for the design
+
+1. The state-tracking arm becomes a **replication of Ramaswamy 2019**, cited as such, and is not a
+   finding. It stays in only because the leakage statistic must be computed **at matched state** and
+   therefore needs a state axis that works.
+2. E154's duration confound (agent identified at **0.3771**, above every feature) remains the single
+   biggest threat and the fixed-window design remains mandatory.
+3. **BLOCKED ON THE INVESTIGATOR:** the full text of **PMID 41385421** (IEEE JBHI, paywalled, no PMC).
+   One PDF decides whether the minimisation framing is claimed. Institutional access would settle it in
+   minutes and it is worth doing before the extraction runs, not after.
