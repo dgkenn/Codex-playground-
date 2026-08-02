@@ -1290,3 +1290,22 @@ unverified on GitHub.
     theta/alpha/spindle search. And when a stage-wise or group-wise profile looks wrong, check it against
     the profile of every OTHER rhythm in range before concluding the instrument failed; a result that
     matches a different real phenomenon is not noise.
+94. **A PLACEBO COMPARED WITH `>=` CANNOT FIRE AT A CEILING — AND A RANDOM-PARAMETER PLACEBO TESTS
+    WHETHER THE PARAMETER IS SPECIAL, NOT WHETHER IT TRANSPORTS.** E244 ranked measures by how much
+    accuracy is lost when a decision threshold learned on one deposit is imported to another. Its
+    placebo drew a random threshold from the source's range and asked `mean(rand >= acc) < 0.05`.
+    **`whole_head_exponent` transported at accuracy 1.0000 against a placebo MEAN of 0.6091 and was
+    recorded as failing**, because 1.0000 is the maximum the statistic can take, so every random draw
+    landing in the target's separation gap ties with it and counts as `>=`. The test is structurally
+    incapable of passing for a perfect classifier — the better the result, the more certain the
+    refusal. Rule 37's operator family, arriving at a boundary rather than at a sign.
+    **The deeper error is rule 55 and it survives fixing the operator.** A random-parameter placebo asks
+    whether the fitted parameter is SPECIAL. Deployment asks whether it WORKS at the target. Those come
+    apart exactly when the classes separate well: if many thresholds succeed, transport is *easier*, and
+    a placebo built on specialness reads that abundance as weak evidence. **Match the placebo to the
+    decision, not to the parameter** — here, a threshold drawn from a deposit that shares nothing with
+    either, or the target's own accuracy under a threshold from an unrelated measure.
+    **The cheap general check: before trusting a placebo, ask what value the primary can maximally take,
+    and whether the comparison can distinguish the real result from a tie at that value.** A statistic
+    bounded above (accuracy, AUC, a rate, a resultant length) needs a strict comparison or a different
+    reference, and rule 40's "construct the input that should pass" would have caught it in one line.

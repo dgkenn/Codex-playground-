@@ -1,0 +1,391 @@
+{
+  "both_ok": [],
+  "capability": {
+    "disjoint_sites_gap": 0.44333333333333336,
+    "same_sites_gap": 0.019999999999999907
+  },
+  "dropped": {},
+  "gates": {
+    "G3": true,
+    "G4": true
+  },
+  "n_subjects": {
+    "ds006695": 19,
+    "sleep_edfx": 141
+  },
+  "p3_ratio_vs_gap": 0.2686365152804956,
+  "results": {
+    "critical_slowing_ar1": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.0,
+        "placebo_mean": 0.9230567375886526,
+        "sign": 1,
+        "source_acc": 0.9210526315789473,
+        "target_ceiling": 0.9822695035460993,
+        "threshold": 0.6975782324983731,
+        "transported_acc": 0.9822695035460993
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.07894736842105265,
+        "placebo_mean": 0.5961578947368422,
+        "sign": 1,
+        "source_acc": 0.9822695035460993,
+        "target_ceiling": 0.9210526315789473,
+        "threshold": 0.64731735564832,
+        "transported_acc": 0.8421052631578947
+      }
+    },
+    "emg_beta_gamma_fraction": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.0035460992907800915,
+        "placebo_mean": 0.9073120567375887,
+        "sign": -1,
+        "source_acc": 0.9736842105263157,
+        "target_ceiling": 0.9893617021276595,
+        "threshold": 0.033358093478626324,
+        "transported_acc": 0.9858156028368794
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.07894736842105254,
+        "placebo_mean": 0.5644210526315789,
+        "sign": -1,
+        "source_acc": 0.9893617021276595,
+        "target_ceiling": 0.9736842105263157,
+        "threshold": 0.05433289799293609,
+        "transported_acc": 0.8947368421052632
+      }
+    },
+    "emg_index": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.4148936170212767,
+        "placebo_mean": 0.5856312056737588,
+        "sign": -1,
+        "source_acc": 0.736842105263158,
+        "target_ceiling": 0.9326241134751774,
+        "threshold": -0.04203504042054518,
+        "transported_acc": 0.5177304964539007
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.23684210526315796,
+        "placebo_mean": 0.5416842105263158,
+        "sign": -1,
+        "source_acc": 0.9326241134751774,
+        "target_ceiling": 0.736842105263158,
+        "threshold": 0.2940212542282,
+        "transported_acc": 0.5
+      }
+    },
+    "emg_kurtosis": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.28928571428571426,
+        "placebo_mean": 0.6125571428571428,
+        "sign": -1,
+        "source_acc": 0.6842105263157895,
+        "target_ceiling": 0.875,
+        "threshold": 0.09630215243413243,
+        "transported_acc": 0.5857142857142857
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.07894736842105265,
+        "placebo_mean": 0.5261052631578947,
+        "sign": -1,
+        "source_acc": 0.875,
+        "target_ceiling": 0.6842105263157895,
+        "threshold": 0.8920464360744995,
+        "transported_acc": 0.6052631578947368
+      }
+    },
+    "exponent_high": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.04964539007092206,
+        "placebo_mean": 0.7579858156028367,
+        "sign": 1,
+        "source_acc": 0.8947368421052632,
+        "target_ceiling": 0.8368794326241136,
+        "threshold": 1.2202533042321144,
+        "transported_acc": 0.7872340425531915
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.13157894736842113,
+        "placebo_mean": 0.5532105263157895,
+        "sign": 1,
+        "source_acc": 0.8368794326241136,
+        "target_ceiling": 0.8947368421052632,
+        "threshold": 0.8265037981709997,
+        "transported_acc": 0.763157894736842
+      }
+    },
+    "exponent_low": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.007092198581560183,
+        "placebo_mean": 0.9138156028368796,
+        "sign": 1,
+        "source_acc": 0.868421052631579,
+        "target_ceiling": 0.9893617021276595,
+        "threshold": 2.0660102566584775,
+        "transported_acc": 0.9822695035460993
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.052631578947368474,
+        "placebo_mean": 0.5573684210526316,
+        "sign": 1,
+        "source_acc": 0.9893617021276595,
+        "target_ceiling": 0.868421052631579,
+        "threshold": 2.0140926025288,
+        "transported_acc": 0.8157894736842105
+      }
+    },
+    "lempel_ziv": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.4609929078014184,
+        "placebo_mean": 0.5417801418439716,
+        "sign": -1,
+        "source_acc": 0.7894736842105263,
+        "target_ceiling": 0.9574468085106382,
+        "threshold": 0.17144660063063527,
+        "transported_acc": 0.49645390070921985
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.2894736842105263,
+        "placebo_mean": 0.5256842105263159,
+        "sign": -1,
+        "source_acc": 0.9574468085106382,
+        "target_ceiling": 0.7894736842105263,
+        "threshold": 0.44276567749346,
+        "transported_acc": 0.5
+      }
+    },
+    "multiscale_entropy_slope": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.10992907801418439,
+        "placebo_mean": 0.7403758865248227,
+        "sign": 1,
+        "source_acc": 0.7894736842105263,
+        "target_ceiling": 0.9929078014184397,
+        "threshold": 0.04698568172543721,
+        "transported_acc": 0.8829787234042553
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.2894736842105263,
+        "placebo_mean": 0.5411052631578946,
+        "sign": 1,
+        "source_acc": 0.9929078014184397,
+        "target_ceiling": 0.7894736842105263,
+        "threshold": 0.18481055666155005,
+        "transported_acc": 0.5
+      }
+    },
+    "pac_slow_alpha": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.10638297872340419,
+        "placebo_mean": 0.5023191489361702,
+        "sign": -1,
+        "source_acc": 0.7105263157894737,
+        "target_ceiling": 0.6205673758865248,
+        "threshold": 0.004126029533084699,
+        "transported_acc": 0.5141843971631206
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.21052631578947367,
+        "placebo_mean": 0.5351052631578948,
+        "sign": -1,
+        "source_acc": 0.6205673758865248,
+        "target_ceiling": 0.7105263157894737,
+        "threshold": 0.0011564482178318001,
+        "transported_acc": 0.5
+      }
+    },
+    "relative_alpha_power": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.021276595744680882,
+        "placebo_mean": 0.6330709219858155,
+        "sign": -1,
+        "source_acc": 0.6842105263157895,
+        "target_ceiling": 0.7624113475177305,
+        "threshold": 0.04925304800405147,
+        "transported_acc": 0.7411347517730497
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": true,
+        "gap": 0.10526315789473684,
+        "placebo_mean": 0.5052631578947369,
+        "sign": -1,
+        "source_acc": 0.7624113475177305,
+        "target_ceiling": 0.6842105263157895,
+        "threshold": 0.04636196238145349,
+        "transported_acc": 0.5789473684210527
+      }
+    },
+    "relative_delta_power": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.007092198581560405,
+        "placebo_mean": 0.7425744680851064,
+        "sign": 1,
+        "source_acc": 0.9210526315789473,
+        "target_ceiling": 0.8865248226950355,
+        "threshold": 0.7823946287466743,
+        "transported_acc": 0.8794326241134751
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": true,
+        "gap": 0.026315789473684292,
+        "placebo_mean": 0.5823157894736841,
+        "sign": 1,
+        "source_acc": 0.8865248226950355,
+        "target_ceiling": 0.9210526315789473,
+        "threshold": 0.778437974202,
+        "transported_acc": 0.894736842105263
+      }
+    },
+    "spatial_participation_ratio": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.2321428571428572,
+        "placebo_mean": 0.5036928571428572,
+        "sign": 1,
+        "source_acc": 0.6842105263157894,
+        "target_ceiling": 0.7321428571428572,
+        "threshold": 0.4486114659991195,
+        "transported_acc": 0.5
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.18421052631578938,
+        "placebo_mean": 0.5017368421052631,
+        "sign": 1,
+        "source_acc": 0.7321428571428572,
+        "target_ceiling": 0.6842105263157894,
+        "threshold": 0.6560456186447,
+        "transported_acc": 0.5
+      }
+    },
+    "spectral_edge_95": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.0,
+        "placebo_mean": 0.864872340425532,
+        "sign": -1,
+        "source_acc": 0.9736842105263157,
+        "target_ceiling": 0.9680851063829787,
+        "threshold": 15.131356618844233,
+        "transported_acc": 0.9680851063829787
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.07894736842105265,
+        "placebo_mean": 0.6651052631578946,
+        "sign": -1,
+        "source_acc": 0.9680851063829787,
+        "target_ceiling": 0.9736842105263157,
+        "threshold": 13.560985183871,
+        "transported_acc": 0.894736842105263
+      }
+    },
+    "spectral_entropy": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.028368794326241176,
+        "placebo_mean": 0.6978723404255319,
+        "sign": -1,
+        "source_acc": 0.894736842105263,
+        "target_ceiling": 0.950354609929078,
+        "threshold": 0.5558226346617534,
+        "transported_acc": 0.9219858156028369
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.10526315789473673,
+        "placebo_mean": 0.5815263157894737,
+        "sign": -1,
+        "source_acc": 0.950354609929078,
+        "target_ceiling": 0.894736842105263,
+        "threshold": 0.5941300267451,
+        "transported_acc": 0.7894736842105263
+      }
+    },
+    "whole_head_exponent": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.0035460992907802025,
+        "placebo_mean": 0.8888581560283688,
+        "sign": 1,
+        "source_acc": 1.0,
+        "target_ceiling": 0.9929078014184397,
+        "threshold": 1.6709344694633048,
+        "transported_acc": 0.9893617021276595
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.0,
+        "placebo_mean": 0.6091052631578948,
+        "sign": 1,
+        "source_acc": 0.9929078014184397,
+        "target_ceiling": 1.0,
+        "threshold": 1.6965152736676001,
+        "transported_acc": 1.0
+      }
+    },
+    "wpli_alpha": {
+      "ds006695->sleep_edfx": {
+        "beats_placebo": false,
+        "gap": 0.5,
+        "placebo_mean": 0.2526857142857143,
+        "sign": -1,
+        "source_acc": 0.6578947368421053,
+        "target_ceiling": 0.7785714285714286,
+        "threshold": 0.020735693125098716,
+        "transported_acc": 0.2785714285714286
+      },
+      "sleep_edfx->ds006695": {
+        "beats_placebo": false,
+        "gap": 0.18421052631578955,
+        "placebo_mean": 0.49015789473684207,
+        "sign": 1,
+        "source_acc": 0.7785714285714286,
+        "target_ceiling": 0.6578947368421053,
+        "threshold": 0.07457505208592,
+        "transported_acc": 0.47368421052631576
+      }
+    }
+  },
+  "seed": 20260802,
+  "shared": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spatial_participation_ratio",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent",
+    "wpli_alpha"
+  ],
+  "verdict": "NOTHING DEPLOYS -- no measure transports a threshold in both directions while beating its own random-threshold placebo; Challenge D's problem is real under the corrected metric too"
+}
