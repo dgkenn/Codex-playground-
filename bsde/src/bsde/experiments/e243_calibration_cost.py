@@ -157,17 +157,19 @@ def main() -> int:
 
     tsub = sorted(T)
 
-    def evaluate(subs, a, b):
+    def evaluate(subs, a, b, tbl=None):
         """Accuracy on `subs` after mapping target values as a*x + b."""
+        tb = T if tbl is None else tbl
         ok = 0
         for s in subs:
-            ok += (a * T[s]["W"] + b) < THR
-            ok += (a * T[s]["N3"] + b) >= THR
+            ok += (a * tb[s]["W"] + b) < THR
+            ok += (a * tb[s]["N3"] + b) >= THR
         return ok / (2 * len(subs))
 
-    def fit(scheme, cal, labels=None):
+    def fit(scheme, cal, labels=None, tbl=None):
         """Calibration constants from the labelled subset `cal`. `labels` permutes states for the placebo."""
-        lab = labels or {s: {"W": T[s]["W"], "N3": T[s]["N3"]} for s in cal}
+        tb = T if tbl is None else tbl
+        lab = labels or {s: {"W": tb[s]["W"], "N3": tb[s]["N3"]} for s in cal}
         w = np.asarray([lab[s]["W"] for s in cal], float)
         n = np.asarray([lab[s]["N3"] for s in cal], float)
         if scheme == "NONE":
@@ -212,18 +214,15 @@ def main() -> int:
         gn = rng.normal(sn.mean(), sn.std(), 200)
         fw, fn = sc * gw + off, sc * gn + off
         syn = {f"x{i}": {"W": fw[i], "N3": fn[i]} for i in range(200)}
-        saveT = T
-        globals()["T"] = syn
         subs = sorted(syn)
         r = {}
         for sch in ("NONE", "OFFSET", "OFFSET+SCALE"):
             accs = []
             for _ in range(100):
                 i = rng.permutation(len(subs))
-                a, b = fit(sch, [subs[j] for j in i[:8]])
-                accs.append(evaluate([subs[j] for j in i[8:]], a, b))
+                a, b = fit(sch, [subs[j] for j in i[:8]], tbl=syn)
+                accs.append(evaluate([subs[j] for j in i[8:]], a, b, tbl=syn))
             r[sch] = float(np.mean(accs))
-        globals()["T"] = saveT
         cap[name] = r
         print(f"G3 synthetic {name:18s} NONE {r['NONE']:.3f}  OFFSET {r['OFFSET']:.3f}  "
               f"OFFSET+SCALE {r['OFFSET+SCALE']:.3f}")
