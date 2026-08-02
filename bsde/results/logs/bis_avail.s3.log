@@ -1,1 +1,4 @@
 [probe] eligible 5866 | shard 3/4 -> 1466 | already done 0 | to fetch 1466
+[probe] shard 3: 100/1466
+[probe] shard 3: 200/1466
+[probe] shard 3: 300/1466
