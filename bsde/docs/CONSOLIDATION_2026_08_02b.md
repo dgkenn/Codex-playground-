@@ -31,7 +31,16 @@ baseline.
 | `relative_alpha_power` | absent | absent | **absent** |
 
 **The two that travel are band-free. The one that fails is the fixed-band measure.** That is the same split
-Challenge A arrived at independently, and it is the single most reusable finding of this block.
+Challenge A arrived at independently.
+
+> **CORRECTED LATER THE SAME DAY (E223).** This section originally called that split *the single most reusable
+> finding of this block*. It was tested as a hypothesis rather than read off as a by-product, on eight
+> features of the same deposit that had never touched its label, with the family partition set by a
+> synthetic sweep and the null an exhaustive enumeration of all 70 balanced partitions. **It did not
+> reproduce**: D = −0.0042 at the 7.1st percentile, leaning if anything the other way. The test is
+> underpowered — every increment lies between −0.005 and +0.010 because the incumbent leaves almost no
+> headroom — so it settles nothing in either direction. What survives is the narrower claim: **three
+> specific candidates behave this way across deposits, not a family law.**
 
 ---
 
