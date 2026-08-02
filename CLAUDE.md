@@ -1252,3 +1252,22 @@ unverified on GitHub.
     its *availability* carries no information, so any gate built on availability (rule 32's stratum
     check included) is measuring the instrument's eagerness rather than the phenomenon. Measure the
     false-positive rate of a detector on signal-free input BEFORE using its detection rate as evidence.
+92. **RULE 86'S CONVERSE, NOW DEMONSTRATED ACROSS 47 EXPERIMENTS: THE ONLY INCUMBENT THAT IS RELIABLY
+    ALIVE IS THE ONE THAT SHARES A MEASUREMENT ACT WITH THE OUTCOME.** Rule 86 says an incumbent
+    co-recorded with the outcome sets a bar nothing external can clear, and prescribes preferring an
+    exposure or an objective measure. Challenge B has now tried that prescription five times and the
+    consolidated record shows the trap it walks into. Of every incumbent this project has used —
+    `relative_alpha_power`, the SMR predictor / `alpha_prom`, RASS, `any_sedative`, `Manual activity` —
+    **RASS is the only one ever unambiguously alive, and it is alive precisely because a nurse charted
+    it in the same assessment round as the outcome.** Every genuinely independent incumbent died, either
+    structurally (sedative exposure has near-zero within-patient variance, so there is nothing to
+    condition on) or empirically (E238: Rimbert 2018's manual-activity effect, ρ = 0.381 at n = 35,
+    comes back at **−0.0841, |p| = 0.4368** on n = 87 with better than 95 % power for it).
+    **So "name an independent incumbent" and "name a live incumbent" can be mutually exclusive, and when
+    they are, the challenge is blocked on data rather than on design.** The diagnostic that establishes
+    it is cheap and should be run before any further incumbent hunting: tabulate every incumbent tried,
+    mark each as observation-or-exposure and alive-or-dead, and look for a cell that is both. If none
+    exists after several honest attempts, further designs are rearranging the same impasse — say so, and
+    spend the effort on access instead. Corollary: a null against a dead incumbent is not a weaker
+    version of a null against a live one; it is a different sentence, and rule 53 exists to stop the two
+    being written the same way.
