@@ -707,3 +707,261 @@ offset small relative to it", which is what the ratio measures and what actually
   improvement there (e.g. `ds004541.exponent_high` 1.879→0.741 is built on 7 paired subjects).
 
 No verdict about Challenge D is drawn here, per the task's instruction.
+
+
+---
+
+## 13. Does the DIRECTION SIGNATURE transport across modality when the LEVEL does not? (2026-08-02)
+
+*DIAGNOSTIC follow-up, same status as §0/§12: no ledger row, no registration file, no verdict about
+Challenge D. Script: `/tmp/.../scratchpad/probe_signature_transport.py` (this session only), importing
+`bsde.verifier.stats.read_rows` and the `e92_two_region_information_v2` state parsers via
+`probe_separability.py`'s loaders (rule 20 — none of that is reimplemented), and reusing
+`probe_gate_and_withinsubj.py`'s `subject_level()` / `load_ds005620_by_subject()` unchanged for the
+per-subject referencing (rule 73 — normalisation is per-individual, never per-group; see that code for
+the line-by-line justification, carried over verbatim).*
+
+**Motivation.** E227/E229 (Challenge A) found that across two anaesthetic agents, most EEG measures move
+in the same direction despite differing in magnitude. This asks whether that DIRECTION SIGNATURE — the
+per-column, within-subject, standardised awake→deep change — is the object that transports across
+modality (sleep↔anaesthesia) even though raw LEVEL (§7–§12) does not.
+
+**Deposits used: five of the six**, exactly as the task specifies — sleep_edfx (W→N3), capslpdb
+(W→S3+S4), chennu (sedation 1→3), ds004541 (awake→anaesthetised, via `state_ds004541`), ds005620
+(awake→anaesthetised, via `state_ds005620`). **vitaldb is excluded**, unchanged from §2/§12: it has no
+genuine awake anchor and the task's own deposit list omits it.
+
+**SIGNATURE, defined precisely.** For each deposit and column: pair every subject who has *both* states,
+take that subject's own `deep − awake` difference, then **paired Cohen's dz = mean(diff) / sd(diff) across
+subjects** — i.e. standardised by the *between-subject sd of the change itself*, never by the raw awake
+group's sd or the raw deep group's sd scored separately (rule 73's requirement, satisfied the same way
+§12.2 already established it: `build_signature()`, `probe_signature_transport.py` lines ~68–100). This is
+numerically identical to §12.2's `within_ref[dep][col]["dz"]` — the same computation, reused for a
+different purpose.
+
+### 13.0 Mandatory check — subject coverage, asserted and reported (rules 5/14)
+
+| deposit | subjects w/ awake | subjects w/ deep | BOTH (used) | missing, reported not dropped |
+|---|---:|---:|---:|---|
+| sleep_edfx | 142 | 141 | **141** | `SC4531E0-PSG` (awake only — no N3, same exclusion §12 found) |
+| capslpdb | 106 | 106 | **106** | none |
+| chennu | 20 | 20 | **20** | none |
+| ds004541 | 8 | 7 | **7** | `sub-11` (awake only) |
+| ds005620 | 21 | 20 | **20** | `sub-1037` (awake only) |
+
+Identical to §12.2's table (same underlying per-subject pairing code, same deposits). **`uce_v1` in
+sleep_edfx**: EXCLUDED, `n=0` after pairing (all-NaN, unchanged from §3/§6) — the only rule-74 exclusion
+this run produced; no column was constant (nonzero-n, zero-variance) after pairing.
+
+### 13.1 Task 1 — the signature vectors
+
+Sorted by \|dz\| within each deposit. These are the numbers cited throughout the rest of this section.
+
+<details><summary><b>sleep_edfx</b> (n=141 paired subjects) — click to expand</summary>
+
+| column | dz |
+|---|---:|
+| whole_head_exponent | +4.008 |
+| multiscale_entropy_slope | +3.612 |
+| critical_slowing_ar1 | +3.256 |
+| exponent_low | +3.157 |
+| spectral_edge_95 | −2.868 |
+| lempel_ziv | −2.281 |
+| spectral_entropy | −2.186 |
+| emg_index | −2.071 |
+| emg_beta_gamma_fraction | −1.906 |
+| relative_delta_power | +1.510 |
+| exponent_high | +1.143 |
+| wpli_alpha | +0.755 |
+| emg_kurtosis | −0.751 |
+| relative_alpha_power | −0.501 |
+| pac_slow_alpha | −0.360 |
+| spatial_participation_ratio | +0.339 |
+
+</details>
+
+<details><summary><b>capslpdb</b> (n=106 paired records) — click to expand</summary>
+
+| column | dz |
+|---|---:|
+| whole_head_exponent | +1.028 |
+| spectral_entropy | −0.943 |
+| relative_delta_power | +0.932 |
+| lempel_ziv | −0.931 |
+| spectral_edge_95 | −0.919 |
+| relative_alpha_power | −0.524 |
+
+</details>
+
+<details><summary><b>chennu</b> (n=20 paired subjects) — click to expand</summary>
+
+| column | dz |
+|---|---:|
+| multiscale_entropy_slope | −1.758 |
+| exponent_low | −1.713 |
+| exponent_high | +1.615 |
+| lempel_ziv | +1.031 |
+| spectral_entropy | +0.742 |
+| emg_beta_gamma_fraction | +0.608 |
+| pac_slow_alpha | −0.607 |
+| relative_alpha_power | −0.495 |
+| relative_delta_power | −0.458 |
+| emg_kurtosis | −0.379 |
+| whole_head_exponent | −0.367 |
+| spectral_edge_95 | +0.304 |
+| uce_v1 | −0.283 |
+| spatial_participation_ratio | +0.227 |
+| critical_slowing_ar1 | −0.187 |
+| emg_index | −0.149 |
+| wpli_alpha | −0.084 |
+
+</details>
+
+<details><summary><b>ds004541</b> (n=7 paired subjects — small, see §12.2's caveat, carried over unchanged) — click to expand</summary>
+
+| column | dz |
+|---|---:|
+| uce_v1 | +1.856 |
+| whole_head_exponent | +1.247 |
+| multiscale_entropy_slope | +1.149 |
+| emg_beta_gamma_fraction | −1.047 |
+| critical_slowing_ar1 | +0.842 |
+| exponent_high | +0.816 |
+| spatial_participation_ratio | +0.709 |
+| pac_slow_alpha | +0.646 |
+| emg_kurtosis | +0.568 |
+| relative_alpha_power | −0.452 |
+| emg_index | +0.410 |
+| relative_delta_power | +0.367 |
+| wpli_alpha | −0.305 |
+| spectral_entropy | −0.191 |
+| lempel_ziv | −0.162 |
+| exponent_low | +0.145 |
+| spectral_edge_95 | +0.095 |
+
+</details>
+
+<details><summary><b>ds005620</b> (n=20 paired subjects) — click to expand</summary>
+
+| column | dz |
+|---|---:|
+| lempel_ziv | +1.373 |
+| uce_v1 | +1.002 |
+| whole_head_exponent | +0.991 |
+| relative_alpha_power | +0.848 |
+| spectral_edge_95 | −0.660 |
+| relative_delta_power | −0.575 |
+| wpli_alpha | +0.459 |
+| spectral_entropy | +0.081 |
+
+</details>
+
+### 13.2 Task 2/3 — pairwise sign agreement and Spearman rho, with the permutation null beside each
+
+Ten pairs (`C(5,2)`). "signed n" excludes any cell where either deposit's dz was exactly 0 (none occurred
+here). Permutation null: 500 draws shuffling which column each value in the FIRST-named deposit's
+signature is attached to (its own marginal sign balance is preserved exactly; only the column↔value
+correspondence with the second deposit is randomised), recomputing both statistics each draw — this is the
+rule-63/rule-79 discipline ("measure the null, do not assume Binomial(n,0.5) is it"), and it matters here:
+several deposits' own signs are not close to a 50/50 split (sleep_edfx is 6 positive/10 negative on its 16
+columns; ds004541 is 11/6), so the permutation null's mean sits visibly off 0.5 in several rows below.
+
+| pair | modality | n | agree | rate | exact binom p (upper) | perm-null mean / p95 | rho | perm-p(rho) | perm-null rho mean / p95 |
+|---|---|---:|---:|---:|---:|---|---:|---:|---|
+| sleep_edfx – capslpdb | **same (sleep-sleep)** | 6 | 6 | 1.000 | 0.0156 | 0.562 / 1.000 | +0.771 | 0.046 | −0.001 / +0.714 |
+| sleep_edfx – ds004541 | cross | 16 | 11 | 0.688 | 0.1051 | 0.503 / 0.688 | +0.647 | **0.004** | +0.024 / +0.391 |
+| sleep_edfx – ds005620 | cross | 7 | 3 | 0.429 | 0.7734 | 0.472 / 0.714 | +0.214 | 0.346 | +0.013 / +0.679 |
+| sleep_edfx – chennu | cross | 16 | 6 | 0.375 | 0.8949 | 0.507 / 0.750 | −0.538 | 0.982 | +0.023 / +0.471 |
+| capslpdb – ds004541 | cross | 6 | 5 | 0.833 | 0.1094 | 0.485 / 0.833 | +0.657 | 0.102 | −0.019 / +0.714 |
+| capslpdb – ds005620 | cross | 6 | 2 | 0.333 | 0.8906 | 0.459 / 0.667 | +0.029 | 0.540 | +0.035 / +0.771 |
+| capslpdb – chennu | cross | 6 | 1 | 0.167 | 0.9844 | 0.501 / 0.833 | −0.714 | 0.950 | +0.037 / +0.771 |
+| chennu – ds004541 | **same (anaesthesia-anaesthesia)** | 17 | 5 | 0.294 | 0.9755 | 0.445 / 0.647 | −0.277 | 0.878 | +0.007 / +0.407 |
+| chennu – ds005620 | **same (anaesthesia-anaesthesia)** | 8 | 3 | 0.375 | 0.8555 | 0.426 / 0.625 | +0.095 | 0.358 | −0.047 / +0.573 |
+| ds004541 – ds005620 | **same (anaesthesia-anaesthesia)** | 8 | 2 | 0.250 | 0.9648 | 0.497 / 0.750 | +0.167 | 0.350 | −0.007 / +0.619 |
+
+Two-sided sanity check on the three lowest agreement counts (asked because rule 37 requires checking both
+tails, not just "does it exceed chance"): `chennu–ds004541` 5/17 two-sided p = **0.143** (lower-tail alone
+0.072); `capslpdb–chennu` 1/6 lower-tail p = 0.109; `ds004541–ds005620` 2/8 lower-tail p = 0.145. None of
+the individual pairs' below-chance counts clears 0.05 two-sided on its own — the pooled anaesthesia-group
+number in §13.3 is where that signal becomes visible.
+
+**Rule 85 (knife-edge) flag:** `capslpdb–ds004541` is 5/6 agreements, p=0.109; one more agreement (6/6)
+would have given p=0.0156, the same jump `sleep_edfx–capslpdb`'s row shows. At n=6 the exact binomial has
+essentially two readable values either side of the conventional 0.05 line — report the count, not a
+pass/fail.
+
+### 13.3 THE KEY CONTRAST — same-modality vs cross-modality, and why pooling "same-modality" hides the answer
+
+**Pooled exactly as instructed:**
+
+| group | pairs | pooled agreement | pooled exact binomial p (upper) | mean rho |
+|---|---:|---:|---:|---:|
+| SAME-modality (sleep-sleep + anaesthesia-anaesthesia) | 4 | 16/39 = 0.410 | 0.9002 | +0.189 |
+| CROSS-modality (sleep vs anaesthesia) | 6 | 28/57 = 0.491 | 0.6043 | +0.049 |
+
+**Read literally, this says cross-modality agreement (0.491) is indistinguishable from same-modality
+agreement (0.410), and neither clears chance.** But rule 16 applies directly here: pooling "same-modality"
+merges two sub-groups that behave oppositely, and the definition (which pairs are being pooled) is doing
+the work, not the transport question. Splitting the four same-modality pairs:
+
+| sub-group | pairs | pooled agreement | rate | exact p (upper) | exact p (lower) | two-sided |
+|---|---:|---:|---:|---:|---:|---:|
+| sleep→sleep (the ONE pair, `sleep_edfx–capslpdb`) | 1 | 6/6 | 1.000 | **0.0156** | — | 0.0156 |
+| anaesthesia→anaesthesia (`chennu–ds004541`, `chennu–ds005620`, `ds004541–ds005620`) | 3 | 10/33 | 0.303 | 0.9932 | **0.0175** | **0.0351** |
+
+**The sharpest number in this probe is the anaesthesia-anaesthesia row.** Three independent
+cross-STUDY comparisons **within the same modality** (two of the three studies — chennu and ds004541 —
+use the same drug, propofol) pool to sign agreement of 10/33 = 0.303, which is **significantly BELOW
+chance** (two-sided p = 0.035) — the signatures disagree more than random assignment would. Sleep-to-sleep
+transport is close to perfect (6/6) and matches §11/§12's reading of that pair as "the easy case."
+Sleep-to-anaesthesia transport sits in between, unremarkable in either direction (28/57, p=0.604) but with
+two individually notable cells (`sleep_edfx–ds004541` rho +0.647, permutation p=0.004; `capslpdb–ds004541`
+rho +0.657, permutation p=0.102) that are both anchored on the same deposit, ds004541.
+
+**Interpretation offered, not concluded:** ds004541's signature (post-LOC propofol, resting) correlates
+with BOTH sleep deposits' signatures at rho ≈ +0.65, while chennu (moderate sedation, level 3 — §1's own
+label, one step short of LOC — task-engaged) and ds005620 (TMS-EEG sedation) do not correlate well with
+anything, including each other or with ds004541. One candidate reading, not tested further here: the
+signature that transports is a **depth-of-unconsciousness axis shared between deep NREM sleep and
+post-LOC anaesthesia**, and chennu/ds005620 sit on a lighter part of a state space where the catalogue's
+own rule 42 (Gugino 2001: beta *rises* in light sedation, delta/theta rise further only at LOC) predicts
+sign reversals relative to a fully-unconscious reference — consistent with `exponent_high`,
+`multiscale_entropy_slope` and `whole_head_exponent` all flipping sign between chennu and ds004541 in
+§13.1's tables above. This is a hypothesis a reader could go test, not a finding this probe established.
+
+### 13.4 Plain statement
+
+- **The direction signature does not show a clean "transports across modality, fails within it" pattern.**
+  The single sleep-to-sleep pair transports best of anything measured (6/6, rho +0.771). The three
+  anaesthesia-to-anaesthesia pairs transport **worse than chance, pooled** (10/33, two-sided p=0.035) —
+  i.e. two propofol studies (chennu, ds004541) and a TMS-EEG sedation study (ds005620) disagree in sign
+  more than random assignment would predict. Sleep-to-anaesthesia sits in the middle (28/57, not
+  significant either direction) and its two best cells are both anchored on ds004541.
+- **Sign agreement and rank correlation do not always agree on which pairs look interesting**: the
+  `sleep_edfx–ds004541` cell is unremarkable by exact-binomial sign agreement (11/16, p=0.105) but its
+  Spearman rho (+0.647) clears its own permutation null decisively (perm-p=0.004, n=16) — ordering
+  transports more clearly than raw sign here, which is exactly the distinction the task asked this
+  decomposition to make.
+- **The permutation null is not centred on 0.5 for either statistic**, confirming rule 63/79's caution was
+  warranted: several deposits' own sign balance is skewed (sleep_edfx 6+/10−; ds004541 11+/6−), so a
+  handful of cells' permutation-null means sit at 0.42–0.51 rather than exactly 0.50, and the rho null
+  means sit near 0 but not exactly 0 in every case.
+- **Pooling "same-modality" as a single category, as the task's headline phrasing invites, would have
+  reported 16/39 = 0.410 and concluded "no better than cross-modality (0.491)" — a real number that
+  hides the fact that its two constituent sub-groups point in opposite directions** (sleep-sleep: strong
+  positive; anaesthesia-anaesthesia: significantly negative). Rule 16 applied literally: report the
+  sub-groups, not only the pooled category the task named.
+
+**Plain answer to the task's question:** *does the direction signature transport across modality when the
+level does not?* — **Not cleanly, and not uniformly.** It transports very well between the two sleep
+deposits (matching the one raw-level success in §11/§12). It transports **worse than chance** between the
+three anaesthesia deposits, which was not predicted and is the most surprising number here. Between sleep
+and anaesthesia it is a mixed bag: two cells anchored on one deposit (ds004541) show a real rank
+correlation surviving its own permutation null; the other four sleep-vs-anaesthesia cells and the whole
+pooled cross-modality category do not clear chance in either direction. The signature is not a clean
+rescue of Challenge D's transport problem; if anything, the sharpest single finding here is that two
+studies of the *same drug* (chennu, ds004541) disagree in direction more than chance on 5 of 17 shared
+columns — a within-modality, within-drug replication problem that the level-transport analysis in §7–§12
+never surfaced because it never compared two anaesthesia studies directly against each other.
+
+No verdict about Challenge D is drawn here, per the task's instruction.
