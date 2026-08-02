@@ -209,3 +209,55 @@ separate phenomena and this note collapsed them into one.
 
 The sentence to retire is "it was never an alpha story". The correct one is: **the whole-panel difference
 is not an alpha story, and the reversal is.**
+
+---
+
+## THIRD CORRECTION, 2026-08-02: the arms were wrong, and fixing them strengthens the reversal
+
+Every propofol number above — including the 2.30x in the first correction and the 12/15 in the second —
+came from **44 of 114 eligible cases**. The arm predicate in E224, E225 and E227 asked whether a VitalDB
+track KEY existed. An anaesthesia machine logs its sevoflurane and desflurane channels whether or not the
+vaporiser is ever opened, so 73 propofol cases carrying an all-zero volatile track were discarded as
+combined-technique. Catalogue rule 6, now written up as rule 87.
+
+| arm | by key presence | by `max(value) > 0` |
+|---|---:|---:|
+| propofol-only | 44 | **114** |
+| sevoflurane-only | 90 | 88 |
+| genuinely both | 101 | **31** |
+| desflurane-only | — | 14 |
+
+**The correction is one-sided**: it barely touches the comparison arm, and it selected on the anaesthesia
+machine — a property of the theatre, not of the patient or the drug — which rule 14 forbids treating as
+innocent.
+
+### E229: everything moves the same way
+
+| | E227 (n=44) | E229 (n=114) |
+|---|---:|---:|
+| propofol features clearing the donor null on CONSISTENCY | 12 / 15 | **14 / 15** |
+| propofol features clearing it on STRENGTH | 3 / 15 | **7 / 15** |
+| sevoflurane, consistency / strength | 11 / 11 | 12 / 11 |
+| direction agreement among features consistent in both arms | 9 / 10, p = 0.0107 | **10 / 11, p = 0.0059** |
+| whole-panel gap, mean \|mean signed rho\| | 2.30x | **1.73x** |
+| `relative_alpha_power`, propofol vs sevoflurane | +0.1079 / −0.2482 | **+0.1189 / −0.2482** |
+
+**Two things follow, and they point in opposite directions.**
+
+The whole-panel magnitude gap is **smaller than reported at every stage** — 4.6x, then 2.30x, now 1.73x —
+and the propofol arm's strength passes more than double, from 3 to 7 of 15. Much of what read as "the EEG
+does not track propofol" was seventy missing cases.
+
+**The reversal is not that.** `relative_alpha_power` is still the single feature pointing the opposite
+way, on 2.6 times the data, with a smaller p, and it clears its own donor null in both arms (0.4786
+against 0.2438 in propofol; 0.6958 against 0.2285 in sevoflurane). A correction that shrinks the
+whole-panel effect and leaves the reversal standing is the best evidence so far that the two are
+different phenomena — which is what the second correction argued on much weaker grounds.
+
+### What is still not established
+
+E228 tried to hold the patient constant and could not: the genuinely combined cohort is 31 cases, and of
+those only 17 have both exposures varying across the EEG windows and only 1 has a usable epoch of each.
+**The reversal has never been tested within a patient**, and no VitalDB design can do it. That is now the
+binding constraint on Challenge A, and it needs a deposit where one patient receives both agents with EEG
+throughout — a crossover volunteer study, not a surgical registry.
