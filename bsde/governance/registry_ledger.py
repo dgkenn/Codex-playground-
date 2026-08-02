@@ -83,6 +83,34 @@ def _git(*args) -> str:
         return ""
 
 
+
+CHALLENGES_PATH = os.path.join(os.path.dirname(__file__), "CHALLENGES.json")
+
+
+def challenge_statement(ch: str) -> str:
+    """The VERBATIM briefed statement for a challenge letter, or a raised error.
+
+    This exists because the working characterisation of the challenges drifted TWICE -- both times
+    caught by the investigator rather than by the project -- and once inverted: Challenge A asks a
+    candidate to MINIMISE drug-identification information, and a whole session was spent measuring
+    how much drug-identification information the panel carries, as though a large value were a
+    finding rather than a disqualifier. Prose in a document did not prevent that. A check at the
+    point of registration might.
+    """
+    import json as _json
+    with open(CHALLENGES_PATH) as fh:
+        spec = _json.load(fh)
+    letter = (ch or "").strip()[:1].upper()
+    if letter not in ("A", "B", "C"):
+        retired = spec.get("_retired", {})
+        if letter in retired:
+            raise ValueError(f"challenge {letter!r} is RETIRED: {retired[letter]}")
+        raise ValueError(
+            f"challenge {ch!r} is not one of the three briefed challenges (A, B, C). "
+            f"See {CHALLENGES_PATH}. If this is genuinely new work, it does not belong under a "
+            "challenge letter.")
+    return spec[letter]["statement"]
+
 def register(exp_id: str, challenge: str, question: str, deposit: str, primary: str,
              gates: List[str], placebo: Optional[str], file: str,
              successor_of: Optional[str] = None,
@@ -101,6 +129,10 @@ def register(exp_id: str, challenge: str, question: str, deposit: str, primary: 
     rows = _load()
     if any(r["id"] == exp_id for r in rows):
         raise ValueError(f"{exp_id} is already in the ledger; the ledger is append-only")
+    # ANCHOR: refuse a challenge letter that is not briefed, and echo the verbatim statement so the
+    # registrant sees what they are claiming to test at the moment they claim it.
+    stmt = challenge_statement(challenge)
+    print(f"[anchor] challenge {challenge.strip()[:1].upper()} = \"{stmt}\"")
     sha = _git("log", "--diff-filter=A", "--format=%H", "--", file).split("\n")[-1]
     date = _git("log", "--diff-filter=A", "--format=%ad", "--date=short", "--", file).split("\n")[-1]
     row = {"id": exp_id, "challenge": challenge, "question": question, "deposit": deposit,

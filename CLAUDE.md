@@ -1309,3 +1309,23 @@ unverified on GitHub.
     and whether the comparison can distinguish the real result from a tie at that value.** A statistic
     bounded above (accuracy, AUC, a rate, a resultant length) needs a strict comparison or a different
     reference, and rule 40's "construct the input that should pass" would have caught it in one line.
+95. **A CHALLENGE DEFINITION IN PROSE DRIFTS; ANCHOR IT WHERE THE WORK IS REGISTERED.** The three briefed
+    challenges are, verbatim: **A** *"predicts loss and recovery across anaesthetics while MINIMISING
+    drug-identification information"*, **B** *"spontaneous EEG predicting command-following"*, **C**
+    *"seeing a transition before the conventional monitor"*. The working characterisation drifted TWICE,
+    both times caught by the investigator rather than by the project, and the second time it INVERTED
+    challenge A: an entire session was spent measuring how much drug-identification information the panel
+    carries — the quantity A asks a candidate to MINIMISE — and reporting a large value as a finding
+    rather than as a disqualifier. A correction document written after the first occurrence did not
+    prevent the second, because a document is only consulted by someone who already suspects drift.
+    Two further symptoms of the same failure. **Challenge C's own negatives were scored against SEF95, a
+    computed spectral-edge proxy, when the briefed comparator is the CONVENTIONAL MONITOR** — so three
+    verdicts do not refute the claim they appear to refute, and VitalDB has recorded BIS all along.
+    **And a fourth "challenge" accumulated that was never briefed at all**: grep returns zero hits for
+    "Challenge D" in either brief, yet experiments, probes and a pre-registration were filed under it.
+    **The fix is structural, not editorial.** `bsde/governance/CHALLENGES.json` holds the verbatim
+    statements and each challenge's two acceptance halves; `registry_ledger.register()` now refuses any
+    letter that is not briefed, names a retired one as retired, and ECHOES the verbatim statement at the
+    moment of registration — so a registrant sees what they are claiming to test while claiming it. The
+    general rule: **when a definition is load-bearing and consulted rarely, put it in the path of the
+    action it governs.** Rule 74's lesson applied to scope rather than to a numerical guard.
