@@ -125,10 +125,48 @@ def test_anchored_measure_is_not_the_incumbent_renamed():
 
 
 def test_no_peak_returns_nan_rather_than_a_band_edge():
-    """An edge maximum is not a peak, and returning one would be exactly the artefact this avoids."""
+    """An edge maximum is not a peak, and returning one would be exactly the artefact this avoids.
+
+    THIS TEST WAS UNFAILABLE UNTIL 2026-08-02 AND IS KEPT ONLY FOR THE EDGE HALF OF ITS CLAIM.
+    It asserted `(not finite) or (5 < got < 15)`. The estimator returns NaN at an edge and otherwise a
+    value strictly inside the search window, so that disjunction is a tautology: measured over 200
+    pure-background draws it is satisfied 200 times out of 200, INCLUDING the 183 that return a
+    spurious peak. Catalogue rule 40, in this project's own test suite.
+    """
     r = _registry()
     rng = np.random.default_rng(7)
     n = int(SFREQ * DURATION_S)
     pure = np.vstack([np.cumsum(rng.normal(0, 1, n)) * 0.4 for _ in range(2)])
     got = r.get("alpha_peak_hz_wide").fn(pure, ["a", "b"], SFREQ, {})
     assert (not np.isfinite(got)) or (5.0 < got < 15.0)
+
+
+def test_the_estimator_INVENTS_a_peak_in_pure_noise_and_this_pins_the_defect():
+    """The claim the previous test only appeared to make, measured as a RATE (rule 91).
+
+    E237 and E239 established that `alpha_peak_hz_wide` has no prominence criterion: it returns the
+    largest value in a noisy residual whether or not there is an oscillation. On signal-free 1/f
+    background it reports a finite "peak" in roughly 0.9 of draws.
+
+    **This test PINS A DEFECT rather than endorsing a property.** It is written to fail if the rate ever
+    moves materially, in EITHER direction -- so that adopting E239's prominence gate (which takes the
+    rate to 0.020) breaks this test loudly and forces every claim resting on peak AVAILABILITY to be
+    revisited, rather than the fix landing silently. The bounds are wide because the point is to detect
+    a change of kind, not to certify a number.
+    """
+    fn = _registry().get("alpha_peak_hz_wide").fn
+    n = int(SFREQ * DURATION_S)
+    finite = 0
+    draws = 120
+    for s in range(draws):
+        rng = np.random.default_rng(1000 + s)
+        pure = np.vstack([np.cumsum(rng.normal(0, 1, n)) * 0.4 for _ in range(2)])
+        if np.isfinite(fn(pure, ["a", "b"], SFREQ, {})):
+            finite += 1
+    rate = finite / draws
+    assert 0.75 < rate < 1.0, (
+        f"false-positive rate on signal-free input is {rate:.3f}; it was ~0.9 when measured by E237 and "
+        "E239. If this has FALLEN, a prominence gate has been adopted and every result resting on peak "
+        "availability -- E233's detectability gate above all -- must be re-read against a detector whose "
+        "rate is now different. If it has RISEN, something else has changed. Either way this is not a "
+        "test to make pass by adjusting the bounds.")

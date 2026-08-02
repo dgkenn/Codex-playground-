@@ -349,3 +349,38 @@ Two limits remain attached to that sentence. The sevoflurane half is **already p
 sevoflurane — and the static endpoint is independently corroborated by Shen 2026 (PMID 42131603,
 8.78 vs 10.88 Hz). Only the propofol dose-response half is unaddressed in the literature. And this is
 still a between-patient comparison; no public deposit can make it within-patient.
+
+---
+
+## WITHDRAWAL, same day: "the propofol null is defended" does not stand as argued
+
+The section above defends E233's propofol null with two pieces of evidence. **An audit of every
+peak-dependent claim found that one of them is an inference E237 refutes one section earlier in this
+same document, and that the other is weaker than it was presented as being.** Both are withdrawn here.
+
+**Leg 2, invalid.** I wrote that "the two arms' peak-detection failure rates are indistinguishable
+(0.0696 vs 0.0725)" as evidence that propofol windows carry real alpha. E237 had already established, in
+the section directly above, that this estimator returns a finite peak on **signal-free 1/f background in
+91.5 % of draws** — so a low NaN rate is what the instrument produces from noise and carries no
+information about whether alpha is present. Using availability as evidence of signal is precisely the
+error rule 91 was written from, committed against my own finding.
+
+**Leg 1, weaker than stated.** `relative_alpha_power_iaf` is power in a ±2 Hz band over 1–45 Hz total.
+Under a 1/f background a 4 Hz window sitting near 9–10 Hz carries a substantial fraction of that total
+whether or not any oscillation exists, so a median of 0.1972 does **not** establish a real peak. It is a
+band-occupancy number, not a prominence number, and I presented it as the latter.
+
+**What the position actually is.** The propofol null in E233's A1 arm — peak frequency not tracking
+propofol dose — remains **ambiguous** between "the peak does not move" and "there is too little alpha
+for the estimator to track anything". Nothing above settles it.
+
+**What would settle it**, and it is now buildable: E239 validated a prominence statistic and a derived
+threshold (k = 3.5 robust sds, taking the false-positive rate on signal-free input from 0.915 to 0.020
+with no accuracy cost). Computing that statistic on the VitalDB windows and comparing its distribution
+between arms is the measurement this section should have rested on. It has not been run — the equivalent
+recompute is currently in flight for Sleep-EDFx only.
+
+**The two claims this reaches.** E233's "THE PANEL HAS NO REVERSAL LEFT IN IT" depends on the anchored
+measure behaving properly on these windows, and the anchored measure depends on the peak. That verdict
+is not withdrawn — its own gates passed and E237 showed the estimator is monotone and accurate *where a
+peak exists* — but it now carries an explicit precondition that has not been verified on this cohort.
