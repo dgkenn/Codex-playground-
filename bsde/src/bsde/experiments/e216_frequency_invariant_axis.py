@@ -186,7 +186,9 @@ def main() -> int:
     A = np.flatnonzero(arm < 0.5)
     B = np.flatnonzero(arm > 0.5)
 
-    invariant = tuple(sorted(c for c in cols if S[c] < s95))
+    # membership is checked against the ENUMERATION's key convention -- itertools.combinations
+    # emits tuples in `cols` order, so sorting here made G4 look up a key that never exists.
+    invariant = tuple(c for c in cols if S[c] < s95)
     print(f"   {len(cols)} features present on both sides; S-null p95 = {s95:.4f} (derived in E214)")
     print(f"   FREQUENCY-INVARIANT subset ({len(invariant)}): "
           + ", ".join(f"{c} S={S[c]:.4f}" for c in invariant))

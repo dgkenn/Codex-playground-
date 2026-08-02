@@ -138,6 +138,62 @@ def _band(name):
     return fn
 
 
+PEAK_SEARCH_LO = 5.0
+PEAK_SEARCH_HI = 15.0
+IAF_HALFWIDTH_HZ = 2.0
+
+
+def _iaf_peak(data, sfreq):
+    """Peak frequency of the APERIODIC-CORRECTED spectrum over a WIDE search range.
+
+    WHY WIDE, AND WHY CORRECTED. The incumbent `alpha_peak_hz` takes the raw PSD maximum inside the fixed
+    8-13 Hz alpha band. That estimator cannot report a peak outside its own band and pins at the edge
+    instead: over 6,437 VitalDB windows its measured range is exactly [8.000, 13.000], and at BIS < 40
+    28.74 % of volatile-agent windows sit precisely on the 8.0 Hz floor against 8.91 % of propofol windows.
+    Any peak that has genuinely moved below 8 Hz is recorded as 8.0, so every peak-shift estimate built on
+    it is a LOWER BOUND rather than a measurement -- catalogue rule 62, an estimator has no resolution
+    outside the range it was built over.
+
+    Searching 5-15 Hz removes the censoring. Subtracting the aperiodic fit first removes the other failure
+    mode: on a steep 1/f background the raw maximum drifts toward the low edge whether or not an
+    oscillation is there, so a raw search over a WIDER band would be more biased, not less.
+
+    Returns NaN when the residual has no interior maximum -- i.e. when there is no peak to anchor to --
+    rather than returning an edge, because an edge would be exactly the artefact this exists to avoid.
+    """
+    from bsde.features.aperiodic import fit_aperiodic
+    f, p = _mean_psd(data, sfreq)
+    ap = fit_aperiodic(f, p, fit_lo_hz=1.0, fit_hi_hz=45.0)
+    m = (f >= PEAK_SEARCH_LO) & (f <= PEAK_SEARCH_HI) & (p > 0)
+    if m.sum() < 5:
+        return float("nan")
+    resid = np.log10(p[m]) - (ap["offset"] - ap["exponent"] * np.log10(f[m]))
+    i = int(np.nanargmax(resid))
+    if i == 0 or i == resid.size - 1:
+        return float("nan")            # an edge maximum is not a peak
+    return float(f[m][i])
+
+
+def f_alpha_peak_hz_wide(data, ch_names, sfreq, meta=None) -> float:
+    """The uncensored peak-frequency estimator. See `_iaf_peak`."""
+    return _iaf_peak(data, sfreq)
+
+
+def f_relative_alpha_power_iaf(data, ch_names, sfreq, meta=None) -> float:
+    """Relative power in a band ANCHORED TO THIS RECORDING'S OWN PEAK, not to fixed edges.
+
+    band = [peak - 2 Hz, peak + 2 Hz], divided by 1-45 Hz total, where `peak` is the aperiodic-corrected
+    maximum over 5-15 Hz. Where the fixed 8-13 Hz window measures how much of an oscillation happens to
+    fall inside a box, this measures the oscillation.
+    """
+    from bsde.features.spectral import relative_band_power
+    pk = _iaf_peak(data, sfreq)
+    if not np.isfinite(pk):
+        return float("nan")
+    f, p = _mean_psd(data, sfreq)
+    return float(relative_band_power(f, p, pk - IAF_HALFWIDTH_HZ, pk + IAF_HALFWIDTH_HZ))
+
+
 def f_alpha_peak_hz(data, ch_names, sfreq, meta=None) -> float:
     """Frequency of the largest spectral peak inside the alpha band.
 
@@ -420,6 +476,47 @@ def seed_registry() -> Sequence[Candidate]:
         notes="Deliberately declares 'higher' for drug identity — it is a KNOWN pharmacological signature "
               "and pretending otherwise would be dishonest. That is precisely why it is a poor "
               "consciousness marker and a good baseline.")
+
+    register(
+        name="alpha_peak_hz_wide", version="1.0", fn=f_alpha_peak_hz_wide,
+        interpretation="Peak frequency of the APERIODIC-CORRECTED spectrum searched over 5-15 Hz. The "
+                       "uncensored counterpart of alpha_peak_hz, whose 8-13 Hz search cannot report a "
+                       "peak outside its own band and pins at the edge instead (measured range over "
+                       "6,437 VitalDB windows: exactly [8.000, 13.000]).",
+        predictions={"unconscious_vs_awake": "lower", "anaesthetic_drug_identity": "lower"},
+        failure_conditions=["it correlates above 0.9 with the censored alpha_peak_hz, in which case the "
+                            "censoring was immaterial and this is the incumbent renamed (rule 60)",
+                            "it returns NaN on more than a third of windows, in which case there is "
+                            "usually no peak to anchor to and the whole IAF programme is unfounded here"],
+        requires=_CORE, complexity=3, min_duration_s=60.0,
+        prior_art="Individual alpha frequency is standard in cognitive and resting-state EEG (234 papers "
+                  "use the phrase). Verified against E-utilities on 2026-08-02: ZERO of them mention "
+                  "anesthesia or anaesthesia. The transfer to anaesthesia monitoring appears unmade.",
+        notes="Declares 'lower' for drug identity because our own measurement puts the volatile peak below "
+              "propofol's at depth, and pretending the measure is agent-blind would be dishonest. Note "
+              "this DISAGREES with Akeju 2014 (PMID 25233374), which puts both agents at approximately "
+              "10 Hz; that tension is the reason an uncensored estimator is worth having.")
+
+    register(
+        name="relative_alpha_power_iaf", version="1.0", fn=f_relative_alpha_power_iaf,
+        interpretation="Relative power in [peak-2, peak+2] Hz, the band ANCHORED TO THIS RECORDING'S OWN "
+                       "peak, over 1-45 Hz total. Where relative_alpha_power measures how much of an "
+                       "oscillation falls inside a fixed 8-13 Hz box, this measures the oscillation.",
+        predictions={"unconscious_vs_awake": "higher", "anaesthetic_drug_identity": "unchanged"},
+        failure_conditions=["it correlates above 0.9 with relative_alpha_power, in which case anchoring "
+                            "changed nothing and this is that measure renamed (rule 60)",
+                            "its deep-versus-light direction still INVERTS between propofol and "
+                            "sevoflurane, which would refute band placement as the cause of the inversion "
+                            "for the second time and leave the mechanism open",
+                            "it is undefined on the windows that matter -- if the peak vanishes at depth "
+                            "the anchored band has nothing to anchor to exactly where it is needed"],
+        requires=_CORE, complexity=3, min_duration_s=60.0,
+        prior_art="No prior art found in anaesthesia monitoring; see alpha_peak_hz_wide.",
+        notes="THIS IS THE ONLY CANDIDATE IN THE REGISTRY DECLARING 'unchanged' FOR DRUG IDENTITY, and "
+              "that is the whole claim: relative_alpha_power declares 'higher' because it is a known "
+              "pharmacological signature, and the hypothesis here is that most of that signature is the "
+              "fixed band mismeasuring a peak that has moved. If drug identity is still legible, the "
+              "declaration is refuted and the candidate fails on its own terms.")
 
     register(
         name="relative_theta_power", version="1.0", fn=_band("theta"),
