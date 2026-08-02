@@ -132,6 +132,53 @@ spectra were stored anywhere in this deposit — only scalar summaries — so a 
 recording's own peak needs re-extraction. That is a successor, not a rescue clause, and its prior is now
 lower than it was.
 
+## Addendum 2, 2026-08-02 — two mechanisms REMOVED before they were proposed
+
+*Cohort diagnostics run on E186's 115 clean single-agent cases, using only `meta_*` columns — BIS,
+suppression ratio, EMG, age, BMI, ASA and the exposure itself. No alpha measure is touched. Run BEFORE
+E218's result existed.*
+
+A literature search was commissioned for candidate mechanisms that could make two GABAergic anaesthetics
+disagree about the DIRECTION of an EEG-depth relationship. Two of the leading candidates can be checked
+directly on this cohort, and **both are refuted here**, which narrows the search before it starts.
+
+### The arms are at the same depth — the non-equipotent-scale explanation is unavailable
+
+The deep and light terciles are defined by EXPOSURE — MAC for sevoflurane, effect-site concentration for
+propofol — and there is no guarantee that a tercile of MAC and a tercile of Ce reach the same cortical
+state. If sevoflurane's "deep" arm were simply lighter, the arms would not be comparable and the inversion
+could be a depth mismatch. Measured, as medians over cases with a case bootstrap on the difference:
+
+| quantity | propofol | sevoflurane | difference | 95 % CI |
+|---|---|---|---|---|
+| **BIS in the DEEP tercile** | 38.86 | 40.06 | −1.20 | [−3.43, +1.84] |
+| BIS in the LIGHT tercile | 44.87 | 47.06 | −2.20 | [−6.59, +4.11] |
+| age (years) | 59.5 | 58.0 | +1.5 | [−5.00, +11.00] |
+| ASA | 2.0 | 2.0 | 0.0 | [−1.00, +0.00] |
+| BMI | 24.5 | 22.8 | +1.7 | [+0.15, +2.85] |
+
+A permutation test on the deep-tercile BIS difference gives **p = 0.4276**. The two arms reach the same
+depth by the monitor's own reckoning, at the same age and the same ASA. **BMI differs slightly** and is the
+one imbalance worth carrying forward; it is not an obvious route to a sign reversal.
+
+### The deep end is not burst suppression — the deep-end-behaviour explanation is unavailable
+
+A second candidate is that the two agents reach burst suppression at different points on their own scales,
+so that one arm's "deep" contains qualitatively different EEG. The median suppression ratio is **0.000 in
+every tercile of both arms**, and only 14 of 44 propofol cases and 10 of 71 sevoflurane cases show any
+suppression at all in either tercile. This cohort's deep end is oscillatory anaesthesia, not suppression,
+in both arms.
+
+### What that leaves
+
+Of the mechanisms available for a same-drug-class reversal, the cohort itself removes **non-equipotent depth
+scales** and **differential burst suppression**, and largely removes **age**. E213 removed **band
+placement**. What remains, and is not testable on this cohort alone, is a genuine difference in the
+generator of the alpha rhythm, an off-target receptor action of the volatile, or systematic co-medication.
+**Two of those three are testable with case-level data that already exists** and are the obvious successors.
+
+---
+
 ## Consequence for the programme
 
 Alpha power is the single most-used feature in this project's Challenge C panel and it is a headline
