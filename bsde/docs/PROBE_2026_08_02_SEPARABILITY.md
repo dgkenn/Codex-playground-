@@ -965,3 +965,176 @@ columns — a within-modality, within-drug replication problem that the level-tr
 never surfaced because it never compared two anaesthesia studies directly against each other.
 
 No verdict about Challenge D is drawn here, per the task's instruction.
+
+---
+
+## 14. Is Challenge D's transport failure the same band-placement artefact E233 found in Challenge A? (2026-08-02)
+
+*DIAGNOSTIC follow-up, same status as §0/§12/§13: no ledger row, no registration file, no verdict about
+Challenge D. No script needed beyond direct CSV inspection -- the decisive step (item 3 of the task) turned
+on data coverage, not statistics, and stopped there per the task's own instruction not to proceed to
+expensive recomputation once that was clear.*
+
+**Motivation, from today's Challenge A result (E233).** `relative_alpha_power` measures power in a FIXED
+8-13 Hz window. Sevoflurane slides the alpha peak downward with dose (signed rho -0.3296, clearing its
+null); propofol does not move it (-0.0226, failing). A stationary window over a moving peak reads as a
+power change that is really a location change, and anchoring the band to each recording's own measured
+peak collapsed the propofol-vs-sevoflurane reversal from +0.3673 [+0.2754, +0.4584] to +0.0730
+[-0.0107, +0.1584]. **The hypothesis here**: if different deposits' populations have systematically
+different individual alpha frequencies (the textbook case being children vs. adults), a fixed 8-13 Hz band
+measures a different part of each population's spectrum, and that alone could be some or all of what
+§7-§13 call transport failure -- in which case peak-anchored measures (`alpha_peak_hz_wide`,
+`relative_alpha_power_iaf`) should show smaller between-deposit ratios than their fixed-band counterparts
+(`alpha_peak_hz`, `relative_alpha_power`).
+
+### 14.1 Item 1 -- the four candidate definitions, verbatim from `bsde/src/bsde/candidates/seed.py`
+
+**`relative_alpha_power`** (`_band("alpha")`, lines 129-138, registered 466-478): fixed band.
+> "Fraction of 1-45 Hz power in 8-13 Hz. Frontal alpha is the classic propofol signature; posterior alpha
+> dominates relaxed wakefulness." Predictions: `unconscious_vs_awake: higher`, `anaesthetic_drug_identity:
+> higher`. Declared deliberately as a "KNOWN pharmacological signature" and "a poor consciousness marker and
+> a good baseline" -- not framed as peak-anchored at all.
+
+**`alpha_peak_hz`** (`f_alpha_peak_hz`, lines 197-212, registered 537-...): fixed band, raw maximum, no
+aperiodic correction.
+> "Frequency of the largest alpha-band spectral peak. A FREQUENCY, not an amplitude... Added for E157. The
+> MGH OR cohort (E156) put this at signed AUC 0.0886 for sevoflurane co-administration against propofol
+> alone -- markedly LOWER under sevoflurane." Implementation: `argmax` of raw PSD restricted to `f in
+> BANDS["alpha"]` (8-13 Hz), no aperiodic subtraction. Predictions: `anaesthetic_drug_identity: lower`.
+
+**`alpha_peak_hz_wide`** (`f_alpha_peak_hz_wide` / `_iaf_peak`, lines 141-179, registered 480-498):
+peak-anchored, uncensored.
+> "Peak frequency of the APERIODIC-CORRECTED spectrum over a WIDE search range... The incumbent
+> `alpha_peak_hz` takes the raw PSD maximum inside the fixed 8-13 Hz alpha band. That estimator cannot
+> report a peak outside its own band and pins at the edge instead: over 6,437 VitalDB windows its measured
+> range is exactly [8.000, 13.000]... Searching 5-15 Hz removes the censoring. Subtracting the aperiodic fit
+> first removes the other failure mode... Returns NaN when the residual has no interior maximum... rather
+> than returning an edge." Search window `PEAK_SEARCH_LO=5.0`, `PEAK_SEARCH_HI=15.0`. Predictions:
+> `unconscious_vs_awake: lower`, `anaesthetic_drug_identity: lower`.
+
+**`relative_alpha_power_iaf`** (`f_relative_alpha_power_iaf`, lines 182-194, registered 500-519):
+peak-anchored power.
+> "Relative power in a band ANCHORED TO THIS RECORDING'S OWN PEAK, not to fixed edges. band = [peak - 2 Hz,
+> peak + 2 Hz], divided by 1-45 Hz total, where `peak` is the aperiodic-corrected maximum over 5-15 Hz.
+> Where the fixed 8-13 Hz window measures how much of an oscillation happens to fall inside a box, this
+> measures the oscillation." `IAF_HALFWIDTH_HZ = 2.0`. **This is the only candidate in the registry
+> declaring `unchanged` for drug identity** -- the registration text states plainly: "the hypothesis here
+> is that most of that signature is the fixed band mismeasuring a peak that has moved. If drug identity is
+> still legible, the declaration is refuted and the candidate fails on its own terms."
+
+This is exactly the E233 apparatus, registered as its own pair of candidates rather than built ad hoc for
+that experiment.
+
+### 14.2 Item 2 -- coverage check: which of the five named deposits actually have these columns computed
+
+Per the task's explicit file list only (`sleep_edfx_five_stage.csv`, `capslpdb_stages.s*.csv`,
+`chennu_features_v3.csv`, `vitaldb_iaf.s*.csv`, `ds006695_features.csv` conditional on row count) --
+ds004541/ds005620 are out of this probe's scope, matching the task, even though §1-§13 use them.
+
+| deposit | file(s) | rows (data rows) | `relative_alpha_power` | `alpha_peak_hz` | `alpha_peak_hz_wide` | `relative_alpha_power_iaf` |
+|---|---|---:|:--:|:--:|:--:|:--:|
+| sleep_edfx | `sleep_edfx_five_stage.csv` | 710 rows, 709 `status=ok` | **yes** | no | no | no |
+| capslpdb | `capslpdb_stages.s0-3.csv` | 163+162+156+157 = 638 (per-record table, no status column) | **yes** | no | no | no |
+| chennu | `chennu_features_v3.csv` | 80 data rows | **yes** | no | no | no |
+| vitaldb | `vitaldb_iaf.s0-3.csv` | 6,679 data rows, 6,438 `status=ok` | **yes** | **yes** | **yes** | **yes** |
+| ds006695 | `ds006695_features.csv` | **99 data rows as of this check (was 79 minutes earlier in this same probe -- still being written)** | yes | yes | yes | yes |
+
+**ds006695 excluded per the task's explicit instruction**: it has not reached 1140 rows (checked twice
+during this probe -- 79, then 99 -- confirming it is genuinely in flight, not a stale partial). It is not
+used anywhere below.
+
+**Result: exactly ONE deposit -- `vitaldb` -- carries `alpha_peak_hz`, `alpha_peak_hz_wide` and
+`relative_alpha_power_iaf` at usable scale.** `sleep_edfx`, `capslpdb` and `chennu` were feature-extracted
+before these three candidates existed in the registry and carry only the fixed-band `relative_alpha_power`
+(consistent with their use throughout §4-§13, none of which touch peak measures).
+
+### 14.3 Item 3 -- peak-frequency distribution, per deposit and per state: THE DECISIVE STEP, and it stops here
+
+**The task's own gate cannot be evaluated as written.** "Report the distribution of peak frequency per
+deposit and per state. If the peak frequencies do NOT differ between deposits, the hypothesis is dead" --
+this requires **at least two deposits** with the measure computed. There is **one**. This is not the "dead"
+outcome (peaks measured and found equal) -- it is a **data-coverage gate the hypothesis fails before it can
+be tested at all**, and it is exactly as decisive as the task asked for, at zero recomputation cost: there
+is nothing left to check before concluding the cross-deposit comparison is currently impossible.
+
+**What IS available: `alpha_peak_hz_wide` and `relative_alpha_power_iaf` within `vitaldb` alone**,
+`n=6,438` `status=ok` rows across 4 shards (6,679 total), 250 distinct patients (246 adult, 4 pediatric --
+see below). Missingness (rule 5): **3.7% NaN on both columns (238/6,438)** -- well inside the candidate's
+own registered failure threshold ("NaN on more than a third of windows"), so the estimator declares itself
+alive by its own criterion on this deposit.
+
+| split | n windows | median Hz | Q1 | Q3 | min | max |
+|---|---:|---:|---:|---:|---:|---:|
+| **overall** | 6,200 | 10.50 | 9.00 | 11.50 | 5.25 | 14.75 |
+| propofol (pure arm) | 1,113 | 10.50 | 9.75 | 11.50 | 5.25 | 14.75 |
+| sevoflurane (pure arm) | 1,810 | 9.75 | 8.50 | 11.25 | 5.25 | 14.75 |
+| desflurane (pure arm) | 343 | 10.00 | 8.50 | 11.25 | 5.25 | 14.75 |
+| BIS bottom decile (<=30.4, deep) | 567 | 9.75 | 8.50 | 11.25 | 5.25 | 14.75 |
+| BIS top decile (>=60.9, light) | 515 | 11.25 | 8.75 | 12.75 | 5.25 | 14.75 |
+| age < 18 (pediatric) | 120 | 11.00 | 9.75 | 13.25 | 5.25 | 14.75 |
+| age >= 18 (adult) | 6,080 | 10.25 | 9.00 | 11.50 | 5.25 | 14.75 |
+
+**Within this one deposit, peak frequency does move with state** in directions broadly consistent with
+E233's underlying premise: deeper anaesthesia (bottom BIS decile) sits half a Hz to a Hz lower than lighter
+anaesthesia (9.75 vs 11.25 median), and sevoflurane's pure-arm median (9.75) sits below propofol's (10.50),
+matching E233's direction (sevoflurane slides down, propofol does not move much). This is a snapshot
+median comparison, not E233's signed-rho-with-dose statistic, so it corroborates the direction without
+repeating the actual test.
+
+**The age split cannot support or refute the population-driven-peak hypothesis and is reported only
+because it was cheap and the task's own motivating example was age.** VitalDB happens to span age 0.6-89,
+so an age split is possible within this single deposit -- but the pediatric group is **4 distinct patients
+(subject ids 10, 1689, 3590, 5985) contributing 120-126 windows**, against 246 adult patients contributing
+the rest. A 4-patient group is not a population contrast; the median difference (11.00 vs 10.25) is
+reported for completeness and rule 5 (n asserted) and should not be read as evidence either way -- it is
+not even in the direction canonical developmental-EEG literature would predict (paediatric IAF is
+conventionally *lower* than adult before adolescence), which is exactly the kind of small-n reversal four
+patients can produce by chance.
+
+### 14.4 Item 4 -- NOT ATTEMPTED, per the task's own instruction
+
+Item 4 (fixed-vs-anchored transport ratio) requires the SAME statistic §7/§11/§12 compute -- a
+between-deposit shift divided by within-deposit effect size -- evaluated once on a fixed-band column and
+once on a peak-anchored column, **on the same pair of deposits**. That needs two deposits with the
+peak-anchored columns. There is one. **This step is not run, per the task's explicit instruction to stop
+at the cheap decisive check rather than proceed to expensive recomputation when the premise cannot be
+established.** Here the premise cannot be established for a different reason than "peaks don't differ" --
+it is "there is only one deposit to compare" -- and the instruction to stop applies with the same force.
+
+### 14.5 What would unblock this
+
+Two paths, neither taken here (out of scope for a diagnostic told to stop at the coverage check):
+
+1. **`ds006695` reaching 1140 rows.** It is a second sleep-staging deposit (OpenNeuro, forehead-patch,
+   5-level AASM hypnogram -- `docs/PROBE_2026_08_02_DEPOSITS.md` line 99) and already computes all four
+   candidates in its extraction pipeline. Once complete it would give exactly one cross-deposit pair
+   (`vitaldb` vs `ds006695`) -- a surgical/anaesthesia-vs-sleep contrast, not the paediatric-vs-adult
+   contrast the hypothesis's motivating example used, since `ds006695`'s own population was not checked
+   here (out of scope -- the file cannot be touched at all per the task's instruction).
+2. **Recomputing `alpha_peak_hz`, `alpha_peak_hz_wide` and `relative_alpha_power_iaf` on `sleep_edfx`,
+   `capslpdb` and `chennu`.** This is new DSP work (re-running the aperiodic fit and peak search over
+   existing raw/cached windows), not a re-read of an existing column, and was not undertaken -- the task
+   asked for the cheap check first and to stop if it settled the question, and here it settled the
+   question in the sense that the cheap check is the ceiling of what this data currently supports.
+
+### 14.6 Plain statement
+
+- **The hypothesis is not dead -- it is currently untestable.** Exactly one of the five deposits the task
+  named (`vitaldb`) has the peak-anchored candidates computed at usable scale; `ds006695` has them but is
+  still being extracted (79 -> 99 rows observed during this probe, against the 1140 required) and was
+  correctly excluded rather than used partially.
+- **No between-deposit peak-frequency comparison exists to report**, because a comparison needs two
+  deposits and there is one. This is the decisive, cheap finding the task asked for: it stops the probe
+  before any recomputation, exactly as instructed.
+- **Within the one available deposit, peak frequency does vary by state** (deep vs light BIS decile: 9.75
+  vs 11.25 Hz median; sevoflurane vs propofol pure arms: 9.75 vs 10.50 Hz median) in the direction E233's
+  finding would predict, which is weak corroborating context for the underlying mechanism but is not a
+  transport measurement and answers a different question than the one asked.
+- **The age split offered as a proxy for the hypothesis's own motivating example (children vs adults)
+  rests on 4 pediatric patients against 246 adults and should not be treated as evidence for or against
+  population-driven peak-frequency differences** -- flagged, not used.
+- **Nothing here confirms or refutes "Challenge D's transport failure is the same band-placement artefact
+  as E233's Challenge A reversal."** Answering that requires either `ds006695` finishing extraction or new
+  peak-frequency recomputation on the three fixed-band-only deposits; both are named and neither is done.
+
+No verdict about Challenge D is drawn here, per the task's instruction.

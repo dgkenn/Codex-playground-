@@ -1193,3 +1193,23 @@ unverified on GitHub.
     the result** — it says the two arms cannot be equated on that variable at all, and restriction to
     the stratum where it is present beats any amount of matching. Rule 54 was cited by name inside the
     file that then failed it.
+89. **A RANK CORRELATION ACROSS MEASURES CAN BE ENTIRELY A ZERO-VERSUS-NONZERO SPLIT, AND THE CHECK IS
+    LEAVE-GROUP-OUT, NOT LEAVE-ONE-OUT.** E234/E235 asked whether a measure's sensitivity to spectral
+    translation predicts how much more it responds to sevoflurane than to propofol, over 15 panel
+    measures. It returned **rho +0.6107, permutation p_hi 0.0100**, every gate passing, and printed a
+    mechanistic verdict. **Four measures have essentially zero translation sensitivity and all four also
+    have negative sevoflurane advantage; drop them and the correlation among the remaining eleven is
+    +0.0273, p_hi 0.4705.** The relationship is a threshold contrast between two groups, not the
+    dose-response the verdict's wording asserts — among measures that respond at all, how much they
+    respond predicts nothing.
+    **Leave-one-out does not reveal this and will reassure you falsely**: removing any single member of
+    the zero group still leaves three, so rho only fell to +0.5253, which reads as robust. The diagnostic
+    that works is to drop the whole group defined by the near-zero level of the independent variable and
+    re-test. **Whenever an independent variable has a cluster at or near zero, the correlation is a
+    two-group comparison in disguise and must be reported as one.**
+    The second half matters as much: **a group defined by one property is usually defined by others too.**
+    Those four measures are all high-frequency or EMG measures, so "sevoflurane's effect is concentrated
+    at low frequencies" produces the identical split with no translation in it. A two-group contrast
+    carries only as much mechanistic information as the groups are separable on the named property alone,
+    and with n = 4 against 11 that is almost none. Related to rule 60 — check what else your grouping
+    variable is correlated with, before the mechanism is named (rule 50).
