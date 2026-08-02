@@ -117,3 +117,59 @@ not a paper**, and it should be written as such.
 numbers are the evidence for even the narrow version; nothing further is registered after it. Any
 write-up must cite Van Calster 2016 as the mechanism and claim only the EEG instantiation — presenting
 this as a new insight about transportability would be wrong on the record.
+
+---
+
+## VERDICT IN, 2026-08-02: Challenge A stops too — the published evidence points the wrong way
+
+The propofol check returned **PARTIALLY PUBLISHED, with the published half cutting AGAINST the
+hypothesis.** Two things I verified myself against the MEDLINE record, and one I could not:
+
+**Verified.** Hight et al. 2017 (PMID 28611600, *Front Syst Neurosci*) is a **305-patient** volatile
+series that "fitted linear concentration-response curves to assess the sensitivity of alpha power and
+**frequency** measures to changing levels of anesthesia", and that explicitly asks "what effect
+increased age has on alpha frequency". So the sevoflurane half of our sentence is published twice over —
+Hayashi 2008 and now a 305-patient concentration-response study — and **age is a documented confound on
+the exact measure we used**, in a comparison that is between-patient by construction.
+
+**NOT verified, and I am flagging it rather than passing it on.** The agent's key quote — that with
+propofol "the spectral median, a close approximation to peak frequency, reaches a lower frequency limit
+during deeper stages of anesthesia" — is **not in the Hight abstract**. It is reported from full text and
+I could not confirm it from the record. If true it contradicts our null directly, describing propofol as
+slowing then plateauing rather than not moving. A modelling paper (Noroozbabaee 2021, PMID 33316393) is
+reported to predict the same direction.
+
+**Decision: stop Challenge A as framed.** Three reasons, any one sufficient:
+
+1. The sentence's novel half is **contradicted, or at best pre-empted**, by evidence pointing to
+   slow-then-floor rather than invariance.
+2. Age is a **documented, sizable confound** (0.5 Hz young-versus-elderly, and it flattens the
+   dose-response slope itself) on a between-patient design that E228-E231 already established cannot be
+   made within-patient on any public deposit.
+3. What would survive — "propofol's peak floors while sevoflurane's keeps slowing" — **is someone
+   else's finding**, not ours.
+
+**The DOSE-I extraction is allowed to finish** (it is at 80 of 101 recordings and costs nothing further)
+and the table is kept, but **no experiment is registered on it**. A replication of a claim we are
+withdrawing is not worth running, and running it anyway would be the sunk-cost move the abstract-first
+rule exists to prevent.
+
+---
+
+## Where that leaves the programme
+
+All three challenges are now closed or downgraded, and that is the honest state rather than a failure of
+effort:
+
+| challenge | state |
+|---|---|
+| **A** — anaesthetic-invariant depth | **stopped**: novel half contradicted, confound unremovable on public data |
+| **B** — covert command-following | **blocked on data**, 47 experiments, zero touching the construct |
+| **C** — earlier transition detection | **confirmatory only**: the aperiodic exponent result is established prior art |
+| **D** — transport / calibration | **stopped**: mechanism is a published proof (Van Calster 2016) |
+
+**What is left that is genuinely ours** is the methodological record: 220 registrations, and an error
+catalogue of 94 rules each paid for with a wrong result — the peak estimator firing on 91.5 % of
+signal-free noise, band placement manufacturing a drug reversal that survived four confound experiments,
+leave-one-out concealing a zero-versus-nonzero split, a placebo unable to fire at a ceiling. That is a
+real contribution and it is the one to write up.
