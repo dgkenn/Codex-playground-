@@ -36,10 +36,19 @@ WHAT IS EXTRACTED, per trial
     the fact without it being visible
   * subject, session, run, decoder, sub-study, trial index within the run, and the pre-trial gap length
 
-SELECTION IS OUTCOME-BLIND AND FIXED HERE: **session Se01 only, every run and every decoder of it**, for
-every subject. That is ~12-13 runs and ~60-65 trials per subject, uniform across subjects, chosen because
-the alternative — taking all sessions — is 109 GB of transfer for a question that needs ~50 matched pairs
-per subject. Nothing about the choice depends on any feature or outcome value.
+SELECTION. Two modes, both outcome-blind with respect to any EEG feature, and both fixed by protocol
+rather than by performance. `--session Se01` takes the first session; `--last-session` takes each subject's
+FINAL session. Either gives 12-13 runs and ~60 trials per subject, uniform across subjects; the alternative
+— taking all sessions — is 109 GB of transfer for a question that needs ~50 matched pairs per subject.
+
+**Se01 turned out to be the wrong choice and `--last-session` exists because of it.** E192 ran on Se01 and
+failed its BCI-aliveness gate: pooled cursor-velocity-to-target alignment **−0.0738** against a sign-flip
+95th percentile of **+0.0416**, with only **6 of 28 subjects positive**, a median cursor-target distance of
+0.4831 where a random pair averages ~0.52, and — for the 14 "Main" subjects — only the traditional AR
+decoder present in that session. Execution quality has no estimand when the cursor is not being driven at
+the target. The final session is the most-trained one and carries the study's later decoders; that is a
+protocol-level criterion, not a ranking on the outcome, and the aliveness gate is unchanged so it can
+still fail.
 
 Resumable on (subject, session, run) and shardable by subject.
 
@@ -229,6 +238,11 @@ def main(argv=None) -> int:
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
     ap.add_argument("--session", default=SESSION_KEEP)
+    ap.add_argument("--last-session", action="store_true",
+                    help="use each subject's FINAL session instead of --session. A protocol-level "
+                         "criterion (most-trained) rather than a performance ranking: E192 showed the "
+                         "BCI is not alive in session 1, with only 6 of 28 subjects driving the cursor "
+                         "toward the target, so 'execution quality' had no estimand there.")
     ap.add_argument("--out", default=OUT)
     a = ap.parse_args(argv)
 
@@ -259,14 +273,18 @@ def main(argv=None) -> int:
             except Exception as ex:                                             # noqa: BLE001
                 print(f"   {s}: INDEX FAIL {type(ex).__name__}: {ex}", flush=True)
                 continue
-            want = []
-            for name in members:
-                mm = MEMBER.search(os.path.basename(name))
-                if mm and mm.group(2) == a.session:
-                    want.append((mm.group(1), mm.group(2), mm.group(4), mm.group(3), name))
+            parsed = [(MEMBER.search(os.path.basename(n)), n) for n in members]
+            parsed = [(m, n) for m, n in parsed if m]
+            if a.last_session:
+                keep = max((m.group(2) for m, _ in parsed), default=None)
+            else:
+                keep = a.session
+            want = [(m.group(1), m.group(2), m.group(4), m.group(3), n)
+                    for m, n in parsed if m.group(2) == keep]
             want.sort()
             todo = [t for t in want if (t[0], t[1], t[2], t[3]) not in done]
-            print(f"   {s}: {len(want)} run-files in {a.session}, {len(todo)} to go", flush=True)
+            print(f"   {s}: {len(want)} run-files in "
+                  f"{want[0][1] if want else a.session}, {len(todo)} to go", flush=True)
             for i, (_su, _se, _r, _d, name) in enumerate(todo, 1):
                 try:
                     rows = run_rows(_read_member(url, name))
