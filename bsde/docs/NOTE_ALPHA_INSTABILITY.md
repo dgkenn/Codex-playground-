@@ -282,6 +282,40 @@ that survives is a lower bound on the drug-specific component only if that share
 ignored, which it should not be. **What survives the caveat entirely is the propofol/sevoflurane asymmetry
 in the RAW column, which involves no adjustment at all.**
 
+### Candidate 6 tested: co-medication is a REAL imbalance and does NOT explain the finding
+
+The literature search found no published comparison of co-medication between propofol-TIVA and volatile
+cohorts and said so. The cohort answers it directly, and the imbalance is large:
+
+| co-medication | propofol | sevoflurane | difference | 95 % CI |
+|---|---|---|---|---|
+| **remifentanil Ce** | **3.504** | **1.503** | **+2.001** | **[+1.568, +2.492]** |
+| rocuronium | 90.0 | 75.0 | +15.0 | [+0.0, +27.5] |
+| midazolam, vecuronium, emergency status | 0.0 | 0.0 | 0.0 | — |
+
+Propofol cases run at **2.3× the remifentanil** of sevoflurane cases — the ordinary TIVA practice pattern.
+Two routes by which that could manufacture the asymmetry were tested and both fail.
+
+**Route 1, dose range: REFUTED.** If opioid-sparing compressed the propofol dose range there would be
+nothing for alpha to track. The arms' dose variation is **identical** — coefficient of variation 0.341
+against 0.355, difference −0.014 [−0.059, +0.042]; relative IQR 0.203 against 0.207, difference −0.005
+[−0.066, +0.055]. Both intervals span zero. Propofol in fact has *more* distinct exposure values per case
+(18.5 against 11.5), because effect-site concentration is continuous where MAC is coarse. Restricting both
+arms to the propofol arm's interquartile CV band leaves the asymmetry untouched: propofol +0.0657 [−0.0247,
++0.1551], sevoflurane −0.3204 [−0.4780, −0.2294].
+
+**Route 2, a direct pharmacodynamic opioid effect: NOT SUPPORTED.** Restricting both arms to their
+overlapping remifentanil band [1.66, 5.51] — which costs 62 % of the sevoflurane arm and almost none of the
+propofol arm — the sevoflurane effect **survives at −0.4784 [−0.6442, −0.0388] on 15 cases**. Within each
+arm, higher opioid associates weakly with a more negative alpha–dose relationship (−0.25 propofol, −0.19
+sevoflurane), in the **same direction in both**, so it is not an agent-specific mechanism.
+
+*Reported and not over-read:* in the opioid-matched band the propofol association is +0.1091 [+0.0114,
++0.2077], an interval that marginally excludes zero on 41 cases where the unmatched estimate did not. That
+is a weak shift on a lower bound of +0.011 and is **not** a basis for reinstating the two-sided "inversion"
+reading. What the matched comparison establishes is the negative: **remifentanil does not explain the
+sevoflurane effect.**
+
 ### What that leaves
 
 Of the six candidate mechanisms, the cohort removes **differential burst suppression** (tested and refuted
