@@ -15,8 +15,126 @@
   "placebo": "contiguous block of the same candidate from a different recording",
   "g1_rebuild": true,
   "g2_incumbent_rho": 0.3986932948626475,
-  "g5_min_donors": 0,
-  "g5": false,
-  "verdict": "NOT INTERPRETABLE",
-  "why": "a cohort or availability gate failed"
+  "g5_short_frac": 0.016129032258064516,
+  "g5_covered_frac": 0.9193548387096774,
+  "g5": true,
+  "aliveness": {
+    "real": -0.050628695932507295,
+    "frac": 0.0,
+    "donor_rho": 0.055934776323118794,
+    "g3": true,
+    "g4": true
+  },
+  "candidate_autocorrelation": {
+    "emg_index": {
+      "ac1": 0.8420380502321423,
+      "ac9": 0.2147938454559131
+    },
+    "multiscale_entropy_slope": {
+      "ac1": 0.9389738882537823,
+      "ac9": 0.4969696721598616
+    },
+    "relative_alpha_power": {
+      "ac1": 0.9331008044439713,
+      "ac9": 0.5009315066239612
+    },
+    "bis_rbr": {
+      "ac1": 0.9545427620402838,
+      "ac9": 0.5241719806777526
+    },
+    "whole_head_exponent": {
+      "ac1": 0.9372300053573375,
+      "ac9": 0.4379848257794851
+    },
+    "wpli_theta": {
+      "ac1": 0.7074597329415417,
+      "ac9": 0.0954217695462978
+    },
+    "emg_kurtosis": {
+      "ac1": 0.7510752944403775,
+      "ac9": 0.13855335881326103
+    },
+    "emg_beta_gamma_fraction": {
+      "ac1": 0.9208970803920074,
+      "ac9": 0.38340421346957443
+    },
+    "pac_slow_alpha": {
+      "ac1": 0.6781179028161765,
+      "ac9": 0.09481086594327559
+    },
+    "wpli_delta": {
+      "ac1": 0.698952053700697,
+      "ac9": 0.10155453906578714
+    },
+    "wpli_alpha_2ch": {
+      "ac1": 0.7275937195746329,
+      "ac9": 0.09825675516566384
+    }
+  },
+  "rungs": {
+    "0.0": {
+      "n": 20,
+      "hits": 2,
+      "fp_rate": 0.1,
+      "ci": [
+        0.027866481206268723,
+        0.3010336452867371
+      ],
+      "donor_rho": 0.05296144137803308,
+      "g4_destroys": true,
+      "usable": true
+    },
+    "0.5": {
+      "n": 20,
+      "hits": 1,
+      "fp_rate": 0.05,
+      "ci": [
+        0.00888144879786612,
+        0.23613119350676542
+      ],
+      "donor_rho": 0.06650065718278987,
+      "g4_destroys": true,
+      "usable": true
+    },
+    "0.8": {
+      "n": 20,
+      "hits": 4,
+      "fp_rate": 0.2,
+      "ci": [
+        0.08065766256307697,
+        0.4160174323066774
+      ],
+      "donor_rho": 0.10705293122024113,
+      "g4_destroys": true,
+      "usable": false
+    },
+    "0.95": {
+      "n": 20,
+      "hits": 1,
+      "fp_rate": 0.05,
+      "ci": [
+        0.00888144879786612,
+        0.23613119350676542
+      ],
+      "donor_rho": 0.20680687494370315,
+      "g4_destroys": true,
+      "usable": true
+    },
+    "0.99": {
+      "n": 20,
+      "hits": 4,
+      "fp_rate": 0.2,
+      "ci": [
+        0.08065766256307697,
+        0.4160174323066774
+      ],
+      "donor_rho": 0.3234893178927809,
+      "g4_destroys": false,
+      "usable": false
+    }
+  },
+  "licensed_candidates": [],
+  "table": {},
+  "verdict": "NOT CALIBRATED",
+  "why": "the donor placebo's false-positive rate exceeds nominal at the rungs bracketing every real candidate's own autocorrelation; it joins the surrogate families as unusable and Challenge C has no licensed way to ask this question on DOSE-I"
 }
