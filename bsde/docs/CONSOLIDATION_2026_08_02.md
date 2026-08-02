@@ -114,10 +114,30 @@ session ships a `Chance` run, and my member regex required two uppercase letters
 subjects track better than their own chance run** (0.4771 vs 0.5864).
 
 **And the actual unblock.** The blocker was never a dataset, it was a label. The GCS motor subscore's top
-level is literally *"obeys commands"*, and HEEDB has it: 26,527 rows over 1,334 patients in 6 of 551 parts,
-against a 67,202-patient EEG cohort with 127,728 timestamped recordings. E204 is registered with sedation
-as the **incumbent** rather than a caveat, patient-level clustering, and the CMD-shaped question declared
-as a conditional secondary.
+level is literally *"obeys commands"*, and HEEDB has it. The full extraction has now landed:
+
+    15,444,620 consciousness-assessment rows
+     3,000,737 GCS BEST MOTOR RESPONSE rows over **31,897 patients**
+               obeys rate **0.767** — minority class 23.3 %, against E204's 15 % floor
+        25,653 patients with BOTH a motor score and RASS (the incumbent E204 needs)
+       127,728 timestamped recordings over 49,088 patients
+        ~31,900 patients with BOTH a label and a recording
+
+That is roughly a thousandfold more command-following labels than Chennu's 32-patient cohort, which was
+the only public alternative and is committee-gated. E204 is registered with sedation as the **incumbent**
+rather than a caveat, patient-level clustering, and the CMD-shaped question declared as a conditional
+secondary.
+
+**Machinery verified on permuted labels** (rule 26), so the registered verdict stays clean for the complete
+table. On 327 partial rows over 184 patients every path executes, the feature finite-rate is 1.000, RASS
+spans the full clinical range −5 to +3, `minutes_before` is exactly 6.00 for every row — G5 holding by
+construction rather than by assertion — and the permuted-label increment straddles zero at
+−0.0113 [−0.1602, +0.1612].
+
+**Operational, for whoever runs it next.** The four shards each hold ~2.6 GB after parsing the label
+table, leaving ~4 GB free; that is the peak, but it rules out anything else memory-heavy running
+concurrently. Pre-filtering the label CSV to patients that have recordings would remove the constraint.
+Yield is 0.59 rows per patient, so the complete table should be ~19,000 assessments.
 
 ---
 
