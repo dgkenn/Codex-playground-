@@ -461,3 +461,39 @@ cases on a continuum with everything else."
   in the loaders above; it is stated as a limitation, not solved.
 
 No verdict about Challenge D is drawn here, per the task's instruction.
+
+---
+
+## 11. OPUS VERIFICATION, 2026-08-02 — two of the four sub-0.25 cells are artefacts of the ratio metric
+
+Recomputed independently from `sleep_edfx_five_stage.csv` and `capslpdb_stages.s*.csv`, parsing the stage
+out of `recording_id` as a field (`split('@')[-1]`) rather than substring-matching it (rule 61):
+
+| pair | sleep_edfx d | target d | same sign | awake-vs-awake shift | ratio |
+|---|---:|---:|:--:|---:|---:|
+| `spectral_entropy`, capslpdb | −2.6681 | −1.2815 | YES | +0.2514 | **0.1273** |
+| `lempel_ziv`, capslpdb | −2.8864 | −1.2521 | YES | −0.1070 | **0.0517** |
+
+Those reproduce §7 to within rounding (0.109 and 0.043 there) and they stand.
+
+**The other two do not, and the ratio cannot see why.** `ratio = |b| / mean(|a_ref|, |a_dep|)` is small
+when the shift is small *or* when either deposit's own contrast is large — and it is blind to the SIGN of
+`a_dep`:
+
+* **`spectral_entropy` vs chennu, ratio 0.202.** `a_ref = −2.665` against `a_dep = **+0.766**`. The measure
+  falls with depth in sleep and RISES with depth under sedation. Catalogue rule 16: when two arms of the
+  same test disagree in sign, the definition is doing the work. A reversing measure has not transported.
+* **`spectral_entropy` vs ds005620, ratio 0.002.** `a_dep = **+0.069**` — no state signal in the target
+  deposit at all, so there is nothing for a shift to be small *relative to*. Rule 53: the phenomenon must
+  exist in the cohort you are asking about before "it agrees there" means anything. A dead measure
+  transports perfectly and is worthless.
+
+**Corrected reading.** Transport succeeds **within a modality and fails across one**. Both surviving cells
+are sleep-deposit-to-sleep-deposit (Sleep-EDFx W/N3 against CAP W/S3+S4) — the same state contrast in
+similar populations, which is the easy case. Every sleep-to-anaesthesia cell is either large (ratio ≥ 0.27)
+or a sign reversal. That is a sharper statement of Challenge D than "45 cells, 4 winners", and it is worse
+news: the transport that a deployable index needs is exactly the one that fails.
+
+**Method note for successors.** A transport ratio must be gated on the TARGET deposit's own effect —
+require `|a_dep|` above a floor and `sign(a_dep) == sign(a_ref)` before the ratio is computed at all.
+Without that gate the metric ranks dead and reversed measures at the top, which is what happened here.
