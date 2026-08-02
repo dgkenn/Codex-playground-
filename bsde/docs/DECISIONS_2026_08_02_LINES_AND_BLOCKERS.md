@@ -410,3 +410,30 @@ follow, and each is an instrument change rather than a moved threshold.
 **NOT BLOCKED ON THE INVESTIGATOR.** Challenge C is the one front that needs no access decision: VitalDB
 is fully public, the probe and the plan are running, and the successor design is determined by what the
 probe returns.
+
+---
+
+## Challenge A's stop, confirmed a second time by an independent search
+
+An independent public-only sweep of PhysioNet (712 published projects, full local grep of the REST
+listing), OpenNeuro (447 EEG datasets enumerated via GraphQL, per-dataset `channels.tsv` pulled from S3),
+Zenodo, OSF, Dryad and Figshare returned **DOSE-I** (Zenodo 10.5281/zenodo.18483292, 171 recordings,
+procedural sedation for endoscopy, MOAA/S behavioural scores, 1,129 annotated consciousness transitions)
+as the best public candidate for a deposit with a behavioural state label spanning loss and recovery.
+
+**This project already has DOSE-I extracted** (`bsde/results/dosei_*.csv`) and already assessed it against
+Challenge A's three criteria: `PROBE_2026_08_02_CHALLENGE_A_STATE_LABELS.md` line 260 records
+**(a) two agents — NO, propofol bolus only**, with (b) and (c) both satisfied. So the strongest candidate
+a fresh six-archive search can find fails the *same* criterion, for the same reason, as everything else.
+
+Two things follow. **Challenge A's stop is confirmed** and is not an artefact of one probe's search terms.
+And this is catalogue rule 50's corollary earning its place again: the internal record answered the
+question before the external search did, and grepping it first would have saved the sweep.
+
+The sweep's other useful output is a NEGATIVE with a shape: across all six archives, the criterion that
+always fails for a *monitor-comparison* design is the **monitor channel**. Fully public deposits with raw
+EEG through a transition carry no commercial index (DOSE-I's `pEEG` panel is author-computed SEF95/entropy,
+not a device output); the deposits that plausibly carry one are gated. Rejected solely for being gated,
+and therefore possibly unlockable by the investigator: Zenodo **1168447** (Oxford, ultra-slow induction to
+and emergence from propofol, `access_right: restricted`), PhysioNet **eeg-gaba-anesthesia** (Contributor
+Review), PhysioNet **eeg-power-anesthesia** (Restricted, and derived spectra only).
