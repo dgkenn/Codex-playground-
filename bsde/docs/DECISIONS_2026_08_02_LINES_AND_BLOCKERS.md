@@ -300,3 +300,68 @@ BIS's agent-dependent quirks rather than tracking consciousness. A probe is runn
 fully public deposit has two agents, both transitions, and a non-monitor state label. **If it returns
 none, Challenge A is blocked on public data and stops** — the minimisation framing being novel does not
 rescue a design with no valid state label.
+
+---
+
+# RESOLVED LATER THE SAME DAY — two stops fire, one line survives
+
+*Both stops below were pre-committed above, conditional on a probe. Both probes have now returned and been
+verified by Opus against the raw source rather than accepted from a subagent.*
+
+## Challenge A — STOPPED on fully public data
+
+The condition was: *"A probe is running to find whether ANY fully public deposit has two agents, both
+transitions, and a non-monitor state label. If it returns none, Challenge A is blocked on public data and
+stops."*
+
+**It returned none.** The one cell I had personally disputed — Krause, criterion (b), loss AND recovery —
+is resolved against continuing: **1 of 29 drug patients** (19 propofol, 10 dexmedetomidine, no overlap)
+shows any block transition leaving unresponsiveness, and that one is separated from its loss event by the
+largest gap in the cohort. Re-derived independently; see the verification section of
+`PROBE_2026_08_02_CHALLENGE_A_STATE_LABELS.md`, which also withdraws one of the subagent's ratios and
+corrects my own "13 of 34" spot-check to 1 of 34.
+
+n = 1 recoverer cannot support a design whose acceptance has loss-and-recovery **across agents** in it.
+
+**What is NOT being abandoned:** the framing. The minimisation sentence — *"a representation retains
+loss-and-recovery tracking across anaesthetic agents while reducing agent-identifiability from 91.43 %
+toward chance"* — survives the literature check as unclaimed, and it is the strongest unclaimed sentence
+this project holds. What is missing is a deposit, not an idea.
+
+**BLOCKED ON THE INVESTIGATOR.** This line restarts the moment any one of these exists:
+1. **A credentialed or on-request deposit with two agents and a behavioural state label.** The Bath
+   request (`DATA_REQUEST_BATH_01632.md`) is the wrong dataset for this — it is Challenge B's. What
+   Challenge A needs is an anaesthesia deposit with per-epoch OAA/S or equivalent under >= 2 agents.
+2. **Confirmation that the 91.43 % figure is real.** It is from PMID 42131603's full text and is recorded
+   as NOT independently verified. The whole minimisation framing quotes it as its baseline. One PDF
+   settles it.
+3. A decision to accept a BIS-derived state label, which `BRIEF_02` currently forbids and which would
+   change what the result means (it would test reproduction of BIS's agent-dependence, not consciousness).
+
+## Challenge B — STOPPED, and the reason is now stronger than "no incumbent"
+
+Abandoned above on rule 92 (the only live incumbent shares a measurement act with the outcome). The
+public-only search returned exactly one new candidate deposit — a Zenodo CLIS set — and it does not
+rescue the line for two independent reasons, either sufficient:
+
+1. **n = 4 patients.** No incumbent comparison, no cluster-level null, no gate in this project's
+   repertoire is estimable at that size (rule 69: the effective n is the number of clusters).
+2. **It is already analysed.** PMID **41017975** (*Assessing consciousness in patients with locked-in
+   syndrome using their EEG*, Frontiers in Neuroscience 2025, verified via E-utilities) analyses "EEG data
+   from four LIS patients ... extracting different features based on frequency, complexity, and
+   connectivity measures", and states the work is done "given the inexistence of ground truth". That is
+   this project's candidate panel, on these patients, with the same missing outcome.
+
+A caveat carried for the record and not load-bearing: PMID 31841514, in the same literature, is a
+**Retraction Notice** (verified: pubtype `['Journal Article', 'Retraction Notice']`) for the CLIS
+BCI-communication result. PMID 33743301 is a separate, non-retracted data descriptor.
+
+**BLOCKED ON THE INVESTIGATOR.** Challenge B restarts only on data access, and the specific object is
+named: a patient cohort where command-following is scored by a procedure **independent of the bedside
+rater** (rule 86). `DATA_REQUEST_BATH_01632.md` is exactly that request and is drafted with the
+investigator's fields still blank.
+
+## Challenge C — CONTINUES, and is now the only live front
+
+It is the only one of the three whose blocker was compute rather than access. The unclaimed sentence is
+the smoothing-window-matched ablation, and the data for it is being extracted now.

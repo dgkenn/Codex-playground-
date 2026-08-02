@@ -325,3 +325,188 @@ from U, Krause satisfies all three criteria and Challenge A is runnable on publi
 **Recorded rather than resolved, deliberately** — announcing a stop on an unverified cell would be worse
 than leaving it open, and the catalogue has four entries about verdicts that turned on a number nobody
 checked.
+
+---
+
+## RESOLUTION, 2026-08-02 — the doubtful cell is resolved: NO, Krause does not have recovery among drug patients
+
+**Task:** find the per-patient drug assignment, split 34 patients into propofol/dex/sleep, count recovery
+among drug patients only, and audit the time gaps for any apparent recoverer rather than inherit the prior
+judgement on 625L. No feature was correlated with anything.
+
+### 1. Where the drug assignment lives
+
+**There is no separate drug-assignment file, column, sidecar or manifest anywhere in the repo.** Checked
+and empty: `grep -rl -i "krause\|dexpro" bsde/results/*.json` (three JSON files found, none a
+patient-to-drug map — `e154_lambda_mgh_or.json`, `e139_challenge_a_single_statistic.json`,
+`e141_family_split_quality_audit_v2.json`, all downstream analysis outputs, not source metadata);
+`find / -iname "*krause*" -o -iname "*15497531*"` returns only
+`bsde/results/krause_dexprosleep_allData.csv` itself; `/tmp/eeg_probe/` (checked, exists, populated with
+unrelated cached tables) has nothing Krause-related; `bsde/scripts/` has no `*krause*`/`*dexpro*` file.
+
+**The assignment is encoded in the `label` column's naming convention itself**, and is used exactly this
+way (uncredited to a lookup table) by `bsde/src/bsde/experiments/e35_challenge_a_drug_probe.py`, whose
+docstring states verbatim: *"34 patients, block-level OAA/S. Propofol `WA`/`S`/`U` at 119/77/129 rows over
+19 patients; dexmedetomidine `WA_dex`/`S_dex`/`U_dex` at 49/111/66 over 10; natural sleep
+`WS`/`N1`/`N2`/`N3`/`R` over 24."** That is:
+
+- **Source file:** `bsde/results/krause_dexprosleep_allData.csv` (n = 12,313 rows, 34 unique `patientID`,
+  confirmed by direct read before any claim below).
+- **Source column:** `label` (values: `N2, WS, R, N1, N3, U, WA, S_dex, S, U_dex, WA_dex` — printed counts
+  below reproduce e35's docstring exactly).
+- **Assignment rule** (the naming convention, not a lookup): a patient is **propofol** if any of their rows
+  carry `WA`/`S`/`U`; **dexmedetomidine** if any carry `WA_dex`/`S_dex`/`U_dex`; **sleep-only** if none of
+  the above and only `WS`/`N1`/`N2`/`N3`/`R` appear.
+
+Verified directly on the file (not copied from e35's docstring):
+
+```
+n rows = 12313
+n unique patientID = 34
+Counter(label) = {'N2': 4519, 'WS': 4456, 'R': 1429, 'N1': 713, 'N3': 645, 'U': 129, 'WA': 119,
+                   'S_dex': 111, 'S': 77, 'U_dex': 66, 'WA_dex': 49}
+```
+
+This exactly reproduces the label counts quoted in the original probe row 2 (verbatim: *"N2 4519, WS 4456,
+R 1429, N1 713, N3 645, U 129, WA 119, S_dex 111, S 77, U_dex 66, WA_dex 49"*) — so the deposit has not
+changed between the probe and this check.
+
+### 2. Three-way split (n = 34, printed before interpretation)
+
+```
+propofol_only: 19  -> 372L, 376R, 384B, 394R, 399R, 400L, 403L, 405L, 409L, 413R, 418R, 423L, 514L,
+                       567R, 585L, 634L, 640L, 672R, 741L
+dex_only:      10  -> 439B, 456R, 457B, 458R, 460L, 525L, 559R, 625L, 720R, 728R
+both_drugs:     0  -> (none)
+sleep_only:     5  -> 369R, 524R, 532R, 717R, 764R
+total = 34
+```
+
+**Reconciles exactly** with the probe's reported 19 propofol + 10 dexmedetomidine, 0 shared. It also
+reconciles with `DATASET_REGISTRY.csv`'s independent count quoted in the probe ("29 with a wake/unresponsive
+contrast … 0 patients shared between drug arms" — 19+10 = 29). No forcing was needed; the split fell out of
+the label convention cleanly on the first pass.
+
+### 3. Recovery among the 29 drug patients (block sequence, ordered by `refTime`, drug-arm labels only)
+
+Consecutive duplicate labels collapsed to blocks; sleep labels excluded from the drug-arm sequence (a
+patient's `WA`/`S`/`U` — or `WA_dex`/`S_dex`/`U_dex` — rows only, in time order):
+
+```
+372L (prop): WA, S, U               376R (prop): WA, S, U               384B (prop): WA, U
+394R (prop): WA, S, U               399R (prop): WA, S, U               400L (prop): WA, S, U
+403L (prop): WA, S, U               405L (prop): WA, S, U               409L (prop): WA, S, U
+413R (prop): WA, S, U               418R (prop): WA, S, U               423L (prop): WA, S, U
+514L (prop): WA, U                  567R (prop): WA, U                  585L (prop): WA, U
+634L (prop): WA, S, U               640L (prop): WA, S, U               672R (prop): WA, S, U
+741L (prop): WA, S, U
+439B (dex):  WA_dex, S_dex, U_dex   456R (dex):  WA_dex, S_dex          457B (dex):  WA_dex, S_dex, U_dex
+458R (dex):  WA_dex, S_dex, U_dex   460L (dex):  WA_dex, S_dex          525L (dex):  WA_dex, S_dex, U_dex
+559R (dex):  WA_dex, S_dex, U_dex   625L (dex):  S_dex, U_dex, WA_dex   720R (dex):  WA_dex, S_dex, U_dex
+728R (dex):  WA_dex, S_dex, U_dex
+```
+
+**28 of 29 are monotone** (deepen only, never a lighter state after `U`/`U_dex`). **Exactly one, `625L`,
+has a block sequence that ends in a lighter state after `U_dex`** — this reproduces the original probe's
+finding, independently re-derived rather than trusted.
+
+**Recovery count among drug patients: 1 of 29 by the block-sequence test alone — pending the gap check
+below.**
+
+### 4. Time-gap audit — the ~100× dismissal of 625L, checked rather than inherited
+
+All 52 block-to-block transition gaps (in `refTime` units) across all 29 drug patients, sorted ascending
+(pid, from state, to state, gap):
+
+```
+403L S->U 0.0035   399R S->U 0.0035   405L S->U 0.0035   372L S->U 0.0035   640L S->U 0.0062
+741L WA->S 0.0104  413R WA->S 0.0125  458R WA_dex->S_dex 0.0125  460L WA_dex->S_dex 0.0125
+720R WA_dex->S_dex 0.0125  728R WA_dex->S_dex 0.0125  456R WA_dex->S_dex 0.0125  525L WA_dex->S_dex 0.0125
+394R S->U 0.0132   418R WA->S 0.0132  423L WA->S 0.0132  376R S->U 0.0132   640L WA->S 0.0132
+672R WA->S 0.0134  672R S->U 0.0134   413R S->U 0.0139   439B S_dex->U_dex 0.0139
+457B WA_dex->S_dex 0.0139  525L S_dex->U_dex 0.0139  728R S_dex->U_dex 0.0139
+439B WA_dex->S_dex 0.0146  741L S->U 0.0150   409L S->U 0.0167   423L S->U 0.0167   400L S->U 0.0167
+634L WA->S 0.0167  625L S_dex->U_dex 0.0181  457B S_dex->U_dex 0.0195  409L WA->S 0.0201
+399R WA->S 0.0215  372L WA->S 0.0222   400L WA->S 0.0222   405L WA->S 0.0222   403L WA->S 0.0222
+376R WA->S 0.0229  394R WA->S 0.0236   384B WA->U 0.0243   418R S->U 0.0250   634L S->U 0.0257
+567R WA->U 0.0262  458R S_dex->U_dex 0.0278  720R S_dex->U_dex 0.0278   514L WA->U 0.0327
+585L WA->U 0.0463
+559R WA_dex->S_dex 1.0125   559R S_dex->U_dex 2.0139
+625L U_dex->WA_dex 3.9694
+```
+
+**52 real within-arm transitions range 0.0035–0.0463 refTime units (median 0.0148), with two outliers in
+the SAME (monotone, non-recovering) patient `559R`** (WA_dex→S_dex 1.0125, S_dex→U_dex 2.0139) **and one
+outlier in the sole apparent recoverer, `625L`** (U_dex→WA_dex 3.9694).
+
+`625L`'s own loss transition, `S_dex`→`U_dex`, is 0.0181 — squarely inside the normal range. Its
+apparent-recovery transition, `U_dex`→`WA_dex`, is **3.9694**, which against the 52-transition median of
+0.0148 is **~268×** larger, and against the largest other same-episode gap in the whole drug cohort
+(`585L`, `WA`→`U`, 0.0463) is **~86×** larger — both consistent with the probe's "~100×" claim, now
+measured rather than asserted.
+
+**Independent corroboration beyond the drug-block gap alone:** pulling 625L's FULL unfiltered label
+sequence (not just the drug-arm rows) shows the entire picture. The patient has a block of sleep staging
+(`WS`/`N1`/`N2`/`N3`/`R`) at `refTime` ≈ 7.31–7.69, then a gap of **~6.1 refTime units** to `S_dex` at
+13.77 (note: **625L's own timeline never shows a `WA_dex` block before `S_dex`** — the record does not
+capture this patient awake-on-dex at all before sedation is already underway), `U_dex` at 13.79, and then
+the same **~3.97-unit** gap to a lone `WA_dex` block at 17.76 with nothing after it. If `refTime` is in
+days (consistent with Krause/Banks being a multi-day epilepsy-monitoring-unit intracranial deposit), this
+reads as: sleep staging on day ~7, dexmedetomidine sedation starting day ~13.8, and a `WA_dex`-labelled
+block on a **separate day, ~4 days later**, with no drug-arm activity in between. That is not recovery
+within an anaesthetic episode — it is the same generic state label reused for what looks like a distinct
+later session or a different clinical event days on, which is a labelling/session artefact, not a
+loss→recovery transition.
+
+### Answer
+
+**Does Krause satisfy "loss AND recovery" among drug patients — NO.**
+
+0 of 29 drug patients (19 propofol, 10 dexmedetomidine) show a genuine within-episode recovery from
+unresponsiveness. The one nominal exception, `625L`, returns to `WA_dex` only after a gap ~86–268× any real
+transition in the cohort, on a timeline whose full (unfiltered) sequence shows it separated from the loss
+event by what looks like a distinct multi-day session gap, with no `WA_dex` block ever recorded before
+sedation began. The original probe's Krause cell — (b) **NO** — is **confirmed independently**, and its
+table verdict (Krause fails (b) only; no fully public deposit clears all three of Challenge A's criteria)
+**stands. Challenge A remains blocked on fully public data**, as concluded before this check.
+
+---
+
+## Opus verification of the resolution above, and one number withdrawn (2026-08-02)
+
+Re-derived directly from `bsde/results/krause_dexprosleep_allData.csv` (12,313 rows, 34 patients), sorting
+each patient's rows by `refTime`, collapsing to label blocks, and counting every block transition that
+LEAVES `U`/`U_dex`:
+
+| quantity | re-derived | agent reported |
+|---|---|---|
+| patients | 34 | 34 |
+| propofol / dex / sleep-only | 19 / 10 / 5, no patient in both drug arms | same |
+| drug block transitions | 52 | 52 |
+| block transitions leaving U | **1** (`625L`, `U_dex`->`WA_dex`) | 1 |
+| that transition's gap | 3.957 | 3.9694 |
+| median drug transition gap | 0.0097 | 0.0148 |
+
+The split and the decisive count reproduce exactly. The two gap figures differ because block gaps can be
+measured end-to-start or start-to-start; neither reading changes anything.
+
+**One claim is withdrawn.** The resolution says `625L`'s gap is "**~86x** the largest other same-episode
+gap in the whole drug cohort (`585L`, 0.0463)". That is inconsistent with the agent's own table three
+lines above it, which lists `559R` at **1.0125** and **2.0139**. Against the actual next-largest gap in
+the cohort the ratio is **~2x**, not 86x — and `559R`'s 2.0139 sits on a *loss* transition that the same
+analysis counts as real. So gap size alone does not separate "session artefact" from "real transition"
+here, and the 268x-versus-median figure inherits the same problem: the reference distribution has a tail
+the comparison ignores. (Catalogue rule 50 — a baseline of the wrong shape carries the authority of a
+measurement.)
+
+**The verdict does not rest on that adjudication and is unchanged.** Whether `625L` is a genuine recovery
+or a relabelled later session, **it is 1 patient of 29**. A loss-AND-recovery design across two agents
+cannot be run on one recoverer; the question of whether that one is real never becomes decision-relevant.
+Krause fails criterion (b), the probe's table stands, and **the pre-committed stop for Challenge A on
+fully public data now fires.**
+
+**Correcting my own earlier spot-check, which is what put this cell in doubt.** I reported "13 of 34
+subjects returning from `U`". Re-run with rows sorted by `refTime`, the count is **1**. The number 13 is
+exactly the count of patients carrying BOTH propofol and sleep labels (`propofolsleep`, 13 of 34) — i.e.
+the spot-check was reading a sleep session and a drug session in one patient as a single timeline. The
+probe's original cell was right and my challenge to it was the error.
