@@ -1351,3 +1351,23 @@ unverified on GitHub.
     capability gate passing is not a licence.** E246's G3 recovered a planted +60 s and -60 s lead
     *exactly*, which proves the estimator works and says nothing whatever about whether the cohort can
     answer the question — a working instrument pointed at an absent incumbent still returns a number.
+
+97. **A GATE THAT `AND`s TWO INDEPENDENT SUPPORT CRITERIA LETS ONE VETO THE OTHER, AND THE VERDICT THEN
+    MISDESCRIBES WHICH CLAIM FAILED.** Rule 71 says every gate must be indexed by the ARM it belongs to.
+    This is the same error on a different axis: indexed by the **primary**. **E247** registered two
+    primaries — P1, does the monitor go silent at the transition, and P2, are the surviving cases
+    selected — and then wrote one gate, `G4 support`, requiring *both* ">= 1,000 cases in P1" and
+    ">= 200 in each P2 arm". P1's floor passed at **2,128**, more than twice over, with a difference of
+    **+0.8952 [+0.8821, +0.9081]**. P2's smaller arm came in at **170**. The single gate failed, and the
+    file printed **NOT INTERPRETABLE** over a result whose own support criterion had passed comfortably.
+    The verdict is correct as registered and was reported that way (rule 58 forbids splitting the gate
+    after seeing which half failed), but it is a bad description of what happened, and a reader who saw
+    only the verdict string would draw the wrong conclusion about which claim the data could not carry.
+    **The check costs nothing and belongs at registration: one gate per claim it can invalidate, named
+    for that claim.** If a gate would be evaluated identically whether the primary it guards passed or
+    failed, it is guarding the wrong thing. Corollary from the same run and worth its own line: **record
+    a registered PREDICTION separately from the gate that tests it.** G2 gated on the sign agreeing
+    across three SQI thresholds, which passed, and separately predicted that stricter thresholds would
+    enlarge the drop — which did **not** hold at SQI >= 80 (+0.8905 against +0.8952 at SQI > 0), because
+    the placebo's own silent rate rises with the threshold too. The gate passing and the prediction
+    failing are different facts and only one of them was in the gate.
