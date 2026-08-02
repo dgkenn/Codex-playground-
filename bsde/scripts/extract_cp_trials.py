@@ -80,7 +80,7 @@ from extract_stieger_features import SPECTRAL, _spectral                        
 
 ARTICLE = "https://api.figshare.com/v2/articles/25360300"
 OUT = os.path.join(HERE, "..", "results", "cp_trials.csv")
-MEMBER = re.compile(r"(S\d\d)_(Se\d\d)_([A-Z]{2})_(R\d\d)\.mat$")
+MEMBER = re.compile(r"(S\d\d)_(Se\d\d)_([A-Za-z]{2,8})_(R\d\d)\.mat$")
 
 SESSION_KEEP = "Se01"
 MONTAGE = ("FZ", "FCZ", "CZ", "CPZ", "PZ", "C3", "C4", "F3", "F4", "P3", "P4")
@@ -238,6 +238,11 @@ def main(argv=None) -> int:
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
     ap.add_argument("--session", default=SESSION_KEEP)
+    ap.add_argument("--decoder", default=None,
+                    help="keep only this decoder code. The deposit ships a `Chance` run per session, "
+                         "which the README describes as the study's own estimate of chance-level "
+                         "tracking; the first version of MEMBER required exactly two UPPERCASE letters "
+                         "and silently excluded it.")
     ap.add_argument("--last-session", action="store_true",
                     help="use each subject's FINAL session instead of --session. A protocol-level "
                          "criterion (most-trained) rather than a performance ranking: E192 showed the "
@@ -280,7 +285,8 @@ def main(argv=None) -> int:
             else:
                 keep = a.session
             want = [(m.group(1), m.group(2), m.group(4), m.group(3), n)
-                    for m, n in parsed if m.group(2) == keep]
+                    for m, n in parsed if m.group(2) == keep
+                    and (a.decoder is None or m.group(3) == a.decoder)]
             want.sort()
             todo = [t for t in want if (t[0], t[1], t[2], t[3]) not in done]
             print(f"   {s}: {len(want)} run-files in "
