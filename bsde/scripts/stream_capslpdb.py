@@ -85,8 +85,15 @@ MAX_EPOCHS_PER_STAGE = 12
 # before any analysis of this deposit exists, so that no later design can choose what to extract after
 # seeing what would help. `multiscale_entropy_slope` costs roughly a second per epoch and is the reason
 # MAX_EPOCHS_PER_STAGE is 12 rather than 40.
-PANEL = ("whole_head_exponent", "relative_alpha_power", "multiscale_entropy_slope",
-         "spectral_edge_95", "spectral_entropy", "relative_delta_power", "lempel_ziv")
+# MEASURED, NOT GUESSED, on one real 13-channel 512 Hz epoch from this deposit:
+#   whole_head_exponent 0.08s | relative_alpha_power 0.04 | relative_delta_power 0.04
+#   spectral_edge_95 0.04 | spectral_entropy 0.02 | lempel_ziv 1.71 | multiscale_entropy_slope 14.42
+# multiscale_entropy_slope is 88 % of the cost of the whole panel, so it is not in the default pass. The
+# forward test this deposit was acquired for needs `whole_head_exponent`; a Challenge C replication would
+# additionally want the slow one, and can have it with --panel full over whatever subset it needs.
+PANEL_FAST = ("whole_head_exponent", "relative_alpha_power", "relative_delta_power",
+              "spectral_edge_95", "spectral_entropy", "lempel_ziv")
+PANEL_FULL = PANEL_FAST + ("multiscale_entropy_slope",)
 
 
 def parse_scoring(text):
@@ -142,17 +149,17 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="/tmp/eeg_probe/capslpdb_stages.csv")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--panel", choices=("fast", "full"), default="fast")
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
     a = ap.parse_args()
 
     import numpy as np
-    import mne
     from bsde.candidates.seed import seed_registry
     from bsde.candidates.registry import REGISTRY
     seed_registry()
+    PANEL = PANEL_FAST if a.panel == "fast" else PANEL_FULL
     from bsde.features.spectral import BANDS
-    mne.set_log_level("ERROR")
 
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
 
