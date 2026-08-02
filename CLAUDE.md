@@ -1132,3 +1132,23 @@ unverified on GitHub.
     estimand. What the under-resolved run licenses is the comparison of point estimates, never the binary —
     and a verdict branch for "the families split, but their intervals overlap" must exist so a threshold
     artefact is named rather than reported as a difference.
+
+86. **AN INCUMBENT THAT SHARES A MEASUREMENT ACT WITH THE OUTCOME SETS A BAR NOTHING EXTERNAL CAN CLEAR —
+    RULE 45'S MISSING HALF.** Rule 45 says a registration must name its incumbent, and E204 named one
+    carefully and for the right reason: GCS-motor is driven by sedation, so rather than *naming* sedation
+    as a confound (rule 54) the design made **RASS the baseline**. The primary then came back
+    **+0.0049 [−0.0010, +0.0095]** — a clean ABSENT with every gate passing, the noise control dead on
+    zero (−0.0000 [−0.0035, +0.0030]) and the incumbent not merely alive but powerful (+0.3513 [+0.3280,
+    +0.3730]).
+    **The features were not uninformative. They were redundant with a co-measured observation.** The same
+    panel scores **+0.1550 [+0.1312, +0.1777]** over chance on its own. RASS and GCS-motor are both
+    clinician bedside scores, routinely charted by the same nurse in the same assessment round — two
+    readings of one act, sharing method variance that no instrument outside the room can access.
+    **The check is one question at registration: could the incumbent and the outcome have been recorded by
+    the same observer, at the same moment, as part of the same procedure?** If yes, the comparison is
+    partly a test of whether the new instrument can reproduce an *observer*, not a *state*, and a null is
+    uninformative about the state. Prefer an incumbent that is an **exposure** (a drug record, a dose, a
+    time) over one that is another **observation**; if only an observation is available, register both
+    arms and say which question each answers. Related to rule 32 — a measurement's availability defines a
+    stratum — but distinct: here the incumbent is available everywhere and is *too close to the outcome's
+    provenance*.
