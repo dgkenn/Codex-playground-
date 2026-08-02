@@ -77,6 +77,61 @@ measurements, not a mechanism.
 maintained with a halogenated agent rather than propofol, `relative_alpha_power` should track depth in the
 *opposite* direction to its DOSE-I sign. That is falsifiable and no experiment here has used it.
 
+## Addendum, 2026-08-02 — the mechanism was tested and REFUTED (E213)
+
+*This section corrects an attribution made earlier the same day. Nothing above changes.*
+
+### The premise, which is real and was measured first
+
+`alpha_peak_hz` is computed as the **raw PSD maximum inside 8–13 Hz**. It therefore **cannot report a peak
+below 8 Hz** and pins at the band floor instead. Measured over 6,437 finite VitalDB windows its range is
+exactly **[8.000, 13.000]** with nothing outside — the estimator has no resolution outside the range it was
+built over, which is catalogue rule 62 appearing in a new place.
+
+The censoring is strongly agent-dependent. At BIS < 40:
+
+| arm | n windows | median `alpha_peak_hz` | at the 8.0 Hz floor | at the 13.0 Hz ceiling |
+|---|---|---|---|---|
+| propofol | 494 | 9.75 | **8.91 %** | 0.00 % |
+| volatile | 957 | 8.50 | **28.74 %** | 0.10 % |
+
+**Two consequences.** The propofol-minus-sevoflurane peak separation at depth is a **lower bound, not an
+estimate** — every peak that has actually moved below 8 Hz is recorded as 8.0. And the row for
+`alpha_peak_hz` in the table above (sevoflurane deep−light −0.8283) is measured through a censored
+instrument, so its magnitude should not be quoted without this caveat.
+
+### The mechanism this suggested, and why it does not survive
+
+A peak sitting on the band's lower edge loses its lower skirt into theta, so a fixed 8–13 Hz window
+under-counts sevoflurane's alpha at depth **for arithmetic reasons, with no biology involved.** That would
+explain the inversion, the Challenge C replication failure, and why both land on alpha and nothing else.
+
+**E213 tested it and it is ABSENT.** Restricting to the cases whose deep alpha peak is off the floor (58
+sevoflurane, 42 propofol, threshold derived as one PSD bin — 0.125 Hz — above 8.0) moves the oriented arm
+gap only from **+0.3742 to +0.3432**, a change of **−0.0310**, which is the **18.8th percentile** of a null
+built by removing the same number of cases at random from each arm (rule 35). All three gates passed: the
+inversion is alive (|G| 0.3742 vs an arm-permutation p95 of 0.1901) and the restriction is genuinely
+arm-specific (pinning 18.31 % sevoflurane vs 4.55 % propofol).
+
+**The placebo is the informative part.** `spectral_entropy`, which has no arithmetic dependence on where the
+alpha peak sits, attenuated **more** than the primary (−0.0646, 2.3rd percentile), and the declared positive
+control `relative_theta_power` did not show the predicted mirror (−0.0162, 34.5th percentile). So the
+restriction does something mildly non-specific to the cohort and does **not** act on the alpha band in
+particular.
+
+**Withdrawn:** an ad-hoc diagnostic run earlier on 2026-08-02 reported the depth peak shift (propofol
+10.00 Hz vs sevoflurane 8.50 Hz) as *confirming* band placement as the mechanism. The numbers stand; the
+attribution does not survive its own control and is withdrawn. This is catalogue rule 50 exactly —
+**measuring a difference is not measuring its cause**, and it was the matched-size baseline that separated
+them. The sentence in "What this is not" above — *the link is a consistency between two measurements, not a
+mechanism* — is now the correct summary of the whole note, and it survived the one serious attempt to
+replace it.
+
+**What E213 cannot say.** It removed *cases*; it did not build a peak-anchored *measure*. No per-window
+spectra were stored anywhere in this deposit — only scalar summaries — so a band anchored to each
+recording's own peak needs re-extraction. That is a successor, not a rescue clause, and its prior is now
+lower than it was.
+
 ## Consequence for the programme
 
 Alpha power is the single most-used feature in this project's Challenge C panel and it is a headline

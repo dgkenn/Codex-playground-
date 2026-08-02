@@ -203,9 +203,8 @@ def gap(d, arm):
 
 def main() -> int:
     print("E214 — does frequency-shift sensitivity predict cross-agent transport failure?")
-    import bsde.candidates.seed as _seed                                        # noqa: F401
-    from bsde.candidates.registry import REGISTRY
-    names = [c.name for c in REGISTRY.all()]
+    from bsde.candidates.seed import seed_registry
+    names = [c.name for c in seed_registry()]
     ch = [f"C{i}" for i in range(N_CH)]
     meta = {}
 
