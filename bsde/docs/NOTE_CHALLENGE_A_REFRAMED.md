@@ -261,3 +261,60 @@ those only 17 have both exposures varying across the EEG windows and only 1 has 
 **The reversal has never been tested within a patient**, and no VitalDB design can do it. That is now the
 binding constraint on Challenge A, and it needs a deposit where one patient receives both agents with EEG
 throughout — a crossover volunteer study, not a surgical registry.
+
+---
+
+## FOURTH CORRECTION, AND IT RETRACTS THE FINDING: the reversal is BAND PLACEMENT
+
+*E233, 2026-08-02. This section supersedes the second and third corrections above, both of which argued
+that the reversal was a separate phenomenon from the whole-panel magnitude gap. It is separate. It is
+also not a fact about the drug.*
+
+`relative_alpha_power` is power inside a **fixed** 8–13 Hz window over total power. It measures how much
+of the spectrum falls in a box, not the state of an oscillation. `relative_alpha_power_iaf` measures the
+same quantity in a ±2 Hz band centred on **each recording's own** measured peak. On the identical 6,679
+windows and the identical 114 vs 87 cases:
+
+| measure | propofol vs sevoflurane contrast | clears its donor null? |
+|---|---|---|
+| `relative_alpha_power` (fixed box) | **+0.3673 [+0.2754, +0.4584]** | both arms |
+| `relative_alpha_power_iaf` (follows the peak) | **+0.0730 [−0.0107, +0.1584]** | **propofol only — fails in sevoflurane (0.0276 vs 0.2715)** |
+
+**Substituting the anchored measure, direction agreement goes from 10 of 11 to 10 of 10. The panel has
+no reversal left in it.**
+
+### The mechanism, measured rather than supposed
+
+| arm | `alpha_peak_hz_wide` mean signed rho | consistency vs its null |
+|---|---:|---|
+| sevoflurane | **−0.3296** | 0.8204 vs 0.2770 — **clears** |
+| propofol | −0.0226 | 0.0970 vs 0.3163 — **fails** |
+
+**Sevoflurane slides the alpha peak downward as dose rises. Propofol does not move it.** A stationary
+8–13 Hz window therefore reports "alpha power falling" for sevoflurane when what is falling is the
+peak's position relative to the window, while for propofol the same window tracks real power. Two arms
+whose peaks behave differently relative to a fixed box will produce opposite-signed correlations with no
+difference in the rhythm at all — which is exactly what was observed and reported for several rounds.
+
+### What survives and what does not
+
+**Does not survive:** "alpha is the one measure that reverses between the agents." That sentence, in
+E229, E232, the second and third corrections above, and everything in `NOTE_ALPHA_INSTABILITY.md`
+descended from it, is a statement about band placement.
+
+**Survives:** the whole-panel finding, which never depended on alpha. Ten measures clear a donor null in
+both arms and all ten agree in direction, with sevoflurane's magnitudes roughly two to three times
+propofol's — a difference of degree, not of kind. And a NEW, cleaner fact replaces the retracted one:
+**sevoflurane produces a measurable, consistent downward shift of the alpha peak that propofol does
+not.** That is a statement about an oscillation rather than about a window, and it is what should be
+carried forward.
+
+### Why this was not caught earlier, and the general lesson
+
+The instrument was built for exactly this on 2026-08-02 — `alpha_peak_hz_wide`,
+`relative_alpha_power_iaf`, and `tests/test_iaf_capability.py`, which measures that the fixed band
+collapses more than fivefold when an unchanged 10 Hz oscillation moves to 7 Hz. **It was then not
+pointed at the finding for four experiments,** while E228, E230, E231 and E232 tested confounders of the
+COHORT — patient identity, case mix, opioid — none of which could ever have detected an artefact of the
+MEASURE. Restriction and matching cannot repair a definition. The check that settled it in one run was
+available the entire time.
