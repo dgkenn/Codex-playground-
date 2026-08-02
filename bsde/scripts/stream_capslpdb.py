@@ -97,24 +97,38 @@ def fetch(url, dest):
 
 
 def parse_scoring(text):
-    """Return [(seconds_from_first_epoch, stage)] with day rollover resolved by monotonicity."""
+    """Return [(seconds_from_first_epoch, stage)] with day rollover resolved by monotonicity.
+
+    THE COLUMN LAYOUT IS READ FROM THE HEADER, NOT ASSUMED. This deposit ships at least three variants of
+    the same RemLogic export and the first two parsers I wrote each matched one and silently returned zero
+    rows for another:
+
+        n1.txt     `Sleep Stage  Position  Time [hh:mm:ss]  Event  Duration[s]  Location`   22:09:33
+        brux1.txt  same columns                                                             22.18.17
+        ins1.txt   `Sleep Stage  Time [hh:mm:ss]  Event  Duration[s]  Location`  -- NO Position column
+
+    Hardcoding "time is field 2, event is field 3" is the same mistake as substring-matching a structured
+    identifier (rule 61): the fields have names, so read them. Both time separators are accepted.
+    """
     out, prev, day = [], None, 0
-    started = False
+    i_time = i_event = None
     for line in text.splitlines():
         line = line.replace("\r", "")
-        if line.startswith("Sleep Stage\t") or line.startswith("Sleep Stage "):
-            started = True
+        if line.startswith("Sleep Stage"):
+            head = [h.strip() for h in re.split(r"\t+", line)]
+            for i, h in enumerate(head):
+                if h.lower().startswith("time"):
+                    i_time = i
+                elif h.lower() == "event":
+                    i_event = i
             continue
-        if not started:
+        if i_time is None or i_event is None:
             continue
         parts = re.split(r"\t+", line.strip())
-        if len(parts) < 4:
+        if len(parts) <= max(i_time, i_event):
             continue
-        # this deposit ships TWO time formats -- n1.txt writes 22:09:33, brux1.txt writes
-        # 22.18.17. The first parser matched only the first and returned zero rows for the
-        # other, which rule 5 says must never be read as absence of scoring.
-        m = re.match(r"^(\d{1,2})[:.](\d{2})[:.](\d{2})$", parts[2].strip())
-        ev = parts[3].strip()
+        m = re.match(r"^(\d{1,2})[:.](\d{2})[:.](\d{2})$", parts[i_time].strip())
+        ev = parts[i_event].strip()
         if not m or ev not in EVENT_TO_STAGE:
             continue
         t = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + int(m.group(3))
