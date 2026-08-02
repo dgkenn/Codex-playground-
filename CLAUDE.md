@@ -1171,3 +1171,25 @@ unverified on GitHub.
     exactly what stops you checking. **The check is one line and belongs in every cohort predicate:
     a channel counts only if it is ever nonzero, and the count of rows the two predicates disagree on
     must be printed.**
+88. **A COVARIATE PLACEBO CANNOT TEST A BETWEEN-ARM CONTRAST — ONLY AN ARM-LABEL PERMUTATION CAN.**
+    Rule 55 says a placebo must be able to change the statistic it is a placebo for. This is its most
+    expensive form, because the placebo *looks* like the textbook one. **E230 and E231 both died on it,
+    in the same lineage, and the second death was one level deeper than the first.** The estimand was
+    `mean(rho | propofol arm) - mean(rho | sevoflurane arm)`, and the placebo re-ran the covariate
+    matching with the covariate rows PERMUTED. E230's match discarded nobody (85 pairs of 85 possible),
+    so the placebo merely re-PAIRED identical cases and a difference of arm means does not depend on
+    pairing: placebo +0.3701 against a real +0.3530. E231 added a derived caliper that genuinely
+    discarded 43 of 85, and it *still* failed at p = 0.4767 — because permuting covariates changes
+    **which subset of each arm is retained** and never the arm distinction itself, and a whole-arm
+    effect survives any random subset of that arm. **A covariate placebo can only ever test whether the
+    matching procedure manufactured the contrast; it cannot test whether the contrast is real.** The
+    destruction that matches the estimand is permuting the ARM LABEL, which is the only operation that
+    removes the drug contrast while preserving cohort, covariates, windows and code path.
+    Two corollaries worth as much as the rule. **A stable number across matched, unmatched and randomly
+    subset cohorts is evidence of robustness being misread as placebo failure** — +0.3799 / +0.3826 /
+    +0.3671 across three cohorts is what insensitivity to case mix looks like, and the registered gate
+    called it a refusal. And **when a confound named in a registration has an SMD that gets WORSE after
+    the adjustment declared to handle it (1.1041 → 1.2105 for remifentanil here), the balance table is
+    the result** — it says the two arms cannot be equated on that variable at all, and restriction to
+    the stratum where it is present beats any amount of matching. Rule 54 was cited by name inside the
+    file that then failed it.
