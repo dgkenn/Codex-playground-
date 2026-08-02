@@ -49,5 +49,13 @@ bsde/results/mgh_volunteer_cnn_btlncks.feather
 bsde/results/mgh_volunteer_windows.csv
 bsde/results/mgh_volunteer_windows_lt30.csv
 bsde/results/vitaldb_agentprobe.s*.csv
+# Same treatment for the peak-anchored re-extraction, for the same reason: VitalDB's API grants
+# CC BY-NC-SA 4.0 for R&D, which is more restrictive than the other deposits here, and this repo is
+# public. Regenerable in about 15 minutes with:
+#   for i in 0 1 2 3; do python bsde/scripts/stream_vitaldb_grid.py --case-shard $i --of 4 \
+#     --candidates alpha_peak_hz_wide,relative_alpha_power_iaf,alpha_peak_hz,relative_alpha_power \
+#     --out bsde/results/vitaldb_iaf.s$i.csv & done
+bsde/results/vitaldb_iaf.s*.csv
+bsde/results/vitaldb_iaf.s*.csv.manifest.json
 bsde/results/mimic_cohort.csv
 bsde/results/mimic_cohort.csv.manifest.json
