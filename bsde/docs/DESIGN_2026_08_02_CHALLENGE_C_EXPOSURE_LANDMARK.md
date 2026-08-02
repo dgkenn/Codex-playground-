@@ -78,9 +78,11 @@ added after E246 ran, applies the same discipline to the *smoothing-window estim
 white noise through a KNOWN rectangular moving average and requiring the estimate back. It refuted the
 lag-1 AR(1) form E246 used (biased high by ~2×) and licensed the integrated-autocorrelation form, moving
 BIS's measured window from a withdrawn 78.7 s to **47.6 s (IQR 27.3–74.4, n = 109), an upper bound**. The
-successor takes the corrected estimator and the test that certifies it. So is the **P1 placebo**,
-case-mismatched pairing, which is rule 82's move: the control object already exists in the deposit, so
-nothing has to be synthesised and nothing has to be argued about what the synthesis preserved.
+successor takes the corrected estimator and the test that certifies it.
+
+Carried over too: the **P1 placebo**, case-mismatched pairing, which is rule 82's move — the control
+object already exists in the deposit, so nothing has to be synthesised and nothing has to be argued about
+what the synthesis preserved.
 
 And so does the contribution. The prior-art check stands: the anaesthesia depth-index literature measures
 each monitor's raw latency (PMIDs 16508396, 19648154, 22584557, 32040794) and never equalises smoothing
