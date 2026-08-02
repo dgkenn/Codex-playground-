@@ -159,7 +159,21 @@ A literature search was commissioned for candidate mechanisms that could make tw
 disagree about the DIRECTION of an EEG-depth relationship. Two of the leading candidates can be checked
 directly on this cohort, and **both are refuted here**, which narrows the search before it starts.
 
-### The arms are at the same depth — the non-equipotent-scale explanation is unavailable
+### The arms are at the same BIS — but that does NOT close the non-equipotent-scale explanation
+
+**CORRECTED the same day.** The heading below originally read "the non-equipotent-scale explanation is
+unavailable" and that was wrong, for a reason a verified citation supplies. Kuizenga 2019
+(**PMID 31567365**, *Anesthesiology*, healthy-volunteer crossover) reports the EEG index value at which
+50 % of subjects lose a behavioural endpoint as **46.7 for propofol against 68 for sevoflurane**, and
+**41.5 against 59.2**, and **29.5 against 61.1** for three endpoints — while the drug concentrations
+themselves are *"perfectly correlated (correlation coefficient = 1)"* for two of them. **An EEG index sits
+at radically different values at matched behavioural depth between these two drugs.**
+
+So matching the two arms on BIS, which is what the diagnostic below does, is precisely NOT matching them on
+state. If anything the diagnostic's result — that BIS agrees between arms — implies under Kuizenga that the
+*behavioural* depths differ. **Non-equipotent depth scales survives as the leading candidate, not the
+refuted one.** What the diagnostic does establish is that the arms are matched on age, ASA and the monitor's
+own reading, which removes the cruder versions of the confound.
 
 The deep and light terciles are defined by EXPOSURE — MAC for sevoflurane, effect-site concentration for
 propofol — and there is no guarantee that a tercile of MAC and a tercile of Ce reach the same cortical
@@ -186,10 +200,31 @@ every tercile of both arms**, and only 14 of 44 propofol cases and 10 of 71 sevo
 suppression at all in either tercile. This cohort's deep end is oscillatory anaesthesia, not suppression,
 in both arms.
 
+### Two more mechanisms tested directly, 2026-08-02 (mechanism triage, 2 tests, count stated)
+
+A verified literature review ranked six candidate mechanisms. Two carry predictions testable on this
+cohort, and both were run:
+
+* **Burst suppression differing by agent** (Kenny 2014, PMID 25565990: *"the circuit mechanisms that
+  generate burst suppression activity may differ among general anesthetics"*). Prediction: the arm gap
+  should be **absent or smaller** with suppression-containing cases excluded. Measured, it is **larger** —
+  −0.4792 [−0.7302, −0.2082] against −0.3742 on all cases. **REFUTED**, and by catalogue rule 17's pattern:
+  when a fix makes the effect stronger, the diagnosis was wrong.
+* **Off-target receptor actions of the volatile** (Solt & Forman 2007, PMID 17620835: *"Volatile halogenated
+  anesthetics show little selectivity for molecular targets. They act on all the channels mentioned above"*
+  — i.e. sevoflurane engages the same glutamate and TREK-1 targets as the drug class behind every
+  precedented EEG reversal, and propofol does not). Prediction: the effect should **scale with MAC** within
+  the sevoflurane arm and be much weaker below 1 MAC. Measured: **−0.4667 below the median MAC of 1.100 and
+  −0.6154 above it**, both far beyond their sign-flip floors. It is present at low dose, so this is **weak
+  support at best** and arguably counts against the prediction as stated.
+
 ### What that leaves
 
-Of the mechanisms available for a same-drug-class reversal, the cohort itself removes **non-equipotent depth
-scales** and **differential burst suppression**, and largely removes **age**. E213 removed **band
+Of the six candidate mechanisms, the cohort removes **differential burst suppression** (tested and refuted
+above) and largely removes **age** — Purdon 2015 (PMID 26174300) reports the age effect running in the
+*same* direction for both drugs, and this cohort's arms are age-matched. **Non-equipotent depth scales is
+NOT removed and is now the leading candidate**, on Kuizenga's evidence above. Off-target volatile receptor
+action is weakly supported at best. E213 removed **band
 placement**. What remains, and is not testable on this cohort alone, is a genuine difference in the
 generator of the alpha rhythm, an off-target receptor action of the volatile, or systematic co-medication.
 **Two of those three are testable with case-level data that already exists** and are the obvious successors.
