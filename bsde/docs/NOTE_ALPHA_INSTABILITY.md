@@ -30,6 +30,15 @@ Only `alpha_peak_hz` clears a stable-flip criterion (|mean| > 2 SD in both arms 
 `relative_alpha_power` flips in 46 of 50 subsamples and clears easily on the propofol side (|m|/sd 5.26)
 but not on the sevoflurane side (1.34). **Both are alpha measures. None of the other eight flips.**
 
+> **CORRECTION, 2026-08-02 (E218): the inversion is ASYMMETRIC, and calling it an inversion overstates it.**
+> Testing each arm against its own within-arm sign-flip null, `relative_alpha_power`'s deep-minus-light
+> change is **−0.5211 against a floor of 0.2394 in sevoflurane — decisively alive** — and **+0.2273 against
+> a floor of 0.3182 in propofol, which does NOT clear.** So what the table above shows as two arms pointing
+> opposite ways is really **one arm moving and the other not detectably moving.** Every description of this
+> finding in the programme's documents, including the sentences below, says "inverts" or "opposite
+> directions"; read them with this correction. The arm GAP is real and survives (|G| 0.3742 against an
+> arm-permutation p95 of 0.1901) — it is the two-sided reading of it that does not.
+
 **Challenge C (E209).** Of the three DOSE-I survivors testable on ds005620, two replicate and one does
 not — and the one that fails is **`relative_alpha_power`** (+0.0978 [−0.0405, +0.2334]), which had the
 **largest** DOSE-I increment of the five (−0.03331). The two that replicate were smaller.
@@ -95,10 +104,18 @@ The censoring is strongly agent-dependent. At BIS < 40:
 | propofol | 494 | 9.75 | **8.91 %** | 0.00 % |
 | volatile | 957 | 8.50 | **28.74 %** | 0.10 % |
 
-**Two consequences.** The propofol-minus-sevoflurane peak separation at depth is a **lower bound, not an
-estimate** — every peak that has actually moved below 8 Hz is recorded as 8.0. And the row for
-`alpha_peak_hz` in the table above (sevoflurane deep−light −0.8283) is measured through a censored
-instrument, so its magnitude should not be quoted without this caveat.
+**One consequence, and one that I got wrong and E218 corrected.** The row for `alpha_peak_hz` in the table
+above (sevoflurane deep−light −0.8283) is measured through a censored instrument and its magnitude should
+not be quoted without that caveat. That stands.
+
+**WITHDRAWN:** I wrote here that the peak separation at depth is therefore a *lower bound*. It is not.
+E218 measured the same quantity with an uncensored estimator (aperiodic-corrected peak searched over
+5–15 Hz) on the same windows: the shift is **+1.38 Hz** (propofol 10.50, sevoflurane 9.12) against the
+censored estimator's **+1.50 Hz** (10.00 vs 8.50). Slightly *smaller*, not larger — because censoring pins
+**both** tails and removing it moves both arms' peaks upward. The lower-bound reasoning only considered the
+floor. Note also that the uncensored sevoflurane peak of 9.12 Hz is materially closer to Akeju 2014's
+*"approximately 10 Hz"* for both agents than 8.50 was, so the censoring accounts for part of that
+disagreement without removing it.
 
 ### The mechanism this suggested, and why it does not survive
 
