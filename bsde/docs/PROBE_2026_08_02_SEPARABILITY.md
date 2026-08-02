@@ -1359,3 +1359,38 @@ task's framing predicted.
 No verdict about Challenge D is drawn here, per the task's instruction.
 
 No verdict about Challenge D is drawn here, per the task's instruction.
+
+---
+
+## 16. OPUS VERIFICATION of §15, and the sharpest statement of Challenge D this project has
+
+Recomputed independently from `sleep_edfx_five_stage.csv` and `ds006695_features.csv`, aggregating to
+subject means before any effect size (rule 69), parsing the Sleep-EDFx stage as a field (rule 61):
+
+| deposit | subjects with both W and N3 | W mean | N3 mean | Cohen's d | AUC |
+|---|---:|---:|---:|---:|---:|
+| sleep_edfx | 141 | **+0.7123** | **+2.6904** | +4.6794 | 0.9920 |
+| ds006695 | 19 | **+1.1318** | **+2.0890** | +3.5296 | **1.0000** |
+
+§15's numbers reproduce exactly. The AUC of 1.000 is real and not a rounding artefact: on ds006695 the
+largest wake value (+1.6708) lies below the smallest N3 value (+1.9042), so the two states are
+**completely separated in 19 of 19 subjects**.
+
+**And the value still does not transport.** Sleep-EDFx runs 0.71 → 2.69 across the same contrast that
+ds006695 runs 1.13 → 2.09. ds006695 reads **higher at wake and lower at deep sleep** — the deposits
+diverge in opposite directions from their own baselines, so no additive offset aligns both states, and
+ds006695's dynamic range (0.96) is less than half Sleep-EDFx's (1.98). §15's gated ratios say the same
+thing: 0.211 anchored at W, 0.478 anchored at N3, and within-subject referencing makes it worse
+(0.211 → 0.657).
+
+**This is the cleanest example of Challenge D's actual problem the project has produced, and it is on
+its strongest surviving candidate.** `whole_head_exponent` discriminates wake from deep sleep
+essentially perfectly *inside* each deposit — AUC 0.992 and 1.000 — and a threshold learned on either
+one would misclassify on the other. Discrimination and calibration are separable properties, and every
+Challenge C result so far measures only the first.
+
+**What it does not establish.** ds006695 is a 3-channel forehead montage against Sleep-EDFx's 2-channel,
+with 19 subjects against 141. The project's own `PROBE_2026_08_02_DEPOSITS.md` already records that this
+makes `whole_head_exponent` "a different measurement, not the same one" across the two. Nothing here can
+separate montage from sample size from population as the cause, and the sentence must travel with the
+number.
