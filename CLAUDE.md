@@ -563,7 +563,26 @@ Every rule below was paid for with a wrong result in this project.
     **Diagnostic order, always:** (1) `git fetch origin <branch>`; (2) `git merge-base --is-ancestor HEAD
     origin/<branch>` — if it PASSES the local branch is behind and `reset --hard` discards nothing; if it
     FAILS **stop**, because the reset would destroy real work; (3) `git log --oneline HEAD..origin/<branch>`
-    to size the recovery; (4) only now enumerate what is actually missing. The corollary is the cheap habit
+    to size the recovery; (4) only now enumerate what is actually missing.
+    **SECOND OCCURRENCE, 2026-08-02, and it presented completely differently — `git status` was CLEAN.**
+    The rollback reset `.git` to a commit **82 behind the remote**, and the session then made five more
+    commits on that old base. So there was no dirty worktree, no failed push and no error: `git log`
+    showed a sensible history, `git status` showed nothing wrong, and the loss surfaced only when a
+    script could not open a data file that had been written and committed hours earlier. Step (2) above
+    **cannot detect this**, because the local branch is not behind the remote — it has DIVERGED, and
+    `--is-ancestor HEAD origin/<branch>` returns false for the same reason a genuinely-ahead branch
+    does. **The diagnostic that works is `git merge-base --is-ancestor <a-commit-you-know-you-made>
+    HEAD`**: if a commit you remember making is not an ancestor of your own HEAD, the repository has
+    been rolled back underneath you.
+    Recovery is then: verify your post-rollback commits are pure ADDITIONS (`git show --stat` on each —
+    if any deletes a file, a reset would destroy remote work and you must rebase instead), copy the
+    local-only files out of the tree, `git reset --hard origin/<branch>`, re-apply, and **push before
+    doing anything else**. Two further details that cost time here: `reset --hard` deletes files tracked
+    in the old HEAD, so anything a running background job is writing must be backed up and the job
+    stopped first; and an append (`cat >>`) to a file the rollback removed silently creates a NEW file
+    containing only the appended text, which is how a 9 KB results note became a 1.7 KB fragment that
+    still read as a valid document.
+    The corollary is the cheap habit
     that made recovery possible at all: **commit and push at every artifact boundary, not at the end of a
     work item.** An artifact that has not been pushed does not exist.
 39. **WebFetch fabricated a file manifest, not just a citation — rule 25 extends to ANY record, not only
