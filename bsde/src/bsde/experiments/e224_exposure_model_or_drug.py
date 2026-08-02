@@ -426,10 +426,19 @@ def main() -> int:
         s = int(rng.integers(1, n)) if n > 2 else 1
         shift_scores.append(case_score(panel, cols, np.roll(inc, s)))
     shift_scores = np.asarray([v for v in shift_scores if np.isfinite(v)], float)
-    g1 = float(sev_inc.mean()) > float(np.percentile(shift_scores, 95))
-    print(f"G1 aliveness: sevoflurane incumbent {sev_inc.mean():.4f} against a circular-shift floor "
-          f"mean {shift_scores.mean():.4f}, 95th pct {np.percentile(shift_scores, 95):.4f} "
-          f"-> {'PASS' if g1 else 'FAIL'}")
+    # THE COMPARISON IS MEAN AGAINST THE DISTRIBUTION OF MEANS, not against individual floor cases.
+    # The first draft took the 95th percentile of the individual shifted case-scores, which is a baseline
+    # of the wrong SHAPE (rule 50): the real quantity is an average over n cases and its sampling
+    # distribution is narrower than a single case's by roughly sqrt(n), so the test was answering
+    # "is the mean bigger than a typical single null case" instead of "is the mean bigger than a null
+    # mean". Repaired once, with the reason stated, per rule 58.
+    g1_null = np.asarray([shift_scores[rng.integers(0, len(shift_scores), len(sev_inc))].mean()
+                          for _ in range(N_BOOT)])
+    g1_p = float(np.mean(g1_null >= sev_inc.mean()))
+    g1 = g1_p < 0.05
+    print(f"G1 aliveness: sevoflurane incumbent {sev_inc.mean():.4f} against the distribution of "
+          f"circular-shift MEANS (mean {g1_null.mean():.4f}, 95th pct {np.percentile(g1_null, 95):.4f}); "
+          f"p = {g1_p:.4f} -> {'PASS' if g1 else 'FAIL'}")
 
     # ---- placebo: donor exposure from a DIFFERENT case ---------------------------------------------
     placebo = {}
@@ -455,12 +464,17 @@ def main() -> int:
             if np.isfinite(v):
                 vals.append(v)
         real = float(np.mean([x[1] for x in res[arm]]))
-        p = float(np.mean(np.asarray(vals) >= real))
-        placebo[arm] = {"n": len(vals), "donor_mean": float(np.mean(vals)),
-                        "donor_p95": float(np.percentile(vals, 95)), "real": real,
-                        "frac_donors_reaching_real": p, "beaten": p < 0.05}
-        print(f"placebo {arm:12s}: real {real:.4f} vs donor mean {np.mean(vals):.4f} "
-              f"(95th pct {np.percentile(vals, 95):.4f}); {p:.4f} of {len(vals)} donors reach it "
+        # Same shape repair as G1: the real quantity is a mean over n cases, so the null must be a
+        # distribution of MEANS over n donor draws, not the spread of individual donor cases.
+        v = np.asarray(vals, float)
+        k = len(res[arm])
+        null = np.asarray([v[rng.integers(0, len(v), k)].mean() for _ in range(N_BOOT)])
+        p = float(np.mean(null >= real))
+        placebo[arm] = {"n": len(vals), "donor_case_mean": float(v.mean()),
+                        "donor_mean_p95": float(np.percentile(null, 95)), "real": real,
+                        "p_donor_mean_reaches_real": p, "beaten": p < 0.05}
+        print(f"placebo {arm:12s}: real {real:.4f} vs the distribution of donor MEANS "
+              f"(mean {null.mean():.4f}, 95th pct {np.percentile(null, 95):.4f}); p = {p:.4f} "
               f"-> {'BEATEN' if p < 0.05 else 'NOT BEATEN'}")
 
     # ---- primaries ---------------------------------------------------------------------------------
