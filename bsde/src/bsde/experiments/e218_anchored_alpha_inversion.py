@@ -77,6 +77,13 @@ G3  **RULE 60 ESCAPE CHECK, AND IT IS THE CANDIDATE'S OWN FAILURE CONDITION.** `
     must NOT correlate above 0.9 with `relative_alpha_power` across cases. If it does, anchoring changed
     nothing and this is the incumbent renamed — the error rule 60 was written for, where a measure chosen
     to escape a family had to be shown to differ from it and was not.
+G5  **THE ANCHORED MEASURE MUST ITSELF CARRY DEPTH, WITHIN EACH ARM** (rule 83). ADDED AFTER THE FIRST
+    RUN, WHICH DID NOT HAVE IT AND WAS WRONG WITHOUT IT. A measure that carries no depth signal at all
+    cannot invert, so "the inversion is gone" and "the measure does nothing" print identically -- the
+    discrimination-versus-equivalence error. The first run returned ANCHORING REMOVES IT and the anchored
+    measure's deep-above-light rate was -0.0455 in propofol and -0.0423 in sevoflurane against sign-flip
+    floors of 0.2727 and 0.2394, i.e. dead in both arms. The gate is added because it makes the test
+    STRICTER after a pass, which is the safe direction; a gate loosened after a failure would not be.
 G4  the peak estimators must actually differ: `alpha_peak_hz_wide` must report values OUTSIDE [8, 13] on a
     non-trivial fraction of windows. If every peak really does lie inside the fixed band on real data, the
     censoring is immaterial here whatever the synthetic tests show.
@@ -237,6 +244,16 @@ def main() -> int:
     print(f"   for reference, the ANCHORED measure    G {Ga:+.4f}  |G| {abs(Ga):.4f} vs its own "
           f"p95 {p95a:.4f}")
 
+    for lab, a in (("propofol", 0.0), ("sevoflurane", 1.0)):
+        m = (arm == a) & np.isfinite(D[FIXED])
+        v = D[FIXED][m]
+        obs = float(np.mean(v > 0) - 0.5) * 2.0
+        nul = np.array([float(np.mean((v * np.random.default_rng(SEED + 600 + k)
+                                       .choice([-1.0, 1.0], size=v.size)) > 0) - 0.5) * 2.0
+                        for k in range(1000)])
+        print(f"   FIXED measure within {lab:<12s} deep-above-light {obs:+.4f} vs sign-flip p95 "
+              f"{float(np.quantile(np.abs(nul), 0.95)):.4f} ({v.size} cases)")
+
     dv = np.array([cases[c][f"deep_{FIXED}"] for c in ids])
     av = np.array([cases[c][f"deep_{ANCHORED}"] for c in ids])
     m = np.isfinite(dv) & np.isfinite(av)
@@ -251,6 +268,23 @@ def main() -> int:
     g4 = bool(np.isfinite(out_frac) and out_frac > 0.05)
     print(f"G4 THE ESTIMATORS DIFFER  {out_frac:.4f} of uncensored peaks lie OUTSIDE [8, 13] "
           f"({wide.size} windows)   {'PASS' if g4 else '*** FAIL'}")
+
+    # G5, added after the first run (see the docstring). Rule 83: a measure must be shown to carry the
+    # thing before its failure to carry a CONFOUND means anything.
+    alive_arm, g5 = {}, True
+    for lab, a in (("propofol", 0.0), ("sevoflurane", 1.0)):
+        m = (arm == a) & np.isfinite(D[ANCHORED])
+        v = D[ANCHORED][m]
+        obs = float(np.mean(v > 0) - 0.5) * 2.0
+        nul = np.array([float(np.mean((v * np.random.default_rng(SEED + 900 + k)
+                                       .choice([-1.0, 1.0], size=v.size)) > 0) - 0.5) * 2.0
+                        for k in range(N_PERM)])
+        fl = float(np.quantile(np.abs(nul), 0.95))
+        ok = bool(abs(obs) > fl)
+        alive_arm[lab] = {"deep_above_light": obs, "floor": fl, "n": int(v.size), "pass": ok}
+        g5 = g5 and ok
+        print(f"G5 ANCHORED MEASURE ALIVE  {lab:<12s} deep-above-light {obs:+.4f} vs sign-flip p95 "
+              f"{fl:.4f} ({v.size} cases)   {'PASS' if ok else '*** FAIL'}")
 
     diff = abs(Gf) - abs(Ga)
     boot = []
@@ -285,13 +319,14 @@ def main() -> int:
            "G_fixed": Gf, "G_anchored": Ga, "perm_p95_fixed": p95, "perm_p95_anchored": p95a,
            "redundancy_rho": rho, "outside_band_fraction": out_frac,
            "diff": diff, "ci": [lo, hi], "peak_shift": p2,
-           "g1": g1, "g2": g2, "g3": g3, "g4": g4}
+           "g1": g1, "g2": g2, "g3": g3, "g4": g4, "g5": g5, "anchored_alive": alive_arm}
 
     print("\n" + "=" * 100)
-    if not (g1 and g2 and g3 and g4):
+    if not (g1 and g2 and g3 and g4 and g5):
         v_, why = "NOT INTERPRETABLE", ("a gate failed: " + ", ".join(
             nm for nm, ok in (("G1 coverage", g1), ("G2 inversion alive", g2),
-                              ("G3 rule-60 escape", g3), ("G4 estimators differ", g4)) if not ok))
+                              ("G3 rule-60 escape", g3), ("G4 estimators differ", g4),
+                              ("G5 anchored measure alive", g5)) if not ok))
     elif hi < 0:
         v_, why = "ANCHORING MAKES IT WORSE", (
             f"the anchored measure inverts MORE strongly than the fixed one ({abs(Ga):.4f} vs "
