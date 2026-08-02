@@ -257,3 +257,46 @@ reverse of the position an hour ago, when B had two pending requests and A and C
   BNCI Horizon 2020 catalogue and MOABB's registry. Locked-in syndrome is command-following with MACHINE
   scoring, which is precisely the rule-86 escape the challenge needs. If that returns nothing, Challenge B
   has no public route and should be stated as blocked rather than repeatedly re-searched.
+
+---
+
+## ABSTRACTS AS REVISED BY THE LITERATURE CHECKS, 2026-08-02
+
+Both remaining challenges came back PARTIALLY. The checks did not kill either line, but they moved where
+the novelty sits, so the licensed sentence is rewritten here — sharpened to what is actually unclaimed.
+
+### Challenge C — the sentence is now about the ABLATION, not the lead
+
+> *"A raw-EEG measure detects anaesthetic state transitions earlier than BIS, and the lead SURVIVES
+> matching the measure's smoothing window to BIS's — establishing it as neurophysiological rather than
+> an artefact of less smoothing."*
+
+**Prior art that constrains it.** BIS's lag is measured, not assumed: **20–160 s, asymmetric by
+direction**, from a four-paper series that replayed known transitions into the monitors (PMIDs 16508396,
+19648154, 22584557, 32040794). A thin precedent for the lead itself exists — Ra, Li & Li 2021
+(PMID 33978842) report a spectral-entropy index reacting **158 s earlier** than BIS (range 6–331, n = 14),
+single-centre and one direction only. And the framing is live on this very dataset: Kavuncu et al. 2026
+(PMID 42351597) used **5,471 VitalDB cases** to predict BIS-threshold crossings 3/5/10 min ahead.
+
+**What is unclaimed.** No smoothing-window-matched ablation exists anywhere in that literature. Without
+it, a lead is engineering — a shorter window reacting faster — and not a discovery. That ablation IS the
+contribution; the lead on its own is not. **The clause after the dash is the paper.**
+
+### Challenge A — the sentence is about MINIMISATION, and it has a number
+
+> *"A representation retains loss-and-recovery tracking across anaesthetic agents while reducing
+> agent-identifiability from 91.43 % toward chance."*
+
+**What is unclaimed.** The failure half is extensive prior art (BIS unreliable for ketamine,
+dexmedetomidine, N₂O, xenon, opioids — PMID 16634416). But nobody states agent-identifiability as a
+quantity to ACTIVELY MINIMISE. PSI's validation (PMID 14742326) targeted "consistency across anaesthetic
+agents" and tested it as pooled/per-agent regression agreement — the same post-hoc logic a prior session
+mistakenly used. The 91.43 % baseline comes from PMID 42131603 and is **recorded as not independently
+verified**: the paper and title are confirmed, the number is from full text.
+
+**The blocker is in this project's own brief.** `BRIEF_02_DATASET_STRATEGY.md` states VitalDB lacks
+precise behavioural consciousness labels, so a VitalDB design would test whether a candidate reproduces
+BIS's agent-dependent quirks rather than tracking consciousness. A probe is running to find whether ANY
+fully public deposit has two agents, both transitions, and a non-monitor state label. **If it returns
+none, Challenge A is blocked on public data and stops** — the minimisation framing being novel does not
+rescue a design with no valid state label.
