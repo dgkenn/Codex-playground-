@@ -401,8 +401,18 @@ def main() -> int:
                    "measure is computed on a stratum selected on the thing under test (rule 32)")
     elif not g4:
         verdict = "NOT INTERPRETABLE -- G4 coverage failed"
-    elif p_plac >= 0.05:
+    elif anchored_reverses and p_plac >= 0.05:
+        # THE PLACEBO GATES A PASS AND NEVER A NULL, which is what this file registered: "a gate can only
+        # invalidate a pass, never rescue a null". The first draft applied it unconditionally, so a P1
+        # whose interval INCLUDES zero -- the outcome branch (c) is built on -- was refused by a control
+        # that cannot speak to nulls at all (rule 48: a placebo cannot validate a null, and equally cannot
+        # invalidate one). Repaired once, with the reason, per rule 58; the code now matches the
+        # registered gating principle rather than contradicting it.
         verdict = "NOT INTERPRETABLE -- the arm-label permutation reproduces the contrast"
+    elif not anchored_reverses:
+        verdict += (f" | the arm-label placebo on the null primary is NOT INFORMATIVE by rule 48 "
+                    f"(|p| = {p_plac:.4f} against P1 = {p1:+.4f}, whose interval includes zero); it is "
+                    "reported and does not gate")
     print()
     print("VERDICT:", verdict)
 
