@@ -708,3 +708,35 @@ It is stated that way here so that no later document can quietly re-inflate it.
 3. **BLOCKED ON THE INVESTIGATOR:** the full text of **PMID 41385421** (IEEE JBHI, paywalled, no PMC).
    One PDF decides whether the minimisation framing is claimed. Institutional access would settle it in
    minutes and it is worth doing before the extraction runs, not after.
+
+## Pre-committed stop #3 does NOT fire — the leakage floor drops 6–8×, and the check validated itself first
+
+Stop #3 was: *"if the patient-level permutation null's 95th percentile does not fall materially below
+0.19 at this cohort size, the measurement is no better resolved than before and the line stops."*
+
+The floor is a pure property of the arm sizes, so it needs no features and no extraction — under label
+permutation the null AUC has sd = √((n₁+n₂+1) / 12n₁n₂). **That form was validated by reproducing E154's
+own measured number before it was trusted anywhere new** (rule 23: an independent implementation), and a
+Monte Carlo permutation was run beside it as a second route:
+
+| contrast | n₁ | n₂ | analytic 95th pct of \|AUC−0.5\| | Monte Carlo |
+|---|---|---|---|---|
+| **E154, MGH OR** (25 vs 14) | 25 | 14 | 0.1913 | 0.1886 |
+| **Krause** (E142) | 8 | 7 | 0.3024 | 0.3036 |
+| VitalDB sevoflurane vs desflurane | 1,474 | 460 | **0.0302** | 0.0300 |
+| VitalDB sevoflurane vs propofol | 1,474 | 996 | **0.0232** | 0.0232 |
+| VitalDB desflurane vs propofol | 460 | 996 | **0.0319** | 0.0315 |
+
+E154 reported **0.1904** at 39 clusters and E142 **0.2791** at Krause's 15. The analytic form returns
+0.1913 and 0.3024 for those splits, so it reproduces both measured values and can be trusted at the new
+sizes.
+
+**The floor falls from 0.1904 to 0.023–0.032 — a factor of 6 to 8.** E154's own conclusion was that
+resolving leakage at 0.10 needs roughly 140 clusters and that no public deposit came close; these arms
+resolve it at 0.10 with a wide margin and resolve it at **0.05** as well. The measurement E154 could not
+make is now makeable, and this is the strongest single reason the line is worth its extraction cost.
+
+Note what this does and does not license. It says the **instrument** now has the resolution. It says
+nothing about whether leakage is large or small — that is what the run measures, and both answers are
+reportable (a large leakage is a quantified criticism of every "drug-independent" estimator including
+Ramaswamy 2019's; a small one says the invariance problem is smaller than the field assumes).
