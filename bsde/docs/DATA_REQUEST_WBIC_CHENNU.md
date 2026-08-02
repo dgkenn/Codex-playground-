@@ -76,3 +76,41 @@ worked around. The fallbacks, in order, and each is weaker than the last:
    against it**: behavioural unresponsiveness and consciousness dissociate under anaesthesia — the same
    failure mode cognitive motor dissociation describes in DoC. Using MOAA/S as ground truth for
    command-following would import exactly the error the challenge exists to detect.
+
+---
+
+## AMENDMENT 2026-08-02 — this is in scope, and the draft above needs two changes before sending
+
+**Verified by Opus directly against the PMC full text (PMC4199497), not taken on report.** The paper's own
+data-availability statement reads, verbatim:
+
+> *"data are available by request to **either the study authors or** the Wolfson Brain Imaging Centre's
+> **data protection officer** (enquiries@wbic.cam.ac.uk) for researchers who can meet the requisite
+> ethical criteria for access to confidential UK National Health Service patient data. **All requests
+> will be subject to case-by-case review by the WBIC's data access committee.**"*
+
+Three things follow.
+
+**1. The DPO route is offered as an ALTERNATIVE to the authors, and there is a formal data access
+committee.** So this is squarely inside the investigator's standing constraint (formal access routes
+only, no cold-emailing authors) — it is the record's own published institutional route with a named
+review body, not an author request.
+
+**2. Two edits are required to the draft above before it is sent.** As written it (a) copies the study
+authors and (b) offers *"I am happy to be redirected to the study authors instead if that is the more
+appropriate route."* Both invite exactly the author-mediated channel the constraint excludes. **Remove
+both.** Address `enquiries@wbic.cam.ac.uk` only, and let the committee route it if they choose to.
+
+**3. Ask for BOTH cohorts in the same request**, since they share a custodian and a committee:
+
+| | cohort |
+|---|---|
+| Chennu et al. 2014, **PMID 25329398** | n = 32 DoC patients, 128-channel, 10-min eyes-open resting EEG, CRS-R **and** fMRI-based command-following determinations |
+| Chennu et al. 2017, **PMID 28666351** — *"Brain networks predict metabolism, diagnosis and prognosis at the bedside in disorders of consciousness"* (title verified via E-utilities) | the larger follow-on cohort |
+
+**Why this is now the priority request rather than the second one.** A formal-access survey run today found
+**no new deposit anywhere** that clears the constraint, and rated this the cleanest escape from rule 86 of
+anything located: task-free resting EEG, with command-following determined by **fMRI** — a procedure
+entirely separate from the bedside CRS-R that would serve as the clinical comparator. Bath remains the
+other live request; this one is not a fallback to it but the better-matched instrument for the briefed
+Challenge B question.
