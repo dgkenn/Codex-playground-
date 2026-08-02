@@ -167,7 +167,23 @@ class SensorHealth:
 def _sensor_health(rec: CalibrationRecording) -> SensorHealth:
     n = len(rec.samples)
     with_hr = [s for s in rec.samples if s.hr_bpm is not None]
-    coverage = len(with_hr) / n if n else 0.0
+
+    # Coverage is measured against the elapsed span, NOT against the number of rows present.
+    #
+    # Those differ whenever a recorder omits seconds rather than writing nulls for them, which is
+    # what the Web Bluetooth logger does when the armband goes out of range -- deliberately, because
+    # a gap is honest and a repeated last value is undetectable fabrication. But dividing by the row
+    # count then made that honesty invisible: a session with a two-minute hole reported 100% coverage
+    # and zero dropout, because every row that existed did have a heart rate.
+    #
+    # The consequence was not cosmetic. Coverage gates whether the run contributes training load at
+    # all, so a recording that lost half its data would have been treated as complete.
+    span = 0.0
+    if rec.samples:
+        times = [s.t_s for s in rec.samples]
+        span = max(times) - min(times) + 1.0
+    expected = max(float(n), span)
+    coverage = len(with_hr) / expected if expected else 0.0
 
     # Frozen: runs of bit-identical HR while moving.
     frozen_s = 0.0
@@ -195,7 +211,7 @@ def _sensor_health(rec: CalibrationRecording) -> SensorHealth:
         if len(window) >= 20 and cadence_lock_suspicion(window) >= 0.8:
             lock_s += 1
 
-    dropout_s = float(n - len(with_hr))
+    dropout_s = max(0.0, expected - len(with_hr))
 
     ppi_frac: Optional[float] = None
     if rec.resting_ppi_ms:

@@ -330,3 +330,27 @@ def test_protocol_stop_rules_present():
 def test_result_is_serialisable():
     r = analyse_recording(good_recording())
     json.dumps(r.to_dict())
+
+
+def test_missing_seconds_count_against_coverage_even_when_absent_from_the_file():
+    """A recorder may signal a dropout by omitting seconds rather than writing nulls.
+
+    The Web Bluetooth logger does exactly that, on purpose: writing the last known heart rate through
+    a dropout produces a plausible flat series that cannot be detected afterwards, so it writes
+    nothing instead. Dividing by the row count made that honesty invisible -- every row present had a
+    heart rate, so coverage read 100% on a recording that had lost half its data. Coverage gates
+    whether a session contributes training load, so this was not a display bug.
+    """
+    from marathon_engine.calibration import CalibrationRecording, RecordingSample, analyse_recording
+    from datetime import datetime, timezone
+
+    # Ten minutes of wall clock, but the middle five are simply not in the file.
+    samples = [RecordingSample(t_s=float(t), hr_bpm=140.0, speed_m_s=2.5, cadence_spm=160.0,
+                               accel_sd_g=0.3, label="steady")
+               for t in list(range(0, 150)) + list(range(450, 600))]
+    rec = CalibrationRecording(started_at=datetime(2026, 8, 5, tzinfo=timezone.utc),
+                               age=30, hr_rest=55, samples=samples)
+    health = analyse_recording(rec).sensor
+    assert health.hr_coverage < 0.6, (
+        f"coverage read {health.hr_coverage:.0%} on a recording missing half its seconds")
+    assert health.dropout_seconds > 250, health.dropout_seconds

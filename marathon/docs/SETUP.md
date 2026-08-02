@@ -46,6 +46,24 @@ or gyroscope, so gait metrics do not run, and — if the export also lacks caden
 cadence-lock nor the frozen-heart-rate detector can run at all. Both need evidence you were moving
 before a suspiciously steady pulse means anything.
 
+### Which recorder for which session
+
+Bluetooth reaches about ten metres, so what can record a session depends on what stays near you.
+
+| Session | Recorder | What you get |
+|---|---|---|
+| Treadmill ramp test | **Browser logger** (`tools/verity-logger.html`) on a laptop at the machine | HR + accelerometer + labelled stages. Full sensor health. |
+| Resting / orthostatic block | Browser logger, laptop beside you | Same |
+| Outdoor run | **Polar Flow on your phone**, in your pocket | HR + GPS distance. No accelerometer, so sensor health reads partial. |
+
+The browser logger is not for outdoor runs and does not pretend to be: the moment you run away from
+the machine the connection drops. That is handled rather than hidden — nothing is written while the
+signal is gone, and it reconnects by itself when you come back. A gap in the file is honest; a
+repeated last value would look like real data and be undetectable afterwards.
+
+The calibration ramp is a treadmill protocol, so the session that matters most is the one the logger
+handles best.
+
 ### Recording it
 
 The Verity Sense records **standalone**, with no phone involved: hold the button until it enters

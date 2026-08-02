@@ -69,6 +69,20 @@
     in Safari — use <strong>Bluefy</strong> from the App Store if the phone is all you have.</p>
   </div>
 
+  <div class="note" style="margin-bottom:1rem">
+    <strong>This is for sessions that stay near the computer</strong> — the treadmill ramp test, the
+    resting block, anything indoors. Bluetooth reaches roughly ten metres, so the moment you run away
+    from the machine the connection goes and the recording stops.
+    <br><br>
+    That is handled rather than hidden: nothing is written while the signal is gone, and it
+    reconnects by itself when you come back. A gap in the file is honest. A repeated last value would
+    look like real data and would be undetectable afterwards.
+    <br><br>
+    <strong>For outdoor runs</strong>, record in Polar Flow on your phone — the band is a hand's
+    width from it the whole time — then export TCX and import that. You lose the accelerometer, so
+    sensor health comes back partial, and the import says so.
+  </div>
+
   <div id="status">Not connected.</div>
 
   <div class="row" style="margin-top:.9rem">
@@ -88,6 +102,8 @@
       <div><span class="v" id="accsd">—</span> <span class="u">g sd</span></div></div>
     <div class="tile"><div class="k">Battery</div>
       <div><span class="v" id="batt">—</span> <span class="u">%</span></div></div>
+    <div class="tile"><div class="k">Dropped</div>
+      <div><span class="v" id="gaps">0</span> <span class="u">sec</span></div></div>
   </div>
 
   <h2>You</h2>
@@ -115,6 +131,11 @@
              style="width:4.2rem;font:inherit;padding:.25rem;border-radius:5px;
                     border:1px solid var(--line);background:transparent;color:var(--fg)"> km/h</label>
     <button data-label="">clear label</button>
+  </div>
+
+  <div id="hidden-warning" class="note" style="display:none;color:var(--warn)">
+    This tab is in the background. Browsers throttle background tabs, which thins the recording.
+    Leave it visible for the whole session.
   </div>
 
   <h2>Session log</h2>
@@ -260,9 +281,14 @@ function parseHeartRate(view) {
 // Recording
 // ---------------------------------------------------------------------------------------------
 
+// A heart-rate notification older than this is not a heart rate, it is a memory. The armband sends
+// at roughly 1 Hz, so five seconds is four missed notifications — comfortably past noise.
+const STALE_HR_MS = 5000;
+
 const state = {
-  device: null, recording: false, startedAt: null,
-  hr: null, rr: [], batt: null, label: '',
+  device: null, recording: false, startedAt: null, gapOpen: false,
+  hr: null, hrAt: 0, rr: [], batt: null, label: '',
+  connected: false, gaps: 0, reconnecting: false,
   accWindow: [], accSd: null, steadySpeed: null,
   perSecond: new Map(),   // second -> partial sample
   events: [],
@@ -310,7 +336,17 @@ function tick() {
   }
   state.accWindow = [];
 
-  if (state.hr != null) {
+  // A heart rate is only written if one actually arrived recently.
+  //
+  // This guard is the most important line in the file. Without it, `state.hr` keeps its last value
+  // forever, so the moment the armband goes out of range — which it will, the instant you walk away
+  // from the machine running this — the logger writes that same number every second for the rest of
+  // the session. The result is a perfectly flat, entirely plausible heart-rate series that imports
+  // as clean data. That is exactly the failure the whole engine exists to detect, manufactured by
+  // the tool that is supposed to be feeding it. A gap in the file is honest; a fabricated plateau is
+  // not, and it is undetectable after the fact.
+  const fresh = state.hr != null && (Date.now() - state.hrAt) < STALE_HR_MS;
+  if (fresh) {
     const speed = LABEL_SPEED_MS[state.label] ?? (state.label === 'steady' ? state.steadySpeed : null);
     state.perSecond.set(t, {
       t_s: t, hr_bpm: state.hr,
@@ -322,11 +358,24 @@ function tick() {
       state.perSecond.get(t).rr_ms = state.rr.map(v => Math.round(v * 10) / 10);
       state.rr = [];
     }
+    if (state.gapOpen) { state.gapOpen = false; log('signal back', 'ok'); }
+  } else {
+    // Nothing written. The second simply does not appear in the file, which is what a dropout
+    // honestly looks like, and the importer already handles gaps.
+    state.gaps++;
+    $('hr').textContent = '—';
+    if (!state.gapOpen) {
+      state.gapOpen = true;
+      log('no heart rate — out of range?', 'bad');
+      setStatus('Signal lost. Nothing is being written until it comes back — a gap is honest, '
+                + 'a repeated last value would not be.', 'bad');
+    }
   }
 
   $('elapsed').textContent = fmtTime(t);
   $('samples').textContent = state.perSecond.size;
   $('accsd').textContent = sd == null ? '—' : sd.toFixed(3);
+  $('gaps').textContent = state.gaps;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -342,13 +391,29 @@ async function connect() {
     });
     state.device = device;
     device.addEventListener('gattserverdisconnected', () => {
-      setStatus('Armband disconnected.', 'bad');
+      state.connected = false;
       log('disconnected', 'bad');
+      setStatus('Disconnected. Retrying…', 'bad');
+      // Walking back into range should just work. Without this the session is over the first time
+      // you step away from the machine, and you would not necessarily notice until you looked.
+      reconnect();
     });
 
     setStatus('Connecting…');
     const server = await device.gatt.connect();
+    await attach(server);
+    state.connected = true;
 
+    setStatus('Connected. Warm up for a few minutes before recording — cold skin is a common cause '
+              + 'of poor optical signal.', 'ok');
+    $('record').disabled = false;
+    $('connect').disabled = true;
+  } catch (err) {
+    setStatus(`Could not connect: ${err.message}`, 'bad');
+  }
+}
+
+async function attach(server) {
     // Heart rate first: it is the standard service, it always works, and it is the one stream the
     // session cannot do without.
     const hrService = await server.getPrimaryService(HR_SERVICE);
@@ -357,6 +422,7 @@ async function connect() {
     hrChar.addEventListener('characteristicvaluechanged', e => {
       const { hr, rr } = parseHeartRate(e.target.value);
       state.hr = hr;
+      state.hrAt = Date.now();      // see tick(): the timestamp is what stops a stale value
       if (rr.length) state.rr.push(...rr);
       $('hr').textContent = hr;
     });
@@ -388,14 +454,29 @@ async function connect() {
     } catch (err) {
       log(`no accelerometer (${err.message}) — sensor health will be partial`, 'warn');
     }
+}
 
-    setStatus('Connected. Warm up for a few minutes before recording — cold skin is a common cause '
-              + 'of poor optical signal.', 'ok');
-    $('record').disabled = false;
-    $('connect').disabled = true;
-  } catch (err) {
-    setStatus(`Could not connect: ${err.message}`, 'bad');
+let reconnectTimer = null;
+async function reconnect() {
+  if (state.reconnecting || !state.device) return;
+  state.reconnecting = true;
+  let delay = 1000;
+  while (!state.device.gatt.connected) {
+    try {
+      await new Promise(r => { reconnectTimer = setTimeout(r, delay); });
+      await attach(await state.device.gatt.connect());
+      state.connected = true;
+      state.reconnecting = false;
+      log('reconnected', 'ok');
+      setStatus(state.recording ? 'Recording.' : 'Connected.', 'ok');
+      return;
+    } catch {
+      // Backs off to 8 s and stays there. Retrying every second for an hour would drain the phone
+      // or laptop battery for no benefit -- the band is either back in range or it is not.
+      delay = Math.min(delay * 2, 8000);
+    }
   }
+  state.reconnecting = false;
 }
 
 function toggleRecord() {
@@ -403,15 +484,24 @@ function toggleRecord() {
     state.recording = true;
     state.startedAt = Date.now();
     state.perSecond.clear();
+    state.gaps = 0;
+    state.gapOpen = false;
+    keepAwake(true);
     $('record').textContent = 'Stop recording';
     $('record').classList.remove('primary');
     setStatus('Recording.', 'ok');
     log('recording started', 'ok');
   } else {
     state.recording = false;
+    keepAwake(false);
     $('record').textContent = 'Start recording';
     $('download').disabled = state.perSecond.size === 0;
-    setStatus(`Stopped. ${state.perSecond.size} samples captured.`, 'ok');
+    const total = Math.max(1, Math.floor((Date.now() - state.startedAt) / 1000));
+    const coverage = state.perSecond.size / total;
+    setStatus(`Stopped. ${state.perSecond.size} samples over ${fmtTime(total)} — `
+              + `${(coverage * 100).toFixed(0)}% coverage.`
+              + (coverage < 0.9 ? ' Below 90%: worth re-recording rather than analysing.' : ''),
+              coverage < 0.9 ? 'warn' : 'ok');
     log('recording stopped');
   }
 }
@@ -471,6 +561,25 @@ document.addEventListener('click', e => {
   document.querySelectorAll('button[data-label]').forEach(x => x.classList.remove('active'));
   if (state.label) b.classList.add('active');
   log(state.label ? `→ ${state.label}` : 'label cleared');
+});
+
+document.addEventListener('visibilitychange', () => {
+  const hidden = document.hidden;
+  $('hidden-warning').style.display = hidden ? 'block' : 'none';
+  if (hidden && state.recording) log('tab backgrounded — recording will thin out', 'warn');
+});
+
+// Keep the screen on for the length of a fifty-minute protocol. Without this the display sleeps,
+// the tab is throttled, and the session ends up with a fraction of the samples it should have.
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    else if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { /* not fatal: the recording still works, the screen may just sleep */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && state.recording && !wakeLock) keepAwake(true);
 });
 
 $('connect').onclick = connect;
