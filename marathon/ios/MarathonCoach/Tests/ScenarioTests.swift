@@ -52,6 +52,47 @@ final class ScenarioTests: XCTestCase {
                        "expected exactly two mentions, got \(notWorn.count):\n" + r.transcript())
     }
 
+    /// The tone channel has its own budget. Moving noise out of speech and into tones would not have
+    /// solved anything — the test that matters is the combined stream in your ear.
+    func testToneChannelStaysWithinBudget() {
+        for sc in ScenarioLibrary.all {
+            let r = run(sc)
+            // 1.5/min is generous: it allows the designed worst case (a runner a long way out and
+            // not correcting) while catching anything that has become a metronome.
+            XCTAssertLessThanOrEqual(r.tonesPerMinute, 1.5,
+                "\(sc.name) plays \(r.tones.count) tones in \(r.ticks.count / 60) min:\n"
+                + r.transcript())
+        }
+    }
+
+    /// The warm-up defect, pinned. Found by reading a transcript: the tempo session played twenty
+    /// tones in five minutes telling the athlete to speed up during a warm-up jog.
+    func testNoToneTellsYouToSpeedUpDuringAWarmUp() {
+        for sc in ScenarioLibrary.all {
+            let r = run(sc)
+            let early = r.tones.filter { $0.t < sc.warmupS && $0.earcon == .lift }
+            XCTAssertTrue(early.isEmpty,
+                          "\(sc.name) played \(early.count) lift tones during its warm-up")
+        }
+    }
+
+    /// A tone must never be heard without something real behind it.
+    func testNoTonesWhilePaceIsUntrusted() {
+        let r = run(ScenarioLibrary.gpsLostInTunnel)
+        let duringLoss = r.tones.filter { $0.t >= 700 && $0.t < 940 && $0.earcon != .degraded }
+        XCTAssertTrue(duringLoss.isEmpty,
+                      "beeped about pace while GPS was gone:\n" + r.transcript())
+    }
+
+    /// An easy run is a ceiling. Being slower than target is the session working.
+    func testCeilingOnlySessionsNeverPlayTheLiftTone() {
+        for sc in ScenarioLibrary.all where sc.intent.ceilingOnly {
+            let r = run(sc)
+            XCTAssertTrue(r.tones.allSatisfy { $0.earcon != .lift },
+                          "\(sc.name) is ceiling-only but told the athlete to speed up")
+        }
+    }
+
     // MARK: - Silence where silence is right
 
     /// Walk breaks are part of the session. The app must not chase them.
@@ -163,6 +204,19 @@ final class ScenarioTests: XCTestCase {
         for sc in ScenarioLibrary.all {
             XCTAssertEqual(run(sc).transcript(), run(sc).transcript(),
                            "\(sc.name) is not reproducible")
+        }
+    }
+}
+
+// MARK: - Transcript dump
+
+/// Not an assertion — a way to read what a session actually sounds like, both channels interleaved.
+final class ScenarioTranscriptTests: XCTestCase {
+    func testPrintTranscripts() {
+        let zones = ScenarioLibrary.defaultZones()
+        for sc in ScenarioLibrary.all {
+            print(RunSimulator.run(sc, zones: zones).transcript())
+            print("")
         }
     }
 }

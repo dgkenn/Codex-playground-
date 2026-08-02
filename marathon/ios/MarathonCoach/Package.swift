@@ -23,6 +23,7 @@ let package = Package(
             // cannot build on a non-Apple host. Everything left is portable, deterministic logic.
             exclude: ["Views", "MarathonCoachApp.swift",
                       "Sensors/VeritySensor.swift", "Sensors/AudioCoach.swift",
+                      "Sensors/EarconPlayer.swift",
                       "Sensors/LocationPace.swift", "Store/HealthKitBridge.swift",
                       "Engine/RunSession.swift",
                       // Combine-dependent, so Apple-only. The scenario engine itself

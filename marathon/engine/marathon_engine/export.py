@@ -280,6 +280,38 @@ def export_golden_vectors() -> Dict[str, Any]:
                           "acute": round(r.acute, 9), "chronic": round(r.chronic, 9),
                           "ratio": round(r.ratio, 9), "band": r.band})
 
+    # --- the tone channel ---------------------------------------------------------------------
+    #
+    # Traced rather than spot-checked because the interesting behaviour is *sequential*: the Schmitt
+    # trigger, the two floors, and the ceiling-only suppression are all history-dependent, and a port
+    # can agree on every individual decision while producing a different sequence.
+    from marathon_engine.audio import PaceBandMonitor
+
+    v["earcons"] = []
+    for name, target, tol, ceiling, paces, grades in (
+            ("even_pace_silent", 520.0, 0.06, False, [520.0] * 300, [0.0] * 300),
+            ("too_fast_then_corrects", 520.0, 0.06, False,
+             [520.0 * 0.85] * 120 + [520.0] * 180, [0.0] * 300),
+            ("too_slow_lift", 520.0, 0.06, False, [520.0 * 1.20] * 300, [0.0] * 300),
+            ("ceiling_only_ignores_slow", 520.0, 0.06, True, [520.0 * 1.35] * 300, [0.0] * 300),
+            ("ceiling_only_still_eases", 520.0, 0.06, True, [520.0 * 0.80] * 300, [0.0] * 300),
+            ("far_out_repeats", 520.0, 0.06, False, [520.0 * 0.70] * 600, [0.0] * 600),
+            ("climb_moves_the_band", 520.0, 0.06, False,
+             [520.0 * grade_adjusted_pace_factor(0.06)] * 300, [0.06] * 300),
+            ("boundary_chatter", 520.0, 0.06, False,
+             [520.0 * (1.062 if i % 2 else 1.058) for i in range(600)], [0.0] * 600),
+    ):
+        mon = PaceBandMonitor(target_pace_sec_km=target, tolerance=tol, ceiling_only=ceiling)
+        events = []
+        for i, (pace, grade) in enumerate(zip(paces, grades)):
+            ev = mon.update(float(i), pace, grade=grade)
+            if ev:
+                events.append({"t_s": ev.t_s, "earcon": ev.earcon.value,
+                               "error": round(ev.error, 6), "reason": ev.reason})
+        v["earcons"].append({"case": name, "target_pace_sec_km": target, "tolerance": tol,
+                             "ceiling_only": ceiling, "events": events,
+                             "final_state": mon.state})
+
     v["controller_trace"] = {
         "description": ("Obedient runner with a first-order HR response. The Swift port must produce "
                         "the same cue sequence; a divergence means the lead compensation, deadband or "

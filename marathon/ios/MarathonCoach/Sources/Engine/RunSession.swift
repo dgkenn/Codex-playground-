@@ -119,6 +119,13 @@ public final class RunSession: ObservableObject {
     /// The gate that decides whether a heart rate may drive control at all.
     private var gate = HrGate()
 
+    /// The tone channel: continuous "am I on pace" feedback for a runner who cannot see the screen.
+    /// Independent of the controller above, because it answers a different question on a much
+    /// shorter timescale — see PaceBandMonitor.
+    private let paceBand: PaceBandMonitor
+    private let splits: SplitAnnouncer
+    @Published public private(set) var lastEarcon: (Earcon, Date)?
+
     /// `simulated` exists so the session, the trace file and the summary all know they came from a
     /// replay. Without it a simulated run would be indistinguishable from a real one in the history,
     /// which would quietly corrupt the training load the plan is computed from.
@@ -153,6 +160,10 @@ public final class RunSession: ObservableObject {
         self.plannedTitle = plannedTitle
         self.controller = InRunController(zones: zones, intent: intent,
                                           hrSpeedSlope: profile.hrSpeedSlope)
+        self.paceBand = PaceBandMonitor(targetPaceSecKm: intent.targetPaceSecKm,
+                                        tolerance: intent.paceTolerance,
+                                        ceilingOnly: intent.ceilingOnly)
+        self.splits = SplitAnnouncer(everyM: 1000)
     }
 
     // MARK: Lifecycle
@@ -297,6 +308,29 @@ public final class RunSession: ObservableObject {
         if let cue = d.cue {
             audio.speak(cue)
             lastCue = cue
+        }
+
+        // The tone channel, after the controller so a spoken cue always wins the moment. Speech and
+        // a tone landing together would be heard as one confusing event; the pre-roll in AudioCoach
+        // already occupies the 400 ms before speech, so a tone in that window is dropped rather than
+        // stacked.
+        let currentPace = (speed ?? 0) > 0.3 ? Physiology.speedToPace(mPerS: speed!) : nil
+        // `.estimated` is cadence-derived, not measured, so it is not trustworthy enough to beep
+        // about — the whole point of the channel is that a tone means something real.
+        let paceTrusted = pace?.quality == .good || pace?.quality == .degraded
+        if d.cue == nil,
+           let ev = paceBand.update(tS: elapsed, paceSecKm: currentPace, grade: pace?.grade ?? 0,
+                                    paceTrusted: paceTrusted,
+                                    running: state == .running && controller.state != .warmup) {
+            audio.play(ev.earcon)
+            lastEarcon = (ev.earcon, Date())
+        }
+        // The periodic split: two seconds of speech that makes silence readable as "on pace" rather
+        // than "the app has stopped". Without it the design's central choice -- quiet while correct
+        // -- is indistinguishable from a crash.
+        if let line = splits.update(tS: elapsed, distanceM: pace?.distanceM ?? 0,
+                                    paceSecKm: currentPace, state: paceBand.state) {
+            audio.speak(Cue(.info, line, key: "split", cooldownS: 0))
         }
 
         // Publish display state from the one controller that is actually running.

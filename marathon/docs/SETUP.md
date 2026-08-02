@@ -123,6 +123,50 @@ Health app.
 
 ---
 
+## 3a. What you will hear
+
+Two channels, because one cannot do both jobs.
+
+**Tones** answer "am I on pace", continuously, without ducking your music.
+
+| Sound | Means |
+|---|---|
+| Two notes falling | Ease off — you are faster than the band |
+| Two notes rising | Lift — you are slower than the band |
+| One single note | Back on pace |
+| Three quick rising notes | The voice is about to say something |
+| Two low dull notes | Signal lost; guidance has degraded |
+
+**Silence means you are inside the band.** That is the design, not an absence of one. Two things stop
+silence being ambiguous: the single note when you come back on pace, so every correction closes its
+own loop, and a two-second spoken split each kilometre ("2K. 8:41. On pace.") which doubles as proof
+the app is alive.
+
+The margin is the session's own tolerance — ±6% by default, ±4% on a tempo. At 8:40/km that is about
+±31 s/km, which is roughly where GPS noise stops dominating. Tighter would beep at measurement error
+rather than at you.
+
+Rules worth knowing before your first run:
+
+- **Warm-ups are never policed for being slow.** You cannot be told to speed up until you have
+  reached the target pace once. Being *too fast* is policed from the first second, because there is
+  no session where going out hard is the prescription.
+- **Easy and long runs are a ceiling.** Running slower than target on those is the session working,
+  so the rising tone never plays.
+- **Hills move the band.** A 6% climb costs about 37% in pace at the same effort, and the band moves
+  with it rather than nagging you up every incline.
+- **The acknowledgement lags your correction by up to twenty seconds.** That is the smoothing window
+  that keeps the channel quiet on an evenly-run kilometre. Ease off, then expect the pip about twenty
+  seconds later, not immediately.
+- **Worst case is four tones a minute**, and only when you are a long way out and not correcting. A
+  well-run easy session is silent.
+
+Set the tone volume in **Settings → Audio → Play them now**, with Apple Music playing. If a tone
+disappears under the music or startles you, that slider is the fix — and it is worth doing before a
+run rather than during one.
+
+---
+
 ## 4. Day one with the Verity
 
 **Before anything else:** charge it fully, and update the firmware through Polar Flow. Do this the day

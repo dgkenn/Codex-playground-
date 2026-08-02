@@ -474,3 +474,97 @@ final class WeeklyReviewParityTests: XCTestCase {
         XCTAssertEqual(boolean?.valueBool, true)
     }
 }
+
+// MARK: - Tone channel
+
+/// The tone channel's decisions are history-dependent — a Schmitt trigger, two spacing floors and a
+/// three-tier reminder ladder — so a port can agree on every individual judgement while producing a
+/// different *sequence*. These vectors therefore trace whole sessions rather than spot-checking.
+final class EarconParityTests: XCTestCase {
+
+    private struct Vectors: Decodable {
+        struct Event: Decodable {
+            let t_s: Double; let earcon: String; let error: Double; let reason: String
+        }
+        struct Case: Decodable {
+            let `case`: String
+            let target_pace_sec_km: Double
+            let tolerance: Double
+            let ceiling_only: Bool
+            let events: [Event]
+            let final_state: String
+        }
+        let earcons: [Case]
+    }
+
+    private static var vectors: Vectors!
+
+    override class func setUp() {
+        super.setUp()
+        guard let url = Bundle.module.url(forResource: "golden_vectors", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            XCTFail("golden_vectors.json missing — run `python -m marathon_engine.export` first")
+            return
+        }
+        do { vectors = try JSONDecoder().decode(Vectors.self, from: data) }
+        catch { XCTFail("earcon vectors did not decode: \(error)") }
+    }
+
+    /// Same inputs the exporter used. Kept here rather than in the fixture deliberately: a fixture
+    /// that carried its own inputs could drift from the generator with nothing failing.
+    private func inputs(for name: String) -> (paces: [Double], grades: [Double])? {
+        let t = 520.0
+        switch name {
+        case "even_pace_silent":
+            return (Array(repeating: t, count: 300), Array(repeating: 0.0, count: 300))
+        case "too_fast_then_corrects":
+            return (Array(repeating: t * 0.85, count: 120) + Array(repeating: t, count: 180),
+                    Array(repeating: 0.0, count: 300))
+        case "too_slow_lift":
+            return (Array(repeating: t * 1.20, count: 300), Array(repeating: 0.0, count: 300))
+        case "ceiling_only_ignores_slow":
+            return (Array(repeating: t * 1.35, count: 300), Array(repeating: 0.0, count: 300))
+        case "ceiling_only_still_eases":
+            return (Array(repeating: t * 0.80, count: 300), Array(repeating: 0.0, count: 300))
+        case "far_out_repeats":
+            return (Array(repeating: t * 0.70, count: 600), Array(repeating: 0.0, count: 600))
+        case "climb_moves_the_band":
+            let holding = t * Physiology.gradeAdjustedPaceFactor(grade: 0.06)
+            return (Array(repeating: holding, count: 300), Array(repeating: 0.06, count: 300))
+        case "boundary_chatter":
+            return ((0..<600).map { t * ($0 % 2 == 1 ? 1.062 : 1.058) },
+                    Array(repeating: 0.0, count: 600))
+        default:
+            return nil
+        }
+    }
+
+    func testEarconSequencesMatchPython() throws {
+        let cases = try XCTUnwrap(Self.vectors?.earcons)
+        XCTAssertFalse(cases.isEmpty)
+
+        for c in cases {
+            guard let input = inputs(for: c.case) else {
+                XCTFail("no Swift-side input for golden case \(c.case)")
+                continue
+            }
+            let monitor = PaceBandMonitor(targetPaceSecKm: c.target_pace_sec_km,
+                                          tolerance: c.tolerance, ceilingOnly: c.ceiling_only)
+            var got: [AudioEvent] = []
+            for (i, pair) in zip(input.paces, input.grades).enumerated() {
+                if let ev = monitor.update(tS: Double(i), paceSecKm: pair.0, grade: pair.1) {
+                    got.append(ev)
+                }
+            }
+            XCTAssertEqual(got.count, c.events.count,
+                           "\(c.case): expected \(c.events.count) tones, got \(got.count)")
+            for (mine, theirs) in zip(got, c.events) {
+                XCTAssertEqual(mine.earcon.rawValue, theirs.earcon, "\(c.case) at t=\(theirs.t_s)")
+                XCTAssertEqual(mine.tS, theirs.t_s, "\(c.case) timing")
+                XCTAssertEqual(mine.error, theirs.error, accuracy: 1e-4, "\(c.case) error")
+                XCTAssertEqual(mine.reason, theirs.reason, "\(c.case) reason")
+            }
+            XCTAssertEqual(monitor.state.rawValue, c.final_state, "\(c.case) final state")
+        }
+    }
+}

@@ -90,9 +90,22 @@ public final class AudioCoach: NSObject, ObservableObject {
         configureSession()
     }
 
+    /// The tone channel. Speech and tones share one AVAudioSession but want opposite ducking
+    /// behaviour, so each sets the category immediately before it activates. See EarconPlayer.
+    public let earcons = EarconPlayer()
+
+    /// Play a short rising motif immediately before speech, so there is time to switch from
+    /// listening to music to listening to words.
+    ///
+    /// Without it the first two or three words land while the music is still dipping and attention
+    /// is still elsewhere, which is exactly where the important part of a short cue lives.
+    @Published public var preRollBeforeSpeech = true
+
     // MARK: - Session
 
-    /// Configure once, at start-up. This does NOT activate the session — see the file header.
+    /// Set the category for *speech*. Called before every activation rather than once at start-up,
+    /// because `EarconPlayer` sets a different, non-ducking category for tones and whichever ran
+    /// last would otherwise win.
     private func configureSession() {
         do {
             try AVAudioSession.sharedInstance().setCategory(
@@ -111,6 +124,7 @@ public final class AudioCoach: NSObject, ObservableObject {
     /// directions do, and it routes sensibly to AirPods without stealing the route.
     private func activate() {
         guard !sessionActive else { return }
+        configureSession()      // reclaim ducking from the tone channel
         do {
             try AVAudioSession.sharedInstance().setActive(true)
             sessionActive = true
@@ -159,6 +173,20 @@ public final class AudioCoach: NSObject, ObservableObject {
     }
 
     private func utter(_ cue: Cue) {
+        if preRollBeforeSpeech {
+            earcons.play(.attend)
+            // Long enough for the motif to finish and for the ear to arrive; short enough that a
+            // safety cue is not meaningfully delayed. The motif is ~0.3 s.
+            let cueCopy = cue
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.38) { [weak self] in
+                self?.utterNow(cueCopy)
+            }
+            return
+        }
+        utterNow(cue)
+    }
+
+    private func utterNow(_ cue: Cue) {
         activate()
         let u = AVSpeechUtterance(string: cue.text)
         // Slightly faster than default: a runner is not settling in with a novel, and a long cue at
@@ -182,6 +210,7 @@ public final class AudioCoach: NSObject, ObservableObject {
     /// Call when the run ends, so the session does not sit active holding the music down.
     public func stop() {
         synth.stopSpeaking(at: .immediate)
+        earcons.stop()
         pending = nil
         deactivate()
     }

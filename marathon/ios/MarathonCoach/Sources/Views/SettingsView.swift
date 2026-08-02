@@ -20,6 +20,9 @@ struct SettingsView: View {
     @State private var tokenSaved = TokenStore.load() != nil
     @State private var exportURL: URL?
     @State private var showRehearsal = false
+    @AppStorage("toneChannel") private var toneChannel = true
+    @AppStorage("toneLevel") private var toneLevel = 0.5
+    @AppStorage("splitEveryM") private var splitEveryM = 1000.0
 
     var body: some View {
         NavigationStack {
@@ -94,6 +97,45 @@ struct SettingsView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
 
+                Section("Audio") {
+                    Toggle("Pace tones", isOn: $toneChannel)
+                    Text("Short beeps that tell you whether you are holding pace, without ducking "
+                         + "your music. Falling pair = ease off, rising pair = lift, single pip = "
+                         + "back on pace. Silence means you are fine.")
+                        .font(.footnote).foregroundStyle(.secondary)
+
+                    Toggle("Chime before speech", isOn: $app.audio.preRollBeforeSpeech)
+                    Text("Three rising notes just before the voice, so the first words do not land "
+                         + "while the music is still dipping.")
+                        .font(.footnote).foregroundStyle(.secondary)
+
+                    VStack(alignment: .leading) {
+                        Text("Tone volume")
+                        Slider(value: $toneLevel, in: 0.1...1.0)
+                    }
+                    Button("Play them now") {
+                        // Ordered as you would meet them, with enough spacing to tell apart.
+                        let order: [Earcon] = [.ease, .lift, .inBand, .attend, .degraded]
+                        for (i, e) in order.enumerated() {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.9) {
+                                app.audio.earcons.play(e)
+                            }
+                        }
+                    }
+                    Text("Do this with Apple Music playing. If a tone is inaudible over the music, "
+                         + "or loud enough to startle you, this slider is the fix.")
+                        .font(.footnote).foregroundStyle(.secondary)
+
+                    Picker("Spoken splits", selection: $splitEveryM) {
+                        Text("Every km").tag(1000.0)
+                        Text("Every 2 km").tag(2000.0)
+                        Text("Off").tag(0.0)
+                    }
+                    Text("A two-second line — distance, pace, on-pace or not. This is what makes "
+                         + "silence readable as \"you are fine\" rather than \"the app has died\".")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+
                 Section("Testing") {
                     Button("Rehearse a run") { showRehearsal = true }
                     Text("Play a scripted session through the real voice, without the sensor. Use it "
@@ -103,6 +145,7 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .sheet(isPresented: $showRehearsal) { RehearsalView() }
+            .onChange(of: toneLevel) { _, new in app.audio.earcons.level = Float(new) }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }

@@ -53,7 +53,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "Easy 40 min with cardiac drift",
             summary: "Constant speed, drift 0.4 bpm/min. Checks drift is corrected but not nagged.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 2400),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 2400),
             durationS: 2400,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.95 },
             plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.4))
@@ -64,7 +64,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "Easy run started far too hard",
             summary: "Opens at threshold effort. Checks the app pulls it back and then stops talking.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 2400),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 2400),
             durationS: 2400,
             intendedSpeed: { t in t < 240 ? 1.55 : 2.85 },
             plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13))
@@ -85,7 +85,8 @@ public enum ScenarioLibrary {
                 if t < 1800 { return 2.41 }               // the tempo block, Z4 by construction
                 return 1.65                               // cool-down
             },
-            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.5))
+            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.5),
+            warmupS: 600)
     }
 
     /// A hilly easy run: the grade should be absorbed by the grade-adjustment, not treated as the
@@ -94,7 +95,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "Easy run over a hill",
             summary: "6% climb for 5 min, then descent. Checks grade is adjusted for, not punished.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 2400),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 2400),
             durationS: 2400,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.95 },
             faults: [.grade(from: 900, to: 1200, rise: 0.06),
@@ -109,7 +110,7 @@ public enum ScenarioLibrary {
             name: "Frozen heart rate mid-run",
             summary: "HR sticks at one value from 12 to 22 min — Polar's documented behaviour. "
                    + "Checks the app notices and stops coaching off it.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 2400),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 2400),
             durationS: 2400,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.98 },
             faults: [.frozenHr(from: 720, to: 1320)])
@@ -119,7 +120,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "Cadence lock-on",
             summary: "Optical HR locks to step rate at 168. Checks the app refuses to coach off it.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 1800),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 1800),
             durationS: 1800,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.95 },
             faults: [.cadenceLock(from: 600, to: 1500)])
@@ -130,7 +131,7 @@ public enum ScenarioLibrary {
             name: "Band works loose",
             summary: "Still reports a plausible 95 bpm but the arm is not moving. Polar warns "
                    + "skin-contact detection is unreliable, so this must be caught from the signal.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 1800),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 1800),
             durationS: 1800,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.95 },
             faults: [.notWorn(from: 900, to: 1800)])
@@ -140,7 +141,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "Sensor drops out for 3 min",
             summary: "No readings at all. Checks the app degrades to pace-only rather than guessing.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 1800),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 1800),
             durationS: 1800,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.95 },
             faults: [.dropout(from: 600, to: 780)])
@@ -150,7 +151,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "GPS lost for 4 min",
             summary: "Under cover, no speed. Checks HR-only control takes over cleanly.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 1800),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 1800),
             durationS: 1800,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.95 },
             faults: [.gpsLoss(from: 700, to: 940)])
@@ -162,7 +163,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "Pain reported at 6/10",
             summary: "Above the stop threshold. Checks the run is ended, not negotiated.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 1800),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 1800),
             durationS: 1800,
             intendedSpeed: { t in t < 300 ? 1.55 : 1.95 },
             faults: [.pain(at: 900, level: 6)])
@@ -173,7 +174,7 @@ public enum ScenarioLibrary {
         RunScenario(
             name: "Cues ignored, HR climbs to the ceiling",
             summary: "Non-compliant athlete at 95%+ of HRmax. Checks the safety abort actually fires.",
-            intent: SessionIntent(kind: "easy", targetZones: [2], plannedDurationS: 1800),
+            intent: SessionIntent(kind: "easy", targetZones: [2], targetPaceSecKm: 513, plannedDurationS: 1800),
             durationS: 1800,
             intendedSpeed: { t in t < 300 ? 1.7 : 3.2 },
             faults: [.nonCompliance(from: 0, to: 1800)],
@@ -200,7 +201,8 @@ public enum ScenarioLibrary {
                 if t < 1380 { return 2.5 }                // settles, still hard
                 return 1.5                                // cool-down
             },
-            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.6))
+            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.6),
+            warmupS: 600)
     }
 
     /// Interval reps, where the controller manages recovery between efforts rather than within them.
@@ -218,7 +220,8 @@ public enum ScenarioLibrary {
                 let cycle = into.truncatingRemainder(dividingBy: 300)
                 return cycle < 180 ? 2.8 : 1.6            // 3 min hard, 2 min jog
             },
-            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.5))
+            plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.5),
+            warmupS: 600)
     }
 
     /// A two-hour long run, where drift is the whole story.
@@ -227,7 +230,7 @@ public enum ScenarioLibrary {
             name: "Long run — 2 hours",
             summary: "Steady effort with heavy cardiac drift. Checks the app explains drift once and "
                    + "widens the band, rather than demanding a slowdown every ten minutes.",
-            intent: SessionIntent(kind: "long", targetZones: [2], plannedDurationS: 7200),
+            intent: SessionIntent(kind: "long", targetZones: [2], targetPaceSecKm: 526, plannedDurationS: 7200),
             durationS: 7200,
             intendedSpeed: { t in t < 300 ? 1.5 : 1.9 },
             plant: RunnerPlant(hrRest: 55, hrMax: 187, hrPerKmh: 13, driftBpmPerMin: 0.55))

@@ -175,11 +175,16 @@ public struct RunScenario {
     public var plant: RunnerPlant
     public var response: AthleteResponse
     public var indoor: Bool
+    /// When the warm-up ends. Declared per scenario rather than assumed, because assuming five
+    /// minutes for a session with a ten-minute warm-up made the simulator police the second half of
+    /// the warm-up — which is not what the app does, so the transcript was reporting a defect the
+    /// app does not have while hiding whether it has a real one.
+    public var warmupS: Double
 
     public init(name: String, summary: String, intent: SessionIntent, durationS: Double,
                 intendedSpeed: @escaping (Double) -> Double, faults: [RunFault] = [],
                 plant: RunnerPlant = RunnerPlant(), response: AthleteResponse = AthleteResponse(),
-                indoor: Bool = false) {
+                indoor: Bool = false, warmupS: Double = 300) {
         self.name = name
         self.summary = summary
         self.intent = intent
@@ -189,6 +194,7 @@ public struct RunScenario {
         self.plant = plant
         self.response = response
         self.indoor = indoor
+        self.warmupS = warmupS
     }
 }
 
@@ -214,6 +220,10 @@ public struct SimulationResult {
     public var decisions: [ControlDecision] = []
     /// `(second, cue)` for everything actually spoken.
     public var spoken: [(t: Double, cue: Cue)] = []
+    /// `(second, earcon)` for every tone played. Tracked separately from speech because the two
+    /// channels have separate budgets, and a design that keeps speech quiet by moving the noise into
+    /// tones has not solved anything.
+    public var tones: [(t: Double, earcon: Earcon)] = []
     public var hrStatuses: [String] = []
     public var aborted = false
     public var abortReason: String?
@@ -230,19 +240,34 @@ public struct SimulationResult {
         return Double(spoken.count) / (last / 60.0)
     }
 
+    /// Tone rate per minute. Budgeted separately and much higher, because a tone costs 200 ms and
+    /// does not duck the music.
+    public var tonesPerMinute: Double {
+        guard let last = ticks.last?.tS, last > 0 else { return 0 }
+        return Double(tones.count) / (last / 60.0)
+    }
+
     /// A human-readable transcript. This is the artefact worth reading before a first real run: it is
     /// literally what the app will say, in order, with the reason beside it.
-    public func transcript() -> String {
+    public func transcript(includeTones: Bool = true) -> String {
         var out = ["=== \(scenario) ==="]
-        for (t, cue) in spoken {
+        // Interleaved, because the question "is this pleasant to run with" is about the combined
+        // stream in your ear, not about either channel on its own.
+        var lines: [(Double, String)] = spoken.map { (t, cue) in
+            (t, String(format: "[%@] %@", String(describing: cue.level), cue.text))
+        }
+        if includeTones {
+            lines += tones.map { (t, e) in (t, "(\(e.rawValue))") }
+        }
+        for (t, text) in lines.sorted(by: { $0.0 < $1.0 }) {
             let mm = Int(t) / 60, ss = Int(t) % 60
-            out.append(String(format: "%02d:%02d  [%@] %@", mm, ss,
-                              String(describing: cue.level), cue.text))
+            out.append(String(format: "%02d:%02d  %@", mm, ss, text))
         }
         if aborted { out.append("ABORTED: \(abortReason ?? "unknown")") }
-        out.append(String(format: "-- %d cues in %.0f min (%.2f/min), HR usable %.0f%%, %.2f km",
-                          spoken.count, (ticks.last?.tS ?? 0) / 60, cuesPerMinute,
-                          usableHrFraction * 100, distanceM / 1000))
+        out.append(String(format: "-- %d cues (%.2f/min), %d tones (%.2f/min) in %.0f min, "
+                          + "HR usable %.0f%%, %.2f km",
+                          spoken.count, cuesPerMinute, tones.count, tonesPerMinute,
+                          (ticks.last?.tS ?? 0) / 60, usableHrFraction * 100, distanceM / 1000))
         return out.joined(separator: "\n")
     }
 }
@@ -263,6 +288,9 @@ public enum RunSimulator {
                                          hrSpeedSlope: hrSpeedSlope)
         let gate = HrGate()
         let scheduler = CueScheduler()
+        let paceBand = PaceBandMonitor(targetPaceSecKm: scenario.intent.targetPaceSecKm,
+                                       tolerance: scenario.intent.paceTolerance,
+                                       ceilingOnly: scenario.intent.ceilingOnly)
 
         var distance: Double = 0
         var frozenAt: Double?
@@ -342,7 +370,7 @@ public enum RunSimulator {
 
             // --- the controller ------------------------------------------------------------------
             // Warm-up ends at five minutes, which is where the plan's warm-ups end.
-            if state == .warmup, t >= 300 { state = .steady; controller.setState(.steady) }
+            if state == .warmup, t >= s.warmupS { state = .steady; controller.setState(.steady) }
 
             let tick = RunTick(tS: t, hrBpm: gate.usableForControl ? gate.value : nil,
                                hrStatus: status, speedMPerS: reportedSpeed, grade: grade,
@@ -350,6 +378,16 @@ public enum RunSimulator {
                                pain0to10: pain, symptom: nil)
             let decision = controller.update(tick)
             result.decisions.append(decision)
+
+            // The tone channel, suppressed on any tick that also speaks — see RunSession for why.
+            if decision.cue == nil {
+                let paceNow = (reportedSpeed ?? 0) > 0.3
+                    ? Physiology.speedToPace(mPerS: reportedSpeed!) : nil
+                if let ev = paceBand.update(tS: t, paceSecKm: paceNow, grade: grade,
+                                            paceTrusted: !gpsLost, running: state != .warmup) {
+                    result.tones.append((t, ev.earcon))
+                }
+            }
 
             if let cue = decision.cue, let spoken = scheduler.submit([cue], now: t) {
                 result.spoken.append((t, spoken))

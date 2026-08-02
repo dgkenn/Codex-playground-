@@ -4261,6 +4261,569 @@
    "band": "insufficient_history"
   }
  ],
+ "earcons": [
+  {
+   "case": "even_pace_silent",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": false,
+   "events": [],
+   "final_state": "in"
+  },
+  {
+   "case": "too_fast_then_corrects",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": false,
+   "events": [
+    {
+     "t_s": 7.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "crossed to the other side"
+    },
+    {
+     "t_s": 22.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 37.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 52.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 67.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 82.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 97.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 112.0,
+     "earcon": "ease",
+     "error": -0.15,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 127.0,
+     "earcon": "ease",
+     "error": -0.0929,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 135.0,
+     "earcon": "in_band",
+     "error": -0.0357,
+     "reason": "back in the band"
+    }
+   ],
+   "final_state": "in"
+  },
+  {
+   "case": "too_slow_lift",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": false,
+   "events": [
+    {
+     "t_s": 187.0,
+     "earcon": "lift",
+     "error": 0.2,
+     "reason": "left the band"
+    },
+    {
+     "t_s": 202.0,
+     "earcon": "lift",
+     "error": 0.2,
+     "reason": "still out of the band"
+    }
+   ],
+   "final_state": "slow"
+  },
+  {
+   "case": "ceiling_only_ignores_slow",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": true,
+   "events": [],
+   "final_state": "in"
+  },
+  {
+   "case": "ceiling_only_still_eases",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": true,
+   "events": [
+    {
+     "t_s": 7.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "crossed to the other side"
+    },
+    {
+     "t_s": 22.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 37.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 52.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 67.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 82.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 97.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 112.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 127.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 142.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 157.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 172.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 187.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 202.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 217.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 232.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 247.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 262.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 277.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 292.0,
+     "earcon": "ease",
+     "error": -0.2,
+     "reason": "still out of the band"
+    }
+   ],
+   "final_state": "fast"
+  },
+  {
+   "case": "far_out_repeats",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": false,
+   "events": [
+    {
+     "t_s": 7.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "crossed to the other side"
+    },
+    {
+     "t_s": 22.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 37.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 52.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 67.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 82.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 97.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 112.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 127.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 142.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 157.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 172.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 187.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 202.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 217.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 232.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 247.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 262.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 277.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 292.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 307.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 322.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 337.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 352.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 367.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 382.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 397.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 412.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 427.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 442.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 457.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 472.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 487.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 502.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 517.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 532.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 547.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 562.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 577.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 592.0,
+     "earcon": "ease",
+     "error": -0.3,
+     "reason": "still out of the band"
+    }
+   ],
+   "final_state": "fast"
+  },
+  {
+   "case": "climb_moves_the_band",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": false,
+   "events": [],
+   "final_state": "in"
+  },
+  {
+   "case": "boundary_chatter",
+   "target_pace_sec_km": 520.0,
+   "tolerance": 0.06,
+   "ceiling_only": false,
+   "events": [
+    {
+     "t_s": 21.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "crossed to the other side"
+    },
+    {
+     "t_s": 81.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 141.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 201.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 261.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 321.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 381.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 441.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 501.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    },
+    {
+     "t_s": 561.0,
+     "earcon": "lift",
+     "error": 0.0601,
+     "reason": "still out of the band"
+    }
+   ],
+   "final_state": "slow"
+  }
+ ],
  "controller_trace": {
   "description": "Obedient runner with a first-order HR response. The Swift port must produce the same cue sequence; a divergence means the lead compensation, deadband or rate limiting differ.",
   "intent": {

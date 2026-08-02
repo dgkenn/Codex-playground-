@@ -58,6 +58,9 @@ public protocol PaceSource: AnyObject {
 /// rate, ducking the real music.
 public protocol CoachAudio: AnyObject {
     func speak(_ cue: Cue)
+    /// Play a non-speech tone. Separate from `speak` because the two have opposite ducking
+    /// requirements and opposite rate budgets — see EarconPlayer.
+    func play(_ earcon: Earcon)
     func stop()
 }
 
@@ -73,5 +76,7 @@ public protocol WorkoutRecorder: AnyObject {
 
 extension VeritySensor: HeartRateSource {}
 extension LocationPace: PaceSource {}
-extension AudioCoach: CoachAudio {}
+extension AudioCoach: CoachAudio {
+    public func play(_ earcon: Earcon) { earcons.play(earcon) }
+}
 extension HealthKitBridge: WorkoutRecorder {}
