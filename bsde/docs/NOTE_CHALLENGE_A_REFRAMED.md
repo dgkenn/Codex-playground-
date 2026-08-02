@@ -73,7 +73,42 @@ depth index differs in the same direction: within-case rho against BIS is **−0
 * **E220's identifiability result is unaffected and remains the strongest methodological finding.** The
   agent main effect is not identifiable when each patient receives one agent, whatever the feature.
 
-## The falsifiable prediction, and it is cheap
+## THE PREDICTION WAS TESTED THE SAME DAY AND IT LARGELY FAILS
+
+The test below was run. **Provenance moves the number in the predicted direction and is nowhere near large
+enough to explain the asymmetry.**
+
+VitalDB carries two volatile exposures with different provenance, so the instrument can be degraded without
+touching the cohort: `Primus/EXP_SEVO` is **end-tidal** — measured gas leaving the patient, carrying uptake
+and therefore physiology — while `insp_sevo` is **inspired**, essentially the vaporiser's delivered
+setting, which carries none. Median per-case |rho| against the drug's own concentration, over six features:
+
+| exposure | provenance | mean \|rho\| |
+|---|---|---|
+| propofol `Ce` | **pump PK-model output** | **0.0912** |
+| sevoflurane **inspired** | delivered setting | **0.4192** |
+| sevoflurane MAC | monitor-derived from end-tidal | 0.4392 |
+| sevoflurane **end-tidal** | **measured** | **0.4925** |
+
+**Within the sevoflurane arm the ordering is exactly as predicted and monotone** — measured 0.4925 >
+monitor-derived 0.4392 > delivered 0.4192 — so provenance is real and it costs about **15 %** of tracking
+when a measured exposure is replaced by a delivered one.
+
+**But the worst sevoflurane exposure still tracks the EEG 4.6 times better than propofol's modelled Ce.**
+Degrading the volatile instrument as far as this deposit allows closes almost none of the gap. Provenance
+is a contributor and not the explanation, and the headline of this note as first written was wrong.
+
+*Caveat that cuts against the test rather than for it:* inspired sevoflurane is still a MEASURED gas
+concentration, just one that does not reflect uptake. It is not a model output, so it is an imperfect
+analogue of propofol's Ce and the 15 % is a LOWER bound on what full modelling would cost. It would have to
+be a thirty-fold underestimate to close a 4.6-fold gap.
+
+**What this leaves.** The scan's central observation stands and is unexplained: within a case, EEG tracks
+sevoflurane concentration and does not track propofol concentration, across the whole panel. Smoothness is
+not the reason either — the two exposures have matched within-case variability (CV 0.341 vs 0.355) and
+propofol in fact has MORE distinct values per case (18.5 vs 11.5), so it is not a coarse staircase.
+
+## The original prediction, kept for the record
 
 If provenance is the cause, then **a propofol exposure that is MEASURED rather than modelled should track
 the EEG as well as sevoflurane's does.** VitalDB does not carry measured plasma propofol. Two routes exist:
