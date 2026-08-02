@@ -124,7 +124,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 
-from bsde.verifier.stats import grouped_cv_predict  # noqa: E402  (import checked at run time)
+from bsde.verifier.stats import grouped_cv_predict, screen_candidates  # noqa: E402
 
 RESULTS = os.path.abspath(os.path.join(HERE, "..", "..", "..", "results"))
 OUT = os.path.join(RESULTS, "e212_command_following_discordant.json")
@@ -139,3 +139,287 @@ N_CHANNELS_REQUIRED = 19
 
 CANDIDATES = ("whole_head_exponent", "exponent_low", "exponent_high", "relative_alpha_power",
               "relative_delta_power", "spectral_edge_95", "spectral_entropy", "lempel_ziv")
+
+
+def load_pairs():
+    """Every extracted row, de-duplicated on (patient, assessment) because more than one writer has
+    appended to these files before (rule 56), restricted to the 19-channel panel, and reduced to the
+    patients whose two assessments DISAGREE on obeying commands."""
+    seen, rows = set(), []
+    for p in sorted(glob.glob(SHARDS)):
+        with open(p, newline="") as fh:
+            for r in csv.DictReader(fh):
+                k = (r["patient_id"], r["assess_time"])
+                if k in seen:
+                    continue
+                seen.add(k)
+                rows.append(r)
+    exposure = {}
+    if os.path.exists(EXPOSURE):
+        for r in csv.DictReader(open(EXPOSURE, newline="")):
+            exposure[(r["patient_id"], r["assess_time"])] = r
+    n_all = len(rows)
+    rows = [r for r in rows if _i(r.get("n_channels")) == N_CHANNELS_REQUIRED]
+    by = {}
+    for r in rows:
+        r["_exp"] = exposure.get((r["patient_id"], r["assess_time"]), {})
+        by.setdefault(r["patient_id"], []).append(r)
+    pairs = []
+    for pid, rs in by.items():
+        if len(rs) != 2:
+            continue
+        if {r["obeys"] for r in rs} != {"0", "1"}:
+            continue
+        rs.sort(key=lambda r: r["assess_time"])
+        pairs.append((pid, rs))
+    return pairs, n_all, len(rows)
+
+
+def _f(x):
+    try:
+        return float(x)
+    except Exception:
+        return float("nan")
+
+
+def _i(x):
+    try:
+        return int(float(x))
+    except Exception:
+        return -1
+
+
+def concordance(pred, pairs_idx, obeys):
+    """Fraction of pairs whose OBEYING member is predicted higher. Exactly a matched AUC."""
+    ok, n = 0, 0
+    for i, j in pairs_idx:
+        a, b = pred[i], pred[j]
+        if not (np.isfinite(a) and np.isfinite(b)) or a == b:
+            continue
+        hi = i if a > b else j
+        ok += int(obeys[hi] == 1)
+        n += 1
+    return (ok / n) if n else float("nan"), n
+
+
+def fit_concordance(X, y, groups, pairs_idx, rng, folds=5):
+    pred = grouped_cv_predict(X, y, groups, rng, folds=folds, lam=1.0)
+    c, _n = concordance(pred, pairs_idx, y)
+    return c
+
+
+def boot_increment(base_X, add_col, y, groups, kp, n_boot, seed):
+    """CLUSTER bootstrap over PAIRS, refitting inside every draw.
+
+    Catalogue rule 9: bootstrapping fixed out-of-fold predictions ignores refit variance, and the first
+    version of this function did exactly that -- it resampled which pairs were scored while handing the
+    model the same rows every time, so every draw returned the same predictions and the interval measured
+    only which pairs were drawn. Here a draw resamples PAIRS with replacement, rebuilds the design from the
+    rows those pairs contain, and refits. A duplicated pair keeps its patient id, so grouped folds put every
+    copy of a patient on the same side and no patient is ever in train and test at once.
+    """
+    out = []
+    for b in range(n_boot):
+        g = np.random.default_rng(seed + b)
+        pick = g.choice(len(kp), size=len(kp), replace=True)
+        rows_b, pairs_b, grp_b = [], [], []
+        for t in pick:
+            i, j = kp[t]
+            k = len(rows_b)
+            rows_b.extend([i, j])
+            pairs_b.append((k, k + 1))
+            grp_b.extend([groups[i], groups[i]])
+        r = np.array(rows_b)
+        yb, gb = y[r], np.array(grp_b)
+        Xb = base_X[r]
+        r0 = np.random.default_rng(seed + 100000 + b)
+        a = fit_concordance(Xb, yb, gb, pairs_b, r0)
+        r1 = np.random.default_rng(seed + 100000 + b)
+        bb = fit_concordance(np.column_stack([Xb, add_col[r]]), yb, gb, pairs_b, r1)
+        if np.isfinite(a) and np.isfinite(bb):
+            out.append(bb - a)
+    return np.array(out)
+
+
+def main() -> int:
+    print("E212 -- does spontaneous EEG predict command-following WITHIN a patient?")
+    pairs, n_all, n_ok = load_pairs()
+    print(f"   {n_all} extracted rows, {n_ok} with exactly {N_CHANNELS_REQUIRED} channels, "
+          f"{len(pairs)} complete discordant pairs")
+
+    rows, pairs_idx, pid_of = [], [], []
+    for pid, rs in pairs:
+        i = len(rows)
+        rows.extend(rs)
+        pairs_idx.append((i, i + 1))
+        pid_of.extend([pid, pid])
+    y = np.array([_i(r["obeys"]) for r in rows], float)
+    groups = np.array(pid_of)
+    n_pairs = len(pairs_idx)
+
+    cand = {c: np.array([_f(r.get(c, "")) for r in rows]) for c in CANDIDATES}
+    usable, dropped = screen_candidates(cand)
+    for k, why in sorted(dropped.items()):
+        print(f"   EXCLUDED candidate {k}: {why}")
+
+    inc = {"rass": np.array([_f(r.get("rass", "")) for r in rows]),
+           "any_sedative": np.array([_f((r["_exp"] or {}).get("any_sedative", "")) for r in rows])}
+    for k, v in inc.items():
+        print(f"   incumbent {k}: {int(np.isfinite(v).sum())} of {len(rows)} rows finite "
+              f"({np.mean(np.isfinite(v)):.4f})")
+
+    # ---- G1 --------------------------------------------------------------------------------------
+    g1 = bool(n_pairs >= MIN_PAIRS and len(usable) > 0
+              and all(_i(r["n_channels"]) == N_CHANNELS_REQUIRED for r in rows))
+    print(f"G1 COVERAGE  {n_pairs} pairs (floor {MIN_PAIRS}), {len(usable)} usable candidates, "
+          f"every row at {N_CHANNELS_REQUIRED} channels   {'PASS' if g1 else '*** FAIL'}")
+
+    rng = np.random.default_rng(SEED)
+
+    # ---- G2: each incumbent must separate the two members of a pair ------------------------------
+    alive, base = {}, {}
+    for name, v in inc.items():
+        keep = [(i, j) for i, j in pairs_idx if np.isfinite(v[i]) and np.isfinite(v[j])]
+        if len(keep) < MIN_PAIRS // 2:
+            alive[name] = False
+            base[name] = {"n_pairs": len(keep), "raw_concordance": float("nan"), "floor": float("nan")}
+            print(f"G2 {name}: only {len(keep)} pairs with the incumbent on BOTH members -- not alive")
+            continue
+        c, n = concordance(v, keep, y)
+        # within-pair sign flip: swap which member is called obeying. The floor is MEASURED, not assumed
+        # at 0.5, because rule 72 records that a cross-validated concordance null is not where it looks.
+        nul = []
+        for _ in range(N_PERM):
+            yy = y.copy()
+            for i, j in keep:
+                if rng.random() < 0.5:
+                    yy[i], yy[j] = yy[j], yy[i]
+            nul.append(concordance(v, keep, yy)[0])
+        nul = np.array(nul)
+        lo, hi = float(np.quantile(nul, 0.025)), float(np.quantile(nul, 0.975))
+        ok = bool(c < lo or c > hi)
+        alive[name] = ok
+        base[name] = {"n_pairs": n, "raw_concordance": c, "null_lo": lo, "null_hi": hi}
+        print(f"G2 INCUMBENT ALIVE  {name}: raw within-pair concordance {c:.4f} vs sign-flip null "
+              f"[{lo:.4f}, {hi:.4f}] over {n} pairs   {'PASS' if ok else '*** FAIL'}")
+
+    g2 = bool(any(alive.values()))
+
+    # ---- primary, per incumbent x candidate ------------------------------------------------------
+    noise = rng.normal(size=len(rows))
+    res_feats, g3 = {}, {}
+    for iname, v in inc.items():
+        if not alive.get(iname):
+            continue
+        keep = [(i, j) for i, j in pairs_idx if np.isfinite(v[i]) and np.isfinite(v[j])]
+        rowsel = sorted({k for p in keep for k in p})
+        sel = np.array(rowsel)
+        # `grouped_cv_predict` -> `_standardise` PREPENDS its own unpenalised intercept, so an
+        # explicit ones column here is standardised to all-zeros and then carried as a fourth,
+        # penalised, information-free degree of freedom. The first pass shipped it and its negative
+        # control failed at -0.1339; this is the ONE repair this design gets (rule 58).
+        base_X = v[sel].reshape(-1, 1)
+        remap = {r: k for k, r in enumerate(rowsel)}
+        kp = [(remap[i], remap[j]) for i, j in keep]
+        ys, gs = y[sel], groups[sel]
+
+        def inc_of(col):
+            r0 = np.random.default_rng(SEED + 11)
+            a = fit_concordance(base_X, ys, gs, kp, r0)
+            r1 = np.random.default_rng(SEED + 11)
+            b = fit_concordance(np.column_stack([base_X, col[sel]]), ys, gs, kp, r1)
+            return b - a
+
+        print(f"\n   [{iname}]  {'candidate':<24s} {'increment':>10s} {'[95% CI]':>22s}  "
+              f"{'earlier':>8s} {'later':>8s}  call")
+        # orientation split for G4: pairs where the OBEYING member is the earlier assessment
+        early = [(i, j) for i, j in keep if y[i] == 1]
+        late = [(i, j) for i, j in keep if y[j] == 1]
+        for cname, col in sorted(usable.items()):
+            d = inc_of(col)
+            boot = boot_increment(base_X, col[sel], ys, gs, kp, N_BOOT, SEED + 5000)
+            lo, hi = float(np.quantile(boot, 0.025)), float(np.quantile(boot, 0.975))
+
+            def orient(sub):
+                if len(sub) < 20:
+                    return float("nan")
+                s2 = sorted({k for p in sub for k in p})
+                rm = {r: k for k, r in enumerate(s2)}
+                ss = np.array(s2)
+                kk = [(rm[i], rm[j]) for i, j in sub]
+                bx = v[ss].reshape(-1, 1)
+                r0 = np.random.default_rng(SEED + 11)
+                a = fit_concordance(bx, y[ss], groups[ss], kk, r0)
+                r1 = np.random.default_rng(SEED + 11)
+                bb = fit_concordance(np.column_stack([bx, col[ss]]), y[ss], groups[ss], kk, r1)
+                return bb - a
+
+            e_, l_ = orient(early), orient(late)
+            same = (np.isfinite(e_) and np.isfinite(l_)
+                    and np.sign(e_) == np.sign(d) and np.sign(l_) == np.sign(d))
+            if lo > 0 and same:
+                call = "ADDS"
+            elif lo > 0:
+                call = "TIME-CONFOUNDED"
+            elif hi < 0:
+                call = "REVERSED"
+            else:
+                call = "absent"
+            res_feats[f"{iname}/{cname}"] = {"increment": d, "ci": [lo, hi], "early": e_, "late": l_,
+                                             "orientations_agree": bool(same), "call": call}
+            print(f"   [{iname}]  {cname:<24s} {d:>+10.4f} [{lo:>+9.4f}, {hi:>+9.4f}] "
+                  f"{e_:>+8.4f} {l_:>+8.4f}  {call}")
+
+        dn = inc_of(noise)
+        bn = boot_increment(base_X, noise[sel], ys, gs, kp, N_BOOT // 2, SEED + 8000)
+        nlo, nhi = float(np.quantile(bn, 0.025)), float(np.quantile(bn, 0.975))
+        g3[iname] = bool(nlo <= 0 <= nhi)
+        print(f"   [{iname}]  NEGATIVE CONTROL noise {dn:>+.4f} [{nlo:+.4f}, {nhi:+.4f}]   "
+              f"{'PASS' if g3[iname] else '*** FAIL'}")
+
+    res = {"experiment": "E212", "n_rows_extracted": n_all, "n_rows_19ch": n_ok,
+           "n_pairs": n_pairs, "candidates_dropped": dropped, "incumbent_alive": alive,
+           "incumbent_baseline": base, "negative_control_pass": g3,
+           "g1": g1, "g2": g2, "results": res_feats}
+
+    print("\n" + "=" * 100)
+    if not (g1 and g2 and all(g3.values())):
+        v_, why = "NOT INTERPRETABLE", ("a gate failed: " + ", ".join(
+            nm for nm, ok in (("G1 coverage", g1), ("G2 incumbent alive", g2),
+                              ("G3 negative control", bool(g3) and all(g3.values()))) if not ok))
+    else:
+        calls = {k: r["call"] for k, r in res_feats.items()}
+        rev = [k for k, c in calls.items() if c == "REVERSED"]
+        adds = [k for k, c in calls.items() if c == "ADDS"]
+        conf = [k for k, c in calls.items() if c == "TIME-CONFOUNDED"]
+        if rev:
+            v_, why = "REVERSED", (
+                f"{len(rev)} candidate-incumbent pairs clear on the NEGATIVE side ({', '.join(rev)}). A "
+                "negative increment is not support in any form and is reported as its own outcome")
+        elif adds:
+            v_, why = "ADDS", (
+                f"{', '.join(adds)} add to the incumbent AND hold their sign in both time orientations, so "
+                "the effect is not a within-patient time trend")
+        elif conf:
+            v_, why = "TIME-CONFOUNDED", (
+                f"{', '.join(conf)} clear on the pooled pairs but do NOT hold their sign in both time "
+                "orientations. G4 refuses them: a pair differs in time as well as in label")
+        else:
+            v_, why = "ABSENT", (
+                "every increment interval includes zero. Within a patient, with the patient acting as their "
+                "own control, the spectral panel adds nothing to the bedside score")
+    res["verdict"], res["why"] = v_, why
+    print(f"VERDICT: {v_}\n  {why}")
+    print("=" * 100)
+    print(f"MULTIPLICITY: {len(res_feats)} candidate-by-incumbent comparisons, no correction applied; the "
+          "count is stated so a reader can apply their own.")
+
+    os.makedirs(RESULTS, exist_ok=True)
+    json.dump(res, open(OUT, "w"), indent=2, default=float)
+    print(f"\nwrote -> {OUT}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+

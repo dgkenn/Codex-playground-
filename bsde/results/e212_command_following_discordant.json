@@ -1,0 +1,122 @@
+{
+  "experiment": "E212",
+  "n_rows_extracted": 1347,
+  "n_rows_19ch": 1347,
+  "n_pairs": 181,
+  "candidates_dropped": {},
+  "incumbent_alive": {
+    "rass": true,
+    "any_sedative": false
+  },
+  "incumbent_baseline": {
+    "rass": {
+      "n_pairs": 62,
+      "raw_concordance": 0.8225806451612904,
+      "null_lo": 0.3709677419354839,
+      "null_hi": 0.6129032258064516
+    },
+    "any_sedative": {
+      "n_pairs": 6,
+      "raw_concordance": 0.16666666666666666,
+      "null_lo": 0.16666666666666666,
+      "null_hi": 0.8333333333333334
+    }
+  },
+  "negative_control_pass": {
+    "rass": false
+  },
+  "g1": true,
+  "g2": true,
+  "results": {
+    "rass/exponent_high": {
+      "increment": -0.1716372489348753,
+      "ci": [
+        -0.26181275131456855,
+        -0.0830017152658664
+      ],
+      "early": -0.18975332068311201,
+      "late": -0.20000000000000007,
+      "orientations_agree": true,
+      "call": "REVERSED"
+    },
+    "rass/exponent_low": {
+      "increment": -0.16220328667072437,
+      "ci": [
+        -0.2486898311592734,
+        -0.057253342288076985
+      ],
+      "early": 0.03605313092979123,
+      "late": -0.18666666666666665,
+      "orientations_agree": false,
+      "call": "REVERSED"
+    },
+    "rass/lempel_ziv": {
+      "increment": -0.1244674376141206,
+      "ci": [
+        -0.23568354849387618,
+        -0.04858671756094028
+      ],
+      "early": -0.22201138519924102,
+      "late": -0.14666666666666672,
+      "orientations_agree": true,
+      "call": "REVERSED"
+    },
+    "rass/relative_alpha_power": {
+      "increment": -0.0772976262933659,
+      "ci": [
+        -0.2335676189965695,
+        -0.008332313004297735
+      ],
+      "early": -0.028462998102466885,
+      "late": -0.10666666666666669,
+      "orientations_agree": true,
+      "call": "REVERSED"
+    },
+    "rass/relative_delta_power": {
+      "increment": -0.15276932440657343,
+      "ci": [
+        -0.24644157563720626,
+        -0.060793420416062
+      ],
+      "early": -0.028462998102466885,
+      "late": -0.16000000000000003,
+      "orientations_agree": true,
+      "call": "REVERSED"
+    },
+    "rass/spectral_edge_95": {
+      "increment": -0.1716372489348753,
+      "ci": [
+        -0.2513241852487135,
+        -0.06222849044359821
+      ],
+      "early": 0.003795066413662229,
+      "late": -0.16000000000000003,
+      "orientations_agree": false,
+      "call": "REVERSED"
+    },
+    "rass/spectral_entropy": {
+      "increment": -0.08673158855751684,
+      "ci": [
+        -0.24945434921650145,
+        -0.03465986235310662
+      ],
+      "early": -0.028462998102466885,
+      "late": -0.06666666666666665,
+      "orientations_agree": true,
+      "call": "REVERSED"
+    },
+    "rass/whole_head_exponent": {
+      "increment": -0.1905051734631772,
+      "ci": [
+        -0.2765393517284043,
+        -0.07407186459489461
+      ],
+      "early": -0.09297912713472489,
+      "late": -0.17333333333333334,
+      "orientations_agree": true,
+      "call": "REVERSED"
+    }
+  },
+  "verdict": "NOT INTERPRETABLE",
+  "why": "a gate failed: G3 negative control"
+}
