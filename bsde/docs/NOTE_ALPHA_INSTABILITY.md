@@ -97,12 +97,43 @@ below 8 Hz** and pins at the band floor instead. Measured over 6,437 finite Vita
 exactly **[8.000, 13.000]** with nothing outside — the estimator has no resolution outside the range it was
 built over, which is catalogue rule 62 appearing in a new place.
 
-The censoring is strongly agent-dependent. At BIS < 40:
+The censoring is strongly agent-dependent. **The original version of this table stratified on BIS < 40 and
+that was a mistake** — see the standing caution below — so it is given here on BOTH stratifications, and the
+conclusion does not depend on which:
 
-| arm | n windows | median `alpha_peak_hz` | at the 8.0 Hz floor | at the 13.0 Hz ceiling |
-|---|---|---|---|---|
-| propofol | 494 | 9.75 | **8.91 %** | 0.00 % |
-| volatile | 957 | 8.50 | **28.74 %** | 0.10 % |
+| stratification | arm | n windows | median `alpha_peak_hz` | at the 8.0 Hz floor | at the 13.0 Hz ceiling |
+|---|---|---|---|---|---|
+| BIS < 40 *(BIS-dependent, superseded)* | propofol | 493 | 9.75 | 8.92 % | 0.00 % |
+| BIS < 40 *(BIS-dependent, superseded)* | volatile | 637 | 8.50 | 28.57 % | 0.16 % |
+| **deep exposure tercile (no EEG index)** | **propofol** | **355** | **9.75** | **10.70 %** | **0.85 %** |
+| **deep exposure tercile (no EEG index)** | **volatile** | **575** | **8.50** | **26.78 %** | **0.70 %** |
+
+The floor-pinning excess in the volatile arm is 2.5-fold on the BIS-free stratification against 3.2-fold on
+the BIS one, and the medians are identical. **Quote the exposure-tercile row.**
+
+### STANDING CAUTION: BIS cannot serve as a depth anchor in this programme, for two independent reasons
+
+1. **It is not equipotent across agents.** Kuizenga 2019 (PMID 31567365) puts the EEG-index value at which
+   50 % of subjects lose a behavioural endpoint at **46.7 for propofol against 68 for sevoflurane**, and
+   41.5 against 59.2, and 29.5 against 61.1, while the drug concentrations themselves are *"perfectly
+   correlated (correlation coefficient = 1)"*. Two arms matched on BIS are therefore **not** matched on
+   state, and any statement of the form "at equal BIS, the agents differ in X" is confounded by the depth
+   they are actually at.
+2. **It is computed from the same EEG.** BIS incorporates band-ratio terms, so residualising a spectral
+   feature on BIS partly residualises that feature on itself. This is not a small effect for alpha measures
+   specifically.
+
+**Consequence for what is reported above.** The within-case table's *BIS-adjusted* column — sevoflurane
+retaining 40 % of its raw association — is affected by BOTH problems at once: the adjustment removes
+shared spectral construction, and it removes a different amount in each arm because the index is
+non-equipotent. **It should not be quoted as a mediation estimate.** The RAW column involves no adjustment
+and is the one that carries the finding: alpha tracks sevoflurane dose at −0.3827 [−0.467, −0.246] and does
+not track propofol dose at +0.0416 [−0.003, +0.103].
+
+**And this cohort has no clean depth anchor at all.** Every candidate is either an EEG index (problems 1
+and 2) or the drug's own concentration (problem 1 by itself, since MAC and effect-site concentration are
+not equipotent). Suppression ratio is 0.000 throughout, so it cannot serve either. That is a structural
+limit on what any Challenge A analysis on VitalDB can establish about *depth*, as opposed to about *dose*.
 
 **One consequence, and one that I got wrong and E218 corrected.** The row for `alpha_peak_hz` in the table
 above (sevoflurane deep−light −0.8283) is measured through a censored instrument and its magnitude should
