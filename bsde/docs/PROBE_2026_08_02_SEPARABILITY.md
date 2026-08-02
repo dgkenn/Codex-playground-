@@ -1137,4 +1137,225 @@ Two paths, neither taken here (out of scope for a diagnostic told to stop at the
   as E233's Challenge A reversal."** Answering that requires either `ds006695` finishing extraction or new
   peak-frequency recomputation on the three fixed-band-only deposits; both are named and neither is done.
 
+---
+
+## 15. Does `whole_head_exponent`'s VALUE transport between the two deposits where its INCREMENT has
+    replicated — sleep_edfx (E222) and ds006695 (E240)? (2026-08-02)
+
+*DIAGNOSTIC, same status as §0/§11–§14: no ledger row, no registration file, no verdict about Challenge D,
+no changes under `bsde/src/bsde/experiments/` or `bsde/governance/`. Script:
+`/tmp/.../scratchpad/probe_d_sleep_transport.py` (this session only), importing `bsde.verifier.stats.read_rows`
+and reusing `probe_separability.py`'s `cohen_d` / `rank_auc` / `f` unchanged (rule 20 — none of it is
+reimplemented).*
+
+**Why this pair, now.** `whole_head_exponent` is the only candidate whose *increment* has replicated across
+two independent sleep deposits (E222 sleep_edfx +0.0542, E240 ds006695 +0.1264, both muscle-adjusted /
+placebo-cleared). §11–§13 above tested transport of raw *value* across **modality** (sleep vs anaesthesia)
+and found it fails almost everywhere except one sleep-to-sleep pair (sleep_edfx–capslpdb). This section asks
+the value-transport question on the **second sleep deposit that actually has the replication result** —
+sleep_edfx vs ds006695 — which §11–§14 never touched because ds006695 was still being extracted when they
+were written (§14.2 recorded it at 79→99 of 1140 rows; it is now complete at 1140).
+
+### 15.0 Data and unit of analysis
+
+`sleep_edfx_five_stage.csv`: 710 rows, 709 `status=ok`, one row per subject per stage already (stage parsed
+as the field after `@` in `recording_id`, never substring-matched — rule 61). `ds006695_features.csv`: 1140
+rows, complete, no `status` column, columns `subject`/`stage`/`epoch_index`, **19 subjects × 5 stages × 12
+epochs** (verified: every subject×stage cell has exactly 12 rows). Neither `whole_head_exponent` nor
+`multiscale_entropy_slope` has any NaN or empty value in either file (checked directly: 709/709 and
+1140/1140 finite in both deposits) — **no rule-74 exclusion applies to either column in either deposit**,
+and neither is constant (`std` 0.757 / 0.125 in sleep_edfx, 0.612 / 0.085 in ds006695, all columns, all
+rows, checked before any grouping).
+
+**ds006695's 12 epochs per subject per stage are averaged to one value per subject per stage before any
+effect size is computed** (`load_ds006695()`, `probe_d_sleep_transport.py` lines ~63–90) — treating epochs
+as independent rows would inflate `n` on a nested, repeated measurement (the epoch-vs-cluster problem rule
+69 names for a different design), and it is the only way to put ds006695 on the same unit of analysis
+(subject) that sleep_edfx already uses. Epoch-level `n` (228 per stage) is reported once in §15.1 for
+completeness and used nowhere downstream.
+
+**Rule 73 (no separate-group normalisation): checked directly, none exists.** `load_sleep_edfx()` and
+`load_ds006695()` (`probe_d_sleep_transport.py` lines ~35–90) return raw column values, unmodified, indexed
+by subject and stage; `cohen_d()` and `rank_auc()` (reused from `probe_separability.py` lines 42–61) take
+those raw values directly and compute a pooled SD **across the two groups being compared in that one call**
+— never a per-deposit or per-group mean-centring or rescaling applied before the groups are handed to the
+comparison. The only per-individual transformation anywhere in this section is Task 6's within-subject
+delta (§15.6), computed per subject from that subject's own two states.
+
+### 15.1 Task 1 — per deposit, per stage: n, median, IQR
+
+**`whole_head_exponent`**
+
+| deposit | stage | n | median | Q1 | Q3 |
+|---|---|---:|---:|---:|---:|
+| sleep_edfx | W | 142 | 0.6910 | 0.3870 | 0.9660 |
+| sleep_edfx | N1 | 142 | 1.5156 | 1.1979 | 1.7478 |
+| sleep_edfx | N2 | 142 | 2.1300 | 2.0129 | 2.2736 |
+| sleep_edfx | N3 | 141 | 2.6927 | 2.5072 | 2.8673 |
+| sleep_edfx | REM | 142 | 1.6618 | 1.4994 | 1.7961 |
+| ds006695 | W | 19 | 1.1653 | 0.8952 | 1.3597 |
+| ds006695 | N1 | 19 | 1.4583 | 1.2674 | 1.5257 |
+| ds006695 | N2 | 19 | 1.6879 | 1.6310 | 1.7758 |
+| ds006695 | N3 | 19 | 2.0744 | 1.9946 | 2.1781 |
+| ds006695 | REM | 19 | 1.5820 | 1.4899 | 1.7063 |
+
+**`multiscale_entropy_slope`**
+
+| deposit | stage | n | median | Q1 | Q3 |
+|---|---|---:|---:|---:|---:|
+| sleep_edfx | W | 142 | −0.0041 | −0.0734 | +0.0448 |
+| sleep_edfx | N1 | 142 | +0.0435 | −0.0058 | +0.1027 |
+| sleep_edfx | N2 | 142 | +0.1739 | +0.1294 | +0.2110 |
+| sleep_edfx | N3 | 141 | +0.2905 | +0.2629 | +0.3241 |
+| sleep_edfx | REM | 142 | +0.1049 | +0.0610 | +0.1485 |
+| ds006695 | W | 19 | +0.0127 | −0.0678 | +0.0257 |
+| ds006695 | N1 | 19 | +0.0319 | −0.0442 | +0.0425 |
+| ds006695 | N2 | 19 | +0.0385 | −0.0176 | +0.0627 |
+| ds006695 | N3 | 19 | +0.0574 | +0.0073 | +0.0749 |
+| ds006695 | REM | 19 | +0.0401 | −0.0398 | +0.0517 |
+
+(ds006695 epoch-level n = 228 per stage, both columns — reported once here, per §15.0, and not used
+downstream.)
+
+**Both deposits monotonically increase W→N1→N2→N3 for both columns**, and both fall back partway at REM —
+the qualitative stage ordering matches. What does not match is scale: sleep_edfx's W→N3 median span is
+2.0017 for `whole_head_exponent` and 0.2946 for `multiscale_entropy_slope`; ds006695's spans are 0.9091 and
+0.0447 respectively — **ds006695 covers 45% and 15% of sleep_edfx's own dynamic range** for the two columns,
+on 19 subjects against 141–142.
+
+### 15.2 Task 2 — WITHIN-deposit effect size, W vs N3
+
+| column | deposit | n(W) | n(N3) | d (N3−W) | auc_abs−0.5 | AUC |
+|---|---|---:|---:|---:|---:|---:|
+| whole_head_exponent | sleep_edfx | 142 | 141 | **+4.6732** | 0.4920 | 0.992 |
+| whole_head_exponent | ds006695 | 19 | 19 | **+3.5296** | **0.5000** | **1.000** |
+| multiscale_entropy_slope | sleep_edfx | 142 | 141 | **+4.4067** | 0.4984 | 0.998 |
+| multiscale_entropy_slope | ds006695 | 19 | 19 | **+0.6928** | 0.2729 | 0.773 |
+
+**ds006695's `whole_head_exponent` separates W from N3 with zero overlap at n=19** — verified directly:
+`max(W) = 1.6708`, `min(N3) = 1.9042`, no W value exceeds any N3 value. That is AUC = 1.000 exactly, not a
+rounding artefact of a near-ceiling value. `multiscale_entropy_slope`'s ds006695 effect is real (d=0.69,
+clears the 0.5 floor used below) but far short of sleep_edfx's near-ceiling d=4.41 — consistent with the
+task's framing that this column's *increment* failed to replicate there.
+
+### 15.3 Task 3 — BETWEEN-deposit shift of the SAME state (ds006695 − sleep_edfx, pooled-SD units)
+
+| column | state | n(sleep_edfx) | n(ds006695) | shift (b) |
+|---|---|---:|---:|---:|
+| whole_head_exponent | W | 142 | 19 | **+0.8651** |
+| whole_head_exponent | N3 | 141 | 19 | **−1.9585** |
+| multiscale_entropy_slope | W | 142 | 19 | **−0.1304** |
+| multiscale_entropy_slope | N3 | 141 | 19 | **−5.0755** |
+
+**The two anchors disagree in sign for `whole_head_exponent`**: ds006695 sits *above* sleep_edfx at W
+(median 1.165 vs 0.691) and *below* it at N3 (median 2.074 vs 2.693). No single additive offset aligns both
+states at once — this is the arithmetic behind §15.1's dynamic-range observation, stated as an effect size.
+
+### 15.4 Task 4 — gated transport ratio (rule 53: `|a_dep| >= 0.5`; rule 16: `sign(a_dep) == sign(a_ref)`)
+
+Both columns' ds006695 effect clears 0.5 and shares sleep_edfx's sign (Task 2), so **the gate passes for
+both columns at both anchors** — nothing is refused here, unlike most of §12's cross-modality cells.
+
+| column | anchor | a_ref | a_dep | b (shift) | ratio = \|b\| / mean(\|a_ref\|,\|a_dep\|) |
+|---|---|---:|---:|---:|---:|
+| whole_head_exponent | W | +4.6732 | +3.5296 | +0.8651 | **0.2109** |
+| whole_head_exponent | N3 | +4.6732 | +3.5296 | −1.9585 | **0.4775** |
+| multiscale_entropy_slope | W | +4.4067 | +0.6928 | −0.1304 | **0.0512** |
+| multiscale_entropy_slope | N3 | +4.4067 | +0.6928 | −5.0755 | **1.9906** |
+
+**`multiscale_entropy_slope`'s W-anchor ratio (0.0512) is the artefact §11 already named, not a transport
+success.** The ratio's denominator is `mean(|a_ref|, |a_dep|) = mean(4.407, 0.693) = 2.550`, inflated almost
+entirely by sleep_edfx's own huge effect; a modest absolute shift (−0.130) reads as tiny only relative to
+that inflated denominator, and the gate's own `|a_dep| >= 0.5` floor (0.693) is barely cleared. The N3-anchor
+number for the same column (1.9906) uses the identical `a_ref`/`a_dep` and a much larger shift (−5.076,
+because ds006695's N3 median, 0.057, sits nowhere near sleep_edfx's, 0.291) and is unambiguous. Read
+together, both anchors for `multiscale_entropy_slope` point the same way once the artefact is named: this
+column's raw value does not transport.
+
+**`whole_head_exponent` is anchor-dependent in a way that is not an artefact of the ratio's insensitivity**
+(both `a_ref` and `a_dep` are large and close to each other, 4.67 vs 3.53, so the denominator is not
+inflated the way MSE slope's is): it clears the 0.25 bar this probe family has used throughout at the W
+anchor (0.211) and misses it by nearly a factor of two at the N3 anchor (0.478), because the between-deposit
+shift itself roughly doubles in magnitude and reverses sign between the two anchors (§15.3).
+
+### 15.5 Task 5 — repeated for `multiscale_entropy_slope`
+
+Done inline above (§15.1–§15.4 report both columns throughout, exactly as the task requested, so the
+contrast is read directly off the same tables rather than a separate pass).
+
+### 15.6 Task 6 — THE KEY DIAGNOSTIC: does within-subject referencing reduce the between-deposit shift?
+
+**Subject coverage, asserted and reported (rules 5/14):**
+
+| column | deposit | n(W) | n(N3) | n(BOTH, used) | missing |
+|---|---|---:|---:|---:|---|
+| whole_head_exponent | sleep_edfx | 142 | 141 | **141** | `SC4531E0-PSG` (W only, no N3) |
+| whole_head_exponent | ds006695 | 19 | 19 | **19** | none |
+| multiscale_entropy_slope | sleep_edfx | 142 | 141 | **141** | `SC4531E0-PSG` (W only, no N3) |
+| multiscale_entropy_slope | ds006695 | 19 | 19 | **19** | none |
+
+Identical missingness pattern to §12.2's table for the same sleep_edfx column (same subject, same reason).
+
+**Referenced (per-subject `N3 − W` delta) effect sizes and the between-deposit shift of the deltas:**
+
+| column | deposit | n | paired dz (mean(delta)/sd(delta)) | mean(delta) | sd(delta) |
+|---|---|---:|---:|---:|---:|
+| whole_head_exponent | sleep_edfx | 141 | +4.0084 | +1.9781 | 0.4935 |
+| whole_head_exponent | ds006695 | 19 | +2.4228 | +0.9571 | 0.3950 |
+| multiscale_entropy_slope | sleep_edfx | 141 | +3.6120 | +0.3042 | 0.0842 |
+| multiscale_entropy_slope | ds006695 | 19 | +1.3396 | +0.0520 | 0.0388 |
+
+Between-deposit shift of the deltas themselves (two-sample `cohen_d`, ds006695 − sleep_edfx):
+`whole_head_exponent` **−2.1126**; `multiscale_entropy_slope` **−3.1382**.
+
+**Before/after ratio, matching §12.2's method exactly (same formula, W-anchor as the raw "before"):**
+
+| column | ratio BEFORE (raw, W anchor) | ratio AFTER (referenced) | change |
+|---|---:|---:|---|
+| whole_head_exponent | 0.2109 | **0.6570** | **WORSENED (+0.446)** |
+| multiscale_entropy_slope | 0.0512 | **1.2676** | **WORSENED (+1.216)** |
+
+**Both gates still pass after referencing** (paired dz clears 0.5 and keeps sleep_edfx's sign for both
+columns in ds006695: +2.423 and +1.340 respectively), so neither ratio is a refusal — both are real, worse
+numbers. **Within-subject referencing does not rescue the between-deposit shift for either column here; it
+makes both substantially worse**, consistent with §12.2's general finding for `whole_head_exponent`
+elsewhere (worsened in 3 of 4 cells it appeared in there: capslpdb, ds004541, and the one cell that improved
+was `chennu.exponent_high`, a different column). The reason is arithmetic, visible in the table above:
+referencing shrinks `a_ref` and `a_dep` less than it shrinks nothing about `b` (the deltas' own
+between-deposit gap, in these units, is *larger* than either raw-value anchor's gap was) — a subject's own
+baseline does not carry information about how much their `whole_head_exponent` will change with sleep depth
+in a way that is stable across these two deposits' populations or montages.
+
+### 15.7 Montage/population confound — stated, not corrected, per the task's own instruction
+
+**`ds006695` is a 3-channel forehead-patch montage; `sleep_edfx` is 2-channel.** This is exactly the
+limitation `docs/PROBE_2026_08_02_DEPOSITS.md` (line 105) already states in its own words: *"its three
+forehead channels make `whole_head_exponent` a different measurement, not the same one elsewhere."*
+Nothing in this section, or in `probe_d_sleep_transport.py`, adjusts for channel count or montage (rule
+54 — no line of code handles it, stated explicitly rather than left implicit). **ds006695 also has 19
+subjects against sleep_edfx's 141–142** — an order-of-magnitude smaller cohort — so montage and sample-size
+are two distinct, unresolved candidate explanations for every number in §15.3–§15.6, and this diagnostic
+cannot separate them. Both are limitations on what "the value does not transport" can be attributed to, not
+reasons to doubt that it does not transport in the numbers measured.
+
+### 15.8 Plain statement
+
+**`whole_head_exponent`'s raw VALUE does not transport cleanly between sleep_edfx and ds006695**: it clears
+the 0.25 ratio bar this probe family has used throughout when anchored at the wake state (0.211) but misses
+it by a factor of ~2 when anchored at deep sleep (0.478), because the two deposits' wake-to-N3 shifts point
+in **opposite directions from their own wake baselines** (ds006695 reads higher at W and lower at N3 than
+sleep_edfx), and within-subject referencing — the standard candidate rescue — makes the mismatch **worse**
+rather than better (ratio 0.211→0.657), all while the *within-deposit* discriminability that made this
+candidate worth testing stays essentially perfect in ds006695 (AUC 1.000, zero overlap at n=19) and near-
+ceiling in sleep_edfx (AUC 0.992) — the increment's replication and the value's transport are, on this
+evidence, separate properties, and only the first one has been shown to hold. `multiscale_entropy_slope`,
+whose increment did *not* replicate in ds006695, shows the same qualitative pattern more starkly: its
+apparently-good W-anchor ratio (0.051) is the ratio-insensitivity artefact §11 already named (an inflated
+denominator from sleep_edfx's own huge effect, not a genuine match), its N3-anchor ratio is unambiguous
+(1.99), and referencing makes it worse too (→1.27) — so on both value-transport and increment-replication,
+`multiscale_entropy_slope` performs worse than `whole_head_exponent` in ds006695, which is the direction the
+task's framing predicted.
+
+No verdict about Challenge D is drawn here, per the task's instruction.
+
 No verdict about Challenge D is drawn here, per the task's instruction.
