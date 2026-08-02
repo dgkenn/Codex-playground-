@@ -665,3 +665,27 @@ def oob_regression_increment(Xa: np.ndarray, Xb: np.ndarray, y: Sequence, subjec
     res = (float(d.mean()), float(np.quantile(d, alpha / 2)), float(np.quantile(d, 1 - alpha / 2)),
            len(d))
     return res + (d,) if return_diffs else res
+
+
+def read_rows(path):
+    """Read a results CSV, dropping SHARD-CONCATENATION HEADER ROWS.
+
+    WHY THIS IS SHARED AND NOT FIXED PER FILE (rule 74). Several results tables in this project are built
+    by concatenating per-shard CSVs, and three of them carry rows where every field holds its own column
+    NAME -- `recording_id` == "recording_id" -- because a shard's header line was appended as data. Such a
+    row survives every downstream guard: it is not NaN, it is not constant, and `screen_candidates` sees a
+    string that becomes NaN only at float conversion, which silently shifts a denominator.
+
+    Measured at the time this was written: `sleep_edfx_irreversibility.csv` carried 3 such rows,
+    `.band0.5-12.csv` and `.band20-45.csv` one each. The same defect has now appeared three times in this
+    project in different guises, and the catalogue's own lesson is that a check living in one experiment
+    will not be there for the next one.
+
+    Rows are dropped only when a field EQUALS ITS OWN KEY, which no real value can do, and the count is
+    returned so a caller can report the exclusion (rule 14) rather than silently benefit from it.
+    """
+    import csv as _csv
+    with open(path, newline="") as fh:
+        rows = list(_csv.DictReader(fh))
+    keep = [r for r in rows if not any(k is not None and r.get(k) == k for k in r)]
+    return keep, len(rows) - len(keep)
