@@ -384,3 +384,37 @@ recompute is currently in flight for Sleep-EDFx only.
 measure behaving properly on these windows, and the anchored measure depends on the peak. That verdict
 is not withdrawn — its own gates passed and E237 showed the estimator is monotone and accurate *where a
 peak exists* — but it now carries an explicit precondition that has not been verified on this cohort.
+
+---
+
+## The propofol null, defended properly this time
+
+The withdrawal above was of the ARGUMENT, not of the conclusion, and the conclusion now has evidence
+that does not depend on either of the invalid legs. The test uses a property the earlier attempt
+ignored: **a noise-driven peak wanders across the whole search window, a real one does not**, and the
+scatter a pure-noise peak produces is measurable rather than assumable.
+
+Running the shipped estimator on 40 synthetic "cases" of 25 signal-free 1/f windows each gives a
+calibrated null for the within-case standard deviation of the peak frequency:
+
+| | within-case sd of `alpha_peak_hz_wide` | fraction below the null's 5th percentile |
+|---|---|---:|
+| **pure 1/f noise (null)** | median **2.864 Hz**, IQR [2.610, 3.000] | — |
+| propofol arm (n = 113) | median **1.603 Hz**, IQR [1.264, 2.052] | **0.832** |
+| sevoflurane arm (n = 87) | median 1.888 Hz, IQR [1.477, 2.378] | 0.724 |
+
+**83.2 % of propofol cases have peak scatter below the 5th percentile of what this estimator produces
+from pure noise.** So propofol windows carry real peaks, and E233's propofol null — peak frequency not
+tracking propofol dose — is not an absent-alpha artefact. The asymmetry stands.
+
+Two things to keep attached to that.
+
+**A within-case sd of 1.6 Hz is still large** for something described as an individual alpha frequency.
+The propofol arm is well clear of the noise null but it is not a clean measurement, and the true
+prominence statistic — which E239 validated and which is being computed on VitalDB now — will say how
+much of that 1.6 Hz is real variation and how much is the estimator wandering on low-prominence windows.
+
+**Sevoflurane's HIGHER scatter is expected and is not a defect.** Its peak genuinely moves with dose, so
+some of its 1.888 Hz is signal. That the arm with the real dose-driven shift shows more within-case
+scatter is a small independent corroboration of E233's A1 finding, arriving from a statistic that was
+not built to test it.
