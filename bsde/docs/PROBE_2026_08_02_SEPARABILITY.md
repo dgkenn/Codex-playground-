@@ -497,3 +497,205 @@ news: the transport that a deployable index needs is exactly the one that fails.
 **Method note for successors.** A transport ratio must be gated on the TARGET deposit's own effect —
 require `|a_dep|` above a floor and `sign(a_dep) == sign(a_ref)` before the ratio is computed at all.
 Without that gate the metric ranks dead and reversed measures at the top, which is what happened here.
+
+---
+
+## 12. Gated re-ranking (Task 1) and within-subject referencing (Task 2), 2026-08-02
+
+*DIAGNOSTIC follow-up, same status as §0: no ledger row, no registration file, no verdict about
+Challenge D. Script: `/tmp/.../scratchpad/probe_gate_and_withinsubj.py` (this session only),
+reusing `probe_separability.py`'s loaders unchanged and importing `bsde.verifier.stats.read_rows`
+rather than reimplementing it (rule 20).*
+
+### 12.1 Task 1 — gate applied to the 45-cell ratio table
+
+Gate, applied per cell, **ratio definition unchanged**:
+(i) `|a_dep| >= 0.5` (rule 53 — the target deposit must actually carry the effect);
+(ii) `sign(a_dep) == sign(a_ref)` (rule 16 — a reversal is not transport).
+
+**14 of 45 cells survive both gates.** Sorted ascending:
+
+| deposit | column | a(sleep_edfx) | a(dep) | b (shift) | ratio |
+|---|---|---:|---:|---:|---:|
+| capslpdb | lempel_ziv | −2.882 | −1.290 | −0.090 | **0.043** |
+| capslpdb | spectral_entropy | −2.665 | −1.336 | +0.219 | **0.109** |
+| capslpdb | spectral_edge_95 | −3.854 | −1.252 | −1.021 | 0.400 |
+| capslpdb | whole_head_exponent | +4.673 | +1.191 | +1.410 | 0.481 |
+| capslpdb | relative_delta_power | +1.973 | +1.417 | −0.816 | 0.481 |
+| ds004541 | multiscale_entropy_slope | +4.407 | +0.835 | +1.271 | 0.485 |
+| ds005620 | wpli_alpha | +1.124 | +0.504 | +0.441 | 0.542 |
+| ds004541 | emg_beta_gamma_fraction | −2.607 | −0.751 | −1.049 | 0.625 |
+| chennu | pac_slow_alpha | −0.530 | −0.761 | +0.539 | 0.836 |
+| ds004541 | whole_head_exponent | +4.673 | +0.975 | +2.683 | 0.950 |
+| chennu | emg_kurtosis | −0.974 | −0.518 | −0.778 | 1.044 |
+| capslpdb | relative_alpha_power | −0.694 | −0.751 | +0.808 | 1.118 |
+| ds004541 | exponent_high | +1.401 | +0.610 | +1.889 | 1.879 |
+| chennu | exponent_high | +1.401 | +1.565 | +4.425 | 2.984 |
+
+**Every surviving cell is either capslpdb (sleep-clinic PSG, same modality as the sleep_edfx
+reference — 6 of 14) or a cross-modality cell whose ratio is ≥ 0.485 (8 of 14, none below the
+original 0.25 bar).** This confirms §11's reading with the full table rather than four cherry-picked
+cells: gating removes both artefacts §11 flagged (`spectral_entropy` vs ds005620 — dead in the target,
+`a_dep`=+0.069 — and `spectral_entropy` vs chennu — reversed, `a_dep`=+0.766) and they do not
+reappear; nothing cross-modality clears 0.25 once the gate is applied.
+
+**31 of 45 cells refused.** Refusal-reason tally: **12 failed on magnitude alone** (`|a_dep| < 0.5`),
+**7 failed on sign alone**, **12 failed on both**. Full list, sorted by deposit then column:
+
+| deposit | column | a(sleep_edfx) | a(dep) | b (shift) | ratio | reason(s) refused |
+|---|---|---:|---:|---:|---:|---|
+| chennu | critical_slowing_ar1 | +3.960 | −0.215 | +4.226 | 2.025 | \|a_dep\|<0.5; sign mismatch |
+| chennu | emg_beta_gamma_fraction | −2.607 | +0.765 | −1.217 | 0.722 | sign mismatch |
+| chennu | emg_index | −2.771 | −0.206 | −2.215 | 1.488 | \|a_dep\|<0.5 |
+| chennu | exponent_low | +3.620 | −1.353 | −1.092 | 0.439 | sign mismatch |
+| chennu | lempel_ziv | −2.882 | +1.084 | +0.554 | 0.279 | sign mismatch |
+| chennu | multiscale_entropy_slope | +4.407 | −1.721 | +3.640 | 1.188 | sign mismatch |
+| chennu | relative_alpha_power | −0.694 | −0.494 | +3.508 | 5.907 | \|a_dep\|<0.5 |
+| chennu | relative_delta_power | +1.973 | −0.489 | −1.787 | 1.451 | \|a_dep\|<0.5; sign mismatch |
+| chennu | spatial_participation_ratio | +0.482 | +0.177 | −5.295 | 16.083 | \|a_dep\|<0.5 |
+| chennu | spectral_edge_95 | −3.854 | +0.338 | −1.209 | 0.577 | \|a_dep\|<0.5; sign mismatch |
+| chennu | spectral_entropy | −2.665 | +0.766 | +0.346 | 0.202 | sign mismatch |
+| chennu | whole_head_exponent | +4.673 | −0.340 | +1.801 | 0.718 | \|a_dep\|<0.5; sign mismatch |
+| chennu | wpli_alpha | +1.124 | −0.114 | +0.714 | 1.153 | \|a_dep\|<0.5; sign mismatch |
+| ds004541 | critical_slowing_ar1 | +3.960 | +0.311 | +1.928 | 0.903 | \|a_dep\|<0.5 |
+| ds004541 | emg_index | −2.771 | +0.029 | −3.751 | 2.679 | \|a_dep\|<0.5; sign mismatch |
+| ds004541 | emg_kurtosis | −0.974 | +0.072 | −1.083 | 2.071 | \|a_dep\|<0.5; sign mismatch |
+| ds004541 | exponent_low | +3.620 | +0.086 | +1.370 | 0.740 | \|a_dep\|<0.5 |
+| ds004541 | lempel_ziv | −2.882 | −0.061 | −2.698 | 1.833 | \|a_dep\|<0.5 |
+| ds004541 | pac_slow_alpha | −0.530 | +0.274 | +19.528 | 48.595 | \|a_dep\|<0.5; sign mismatch |
+| ds004541 | relative_alpha_power | −0.694 | −0.199 | −0.836 | 1.871 | \|a_dep\|<0.5 |
+| ds004541 | relative_delta_power | +1.973 | +0.107 | +1.169 | 1.124 | \|a_dep\|<0.5 |
+| ds004541 | spatial_participation_ratio | +0.482 | +0.373 | −6.136 | 14.353 | \|a_dep\|<0.5 |
+| ds004541 | spectral_edge_95 | −3.854 | +0.045 | −2.096 | 1.075 | \|a_dep\|<0.5; sign mismatch |
+| ds004541 | spectral_entropy | −2.665 | −0.087 | −2.624 | 1.907 | \|a_dep\|<0.5 |
+| ds004541 | wpli_alpha | +1.124 | −0.242 | +0.946 | 1.386 | \|a_dep\|<0.5; sign mismatch |
+| ds005620 | lempel_ziv | −2.882 | +1.016 | −1.955 | 1.003 | sign mismatch |
+| ds005620 | relative_alpha_power | −0.694 | +0.559 | +0.621 | 0.992 | sign mismatch |
+| ds005620 | relative_delta_power | +1.973 | −0.329 | −0.411 | 0.357 | \|a_dep\|<0.5; sign mismatch |
+| ds005620 | spectral_edge_95 | −3.854 | −0.214 | −0.696 | 0.342 | \|a_dep\|<0.5 |
+| ds005620 | spectral_entropy | −2.665 | +0.069 | −0.003 | 0.002 | \|a_dep\|<0.5; sign mismatch |
+| ds005620 | whole_head_exponent | +4.673 | +0.474 | +0.695 | 0.270 | \|a_dep\|<0.5 |
+
+### 12.2 Task 2 — within-subject referencing
+
+**Method.** For each of the five deposits with repeated states per subject (sleep_edfx, capslpdb,
+chennu, ds004541, ds005620), every candidate is re-expressed as one number per subject:
+`ref = (that subject's own deep-state mean) − (that same subject's own awake-state mean)`.
+On that per-subject delta:
+(a) within-deposit effect = **paired Cohen's dz** = `mean(diff) / sd(diff)` (one-sample, not the
+original two-sample pooled-SD d — averaging out between-subject variance is the entire point of
+referencing);
+(b) between-deposit shift = **the same two-sample `cohen_d()`** used everywhere else in this probe,
+applied to the two deposits' per-subject delta *distributions* (sleep_edfx's own N3−W delta vs the
+target deposit's own deep−awake delta) rather than to raw awake values;
+(c) ratio = `|b| / mean(|a_ref|, |a_dep|)` — identical formula, unchanged.
+
+vitaldb has no awake anchor (§2) and is reported for (a) only, informationally, using its
+"lightest-recorded" state as the anchor per the task's own allowance ("or lightest available") — it
+does **not** enter the between-deposit comparison, for the same structural reason it did not in Task 1.
+
+**Rule 73 (no separate-group normalisation).** The subtraction is per **individual** (each subject's
+own two states), computed in `subject_level()` / `load_ds005620_by_subject()`
+(`probe_gate_and_withinsubj.py` lines ~95–150) — no deposit-level or group-level mean or scale is
+touched anywhere in that code path, so it does not annihilate the between-deposit contrast the way a
+per-group z-score would.
+
+**Rule 5/14 — subject coverage, asserted and reported, not silently dropped:**
+
+| deposit | subjects w/ awake | subjects w/ deep | BOTH (used) | missing (reported) |
+|---|---:|---:|---:|---|
+| sleep_edfx | 142 | 141 | **141** | `SC4531E0-PSG` (has N1/N2/REM/W, no N3) |
+| capslpdb | 106 | 106 | **106** | none |
+| chennu | 20 | 20 | **20** | none |
+| ds004541 | 8 | 7 | **7** | `sub-11` (awake only) |
+| ds005620 | 21 | 20 | **20** | `sub-1037` (awake only) |
+| vitaldb (informational) | 213 | 156 | **132** | 81 lightest-only cases, 24 deepest-only cases (both listed in the script's stdout, e.g. `104,106,107,…` / `101,12,126,…`) |
+
+**ds004541's paired analysis runs on n=7 subjects, not the n=69/41 windows §4 reports** — the raw
+table has multiple windows per subject, and referencing collapses them to one subject-level value
+per state before differencing. That is a real loss of resolution and the widest dz's below should be
+read with n=7 in mind.
+
+**Rule 74 — all-NaN/constant columns, excluded not scored:** `sleep_edfx.uce_v1`,
+`vitaldb.spatial_participation_ratio`, `vitaldb.uce_v1`, `vitaldb.wpli_alpha` — all four `EXCLUDED:
+n too small after per-subject pairing (n=0)`, the same all-NaN columns §3/§6 already excluded. No
+column was constant (nonzero n, zero variance) after pairing.
+
+**Before/after, on the 14 cells that were gated in Task 1** (ratio unchanged in definition, both
+computed the same way otherwise):
+
+| deposit | column | ratio BEFORE | ratio AFTER | change |
+|---|---|---:|---:|---|
+| capslpdb | relative_alpha_power | 1.118 | **0.240** | IMPROVED (−0.878) |
+| capslpdb | relative_delta_power | 0.481 | 0.309 | IMPROVED (−0.172) |
+| chennu | exponent_high | 2.984 | 0.321 | IMPROVED (−2.663) |
+| chennu | pac_slow_alpha | 0.836 | 0.251 | IMPROVED (−0.586) |
+| ds004541 | exponent_high | 1.879 | 0.741 | IMPROVED (−1.137) |
+| capslpdb | lempel_ziv | 0.043 | 0.910 | WORSENED (+0.867) |
+| capslpdb | spectral_edge_95 | 0.400 | 0.932 | WORSENED (+0.532) |
+| capslpdb | spectral_entropy | 0.109 | 0.798 | WORSENED (+0.689) |
+| capslpdb | whole_head_exponent | 0.481 | 0.824 | WORSENED (+0.343) |
+| chennu | emg_kurtosis | 1.044 | 1.310 | WORSENED (+0.267) |
+| ds004541 | emg_beta_gamma_fraction | 0.625 | 1.111 | WORSENED (+0.486) |
+| ds004541 | multiscale_entropy_slope | 0.485 | 1.258 | WORSENED (+0.773) |
+| ds004541 | whole_head_exponent | 0.950 | 1.320 | WORSENED (+0.370) |
+| ds005620 | wpli_alpha | 0.542 | 0.995 | WORSENED (+0.453) |
+
+**Tally: 5 improved, 9 worsened, 0 unchanged, of 14.** Split by whether the cell is same-modality
+(capslpdb, sleep-vs-sleep) or cross-modality (chennu/ds004541/ds005620, sleep-vs-anaesthesia — the
+transport a deployable index actually needs, per the task):
+
+- **Same-modality (capslpdb, 6 cells): 2 improved, 4 worsened.**
+- **Cross-modality (8 cells): 3 improved** (`chennu.exponent_high` 2.984→0.321,
+  `chennu.pac_slow_alpha` 0.836→0.251, `ds004541.exponent_high` 1.879→0.741),
+  **5 worsened** (`ds004541.multiscale_entropy_slope`, `ds004541.emg_beta_gamma_fraction`,
+  `ds004541.whole_head_exponent`, `chennu.emg_kurtosis`, `ds005620.wpli_alpha`).
+
+**The improvement rate is not meaningfully different between same- and cross-modality (33% vs 38%),
+but the DESTINATION is**: referencing produces exactly **one** cell anywhere below the 0.25 bar after
+gating — `capslpdb.relative_alpha_power` at 0.240 — and it is same-modality (sleep-vs-sleep). **No
+cross-modality cell reaches 0.25 either before or after referencing**; the closest is
+`chennu.pac_slow_alpha` at 0.251, one thousandth away from the bar and still carrying the scale-mismatch
+caveat §9 raised for `pac_slow_alpha` generally (a ~236× mean-scale gap between sleep_edfx's and
+ds004541's raw values makes any pooled-SD statistic on that column suspect regardless of referencing;
+this same-column risk was not separately re-checked for the chennu pairing here and is flagged, not
+resolved).
+
+**Applying the SAME two-part gate (§12.1's rule 53 + rule 16 criteria) to the referenced quantities
+themselves**, across all 45 originally-scored deposit×column combinations recomputed under
+referencing: **16 of 45 pass** (vs 14 of 45 before referencing) — a similar count, but a different
+membership. All 6 capslpdb cells that passed before still pass after (unsurprising — capslpdb's
+per-subject pairing is closest to a like-for-like reduction of the same test). Of the 8 cross-modality
+cells that passed before, only 3 still pass after referencing on their OWN referenced effect sizes
+(`chennu.exponent_high`, `chennu.pac_slow_alpha`, `ds004541.exponent_high`, plus two new cross-modality
+passes that had been sign-refused pre-referencing: `ds004541.critical_slowing_ar1` and
+`ds004541.spatial_participation_ratio` — the latter is the channel-count-flagged column from §3 and its
+pass here (dz_ref=+0.339, dz_dep=+0.709) should be read with that confound in mind, not as a clean
+transport success). `ds005620.spectral_edge_95` and `ds005620.whole_head_exponent` also newly pass on
+referenced effect sizes though they were not in the original gated 14 (they had failed the raw-scale
+magnitude gate and now clear it after per-subject pairing sharpened the within-deposit signal).
+
+### 12.3 Plain statement
+
+- **Within-subject referencing does not rescue cross-modality transport at the deployability bar
+  used throughout this probe (ratio < 0.25).** Zero cross-modality cells clear it before referencing;
+  zero clear it after. The nearest miss, `chennu.pac_slow_alpha` at 0.251, carries an independent
+  scale-mismatch flag on that same column from §9.
+- **Referencing helps some cells and hurts more of them**, in both the same-modality and
+  cross-modality groups: 5 improved against 9 worsened overall (2 vs 4 same-modality, 3 vs 5
+  cross-modality) — there is no clear directional benefit, and the one cell that crossed the bar
+  (`capslpdb.relative_alpha_power`, 1.118→0.240) is the easy sleep-vs-sleep case, not a
+  sleep-vs-anaesthesia one.
+- **The state signal itself does not survive referencing intact in most cross-modality cells**: of
+  the 8 originally-gated cross-modality cells, the *within-deposit* paired dz (`a_dep` in the new
+  units) drops noticeably for several — e.g. `ds004541.multiscale_entropy_slope` +0.835→+1.149 (paired
+  dz rose here, on n=7), `ds004541.whole_head_exponent` +0.975→+1.247 (also rose) — but per-subject
+  pairing simultaneously changed sleep_edfx's own reference dz for several columns in ways that moved
+  the RATIO the wrong direction even where the deposit's own signal held or grew, because the
+  between-deposit shift (b) also changed under referencing and did not shrink proportionally.
+- **ds004541's referenced numbers rest on n=7 subjects** (not the 69/41 windows the raw table
+  reports), because referencing collapses repeated within-subject windows to one value per subject
+  per state before differencing — a real resolution cost worth weighing against any apparent
+  improvement there (e.g. `ds004541.exponent_high` 1.879→0.741 is built on 7 paired subjects).
+
+No verdict about Challenge D is drawn here, per the task's instruction.

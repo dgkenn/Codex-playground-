@@ -1152,3 +1152,22 @@ unverified on GitHub.
     arms and say which question each answers. Related to rule 32 — a measurement's availability defines a
     stratum — but distinct: here the incumbent is available everywhere and is *too close to the outcome's
     provenance*.
+87. **A TRACK, COLUMN OR CHANNEL BEING PRESENT IS A FACT ABOUT THE INSTRUMENT, NOT ABOUT THE PATIENT —
+    RULE 6 FOR TIME SERIES, AND IT COST THREE EXPERIMENTS AT ONCE.** Rule 6 says check that a
+    `concept_id` column is populated before designing around it. The time-series version is easier to
+    miss because the object *is* there and *is* well-formed. **E224, E225 and E227 all registered
+    "mutually exclusive arms" and all three implemented it as `"Primus/EXP_SEVO" in tracks`.** An
+    anaesthesia machine logs its sevoflurane and desflurane channels whether or not the vaporiser is ever
+    opened, so a propofol case on a gas-reporting machine carries a volatile track that reads **0.00 from
+    end to end** — and was classified as combined-technique and discarded. Measured by one pass of
+    `max(v) > 0` over 250 cases: **propofol-only 44 → 114, sevoflurane-only 90 → 88, genuinely both
+    101 → 31.** Every propofol number the project had reported came from 39 % of the eligible cases.
+    Three things make this worth its own rule. **The exclusion was one-sided** — it barely touched the
+    comparison arm, so it is not the harmless loss of power it looks like. **It selected on the
+    ANAESTHESIA MACHINE**, a property of the theatre rather than of the patient or the drug, which rule 14
+    forbids assuming innocent. And **the first explanation offered for the exclusion count was a
+    plausible clinical story** — propofol induces, volatile maintains, used sequentially — written into a
+    ledger row before anything was measured, which is rule 50 in miniature: the plausible mechanism is
+    exactly what stops you checking. **The check is one line and belongs in every cohort predicate:
+    a channel counts only if it is ever nonzero, and the count of rows the two predicates disagree on
+    must be printed.**
