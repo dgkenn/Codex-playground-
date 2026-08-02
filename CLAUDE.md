@@ -1271,3 +1271,22 @@ unverified on GitHub.
     spend the effort on access instead. Corollary: a null against a dead incumbent is not a weaker
     version of a null against a live one; it is a different sentence, and rule 53 exists to stop the two
     being written the same way.
+93. **A SEARCH WINDOW WIDE ENOUGH TO CONTAIN A SECOND RHYTHM WILL FIND IT, AND YOU WILL CALL IT AN
+    ARTEFACT.** `alpha_peak_hz_wide` searches 5-15 Hz. On Sleep-EDFx its N2 median is **13.500 Hz**, and
+    I recorded that in a ledger row and a commit message as the estimator "reporting its own window edge
+    where there is no alpha to find" — reasoning that slow-wave sleep has no alpha, which is true and
+    irrelevant. **N2's defining electrophysiological feature is the sleep spindle at roughly 11-16 Hz**
+    (PMID 33618345, verified: *"spindles are electrophysiological hallmarks of N2 sleep stage"*), and
+    13.5 Hz is squarely inside it. The estimator was finding a real oscillation the search window
+    happened to admit; the error was mine, and it is rule 21 — check the physiology BEFORE building a
+    prediction on it, not after the numbers look odd.
+    **The tell was available and I read it backwards.** Gated detection across the five stages came out
+    N2 0.408 > N1 0.218 > N3 0.204 > W 0.141 > REM 0.085 — maximal in N2, reduced in slow-wave sleep,
+    minimal in REM. That is the spindle-density profile, recovered by a prominence gate that was never
+    told spindles exist, and it is a stronger validation of the instrument than the control the
+    experiment actually registered. I had it filed as evidence the instrument was broken.
+    **Two rules follow.** When a band-limited estimator is widened, enumerate every rhythm the new window
+    now contains and say which one each cohort should express — an "alpha" search over 5-15 Hz is a
+    theta/alpha/spindle search. And when a stage-wise or group-wise profile looks wrong, check it against
+    the profile of every OTHER rhythm in range before concluding the instrument failed; a result that
+    matches a different real phenomenon is not noise.
