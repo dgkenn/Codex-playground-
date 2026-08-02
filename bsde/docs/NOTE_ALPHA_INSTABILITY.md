@@ -218,6 +218,39 @@ cohort, and both were run:
   −0.6154 above it**, both far beyond their sign-flip floors. It is present at low dose, so this is **weak
   support at best** and arguably counts against the prediction as stated.
 
+### Two further diagnostics, 2026-08-02 — one control passes, one reframes the finding
+
+**A negative control passes, and the check that made it readable nearly did not happen.** Re-ordering each
+case's windows by TIME instead of by drug concentration collapses everything: the arm gap falls from
+−0.3742 to −0.0925 and sevoflurane's effect from −0.5211 to +0.0423. It would be tempting to read that as
+evidence about mechanism. **It is not**, because the time split carries no depth content at all — the
+BIS difference between its "deep" and "light" terciles is **−0.04 [−1.72, +2.02]** in sevoflurane, with
+exactly 50.0 % of cases in the expected direction, against **−8.03 [−10.64, −5.50]** for the exposure
+split. An ordering with no depth in it produces no effect, which is the tercile machinery working, and
+nothing more. (Rule 53 again: check the contrast is alive before reading its null.)
+
+**The window-level asymmetry, which is the sharpest statement of the finding so far.** Within each case,
+across all its windows, correlating alpha against that case's own drug concentration:
+
+| arm | n cases | rho(alpha, own exposure) | after adjusting for BIS | retained |
+|---|---|---|---|---|
+| propofol | 44 | **+0.0416 [−0.003, +0.103]** | +0.0350 [−0.043, +0.109] | 84 % |
+| sevoflurane | 68 | **−0.3827 [−0.467, −0.246]** | −0.1527 [−0.238, −0.025] | 40 % |
+
+**Alpha tracks sevoflurane dose and does not track propofol dose.** Propofol's interval includes zero both
+before and after adjustment; sevoflurane's is decisively negative. This is a cleaner statement than
+"inversion": the two agents do not disagree about alpha, one of them has an alpha–dose relationship and the
+other does not detectably have one in this cohort.
+
+**The BIS adjustment cannot be read as mediation, and that is a limitation not a result.** Sixty per cent of
+sevoflurane's association disappears when BIS is adjusted for, which would be a tidy "most of it runs
+through depth" story — except that **BIS is itself a spectral index computed from the same EEG**, and
+incorporates band-ratio terms. Residualising alpha on BIS therefore partly residualises alpha on itself,
+and this cohort has no non-EEG depth anchor (suppression ratio is 0.000 throughout) to substitute. The 40 %
+that survives is a lower bound on the drug-specific component only if that shared-construction problem is
+ignored, which it should not be. **What survives the caveat entirely is the propofol/sevoflurane asymmetry
+in the RAW column, which involves no adjustment at all.**
+
 ### What that leaves
 
 Of the six candidate mechanisms, the cohort removes **differential burst suppression** (tested and refuted
