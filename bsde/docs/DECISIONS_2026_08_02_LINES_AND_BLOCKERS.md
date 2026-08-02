@@ -437,3 +437,58 @@ not a device output); the deposits that plausibly carry one are gated. Rejected 
 and therefore possibly unlockable by the investigator: Zenodo **1168447** (Oxford, ultra-slow induction to
 and emergence from propofol, `access_right: restricted`), PhysioNet **eeg-gaba-anesthesia** (Contributor
 Review), PhysioNet **eeg-power-anesthesia** (Restricted, and derived spectra only).
+
+---
+
+## Challenge A: the three unlockable deposits were triaged, and NONE of them unblocks it
+
+Access-triage of the three gated candidates, from landing-page metadata and the Zenodo REST API parsed
+directly. Both publication records verified by Opus against retrieved esummary output.
+
+| deposit | access route, as stated on the record | fails |
+|---|---|---|
+| PhysioNet `eeg-gaba-anesthesia` | **Contributor Review** — credentialed user + CITI training + **per-study approval by the authors** + DUA | **(c)**, and (a) only nominally: 4 subjects, of which **one** sevoflurane; the only per-subject signals are drug concentration and infusion rate, i.e. the drug record that criterion (c) excludes |
+| PhysioNet `eeg-power-anesthesia` | Restricted — register and sign the DUA | **(a)+(b)+(c) jointly** — see below |
+| Zenodo `1168447` | "Data available on request" | **(a)** — bench/volunteer **propofol only**; has genuine bidirectional behavioural labelling, which is the harder half, but for one agent |
+
+Publications, verified: PMID **37467269** (Adam et al., *Proc Natl Acad Sci U S A* 2023, "Modulatory
+dynamics mark the transition between anesthetic states of unconsciousness") and PMID **33956800** (Abel
+et al., *PLoS One* 2021, "Machine learning of EEG spectra classifies unconsciousness during GABAergic
+anesthesia").
+
+**And `eeg-power-anesthesia` is not a request at all — this project already has it.** It appears in
+**13 rows** of `REGISTRATION_LEDGER.jsonl` and its extractions are on disk
+(`deposit_eeg_power_anesthesia.json`, `e154_lambda_mgh_or.json`). The triage recommended it as "cheapest
+to request"; there is nothing to request. What matters is *why* it does not solve the problem, and the
+answer is a split the deposit's own structure makes unavoidable:
+
+* the **volunteer arm** carries a real per-epoch behavioural responsiveness label — response probability
+  to click and verbal cues crossing 5 %, in both directions — and is **propofol only**;
+* the **operating-room arm** is genuinely multi-agent (propofol / sevoflurane / mixed, pre-split by a
+  shipped `rx_sorted_case_ids.yml`) and has **no behavioural test and no recovery at all** — its "LOC" is
+  the time surgery began, and recording stops at the end of surgery because, in the contributors' own
+  words, it is unclear retrospectively when a patient returns to consciousness.
+
+**So the cell Challenge A needs is empty in the deposit that comes closest to filling it, and empty for a
+reason that is about how the data was collected rather than about what was shared.** That is the same
+shape as rule 92's finding for Challenge B: the criteria "multi-agent" and "behaviourally labelled in both
+directions" keep landing in different cohorts, and no amount of further searching among existing public or
+requestable deposits looks likely to put them in the same one.
+
+### The honest statement of the blocker, for the investigator
+
+**Challenge A is blocked on data that may not exist in any accessible deposit.** Four independent
+searches — the original probe, a six-archive public sweep, the Krause re-check, and this access triage —
+have each returned deposits satisfying two of the three criteria and never all three. Further searching
+is now low-yield and I am not recommending more of it.
+
+**Three things could change that, and all three are yours rather than mine:**
+1. **A collaborator with unpublished perioperative EEG that carries per-epoch OAA/S or equivalent under
+   two or more agents, in both directions.** This is a collection problem, not a search problem.
+2. **Confirmation of the 91.43 % agent-identifiability figure** (PMID 42131603, full text). It is the
+   baseline the whole minimisation framing quotes and it is recorded as NOT independently verified. One
+   PDF settles it, and if the number is wrong the framing needs rewriting regardless of data access.
+3. **A decision to relax criterion (c)** and accept a drug-record or monitor-derived state label. That is
+   yours to make, not mine, and it changes what the result means: it would test whether a candidate
+   reproduces the monitor's or the pharmacology's behaviour, not whether it tracks consciousness. I would
+   report it as such.
