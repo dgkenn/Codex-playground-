@@ -132,3 +132,69 @@ effect-site equilibration) is already the standard framework for "which index re
 sooner", and that two indices' equilibration constants have already been compared head-to-head on the
 same patients, then the lead question is answered in a better-established language than ours and **the
 lead half of this line stops**. The availability half does not depend on it and continues either way.
+
+---
+
+## THE PRE-COMMITTED STOP FIRES. The lead half of Challenge C is abandoned.
+
+*Written immediately after the prior-art check returned, honouring the condition set above rather than
+reinterpreting it. Three records verified by Opus against retrieved efetch output, not taken from the
+subagent.*
+
+The condition was: *"if PK/PD hysteresis is already the standard framework for 'which index reacts to
+agent change sooner', and two indices' equilibration constants have already been compared head-to-head on
+the same patients, then the lead half of this line stops."* **Both halves are established.**
+
+**PMID 32925339** — Sahinovic et al., *Anesthesia and Analgesia* 2020, "Influence of an
+'Electroencephalogram-Based' Monitor Choice on the Delay Between the Predicted Propofol Effect-Site
+Concentration and the Measured Drug Effect." Verified from the abstract: *"we measured the influence of
+EEG-based monitor choice, namely Bispectral index (BIS) versus qCON index (qCON) monitor, on propofol PD
+hysteresis"*, in 165 patients. That is a head-to-head comparison of two EEG indices' lag on the same
+patients. (The subagent reported 49 s vs 53 s; that figure is from full text and is **not** independently
+verified here, so it is not quoted as a number — the design is what fires the stop, not the value.)
+
+**PMID 33415524** — Kim et al., *J Pharmacokinet Pharmacodyn* 2021, "Do epoch lengths of hypnotic depth
+indicators affect estimated of blood-brain equilibration rate constants of propofol?" Verified verbatim
+from the abstract: equilibration half-lives for approximate entropy at epoch lengths of 2 / 10 / 30 / 60 s
+are **4.31 / 3.96 / 5.78 / 6.54 min**, against **5.09 min** for BIS, in 63 volunteers.
+
+**PMID 15220769** — Vanluchene et al., *Anesthesiology* 2004, fits pharmacodynamic models for state
+entropy, response entropy, AAI and BIS against the same calculated effect-site propofol concentration.
+
+### Why this is a stop and not a refinement
+
+The T1 trivial explanation — *an index leads because it is less smoothed* — is **not an insight this
+project would be contributing. It was published with numbers in 2021.** Kim et al. varied nothing but the
+epoch length and moved the estimated equilibration half-life by more than 50 %, spanning BIS's own value.
+Against that, "we matched the smoothing and the lead survived" is a careful implementation of a control
+the field already knows it needs, not a new idea about how to compare monitors.
+
+And the ke0 framework asks the question better. Fitting each index's equilibration constant against a
+pharmacokinetic reference is a continuous, model-based estimate that uses the whole trajectory; a
+z-threshold crossing time is a single-point statistic that discards it. **When a better-established
+instrument for a question already exists, building a cruder one and defending it is not a contribution.**
+
+The matched-**false-alarm-rate** half (T2) does remain absent from this literature, and that absence is
+real. But without a lead result to demonstrate it on, it is a methodological comment rather than a paper,
+and it is not worth the extraction it would need.
+
+### The synthesis worth keeping, which is a negative result with positive value
+
+**E246's null is what the published PK/PD literature predicts.** Kim's numbers put BIS's equilibration
+half-life (5.09 min) squarely inside the range an entropy-family measure takes across epoch lengths
+(3.96–6.54 min). If the indices' equilibration constants are that close and the epoch dominates, then a
+raw-EEG measure should NOT lead BIS by much once the windows are comparable — which is exactly what E246
+measured: **+0.0 s unsmoothed and +20.0 s [−30.0, +30.0] at matched smoothing.** E246 was uninterpretable
+on its own terms because its incumbent was absent from the window, and it is worth recording that its
+point estimates nonetheless land where prior work says they should.
+
+### What continues
+
+Only the **availability finding**, which was flagged above as not depending on the lead and which needs no
+candidate measure at all. Its own prior-art check is running. If that check returns "already known and
+quantified", **Challenge C stops entirely** and the honest statement is that the briefed question is
+answered — negatively, and by other people — for the deposits available under a public-data constraint.
+
+The MAC landmark probe now running is **not wasted**: the withdrawal-shape distribution it measures is
+what any future exposure-landmarked design on this deposit would need, and it costs one small numeric
+track per case. It is allowed to finish and its output is kept. Nothing further is registered on it.
