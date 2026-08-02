@@ -1,0 +1,66 @@
+{
+  "N_retained": 19,
+  "capability": {
+    "pure_noise": {
+      "C": 0.01575869939681329,
+      "mean_signed": 0.0031483081694890433
+    },
+    "tracks_exposure": {
+      "C": 1.0,
+      "mean_signed": 1.0
+    }
+  },
+  "gates": {
+    "G1": false,
+    "G2": true,
+    "G3": true,
+    "G4": true
+  },
+  "p3": {
+    "est": 0.30344425250922247,
+    "hi": 0.3970923391116387,
+    "lo": 0.21668963150553677,
+    "placebo_p": 0.0
+  },
+  "prominence_gap": {
+    "restricted": 0.23766682999999977,
+    "restricted_p": 0.0,
+    "unrestricted": 0.2231413444999999,
+    "unrestricted_p": 0.0
+  },
+  "restricted": {
+    "propofol": {
+      "C": 0.11825939837221079,
+      "clears": false,
+      "mean_signed": -0.030983956635694414,
+      "n": 113,
+      "null95": 0.24881788977481706
+    },
+    "sevoflurane": {
+      "C": 0.8402689910022657,
+      "clears": true,
+      "mean_signed": -0.3344282091449169,
+      "n": 86,
+      "null95": 0.41352215869431297
+    }
+  },
+  "restriction_bite": 0.772503417,
+  "seed": 20260802,
+  "unrestricted": {
+    "propofol": {
+      "C": 0.09703759085749299,
+      "clears": false,
+      "mean_signed": -0.02263771348221835,
+      "n": 113,
+      "null95": 0.29608061980613687
+    },
+    "sevoflurane": {
+      "C": 0.8203716493605732,
+      "clears": true,
+      "mean_signed": -0.32963255830916977,
+      "n": 86,
+      "null95": 0.27695783445022604
+    }
+  },
+  "verdict": "NOT INTERPRETABLE -- G1 failed; the prominence gap only fell from +0.2231 to +0.2377 and the confound is still present"
+}
