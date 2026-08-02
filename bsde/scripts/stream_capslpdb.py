@@ -50,6 +50,7 @@ record with fewer than `MIN_CH` EEG channels is skipped and NAMED, never silentl
 from __future__ import annotations
 
 import argparse
+import collections
 import csv
 import os
 import re
@@ -58,6 +59,9 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "src")))
+sys.path.insert(0, HERE)
+
+from edf_http import EdfHttp                                                   # noqa: E402
 
 BASE = "https://physionet.org/files/capslpdb/1.0.0"
 STAGES = ("W", "S1", "S2", "S3", "S4", "R")
@@ -83,17 +87,6 @@ MAX_EPOCHS_PER_STAGE = 12
 # MAX_EPOCHS_PER_STAGE is 12 rather than 40.
 PANEL = ("whole_head_exponent", "relative_alpha_power", "multiscale_entropy_slope",
          "spectral_edge_95", "spectral_entropy", "relative_delta_power", "lempel_ziv")
-
-
-def fetch(url, dest):
-    req = urllib.request.Request(url, headers={"User-Agent": "bsde-extractor"})
-    with urllib.request.urlopen(req, timeout=600) as r, open(dest, "wb") as fh:
-        while True:
-            b = r.read(1 << 20)
-            if not b:
-                break
-            fh.write(b)
-    return os.path.getsize(dest)
 
 
 def parse_scoring(text):
@@ -149,7 +142,6 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="/tmp/eeg_probe/capslpdb_stages.csv")
     ap.add_argument("--limit", type=int, default=0)
-    ap.add_argument("--tmp", default="/tmp/capslpdb_work")
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
     a = ap.parse_args()
@@ -162,10 +154,6 @@ def main() -> int:
     from bsde.features.spectral import BANDS
     mne.set_log_level("ERROR")
 
-    # Per-process working directory. Two concurrent copies of this script briefly shared one,
-    # which would have had each deleting the other's EDF mid-read -- rule 56, one writer.
-    a.tmp = os.path.join(a.tmp, str(os.getpid()))
-    os.makedirs(a.tmp, exist_ok=True)
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
 
     recs = urllib.request.urlopen(f"{BASE}/RECORDS", timeout=120).read().decode().split()
@@ -199,7 +187,6 @@ def main() -> int:
     dlo, dhi = BANDS["delta"]
 
     for rec in todo:
-        edf = os.path.join(a.tmp, f"{rec}.edf")
         try:
             txt = urllib.request.urlopen(f"{BASE}/{rec}.txt", timeout=300).read().decode("latin-1")
             epochs = parse_scoring(txt)
@@ -210,31 +197,36 @@ def main() -> int:
                                                    f"{n_ev} SLEEP- event lines"})
                 fh_out.flush(); print(f"{rec}: PARSER FAILED on {n_ev} event lines", flush=True)
                 continue
-            fetch(f"{BASE}/{rec}.edf", edf)
-            raw = mne.io.read_raw_edf(edf, preload=False, verbose=False)
-            picks = eeg_picks(raw.ch_names)
+
+            e = EdfHttp(f"{BASE}/{rec}.edf")
+            picks = eeg_picks(e.labels)
+            if picks:
+                # every pick must share one sampling rate; keep the modal one and report the drop
+                modal = collections.Counter(int(e.n_samp[i]) for i in picks).most_common(1)[0][0]
+                picks = [i for i in picks if int(e.n_samp[i]) == modal]
             if len(picks) < MIN_CH:
                 w.writerow({"record": rec, "n_eeg_channels": len(picks),
-                            "note": f"only {len(picks)} allow-listed EEG channels: {raw.ch_names[:8]}"})
-                fh_out.flush(); os.remove(edf); continue
-            sf = float(raw.info["sfreq"])
+                            "note": f"only {len(picks)} allow-listed EEG channels: {e.labels[:8]}"})
+                fh_out.flush(); continue
+            sf = e.sfreq(picks[0])
+            names = [e.labels[i] for i in picks]
             t0 = epochs[0][0]
             byst = {}
             for t, st in epochs:
                 byst.setdefault(st, []).append(t - t0)
 
-            names = [raw.ch_names[i] for i in picks]
             vals, dvals, counts = {}, {}, {}
             for st, offs in byst.items():
                 take = offs[:: max(1, len(offs) // MAX_EPOCHS_PER_STAGE)][:MAX_EPOCHS_PER_STAGE]
                 acc = {nm: [] for nm in PANEL}
                 dv = []
                 for off in take:
-                    s0 = int(off * sf)
-                    s1 = s0 + int(EPOCH_S * sf)
-                    if s0 < 0 or s1 > raw.n_times:
+                    if off < 0 or off + EPOCH_S > e.duration_s:
                         continue
-                    X = raw.get_data(picks=picks, start=s0, stop=s1) * 1e6
+                    try:
+                        X, _fs = e.read(float(off), EPOCH_S, picks)
+                    except Exception:
+                        continue
                     if not np.isfinite(X).all() or X.std() < 1e-9:
                         continue
                     for nm, fn in fns.items():
@@ -270,15 +262,12 @@ def main() -> int:
                     row[nm] = f"{med[nm]:.6f}"
                 w.writerow(row)
             fh_out.flush()
-            print(f"{rec}: {len(picks)} EEG ch, stages {sorted(vals)}, alignment control {ctrl:+.4f}",
-                  flush=True)
-        except Exception as e:
-            w.writerow({"record": rec, "note": f"{type(e).__name__}: {e}"[:200]})
+            print(f"{rec}: {len(picks)} EEG ch @ {sf:g} Hz, stages {sorted(vals)}, "
+                  f"alignment control {ctrl:+.4f}", flush=True)
+        except Exception as ex:
+            w.writerow({"record": rec, "note": f"{type(ex).__name__}: {ex}"[:200]})
             fh_out.flush()
-            print(f"{rec}: FAILED {type(e).__name__}: {e}", flush=True)
-        finally:
-            if os.path.exists(edf):
-                os.remove(edf)     # 40 GB deposit, fixed disk allowance: never keep two records at once
+            print(f"{rec}: FAILED {type(ex).__name__}: {ex}", flush=True)
     fh_out.close()
     print(f"wrote -> {a.out}")
     return 0
