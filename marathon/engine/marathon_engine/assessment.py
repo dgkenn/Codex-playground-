@@ -411,6 +411,18 @@ VDOT_TABLE_FLOOR = 30.0
 MAX_PREDICTION_EXTRAPOLATION = 2.5
 
 
+#: Below this coefficient of determination the HR-speed line is not a line, and the paces implied by
+#: its intercept are arithmetic rather than measurement.
+#:
+#: Discovered by importing an ordinary variable-pace outdoor run: the stage segmenter found apparent
+#: plateaus, the fit came back at r2 = 0.31, and the engine cheerfully printed a Z1 recovery pace of
+#: "122:14 per kilometre". It *did* also emit a caveat saying the fit was poor -- but a caveat beside
+#: an absurd number is not a safeguard. A number that wrong should never be produced at all, because
+#: somebody will read the number and not the caveat, and because a stored profile carries the number
+#: forward long after the caveat has scrolled away.
+MIN_FIT_R2_FOR_PACES = 0.75
+
+
 def hr_derived_paces(fit: Tuple[float, float, float], zones: ZoneModel,
                      hr_max: float, hr_rest: float) -> Dict[str, Tuple[float, float]]:
     """Pace ranges (s/km) implied by the HR zones and the measured HR-speed fit.
@@ -422,6 +434,9 @@ def hr_derived_paces(fit: Tuple[float, float, float], zones: ZoneModel,
     The fit is only valid across roughly the speeds tested, so each bound is flagged by the caller
     when it required extrapolation beyond the ramp's fastest stage.
     """
+    if fit[2] < MIN_FIT_R2_FOR_PACES:
+        # No paces at all rather than implausible ones. See MIN_FIT_R2_FOR_PACES.
+        return {}
     out: Dict[str, Tuple[float, float]] = {}
     for z in zones.zones:
         try:
@@ -521,7 +536,13 @@ def profile_from_ramp(ramp: RampTest, *, screen: Optional[StrengthScreen] = None
         "low-mileage first-timers fade much harder over the last 12 km than the standard formula "
         "assumes.",
     ]
-    if fit and fit[2] < 0.90:
+    if fit and fit[2] < MIN_FIT_R2_FOR_PACES:
+        caveats.append(
+            f"The HR-speed fit is not usable (r2={fit[2]:.2f}): the points do not lie on a line, so "
+            "no paces have been derived from it. That normally means the speeds were not actually "
+            "held steady -- an ordinary run rather than a ramp -- or the stages were far too short. "
+            "Run `protocol` on a treadmill to get a real one.")
+    elif fit and fit[2] < 0.90:
         caveats.append(f"The HR-speed fit is poor (r2={fit[2]:.2f}) -- HR may have been drifting or "
                        "the stages were too short. Re-test before trusting the derived paces.")
     if ramp.temp_c is not None and ramp.temp_c > 22:

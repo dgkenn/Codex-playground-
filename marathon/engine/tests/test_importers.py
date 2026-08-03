@@ -235,3 +235,37 @@ def test_load_any_dispatches_on_content_not_extension(tmp_path):
     p.write_text(_tcx(_ramp_points()))
     rec, _ = load_any(p, age=30, hr_rest=55)
     assert len(rec.samples) == 1740
+
+
+def test_a_poor_fit_produces_no_paces_rather_than_absurd_ones():
+    """Found by importing an ordinary outdoor run.
+
+    The stage segmenter found apparent plateaus in variable-pace running, the fit came back at
+    r2 = 0.31, and the engine printed a Z1 recovery pace of "122:14 per kilometre" — with a caveat
+    beside it saying the fit was poor. A caveat beside an absurd number is not a safeguard: somebody
+    reads the number and not the caveat, and a saved profile carries the number forward long after
+    the caveat has scrolled away. Below the threshold, no paces are derived at all.
+    """
+    from marathon_engine.assessment import MIN_FIT_R2_FOR_PACES, hr_derived_paces
+    from marathon_engine.physiology import five_zone_model
+
+    zones = five_zone_model(hr_max=187, hr_rest=55)
+    good = hr_derived_paces((12.0, 55.0, 0.99), zones, 187, 55)
+    bad = hr_derived_paces((6.6, 100.0, 0.31), zones, 187, 55)
+
+    assert good, "a clean fit should still yield paces"
+    assert bad == {}, "an unusable fit must yield nothing, not implausible numbers"
+    assert 0.31 < MIN_FIT_R2_FOR_PACES <= 0.90
+
+
+def test_no_derived_pace_is_ever_slower_than_a_walk():
+    """The property behind the threshold, stated directly."""
+    from marathon_engine.assessment import hr_derived_paces
+    from marathon_engine.physiology import five_zone_model
+
+    zones = five_zone_model(hr_max=187, hr_rest=55)
+    for r2 in (0.31, 0.5, 0.74, 0.76, 0.9, 0.99):
+        for slope in (5.0, 8.0, 12.0, 16.0):
+            paces = hr_derived_paces((slope, 55.0, r2), zones, 187, 55)
+            for name, (fast, slow) in paces.items():
+                assert slow < 1200, f"{name} at r2={r2}, slope={slope} gave {slow:.0f} s/km"

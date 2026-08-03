@@ -258,13 +258,22 @@ def cmd_import(args: argparse.Namespace) -> int:
 
     prof = result.profile
     if prof is None:
-        print("\nNO PROFILE PRODUCED")
-        print(_wrap("No steady stages long enough to fit heart rate against speed. That fit is the "
-                    "whole point of the calibration session, and it needs constant-speed blocks of "
-                    "at least two and a half minutes each. A variable-pace outdoor run cannot "
-                    "produce it. Re-record following `protocol`, ideally on a treadmill where speed "
-                    "is imposed rather than chosen.", indent="  "))
-        return 1
+        _print_run_summary(rec, result)
+        print("\nNOT A CALIBRATION")
+        print(_wrap("No constant-speed stages, so there is no heart-rate/speed fit in this file. "
+                    "That is not a fault -- an ordinary run cannot produce one, because the fit "
+                    "needs blocks of at least two and a half minutes at an imposed speed. Run "
+                    "`protocol` and record that session on a treadmill when you want the fit.",
+                    indent="  "))
+        if args.log:
+            _log_from_recording(rec, result)
+        else:
+            print(_wrap("Add --log to record this as a training session anyway.", indent="  "))
+        # Exit 0: a normal run is not an error. Returning failure here made the common case look
+        # broken, which trains you to ignore the exit code on the one occasion it matters.
+        return 0
+
+    _print_run_summary(rec, result)
 
     print("\nPROFILE")
     print(f"  HRmax        {prof.hr_max:.0f} bpm   ({prof.hr_max_source})")
@@ -285,6 +294,10 @@ def cmd_import(args: argparse.Namespace) -> int:
         print(f"    {z.name:<16}{z.low_bpm:>4}-{z.high_bpm:<4} bpm   {z.purpose}")
 
     paces = prof.hr_paces if prof.prescription_basis == "hr_from_ramp" else None
+    if prof.prescription_basis == "hr_from_ramp" and not paces:
+        print("\n  NO PACES")
+        print(_wrap("The heart-rate/speed fit was not good enough to derive paces from, so none "
+                    "have been. See below.", indent="    "))
     if paces:
         print("\n  PACES  (from your measured heart-rate line, not from a VDOT table)")
         for name, (fast, slow) in paces.items():
@@ -332,6 +345,90 @@ def _estimated_profile(*, age: float, hr_rest: float) -> FitnessProfile:
             "starting point only. The 2000 m trial in week 5 of BASE_1 replaces it with something "
             "real; until then, run by effort and let heart rate be the check.",
         ])
+
+
+def _print_run_summary(rec, result) -> None:
+    """What a recording says about the run itself, stages or no stages.
+
+    This is the common case and it used to print nothing. Most sessions are ordinary runs; only a
+    handful across the whole plan are calibration ramps, so a tool that only spoke about calibration
+    was silent for most of what you actually do.
+    """
+    import statistics
+
+    samples = sorted(rec.samples, key=lambda s: s.t_s)
+    hrs = [s.hr_bpm for s in samples if s.hr_bpm]
+    speeds = [s.speed_m_s for s in samples if s.speed_m_s]
+    if not samples:
+        return
+
+    span = samples[-1].t_s - samples[0].t_s
+    print("\nTHE RUN")
+    print(f"  duration     {span / 60:.0f} min")
+
+    distance_m = 0.0
+    for a, b in zip(samples, samples[1:]):
+        if a.speed_m_s:
+            distance_m += a.speed_m_s * max(0.0, min(5.0, b.t_s - a.t_s))
+    if distance_m > 100:
+        print(f"  distance     {distance_m / 1000:.2f} km")
+        if span > 0:
+            print(f"  mean pace    {fmt_pace(span / (distance_m / 1000))} /km")
+
+    if hrs:
+        print(f"  heart rate   mean {statistics.fmean(hrs):.0f}, peak {max(hrs):.0f} bpm")
+    if speeds:
+        print(f"  speed        mean {statistics.fmean(speeds) * 3.6:.1f} km/h")
+
+    # Decoupling: does heart rate drift up at constant effort? The single most informative number a
+    # steady run produces, and the one that tracks aerobic fitness over months.
+    if len(samples) > 600 and hrs and speeds:
+        usable = [s for s in samples if s.hr_bpm and s.speed_m_s]
+        if len(usable) > 600:
+            mid = len(usable) // 2
+            def ef(block):
+                mh = statistics.fmean([x.hr_bpm for x in block])
+                ms = statistics.fmean([x.speed_m_s for x in block])
+                return ms / mh if mh else None
+            a, b = ef(usable[:mid]), ef(usable[mid:])
+            if a and b:
+                drift = (a - b) / a
+                verdict = ("well within normal" if abs(drift) < 0.05
+                           else "worth noting -- heat, dehydration or simply too hard for the day")
+                print(f"  decoupling   {drift * 100:+.1f}%  ({verdict})")
+                print(_wrap("Second-half efficiency versus first. Under 5% on a steady run is the "
+                            "usual benchmark; it is a fitness signal, not a scoreboard.",
+                            indent="    "))
+
+
+def _log_from_recording(rec, result) -> None:
+    """Append an imported run to the training history."""
+    import statistics
+    samples = sorted(rec.samples, key=lambda s: s.t_s)
+    hrs = [s.hr_bpm for s in samples if s.hr_bpm]
+    distance_m = 0.0
+    for a, b in zip(samples, samples[1:]):
+        if a.speed_m_s:
+            distance_m += a.speed_m_s * max(0.0, min(5.0, b.t_s - a.t_s))
+    span = (samples[-1].t_s - samples[0].t_s) if samples else 0
+
+    entry = {
+        "date": rec.started_at.date().isoformat(),
+        "minutes": round(span / 60, 1),
+        "km": round(distance_m / 1000, 2) if distance_m > 100 else None,
+        "rpe": None, "mean_hr": round(statistics.fmean(hrs), 1) if hrs else None,
+        "pain": None, "type": "easy",
+        "notes": f"Imported. Sensor verdict: {result.sensor.verdict}, "
+                 f"HR coverage {result.sensor.hr_coverage * 100:.0f}%.",
+    }
+    sessions = _sessions()
+    sessions.append(entry)
+    _write("sessions.json", sessions)
+    print(f"\n  Logged as training: {entry['minutes']:.0f} min"
+          + (f", {entry['km']} km" if entry["km"] else ""))
+    if result.sensor.hr_coverage < 0.8:
+        print(_wrap("Heart-rate coverage was below 80%, so treat the load figure from this session "
+                    "as soft. The engine already discounts it.", indent="  "))
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -540,6 +637,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--hr-rest", type=float, dest="hr_rest")
     p.add_argument("--surface", default="road", choices=["road", "treadmill", "track", "trail"])
     p.add_argument("--save", action="store_true", help="keep the result as your profile")
+    p.add_argument("--log", action="store_true",
+                   help="also record this run in the training history")
     p.set_defaults(func=cmd_import)
 
     p = sub.add_parser("init", help="seed a profile from age-based estimates")
