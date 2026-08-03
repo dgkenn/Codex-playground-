@@ -160,7 +160,34 @@ def cmd_protocol(args: argparse.Namespace) -> int:
     p = _profile()
     age = args.age or (p["age"] if p else 30.0)
     hr_rest = args.hr_rest or (p["hr_rest"] if p else 55.0)
-    proto = calibration_protocol(age=age, hr_rest=hr_rest)
+
+    top = None
+    if args.from_run:
+        # Tailor the ladder from a previous ordinary run. The default top stage of 10 km/h is a guess
+        # about a stranger; if this athlete's own data says they cross the stop threshold well below
+        # it, the last stages would abort and the fit would lose exactly the points it needs most.
+        from marathon_engine.calibration import top_stage_from_run
+        from marathon_engine.physiology import hr_max_estimate
+        try:
+            rec, _ = load_any(args.from_run, age=age, hr_rest=hr_rest)
+        except (OSError, ValueError) as exc:
+            print(f"Could not read {args.from_run}: {exc}", file=sys.stderr)
+            return 1
+        observed = [s.hr_bpm for s in rec.samples if s.hr_bpm]
+        hr_max = max(hr_max_estimate(age), max(observed) if observed else 0)
+        top = top_stage_from_run(rec.samples, hr_max=hr_max, hr_rest=hr_rest)
+        if top is None:
+            print(_wrap("That run had no continuous minute of running with heart rate under the "
+                        "stop threshold, so the ladder is unchanged from the default.",
+                        indent="  "), file=sys.stderr)
+        else:
+            top = top - 0.5
+            print(_wrap(f"Ladder tailored from {args.from_run}: you held "
+                        f"{top + 0.5:.1f} km/h under the stop threshold, so the top stage is set to "
+                        f"{max(6.0, round(top * 2) / 2):.1f} km/h rather than the default 10.0.",
+                        indent="  "), file=sys.stderr)
+
+    proto = calibration_protocol(age=age, hr_rest=hr_rest, top_stage_kmh=top)
 
     print(_rule("CALIBRATION SESSION"))
     print(f"\nAbout {proto['total_min']:.0f} minutes in total.\n")
@@ -629,6 +656,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("protocol", help="print the calibration session to record")
     p.add_argument("--age", type=float)
     p.add_argument("--hr-rest", type=float, dest="hr_rest")
+    p.add_argument("--from-run", dest="from_run",
+                   help="tailor the stage speeds from a previous run (TCX/CSV/JSON)")
     p.set_defaults(func=cmd_protocol)
 
     p = sub.add_parser("import", help="import a TCX/CSV/JSON recording and build a profile")

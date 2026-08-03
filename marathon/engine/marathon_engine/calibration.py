@@ -512,18 +512,96 @@ def analyse_recording(rec: CalibrationRecording) -> CalibrationResult:
                              warnings=warnings, next_actions=actions)
 
 
-def calibration_protocol(age: float, hr_rest: float) -> Dict[str, Any]:
-    """The session to record. About 55 minutes including warm-up and the steady block."""
+#: Default top stage of the ramp, for an athlete nothing is known about.
+DEFAULT_TOP_STAGE_KMH = 10.0
+
+#: A hole longer than this ends a continuous segment. Three seconds tolerates ordinary jitter in a
+#: 1 Hz stream without letting a real dropout be papered over.
+SEGMENT_MAX_GAP_S = 3.0
+
+#: Margin below the fastest speed an athlete was observed to sustain under the stop threshold.
+#:
+#: A ramp accumulates fatigue: by the last stage you have been going for twenty-odd minutes, so a
+#: speed that sat comfortably under the ceiling when fresh will not by then. Half a km/h is the
+#: smallest step a treadmill offers and is enough to keep the final stage inside the protocol.
+TOP_STAGE_MARGIN_KMH = 0.5
+
+
+def top_stage_from_run(samples: Sequence[RecordingSample], *, hr_max: float,
+                       hr_rest: float) -> Optional[float]:
+    """The fastest speed this athlete held for a minute with heart rate still under the stop rule.
+
+    Why this is worth doing: the default ladder runs to 10 km/h, which is a guess about a stranger.
+    If the athlete's own data says they cross 85% of heart-rate reserve well below that, the last two
+    stages of the default ramp will trigger the stop rule and never be recorded -- and a ramp that
+    ends early gives fewer points to fit a line through, in the range where the line matters most.
+    Shifting the whole ladder down converts a test that aborts into one that completes.
+
+    Returns ``None`` when the data cannot support a judgement, which is the common case: this needs
+    at least one continuous minute of running, and an ordinary run may not contain one.
+    """
+    stop_hr = hr_at_reserve_fraction(0.85, hr_max, hr_rest)
+    ordered = sorted(samples, key=lambda x: x.t_s)
+    best: Optional[float] = None
+    run: List[RecordingSample] = []
+    for x in ordered:
+        running = x.speed_m_s is not None and x.speed_m_s >= 1.9 and x.hr_bpm is not None
+        # A gap in the timeline ends a segment as surely as a walk does. Without this, six thirty-
+        # second bursts with thirty-second holes between them read as one continuous three-minute
+        # run -- and "held for three minutes" is the entire claim this function makes. Missing
+        # seconds are now common by design: the Web Bluetooth logger omits them rather than
+        # repeating a stale heart rate.
+        gapped = bool(run) and (x.t_s - run[-1].t_s) > SEGMENT_MAX_GAP_S
+        if running and not gapped:
+            run.append(x)
+            continue
+        best = _consider_segment(run, stop_hr, best)
+        run = [x] if running else []
+    best = _consider_segment(run, stop_hr, best)
+    return best
+
+
+def _consider_segment(seg: List[RecordingSample], stop_hr: float,
+                      best: Optional[float]) -> Optional[float]:
+    """Judge one continuous running segment on its final 30 s, which is the closest it gets to
+    settled. Anything shorter than a minute has not begun to settle and is ignored."""
+    if len(seg) < 60:
+        return best
+    tail = [x.hr_bpm for x in seg[-30:] if x.hr_bpm]
+    if not tail or statistics.fmean(tail) >= stop_hr:
+        return best
+    speeds = [x.speed_m_s for x in seg if x.speed_m_s]
+    if not speeds:
+        return best
+    kmh = statistics.fmean(speeds) * 3.6
+    return kmh if best is None else max(best, kmh)
+
+
+def calibration_protocol(age: float, hr_rest: float, *,
+                         top_stage_kmh: Optional[float] = None) -> Dict[str, Any]:
+    """The session to record. About 55 minutes including warm-up and the steady block.
+
+    ``top_stage_kmh`` tailors the ladder to an athlete whose ceiling is already roughly known --
+    see :func:`top_stage_from_run`. The six stages then descend from it in 1 km/h steps, which keeps
+    the spread the fit needs while ensuring the last stage is one the athlete can actually complete.
+    """
     from marathon_engine.physiology import hr_max_estimate
     hr_max = hr_max_estimate(age)
     stop_hr = hr_at_reserve_fraction(0.85, hr_max, hr_rest)
+
+    top = DEFAULT_TOP_STAGE_KMH if top_stage_kmh is None else max(6.0, round(top_stage_kmh * 2) / 2)
+    ladder = [round(top - (5 - i), 1) for i in range(6)]
+    # Never prescribe a stage slower than a slow walk; below about 3.5 km/h the relationship between
+    # speed and heart rate is dominated by standing metabolism rather than by locomotion.
+    ladder = [v for v in ladder if v >= 3.5]
+
     stages = []
-    for i, kmh in enumerate([5.0, 6.0, 7.0, 8.0, 9.0, 10.0], start=1):
+    for i, kmh in enumerate(ladder, start=1):
         stages.append({"label": f"stage_{i}", "speed_kmh": kmh,
                        "pace_per_km": fmt_pace(3600.0 / kmh), "duration_min": 4,
                        "mode": "walk" if kmh <= 6.5 else "jog"})
     return {
-        "total_min": 5 + 6 * 4 + 5 + STEADY_BLOCK_MIN,
+        "total_min": 5 + len(stages) * 4 + 5 + STEADY_BLOCK_MIN,
         "device_setup": [
             "Charge the armband fully. Wear it on the UPPER arm, snug -- one notch tighter than feels "
             "necessary. Forearm placement is materially worse on this device.",

@@ -354,3 +354,47 @@ def test_missing_seconds_count_against_coverage_even_when_absent_from_the_file()
     assert health.hr_coverage < 0.6, (
         f"coverage read {health.hr_coverage:.0%} on a recording missing half its seconds")
     assert health.dropout_seconds > 250, health.dropout_seconds
+
+
+def test_ramp_ladder_is_tailored_from_a_previous_run():
+    """The default top stage of 10 km/h is a guess about a stranger.
+
+    If the athlete's own data says they cross 85% of heart-rate reserve well below it, the last
+    stages of the default ramp trigger the stop rule and are never recorded — and a ramp that ends
+    early gives fewer points to fit a line through, in exactly the range where the line matters.
+    """
+    from marathon_engine.calibration import (DEFAULT_TOP_STAGE_KMH, RecordingSample,
+                                             calibration_protocol, top_stage_from_run)
+
+    # Two minutes at 9 km/h with heart rate settling comfortably under the 85% HRR stop (167).
+    seg = [RecordingSample(t_s=float(t), hr_bpm=150.0, speed_m_s=2.5) for t in range(120)]
+    top = top_stage_from_run(seg, hr_max=187, hr_rest=55)
+    assert top is not None
+    assert 8.5 < top < 9.5
+
+    tailored = calibration_protocol(age=30, hr_rest=55, top_stage_kmh=top - 0.5)
+    default = calibration_protocol(age=30, hr_rest=55)
+    assert tailored["stages"][-1]["speed_kmh"] < default["stages"][-1]["speed_kmh"]
+    assert default["stages"][-1]["speed_kmh"] == DEFAULT_TOP_STAGE_KMH
+    # The spread the fit needs is preserved: still six stages, still 1 km/h apart.
+    assert len(tailored["stages"]) == 6
+    speeds = [s["speed_kmh"] for s in tailored["stages"]]
+    assert all(round(b - a, 1) == 1.0 for a, b in zip(speeds, speeds[1:]))
+
+
+def test_a_run_with_no_settled_minute_tailors_nothing():
+    """Returning None rather than a guess. Most ordinary runs cannot support this judgement."""
+    from marathon_engine.calibration import RecordingSample, top_stage_from_run
+    # Thirty-second bursts only: nothing long enough to have begun settling.
+    seg = []
+    for block in range(6):
+        seg += [RecordingSample(t_s=float(block * 60 + t), hr_bpm=150.0, speed_m_s=2.5)
+                for t in range(30)]
+    assert top_stage_from_run(seg, hr_max=187, hr_rest=55) is None
+
+
+def test_a_run_held_above_the_stop_threshold_tailors_nothing():
+    """Heart rate over the ceiling is not evidence of a sustainable speed."""
+    from marathon_engine.calibration import RecordingSample, top_stage_from_run
+    seg = [RecordingSample(t_s=float(t), hr_bpm=178.0, speed_m_s=2.5) for t in range(200)]
+    assert top_stage_from_run(seg, hr_max=187, hr_rest=55) is None
