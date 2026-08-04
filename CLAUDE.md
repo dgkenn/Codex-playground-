@@ -591,6 +591,13 @@ Every rule below was paid for with a wrong result in this project.
     twenty minutes. The third recovery was trivial precisely because the second had already been pushed:
     zero local-only commits, so `git reset --hard origin/<branch>` restored everything with nothing at
     risk, and the only cost was the ~40 minutes of fetching done since the last checkpoint.
+    **FOURTH OCCURRENCE the same day, and the mitigation is now measured rather than argued.** With
+    `checkpoint_loop.sh` running, recovery was `git reset --hard origin/<branch>` plus a relaunch,
+    the resumable extractor picked up from its own output, and the loss was **one checkpoint
+    interval** instead of forty minutes. Rollbacks have arrived roughly every ninety minutes today;
+    at that rate a four-minute checkpoint costs a handful of trivial commits and caps the expected
+    loss at about two minutes of work. Treat the loop as mandatory for anything long-running here,
+    not as a nicety.
     The corollary is the cheap habit
     that made recovery possible at all: **commit and push at every artifact boundary, not at the end of a
     work item.** An artifact that has not been pushed does not exist.
