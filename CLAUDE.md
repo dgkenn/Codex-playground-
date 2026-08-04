@@ -86,6 +86,55 @@ The three immutable investigator briefs — **never edit these, regardless of wh
 or anything after it) are only worth reporting once they have cleared the verifier's layers — do not let a
 biomarker result outrun the machinery that checks it.
 
+### WHERE BSDE ACTUALLY STANDS, 2026-08-04 — read this before planning any experiment
+
+Three challenges are briefed (`bsde/governance/CHALLENGES.json`, verbatim and anchored at registration).
+As of today **two are stopped and one is running.** Full reasoning, with the numbers, in
+`bsde/docs/DECISIONS_2026_08_02_LINES_AND_BLOCKERS.md`.
+
+**Challenge B — "spontaneous EEG predicting command-following" — STOPPED.** Rule 92: the only reliably
+live incumbent is RASS, and it is live *because* it shares a measurement act with the outcome. The one
+new public candidate is n = 4 and PMID 41017975 already ran a comparable panel on those same four
+patients. Restarts only on data access; `DATA_REQUEST_BATH_01632.md` is the specific ask.
+
+**Challenge C — "seeing a transition before the conventional monitor" — the LEAD HALF IS STOPPED,** on
+its own pre-committed condition. The PK/PD hysteresis literature already compares two indices'
+equilibration lag head-to-head (PMID 32925339) and already shows that epoch length alone moves the
+estimate across BIS's own value (PMID 33415524). E246 is `gate_failed` and uninterpretable — it landmarked
+on `aneend` against an incumbent that is absent from the window (catalogue rule 96). **What survives is
+E247**, which measured that the monitor is *recording and silent* through emergence: among cases still
+emitting, 92.5 % carry no valid index against 3.0 % at a placebo landmark, +0.8952 [+0.8821, +0.9081].
+Its verdict printed NOT INTERPRETABLE because G4 bundled two claims' support floors (rule 97); P1 passes
+every gate that applies to P1 and the selection half P2 does not.
+
+**Challenge A — REOPENED 2026-08-04 and RUNNING.** The investigator relaxed criterion (c), which had
+required a state label that is neither the monitor nor the drug. The relaxation is used for a *third*
+label both of the obvious ones would have been circular for: **the airway record** — measured respiratory
+rate versus the ventilator's set rate, which separates controlled from spontaneous ventilation, moves in
+both directions inside one case, and is neither the drug nor the EEG. **It is a brainstem behavioural
+output and NOT consciousness, and that belongs in the first result clause of any abstract.**
+
+E248 is registered and its extraction is in flight. Four things a new session must carry:
+
+1. **The state-tracking half of Challenge A is PUBLISHED** — PMID 31326088 (Ramaswamy 2019, *BJA*), 102
+   volunteers, three agents, MOAA/S labels, drug-independent AUC 0.83 against per-drug 0.97/0.74/0.77.
+   Our version is a **replication** and is labelled one. What is unclaimed is the *measurement* of how
+   much agent identity a representation carries.
+2. **The minimisation framing is NO LONGER described as unclaimed anywhere**, pending the full text of
+   PMID 41385421 (domain-adversarial, cross-anaesthetic, but the abstract does not say whether the
+   adversarial domain was drug or subject).
+3. **Criterion (b) is met in 94 patients, not 2,930** — the recovery landmark is usable in 2,592 cases and
+   the loss landmark in 110. So the reopened line is a **recovery-only design** at usable scale. The 120 s
+   sustain is NOT being re-tuned to fix this (rule 58); a separately-derived loss rule is a successor.
+4. **The reason it is worth running at all is the null floor.** E154 concluded that resolving agent
+   leakage at 0.10 needs ~140 patients and that no public deposit came close. VitalDB's arms
+   (1,274 / 415 / 903) put the patient-level permutation null's 95th percentile at **0.0243–0.0335**
+   against E154's **0.1904** — validated by reproducing E154's own number before being trusted anywhere new.
+
+**`uce_v1` cannot be computed on VitalDB at all** — it and four other connectivity/spatial measures are
+all-NaN on two frontal channels in a 10 s window. E248 therefore says nothing about the project's
+flagship candidate, and that is a limit of the deposit, not evidence about the measure.
+
 **The burst-suppression programme above continues and is not being wound down** — R418 and everything in
 `docs/research/` remains live and correct. `bsde/` is now a **second active thread alongside it, not a
 replacement for it.** Check which project a task belongs to before applying either project's conventions —
@@ -735,7 +784,10 @@ one real effect, all for the same reason (rule 28).
 | `docs/MORGOTH_INTEGRATION.md` | live — wire-up checklist; the model remains unobtainable |
 | `docs/RUNBOOK.md`, `docs/HEEDB_UNLOCK.md`, `docs/HANDOFF.md` | live — real-data procedure and pipeline handoff |
 | everything else in `docs/` | **legacy from unrelated projects — ignore unless specifically directed** |
+| `LOCAL_SETUP.md` | **live — how to run this off the sandbox, on an ordinary machine.** Read it before a local transition |
 | `bsde/docs/MASTER_PLAN.md` | **live — THE plan for the BSDE project**, reconciles the briefs with what's verified |
+| `bsde/docs/DECISIONS_2026_08_02_LINES_AND_BLOCKERS.md` | **live — which lines run, which are abandoned and why, and what is blocked on the investigator** |
+| `bsde/docs/DESIGN_2026_08_02_CHALLENGE_C_EXPOSURE_LANDMARK.md` | live — Challenge C's re-scoping and the stop that fired on its lead half |
 | `bsde/docs/RESEARCH_STRATEGY.md` | live — BSDE's detailed strategy, documented departures from the briefs |
 | `bsde/docs/ANALYSIS_PLAN.md` | live — BSDE's analysis backlog |
 | `bsde/docs/LITERATURE_MAP.md` | live — BSDE's prior-art / literature tracking |
@@ -801,7 +853,10 @@ python cli.py preflight                  # check creds/network/deps before a liv
 scripts/heedb_run.sh python analysis/X   # anything touching real credentialed data
 ```
 
-Branch: **`claude/heedb-eeg-phenotype-discovery-2mnwzx`** — develop, commit and push here.
+Branches: **`research`** is the research branch — all of it, and the one to clone for local work
+(`git clone -b research …`). **`claude/heedb-eeg-phenotype-discovery-2mnwzx`** is the sandbox's
+designated development branch and remains the default target for Claude Code sessions here; keep the
+two in sync (`git push origin HEAD:research` after pushing the working branch). `main` is untouched.
 Run `git config user.email noreply@anthropic.com && git config user.name Claude` or commits show as
 unverified on GitHub.
 51. **THE PRIMARY STATISTIC MUST BE SENSITIVE TO THE FAILURE MODE THE EXPERIMENT EXISTS TO FIND.** Rule 30
