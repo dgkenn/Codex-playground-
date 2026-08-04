@@ -1,0 +1,13 @@
+streaming vitaldb-targeted:10s over 2608 planned cases (56731 windows) -> bsde/results/vitaldb_ventwin.s3.csv
+   candidates: ['alpha_peak_hz', 'alpha_peak_hz_wide', 'critical_slowing_ar1', 'emg_beta_gamma_fraction', 'emg_index', 'emg_kurtosis', 'exponent_gamma', 'exponent_high', 'exponent_low', 'icoh_alpha', 'lempel_ziv', 'lrtc_alpha', 'multiscale_entropy_slope', 'pac_slow_alpha', 'relative_alpha_power', 'relative_alpha_power_iaf', 'relative_delta_power', 'relative_theta_power', 'spatial_participation_ratio', 'spectral_edge_95', 'spectral_entropy', 'uce_v1', 'whole_head_exponent', 'wpli_alpha']
+   shard 0/1: 14154 recordings, 14154 remaining
+   [10/14154] ok=10 err=0
+   [20/14154] ok=20 err=0
+   [30/14154] ok=30 err=0
+   [40/14154] ok=40 err=0
+   [50/14154] ok=50 err=0
+   [60/14154] ok=60 err=0
+   [70/14154] ok=70 err=0
+   [80/14154] ok=80 err=0
+   [90/14154] ok=90 err=0
+   [100/14154] ok=100 err=0

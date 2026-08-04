@@ -1,0 +1,1 @@
+[checkpoint] every 300s on branch claude/heedb-eeg-phenotype-discovery-2mnwzx while 'stream_vitaldb_transitions' is alive; paths: bsde/results/vitaldb_ventwin.s0.csv bsde/results/vitaldb_ventwin.s1.csv bsde/results/vitaldb_ventwin.s2.csv bsde/results/vitaldb_ventwin.s3.csv
