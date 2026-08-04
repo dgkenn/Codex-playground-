@@ -582,6 +582,15 @@ Every rule below was paid for with a wrong result in this project.
     stopped first; and an append (`cat >>`) to a file the rollback removed silently creates a NEW file
     containing only the appended text, which is how a 9 KB results note became a 1.7 KB fragment that
     still read as a valid document.
+    **THIRD OCCURRENCE, ninety minutes after the second, and it rolled back to the SAME COMMIT
+    (`93f1723`) again — so this is a pinned snapshot, not a random event, and it WILL recur.** That
+    changes the mitigation from "commit at artifact boundaries" to something quantitative: an extraction
+    that takes two hours loses, on average, half the interval between pushes. `scripts/checkpoint_loop.sh`
+    exists for this — it stages only the paths it is handed, commits only when something changed, rebases
+    before pushing, and exits when the process it watches is gone. Start it alongside any job over about
+    twenty minutes. The third recovery was trivial precisely because the second had already been pushed:
+    zero local-only commits, so `git reset --hard origin/<branch>` restored everything with nothing at
+    risk, and the only cost was the ~40 minutes of fetching done since the last checkpoint.
     The corollary is the cheap habit
     that made recovery possible at all: **commit and push at every artifact boundary, not at the end of a
     work item.** An artifact that has not been pushed does not exist.
