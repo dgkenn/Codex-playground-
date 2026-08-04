@@ -174,6 +174,29 @@ SKIP = {"recording_id", "dataset", "subject", "status", "error", "n_channels", "
 NUISANCE = ("opdur_s", "age", "bmi")
 
 
+def clinical_table():
+    """`age`, `bmi` and anaesthesia duration per case, straight from VitalDB's clinical endpoint.
+
+    ADDED AFTER THE SMOKE TEST AND BEFORE ANY REAL RESULT EXISTS. The first draft read the nuisance
+    variables from the landmark table, which never carried them, so G2 -- the placebo that E154 FAILED
+    and that this whole design exists to pass -- returned NaN for all three and could not fire. Catalogue
+    rule 40: a gate that cannot fail is not a gate, and the way to find that out is to construct the
+    input that should fail it. The smoke run did exactly that and this is the repair.
+    """
+    import gzip, io as _io, urllib.request
+    req = urllib.request.Request("https://api.vitaldb.net/cases", headers={"User-Agent": "bsde/1.0"})
+    blob = urllib.request.urlopen(req, timeout=300).read()
+    if blob[:2] == b"\x1f\x8b":
+        blob = gzip.decompress(blob)
+    out = {}
+    for r in csv.DictReader(_io.StringIO(blob.decode("utf-8-sig", "replace"))):
+        ae, as_ = _f(r.get("aneend")), _f(r.get("anestart"))
+        out[r["caseid"]] = {"age": _f(r.get("age")), "bmi": _f(r.get("bmi")),
+                            "opdur_s": (ae - as_) if (math.isfinite(ae) and math.isfinite(as_))
+                            else float("nan")}
+    return out
+
+
 def _f(v):
     try:
         f = float(v)
@@ -262,6 +285,14 @@ def main(argv=None) -> int:
                 if r.get("status") == "ok" and r.get("meta_caseid") in lm:
                     rows.append(r)
     print(f"[features] {len(rows)} windows, {len(cols)} candidate columns")
+    finite = {c: sum(1 for r in rows if math.isfinite(_f(r.get(c)))) for c in cols}
+    dropped = {c: n for c, n in finite.items() if n < 0.20 * len(rows)}
+    if dropped:
+        # Rule 74: a column with too few finite values must be dropped WITH A REASON and reported,
+        # never scored -- `nanmean(null >= nan)` counts every comparison False and returns p = 0.0000.
+        print(f"[features] DROPPED {len(dropped)} columns for too few finite values "
+              f"(<20% of windows): {dropped}")
+        cols = [c for c in cols if c not in dropped]
 
     by_case = {}
     for r in rows:
@@ -278,6 +309,16 @@ def main(argv=None) -> int:
     counts = {arm: sum(1 for v in arm_of.values() if v == arm) for arm in ARMS}
     print(f"[cohort] patients per arm: {counts}")
 
+    clin = clinical_table()
+    n_nui = {c: sum(1 for k in by_case if math.isfinite(_f(clin.get(k, {}).get(c, float("nan")))))
+             for c in NUISANCE}
+    print(f"[nuisance] finite values per case: {n_nui} of {len(by_case)}")
+    for c, n in n_nui.items():
+        if n < 0.5 * len(by_case):
+            print(f"REFUSED: nuisance placebo {c!r} is finite in only {n} of {len(by_case)} cases; "
+                  "G2 could not fire and a gate that cannot fail is not a gate (rule 40)")
+            return 2
+
     summ = {}
     for cid, rs in by_case.items():
         d = {}
@@ -285,11 +326,13 @@ def main(argv=None) -> int:
             v = sorted(_f(r.get(c)) for r in rs)
             v = [x for x in v if math.isfinite(x)]
             d[c] = v[len(v) // 2] if v else float("nan")
+        cl = clin.get(cid, {})
         for c in NUISANCE:
-            d[c] = _f(lm[cid].get(c, ""))
+            d[c] = _f(cl.get(c, float("nan")))
         summ[cid] = d
 
-    rep = {"n_cases": len(by_case), "counts": counts, "reps": a.reps, "pairs": {}}
+    rep = {"n_cases": len(by_case), "counts": counts, "reps": a.reps,
+           "dropped_columns": dropped, "nuisance_finite": n_nui, "pairs": {}}
     for x, y in PAIRS:
         ax = [c for c in summ if arm_of[c] == x]
         ay = [c for c in summ if arm_of[c] == y]
@@ -311,7 +354,8 @@ def main(argv=None) -> int:
                       "analytic_p95": p95a}
         rep["pairs"][f"{x}_vs_{y}"] = {"n": [len(ax), len(ay)], "analytic_null_p95": p95a,
                                        "features": res}
-        top = sorted(((v["obs"], k) for k, v in res.items() if k not in NUISANCE), reverse=True)[:5]
+        top = sorted(((v["obs"], k) for k, v in res.items()
+                      if k not in NUISANCE and math.isfinite(v["obs"])), reverse=True)[:5]
         nui = {k: round(res[k]["obs"], 4) for k in NUISANCE if k in res}
         print(f"[P1 {x} vs {y}] n={len(ax)}/{len(ay)} null95={p95a:.4f} | top: "
               + ", ".join(f"{k}={v:.4f}" for v, k in top) + f" | nuisance {nui}")

@@ -812,3 +812,29 @@ Ramaswamy 2019 rather than a finding.
 
 **Window plan: 2,608 cases, 56,731 windows, median 21 per case** — the fixed 21-offset grid, so recording
 length still cannot enter the summary.
+
+## The smoke test caught a dead gate before any result existed — which is what it is for
+
+E248's rule-26 smoke run (arm labels permuted across patients, so every code path executes on real
+feature distributions while the real association is never seen) surfaced two defects. Both were repaired
+before the extraction finished and before any real number existed, so neither repair is tuning.
+
+**1. G2 — the gate this whole design exists to pass — could not fire.** The nuisance placebo read
+`opdur_s`, `age` and `bmi` from the landmark table, which never carried them, so all three returned NaN
+in every case. E154's failure was precisely that recording duration out-identified every candidate at
+|AUC−0.5| = 0.3771; a design built to beat that confound had shipped with the check inert. Catalogue rule
+40 in its exact form, in this project's own file, again. The repair reads the three variables from
+VitalDB's clinical endpoint and **refuses to run** if any is finite in fewer than half the cases. After
+it: finite in **425 of 425**.
+
+**2. Five candidate columns are all-NaN and were being scored rather than excluded.** `icoh_alpha`,
+`lrtc_alpha`, `spatial_participation_ratio`, `uce_v1` and `wpli_alpha` return no finite value on any
+window. That is rule 74's exact failure mode — a NaN column scored at p = 0.0000 because
+`nanmean(null >= nan)` counts every comparison False — and this project has now hit it four times. They
+are dropped with the count reported.
+
+**Worth stating on its own: `uce_v1` is one of the dropped columns.** The project's first named candidate
+cannot be computed at all on this deposit. The reason is structural rather than a bug: VitalDB exposes
+**two** frontal EEG channels and these windows are **10 s**, and every one of the five dropped measures is
+a connectivity or spatial-organisation statistic that needs more channels or a longer window than that.
+It is a limit of the deposit, not evidence about the measure, and E248 therefore says nothing about UCE.
