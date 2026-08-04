@@ -774,3 +774,41 @@ not noise: they are episodes where a patient who had resumed spontaneous breathi
 That is a real state change, and because the rule takes the **last** sustained agreeing run it moves
 `t_rec` later in those ~2 % of cases, which is the correct behaviour rather than an error. It is written
 down here so that nobody later reads the 0.02 as an unfixed defect.
+
+## The landmarks are built, and criterion (b) is only half met at usable scale
+
+Landmarks emitted for all **2,930** single-agent cases at the derived 120 s sustain, with no errors.
+
+| | sevoflurane | desflurane | propofol | total |
+|---|---|---|---|---|
+| cases | 1,474 | 460 | 996 | 2,930 |
+| **recovery landmark usable** | 1,274 | 415 | 903 | **2,592** |
+| **loss landmark usable** | — | — | — | **110** |
+| **both directions** | 39 | 15 | 40 | **94** |
+
+**The recovery direction is abundant and the loss direction is not**, and the reason is a design error
+rather than a threshold that failed. The sustain was derived from spurious runs during *maintenance* and
+during *post-recovery spontaneous breathing* — both long, stable states. The loss landmark's context is
+neither: it is the minute or two of pre-intubation spontaneous breathing at the very start of a record,
+which frequently does not contain 120 s of *sustained* separation. A single sustain derived from
+long-window contexts and applied to a short one was the wrong instrument for that landmark.
+
+**It is not being re-tuned now.** Shortening the sustain after seeing that it costs the loss direction is
+the move `DISCOVERY_LOOP.md` §2 forbids and rule 58 names, regardless of how defensible the reasoning
+sounds. A separately-derived loss rule is a **successor with a stated instrument change**, not a patch.
+
+### What this costs, stated plainly
+
+**Challenge A's criterion (b) — loss AND recovery — is met in 94 patients, not 2,930.** At 39 / 15 / 40
+per arm the patient-level null's 95th percentile is 0.25–0.35, i.e. back where E142 and E154 were, so no
+cross-agent contrast is resolvable on the both-directions subset. **The reopened Challenge A is, at
+usable scale, a RECOVERY-ONLY design**, and that is weaker than the briefed statement.
+
+**E248's primary is unaffected in power.** The leakage measurement is made at matched state, and matched
+state is definable at recovery alone: arms of 1,274 / 415 / 903 give analytic null 95th percentiles of
+**0.0325 (sevo–des), 0.0243 (sevo–ppf), 0.0335 (des–ppf)** — the 6–8× improvement over E154's 0.1904
+stands. What is lost is the *direction-generality* of the state-tracking arm, which was a replication of
+Ramaswamy 2019 rather than a finding.
+
+**Window plan: 2,608 cases, 56,731 windows, median 21 per case** — the fixed 21-offset grid, so recording
+length still cannot enter the summary.
