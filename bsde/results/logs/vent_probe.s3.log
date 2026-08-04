@@ -1,2 +1,6 @@
 [probe] eligible by arm: des=460, mixed=2613, none=23, ppf=996, sevo=1474
 [probe] 1391 cases (ALL, sharded), 759 to fetch
+[probe] 50/759
+[probe] 100/759
+[probe] 150/759
+[probe] 200/759

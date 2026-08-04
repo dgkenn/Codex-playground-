@@ -740,3 +740,37 @@ Note what this does and does not license. It says the **instrument** now has the
 nothing about whether leakage is large or small — that is what the run measures, and both answers are
 reportable (a large leakage is a quantified criticism of every "drug-independent" estimator including
 Ramaswamy 2019's; a small one says the invariance problem is smaller than the field assumes).
+
+## The landmark rule's one free parameter, derived rather than picked
+
+The ventilation label has exactly one free parameter: how long a run of agreement or separation must
+last before it counts as a state change rather than a dropped packet. Rule 63 says a threshold picked as
+a round number measures the round number, so it was measured — **in both directions**, because a sustain
+derived only from one is one-sided and the two corrupt different landmarks.
+
+Fetched the two 1 Hz tracks for ~56 sampled single-agent cases and counted spurious runs against the
+prevailing state: **separations during deep maintenance** (`[aneend−3600, aneend−1800]`, where controlled
+ventilation is the background) and **agreements during spontaneous breathing** (`[aneend+300,
+aneend+1500]`, restricted to cases actually breathing spontaneously there).
+
+| sustain | spurious separations / case | spurious agreements / case |
+|---|---|---|
+| 30 s | 0.27 | 0.04 |
+| 60 s | 0.07 | 0.02 |
+| 90 s | 0.04 | 0.02 |
+| **120 s** | **0.00** | **0.02** |
+| 300 s | 0.00 | 0.02 |
+
+**Derived value: 120 s (12 grid steps).** It is the smallest sustain at which the separation column
+reaches zero, and it sits on a plateau rather than at a cliff — which matters because the measurement was
+run twice on differently-drawn samples (92 spurious separated runs in one, 41 in the other, max run length
+18 steps against 11) and the two disagree on the tail while agreeing that ~120 s is negligible. A value
+chosen at the observed maximum would have been fitting the sample; a value on the plateau is not.
+
+**One thing the mirror column shows that the rule cannot fix, recorded rather than smoothed over.** The
+spurious *agreements* are few (2 across 48 cases) but **long** — median 200 s, max 380 s — so no sustain
+length removes them and the column plateaus at 0.02 per case. At that length they are almost certainly
+not noise: they are episodes where a patient who had resumed spontaneous breathing was supported again.
+That is a real state change, and because the rule takes the **last** sustained agreeing run it moves
+`t_rec` later in those ~2 % of cases, which is the correct behaviour rather than an error. It is written
+down here so that nobody later reads the 0.02 as an unfixed defect.
