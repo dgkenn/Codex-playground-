@@ -1,0 +1,40 @@
+{
+  "candidate_raw": {
+    "e129": 0.444,
+    "perm_p": 0.0,
+    "rho": 0.4461391585666411
+  },
+  "gates": {
+    "G1_incumbent_alive": false,
+    "G2_candidate_alive": true,
+    "G3_vary": true,
+    "G4_coverage": true
+  },
+  "incumbent_levels": {
+    "1": 6,
+    "2": 18,
+    "3": 13,
+    "4": 31,
+    "5": 19
+  },
+  "n": 87,
+  "n_joined": 87,
+  "p1": {
+    "perm_p": 0.4368,
+    "rho": -0.08410944269580997,
+    "rimbert_2018": 0.381
+  },
+  "p2": {
+    "hi": 0.6101273964299426,
+    "lo": 0.23726136566991513,
+    "partial": 0.4399442932501626,
+    "perm_p": 0.0001
+  },
+  "p3": {
+    "partial": -0.016420838418109967,
+    "perm_p": 0.88
+  },
+  "power_floor": 0.29650013101910044,
+  "seed": 20260802,
+  "verdict": "INCUMBENT DEAD -- the self-report does not clear its own null on this cohort (-0.0841, |p| = 0.4368), so P2 = +0.4399 is an association against no competitor; at n = 87 the 80%-power floor is rho = 0.2965 and Rimbert's own effect was 0.381, so this is a real failure to replicate rather than a power failure"
+}

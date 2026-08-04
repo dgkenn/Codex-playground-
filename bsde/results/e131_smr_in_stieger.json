@@ -1,0 +1,43 @@
+{
+  "n_subjects": 62,
+  "gates": {
+    "G1_pass": true,
+    "G2_median_accuracy": 0.5954718333333333,
+    "G2_chance_level": 0.5,
+    "G2_spread": 0.39735466666666674,
+    "G2_pass": true,
+    "G3_median": 0.5698360944764193,
+    "G3_sd": 0.1918217366753787,
+    "G3_frac_positive": 1.0,
+    "G3_pass": true,
+    "S3_e86_reproduces": true
+  },
+  "primary": {
+    "rho": 0.07471481453501548,
+    "lo": -0.19680189368185136,
+    "hi": 0.32937221424794144,
+    "n": 62,
+    "dreyer_alpha_prom": 0.371
+  },
+  "secondaries": {
+    "iaf": {
+      "rho": 0.2592984311651683,
+      "lo": 0.000721462567046917,
+      "hi": 0.46347611493037194,
+      "n": 62
+    },
+    "ge_norm": {
+      "rho": 0.29551006018483544,
+      "lo": 0.03963637279343256,
+      "hi": 0.525774974188512,
+      "n": 62
+    },
+    "rho_alpha_prom_ge_norm_stieger": 0.24585127546523633
+  },
+  "placebo": {
+    "p2.5": -0.24237868600639623,
+    "p97.5": 0.2588124197325677,
+    "real_inside": true
+  },
+  "verdict": "(b) DOES NOT WORK HERE, and it EXCLUDES Dreyer's +0.3710. +0.0747 [-0.1968, +0.3294] lies INSIDE the permutation interval [-0.2424, +0.2588], so no directional claim survives whatever its sign."
+}

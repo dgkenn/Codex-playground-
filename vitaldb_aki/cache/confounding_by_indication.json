@@ -1,0 +1,141 @@
+{
+  "seed": 20260628,
+  "n_total": 15949,
+  "evalues": {
+    "doseresponse_Q4_Q1_adjRR_3.27": {
+      "point": 5.99,
+      "ci_lb_3.02": 5.49,
+      "interp": "an unmeasured confounder would need RR>=5.5-6 with BOTH requirement and death, beyond age+Charlson+Elixhauser+#vaso, to nullify the adjusted dose-response"
+    },
+    "lactate_sofa_adj_OR_2.53_perSD": {
+      "approx_rr": 1.68,
+      "evalue": 2.75
+    },
+    "without_vaso_mediator_OR_2.97": {
+      "approx_rr": 1.8,
+      "evalue": 3.0
+    }
+  },
+  "within_severity_stratum": {
+    "by_lactate_quintile": {
+      "Q1": {
+        "n": 1161,
+        "deaths": 224,
+        "mortality": 0.193,
+        "or_per_sd": 1.944,
+        "ci": [
+          1.444,
+          2.55
+        ]
+      },
+      "Q2": {
+        "n": 993,
+        "deaths": 269,
+        "mortality": 0.271,
+        "or_per_sd": 1.762,
+        "ci": [
+          1.426,
+          2.231
+        ]
+      },
+      "Q3": {
+        "n": 1074,
+        "deaths": 298,
+        "mortality": 0.277,
+        "or_per_sd": 3.951,
+        "ci": [
+          2.611,
+          6.32
+        ]
+      },
+      "Q4": {
+        "n": 1047,
+        "deaths": 365,
+        "mortality": 0.349,
+        "or_per_sd": 2.499,
+        "ci": [
+          2.084,
+          3.069
+        ]
+      },
+      "Q5": {
+        "n": 1054,
+        "deaths": 633,
+        "mortality": 0.601,
+        "or_per_sd": 4.935,
+        "ci": [
+          2.687,
+          8.601
+        ]
+      }
+    },
+    "by_nvaso": {
+      "1_pressor": {
+        "n": 6758,
+        "deaths": 1299,
+        "mortality": 0.192,
+        "or_per_sd": 1.613,
+        "ci": [
+          1.423,
+          1.849
+        ]
+      },
+      "2_pressors": {
+        "n": 4711,
+        "deaths": 1463,
+        "mortality": 0.311,
+        "or_per_sd": 2.225,
+        "ci": [
+          2.019,
+          2.48
+        ]
+      },
+      "3plus_pressors": {
+        "n": 4480,
+        "deaths": 2496,
+        "mortality": 0.557,
+        "or_per_sd": 5.846,
+        "ci": [
+          4.536,
+          7.439
+        ]
+      }
+    }
+  },
+  "strata_all_positive": {
+    "n_strata": 8,
+    "n_OR_gt1_CIexcl1": 8,
+    "verdict": "dose-response persists WITHIN severity strata -> not merely sicker-got-more-drug"
+  },
+  "homogeneous_single_pressor_lactate2to4": {
+    "n": 767,
+    "deaths": 137,
+    "mortality": 0.179,
+    "or_per_sd": 1.464,
+    "ci": [
+      1.25,
+      1.755
+    ]
+  },
+  "sepsis_only": {
+    "n": 7894,
+    "deaths": 3062,
+    "mortality": 0.388,
+    "or_per_sd": 3.519,
+    "ci": [
+      3.199,
+      3.861
+    ]
+  },
+  "nonsepsis": {
+    "n": 8055,
+    "deaths": 2196,
+    "mortality": 0.273,
+    "or_per_sd": 3.855,
+    "ci": [
+      3.228,
+      4.502
+    ]
+  },
+  "verdict": "ARGUMENTS AGAINST CONFOUNDING-BY-INDICATION: (a) E-value ~6 (CI ~5.5) on the severity-adjusted dose-response -> an unmeasured confounder would have to be implausibly strong; (b) the requirement->mortality OR stays >1 (CI excludes 1) in 8/8 within-severity strata (lactate quintiles + #vaso) -> the dose grades mortality even after CONDITIONING on the indication; (c) it persists within a homogeneous single-pressor/lactate-2-4 band (OR 1.464) and within sepsis (OR 3.519). Confounding by indication is not eliminated (observational) but is made IMPLAUSIBLE as the sole explanation. The IV + negative-control-exposure tests (separate module) are the remaining quasi-experimental checks."
+}

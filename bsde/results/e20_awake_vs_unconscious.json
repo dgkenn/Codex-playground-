@@ -1,0 +1,9 @@
+{
+  "experiment": "E20",
+  "gate_passed": false,
+  "gate": {
+    "hits": 5,
+    "n": 7
+  },
+  "no_further_framings": true
+}

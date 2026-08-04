@@ -1,0 +1,10 @@
+five-stage work-list: 710 rows over 142 recordings (5 stages each)
+
+skips by reason:
+   usable                             142
+   N3_block_too_short                 32
+   no_N3_block                        19
+   N1_block_too_short                 3
+   W_block_too_short                  1
+
+retention: 142/197 recordings have all five stages with blocks >= 120s

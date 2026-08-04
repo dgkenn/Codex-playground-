@@ -1,0 +1,71 @@
+{
+  "experiment": "E207",
+  "n_cases": 115,
+  "n_propofol": 44,
+  "n_sevo": 71,
+  "features": [
+    "lempel_ziv",
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "exponent_low",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "relative_delta_power",
+    "exponent_high"
+  ],
+  "n_draws": 200,
+  "g1": true,
+  "g3": {
+    "knn": 0.45934699103713184,
+    "floor": 0.13556338028169013,
+    "pass": true
+  },
+  "g2": {
+    "within": {
+      "propofol": {
+        "deep_above_light": 0.6818181818181819,
+        "floor": 0.2272727272727273,
+        "n": 44
+      },
+      "sevoflurane": {
+        "deep_above_light": 0.6619718309859155,
+        "floor": 0.21126760563380276,
+        "n": 71
+      }
+    },
+    "pass": true
+  },
+  "transport": {
+    "propofol -> sevoflurane": {
+      "cross_mean": 0.1513232514177694,
+      "within_mean": 0.24539697542533084,
+      "diff": -0.09407372400756144,
+      "diff_ci": [
+        -0.19097353497164454,
+        0.052930056710775
+      ],
+      "n_train": 44,
+      "n_eval": 23,
+      "sizes_equal": true,
+      "n_draws": 200
+    },
+    "sevoflurane -> propofol": {
+      "cross_mean": 0.09645408163265305,
+      "within_mean": 0.27005102040816326,
+      "diff": -0.1735969387755102,
+      "diff_ci": [
+        -0.3520408163265306,
+        0.010459183673469454
+      ],
+      "n_train": 30,
+      "n_eval": 14,
+      "sizes_equal": true,
+      "n_draws": 200
+    }
+  },
+  "g4": true,
+  "verdict": "INCONCLUSIVE",
+  "why": "every paired difference straddles zero: {'propofol -> sevoflurane': [-0.191, 0.0529], 'sevoflurane -> propofol': [-0.352, 0.0105]}. The cohort cannot resolve the question and NO transport claim is licensed in either direction"
+}

@@ -1,0 +1,209 @@
+{
+  "seed": 20260628,
+  "mimic_discovery": {
+    "seed": 20260628,
+    "baseline_mode": "first (admission); min reported as sensitivity",
+    "n_linked_stays": 6421,
+    "n_esrd_excluded": 883,
+    "aki_rate": 0.482,
+    "aki_rate_min_baseline_sensitivity": 0.87,
+    "stage_dist": {
+      "0": 3325,
+      "1": 1573,
+      "2": 589,
+      "3": 934
+    },
+    "age_adjusted_OR_per_SD": {
+      "or": 1.377,
+      "ci": [
+        1.248,
+        1.504
+      ],
+      "n": 6421,
+      "events": 3093
+    },
+    "dose_response_quartiles": [
+      {
+        "quartile": 1,
+        "n": 1605,
+        "median_req": 0.04,
+        "aki_rate": 0.384
+      },
+      {
+        "quartile": 2,
+        "n": 1605,
+        "median_req": 0.06,
+        "aki_rate": 0.435
+      },
+      {
+        "quartile": 3,
+        "n": 1605,
+        "median_req": 0.1,
+        "aki_rate": 0.5
+      },
+      {
+        "quartile": 4,
+        "n": 1606,
+        "median_req": 0.2203,
+        "aki_rate": 0.607
+      }
+    ],
+    "dose_response_monotone": true,
+    "dose_response_q4_minus_q1": 0.223,
+    "within_severity_adjusted_OR_per_SD": {
+      "or": 1.198,
+      "ci": [
+        1.069,
+        1.362
+      ],
+      "n": 4549,
+      "events": 2084,
+      "covars": [
+        "age",
+        "lactate",
+        "comorbidity_count",
+        "requirement(target)"
+      ]
+    },
+    "within_lactate_tertile_OR": [
+      {
+        "lactate_tertile": 1,
+        "n": 1453,
+        "events": 547,
+        "aki_rate": 0.376,
+        "or": 1.273,
+        "ci": [
+          1.099,
+          1.501
+        ]
+      },
+      {
+        "lactate_tertile": 2,
+        "n": 1569,
+        "events": 674,
+        "aki_rate": 0.43,
+        "or": 1.165,
+        "ci": [
+          1.005,
+          1.546
+        ]
+      },
+      {
+        "lactate_tertile": 3,
+        "n": 1527,
+        "events": 863,
+        "aki_rate": 0.565,
+        "or": 1.136,
+        "ci": [
+          1.031,
+          1.304
+        ]
+      }
+    ],
+    "verdict": "MIMIC DISCOVERY (n=6421 norepi stays, 883 ESRD excluded, AKI 0.482): requirement->AKI age-adjusted OR/SD 1.377 [1.248, 1.504] (CI excludes 1) | dose-response Q4-Q1 0.223 MONOTONE across quartiles | within-severity (age+lactate+comorbidity adj) OR/SD 1.198 [1.069, 1.362] | 3/3 lactate strata keep OR>1 (CI excl 1). DOSE-RESPONSE TO AKI HOLDS within severity -> requirement marks renal risk beyond measured severity (observational; not a treatment effect)."
+  },
+  "inspire_validation": {
+    "seed": 20260628,
+    "n_medicated_subset": 50546,
+    "exposure_note": "intraop_norepi populated only in the 50.5k intraop-med subset; blank elsewhere means 'no med extract', not zero -> restricted here.",
+    "intraop_norepi": {
+      "panel": {
+        "organ_renal": {
+          "log_or": 0.0473,
+          "or": 1.048,
+          "n": 38963,
+          "events": 2475
+        },
+        "organ_hepatocellular": {
+          "log_or": 0.0204,
+          "or": 1.021,
+          "n": 31577,
+          "events": 3535
+        },
+        "organ_cholestatic": {
+          "log_or": 0.0948,
+          "or": 1.099,
+          "n": 30251,
+          "events": 2971
+        },
+        "organ_coagulation": {
+          "log_or": 0.0746,
+          "or": 1.077,
+          "n": 19513,
+          "events": 2146
+        }
+      },
+      "null_mean_logor": 0.0633,
+      "null_sd_logor": 0.0385,
+      "renal_raw_logor": 0.0473,
+      "renal_calibrated_logor": -0.016,
+      "renal_calibrated_OR": 0.984,
+      "renal_z_vs_null": -0.42,
+      "survives": false,
+      "verdict": "renal raw OR 1.048 (logOR 0.0473); negative-control null mean 0.0633 sd 0.0385; CALIBRATED logOR -0.016 (OR 0.984, z=-0.42) -> DIES within the empirical confounding null (NOT renal-specific) -- same fate as Pivot 3"
+    },
+    "norepi_any": {
+      "panel": {
+        "organ_renal": {
+          "log_or": 0.933,
+          "or": 2.542,
+          "n": 38963,
+          "events": 2475
+        },
+        "organ_hepatocellular": {
+          "log_or": 0.4151,
+          "or": 1.514,
+          "n": 31577,
+          "events": 3535
+        },
+        "organ_cholestatic": {
+          "log_or": 1.101,
+          "or": 3.007,
+          "n": 30251,
+          "events": 2971
+        },
+        "organ_coagulation": {
+          "log_or": 1.272,
+          "or": 3.568,
+          "n": 19513,
+          "events": 2146
+        }
+      },
+      "null_mean_logor": 0.9294,
+      "null_sd_logor": 0.4535,
+      "renal_raw_logor": 0.933,
+      "renal_calibrated_logor": 0.0036,
+      "renal_calibrated_OR": 1.004,
+      "renal_z_vs_null": 0.01,
+      "survives": false,
+      "verdict": "renal raw OR 2.542 (logOR 0.933); negative-control null mean 0.9294 sd 0.4535; CALIBRATED logOR 0.0036 (OR 1.004, z=0.01) -> DIES within the empirical confounding null (NOT renal-specific) -- same fate as Pivot 3"
+    },
+    "verdict": "INSPIRE EXTERNAL (norepi dose -> AKI, age/sex/asa/egfr/duration-adj): renal raw OR 1.048 (logOR 0.0473); negative-control null mean 0.0633 sd 0.0385; CALIBRATED logOR -0.016 (OR 0.984, z=-0.42) -> DIES within the empirical confounding null (NOT renal-specific) -- same fate as Pivot 3"
+  },
+  "vitaldb_validation": {
+    "seed": 20260628,
+    "n_nepi_requirement_cases": 219,
+    "n_cases_any_pressor": 3468,
+    "requirement_vs_renal": {
+      "n": 157,
+      "renal_events": 17,
+      "median_req_renal_pos": 0.2134,
+      "median_req_renal_neg": 0.1658,
+      "mannwhitney_p": 0.2574
+    },
+    "any_pressor_vs_renal": {
+      "n": 3924,
+      "renal_events": 143,
+      "table": {
+        "pressor_renal": 95,
+        "pressor_norenal": 2218,
+        "nopressor_renal": 48,
+        "nopressor_norenal": 1563
+      },
+      "crude_OR": 1.395,
+      "fisher_p": 0.069
+    },
+    "verdict": "VitalDB EXTERNAL (small N): NEPI-requirement cases n=219 (renal events 17); NO requirement->renal signal at this N (MW p=0.2574) | any-pressor crude OR 1.395 (fisher p 0.069). Underpowered -- directional only."
+  },
+  "overall_verdict": "OVERALL: DISCOVERY (MIMIC): dose-response to AKI holds within severity; INSPIRE causal arm: DIES on negative-control calibration (expected, cf Pivot 3); VitalDB: underpowered directional. The requirement is a robust RISK MARKER for AKI that grades dose-response within measured severity in the discovery ICU cohort, BUT the cross-cohort CAUSAL arm (INSPIRE, the honest negative-control-calibrated test) does NOT survive: the renal effect is indistinguishable from the empirical confounding null built from non-renal organ injuries. So: predictive / risk-stratifying YES, renal-SPECIFIC CAUSAL claim NO. Consistent with confounding by indication, exactly as Pivot 3 found for the CKD-MAP claim."
+}

@@ -1,0 +1,83 @@
+{
+ "gates": {
+  "G1_blocks": 487,
+  "G1_subjects": 141,
+  "G1_pass": true,
+  "G3_labels": [
+   "N2",
+   "N3",
+   "REM",
+   "W"
+  ],
+  "G3_pass": true,
+  "blocks_per_stage": {
+   "N2": 137,
+   "N3": 92,
+   "REM": 132,
+   "W": 126
+  },
+  "G2_positive_control": {
+   "n_blocks": 486,
+   "median": -0.02857142857142857,
+   "lo": -0.14285714285714288,
+   "hi": 0.02857142857142857,
+   "n_boot_ok": 2000
+  },
+  "G2_pass": false,
+  "G2_direction_as_predicted": false
+ },
+ "primary": {
+  "irr3": {
+   "n_blocks": 486,
+   "median": 0.02857142857142857,
+   "lo": -0.08571428571428572,
+   "hi": 0.08571428571428572,
+   "n_boot_ok": 2000
+  },
+  "irr4": {
+   "n_blocks": 486,
+   "median": 0.0,
+   "lo": -0.08571428571428572,
+   "hi": 0.08571428571428572,
+   "n_boot_ok": 2000
+  },
+  "incr_asym": {
+   "n_blocks": 486,
+   "median": -0.02857142857142857,
+   "lo": -0.08571428571428572,
+   "hi": 0.08571428571428572,
+   "n_boot_ok": 2000
+  }
+ },
+ "placebo": {
+  "exponent_high": {
+   "n_draws": 500,
+   "mean": 0.0023999999999999994,
+   "p2.5": -0.08571428571428572,
+   "p97.5": 0.08571428571428572,
+   "frac_draws_at_least_as_extreme": 0.964
+  },
+  "irr3": {
+   "n_draws": 500,
+   "mean": -0.0017142857142857142,
+   "p2.5": -0.08571428571428572,
+   "p97.5": 0.08571428571428572,
+   "frac_draws_at_least_as_extreme": 0.95
+  },
+  "irr4": {
+   "n_draws": 500,
+   "mean": 0.00045714285714285713,
+   "p2.5": -0.08571428571428572,
+   "p97.5": 0.08571428571428572,
+   "frac_draws_at_least_as_extreme": 1.0
+  },
+  "incr_asym": {
+   "n_draws": 500,
+   "mean": 0.0020571428571428568,
+   "p2.5": -0.08571428571428572,
+   "p97.5": 0.08571428571428572,
+   "frac_draws_at_least_as_extreme": 0.96
+  }
+ },
+ "verdict": "(a) NOT INTERPRETABLE -- the positive control did not fire (exponent_high partial rho -0.0286 [-0.1429, +0.0286]). Either within-block submental tone does not vary enough to be read, or the control does not behave as the muscle account requires. NOTHING follows about irreversibility, and in particular a null primary here is NOT evidence that irreversibility is muscle-free."
+}

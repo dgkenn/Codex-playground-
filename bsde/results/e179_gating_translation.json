@@ -1,0 +1,127 @@
+{
+  "experiment": "E179",
+  "n_trial_rows": 27900,
+  "budgets": [
+    5,
+    10,
+    20
+  ],
+  "quantiles": [
+    0.5,
+    0.67
+  ],
+  "incumbent": "Geronimo 2016, PMID 27199630",
+  "n_sessions": 62,
+  "n_subjects": 62,
+  "G1_pass": true,
+  "G3": {
+    "recomputed": 0.5176449836701507,
+    "e172": 0.5176,
+    "pass": true
+  },
+  "arms": {
+    "N5_q0.5": {
+      "n": 5,
+      "q": 0.5,
+      "n_sessions": 62,
+      "gated_rate": 0.5903225806451614,
+      "control_rate": 0.6258064516129033,
+      "gain": -0.035483870967741936,
+      "ci": [
+        -0.07741935483870968,
+        0.006451612903225806
+      ],
+      "throughput_gain": -0.014392558375706228,
+      "placebo_mean": 0.006916129032258064,
+      "placebo_p": 0.982,
+      "extra_hits_per_10": -0.3548387096774194
+    },
+    "N5_q0.67": {
+      "n": 5,
+      "q": 0.67,
+      "n_sessions": 62,
+      "gated_rate": 0.6483870967741935,
+      "control_rate": 0.6258064516129033,
+      "gain": 0.02258064516129032,
+      "ci": [
+        -0.02580645161290322,
+        0.06774193548387097
+      ],
+      "throughput_gain": -0.016449693015311156,
+      "placebo_mean": 0.0007999999999999996,
+      "placebo_p": 0.152,
+      "extra_hits_per_10": 0.22580645161290322
+    },
+    "N10_q0.5": {
+      "n": 10,
+      "q": 0.5,
+      "n_sessions": 62,
+      "gated_rate": 0.6306451612903224,
+      "control_rate": 0.6387096774193549,
+      "gain": -0.008064516129032265,
+      "ci": [
+        -0.03870967741935484,
+        0.02096774193548387
+      ],
+      "throughput_gain": -0.028668577343756715,
+      "placebo_mean": -0.012806451612903228,
+      "placebo_p": 0.362,
+      "extra_hits_per_10": -0.08064516129032265
+    },
+    "N10_q0.67": {
+      "n": 10,
+      "q": 0.67,
+      "n_sessions": 62,
+      "gated_rate": 0.6693548387096775,
+      "control_rate": 0.6387096774193549,
+      "gain": 0.030645161290322572,
+      "ci": [
+        -0.009677419354838714,
+        0.07096774193548386
+      ],
+      "throughput_gain": -0.03915858529545519,
+      "placebo_mean": -0.009193548387096776,
+      "placebo_p": 0.004,
+      "extra_hits_per_10": 0.3064516129032257
+    },
+    "N20_q0.5": {
+      "n": 20,
+      "q": 0.5,
+      "n_sessions": 62,
+      "gated_rate": 0.6338709677419355,
+      "control_rate": 0.6217741935483871,
+      "gain": 0.012096774193548378,
+      "ci": [
+        -0.010483870967741938,
+        0.0346774193548387
+      ],
+      "throughput_gain": -0.04858552189194288,
+      "placebo_mean": 0.008946774193548382,
+      "placebo_p": 0.388,
+      "extra_hits_per_10": 0.12096774193548378
+    },
+    "N20_q0.67": {
+      "n": 20,
+      "q": 0.67,
+      "n_sessions": 62,
+      "gated_rate": 0.6564516129032258,
+      "control_rate": 0.6217741935483871,
+      "gain": 0.03467741935483871,
+      "ci": [
+        0.004838709677419341,
+        0.06451612903225806
+      ],
+      "throughput_gain": -0.07767009561264221,
+      "placebo_mean": 0.0009580645161290273,
+      "placebo_p": 0.0,
+      "extra_hits_per_10": 0.34677419354838707
+    }
+  },
+  "G2": {
+    "causal_gain": 0.030645161290322572,
+    "oracle_gain": 0.02419354838709677,
+    "pass": true
+  },
+  "verdict": "USABLE",
+  "why": "gating gives +0.35 extra detected responses per ten attempts at N = 20, q = 0.67, above the random-score placebo (p = 0.0000) -- stated in attempts rather than percentages because that is the unit the claim has to be made in"
+}

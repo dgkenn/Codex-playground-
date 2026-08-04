@@ -1,0 +1,61 @@
+{
+  "design": "target-trial emulation; landmark = first liberation among co-treated patients alive+on-both; exposure = pressor liberated before ventilation",
+  "n_cotreated_imv_vaso": 20824,
+  "n_excluded_death_before_first_liberation": 885,
+  "n_analyzed": 19939,
+  "pressor_first_rate": 0.632,
+  "mortality_pressor_first": 0.224,
+  "mortality_vent_first": 0.146,
+  "pressor_first_OR_age": {
+    "or": 1.711,
+    "ci": [
+      1.583,
+      1.848
+    ],
+    "n": 19939
+  },
+  "pressor_first_OR_full_clinical": {
+    "or": 1.679,
+    "ci": [
+      1.539,
+      1.831
+    ],
+    "n": 19934
+  },
+  "pressor_first_OR_full_plus_labs": {
+    "or": 1.345,
+    "ci": [
+      1.117,
+      1.621
+    ],
+    "n": 3553
+  },
+  "evalue_full_plus_labs": 1.83,
+  "triple_support_n": 1617,
+  "triple_liberation_order_mortality": {
+    "CPV": {
+      "n": 454,
+      "mortality": 0.564
+    },
+    "PVC": {
+      "n": 384,
+      "mortality": 0.534
+    },
+    "PCV": {
+      "n": 247,
+      "mortality": 0.36
+    },
+    "VPC": {
+      "n": 202,
+      "mortality": 0.485
+    },
+    "CVP": {
+      "n": 179,
+      "mortality": 0.587
+    },
+    "VCP": {
+      "n": 151,
+      "mortality": 0.364
+    }
+  }
+}

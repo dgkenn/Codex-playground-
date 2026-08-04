@@ -1,0 +1,71 @@
+{
+  "n_subjects_all_stages": 138,
+  "gates": {
+    "G1_pass": true,
+    "G4_real_median": 0.00031011568,
+    "G4_surrogate_median": 0.00019122966,
+    "G4_paired_mean": 0.0007583749565021771,
+    "G4_lo": 0.0006082094696775399,
+    "G4_hi": 0.0009270630576088171,
+    "G4_pass": true,
+    "G3_W_to_N3_dz": -0.8186843402667308,
+    "G3_noise95": 0.1718494310073099,
+    "G3_pass": true,
+    "G2_dropped": {
+      "primary": 46,
+      "incumbent": 0
+    },
+    "G5": {
+      "emg_median_position": 0.988623624000382,
+      "d_z_after_emg": 0.27388355079926224,
+      "lo": 0.07590597094444308,
+      "hi": 0.44446487135264845,
+      "n": 67
+    }
+  },
+  "primary": {
+    "d_z": 1.4538829906936874,
+    "lo": 1.0166428927678128,
+    "hi": 2.2258620033999414,
+    "n": 90,
+    "median_pos_primary": 0.9974288848339179,
+    "median_pos_incumbent": 0.47879873121762606
+  },
+  "secondary": {
+    "frontal_irr4_net": {
+      "d_z": 1.8995317194496484,
+      "lo": 1.439148738909952,
+      "hi": 2.658869496689648,
+      "n": 92,
+      "median_pos": 0.9948274055097396
+    },
+    "posterior_irr3_net": {
+      "d_z": 0.969264334399477,
+      "lo": 0.421017707966894,
+      "hi": 3.637619132691058,
+      "n": 65,
+      "median_pos": 1.0175887540421076
+    },
+    "posterior_irr4_net": {
+      "d_z": 0.9571605506474764,
+      "lo": 0.41494741767502086,
+      "hi": 3.381399175276658,
+      "n": 68,
+      "median_pos": 1.008895651696659
+    },
+    "frontal_incr_net": {
+      "d_z": 0.6363992682644501,
+      "lo": 0.3632780628477586,
+      "hi": 1.0627520124481065,
+      "n": 103,
+      "median_pos": 0.8817114085573396
+    }
+  },
+  "placebo": {
+    "lo": -0.29371394971941306,
+    "hi": 0.2660300187503681,
+    "inside": false,
+    "n_draws": 500
+  },
+  "verdict": "WORSE THAN THE EXPONENT -- irreversibility places REM even further from wake than the spectral measure does. The single-axis reading survives its sharpest test and is strengthened."
+}

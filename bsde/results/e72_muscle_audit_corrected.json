@@ -1,0 +1,142 @@
+{
+  "n_subjects": 142,
+  "features": {
+    "exponent_low": {
+      "testable": true,
+      "d0": 3.156843333901577,
+      "d1": 1.7832521274762134,
+      "d2": 1.9421136436412632,
+      "attribution": 0.05032290150702888,
+      "hi_fraction": 0.0
+    },
+    "exponent_high": {
+      "testable": true,
+      "d0": 1.1429097824952537,
+      "d1": 0.7099275179110145,
+      "d2": 0.8909889265360057,
+      "attribution": 0.15842143570570333,
+      "hi_fraction": 1.0
+    },
+    "whole_head_exponent": {
+      "testable": true,
+      "d0": 4.008442378042586,
+      "d1": 1.9394889850522743,
+      "d2": 2.2209347527753485,
+      "attribution": 0.0702132502302579,
+      "hi_fraction": 0.513
+    },
+    "relative_alpha_power": {
+      "testable": true,
+      "d0": -0.5008632622670822,
+      "d1": -0.5689466980526384,
+      "d2": 0.43139478380438195,
+      "attribution": -0.27462967362718604,
+      "hi_fraction": 0.0
+    },
+    "relative_delta_power": {
+      "testable": true,
+      "d0": 1.509657990631264,
+      "d1": 1.1932423721720256,
+      "d2": 1.1606735324283146,
+      "attribution": -0.021573654394458092,
+      "hi_fraction": 0.0
+    },
+    "spectral_edge_95": {
+      "testable": true,
+      "d0": -2.867701158125397,
+      "d1": -1.6941838508854072,
+      "d2": 1.8471803429880889,
+      "attribution": 0.05335161638763459,
+      "hi_fraction": 0.513
+    },
+    "spectral_entropy": {
+      "testable": true,
+      "d0": -2.185744818774727,
+      "d1": -1.5168593235150631,
+      "d2": 1.5443051269188075,
+      "attribution": 0.012556728108421084,
+      "hi_fraction": 0.513
+    },
+    "lempel_ziv": {
+      "testable": true,
+      "d0": -2.2811419899607634,
+      "d1": -1.6283797419655417,
+      "d2": 1.6666828418037796,
+      "attribution": 0.016791194939556,
+      "hi_fraction": 0.562
+    },
+    "critical_slowing_ar1": {
+      "testable": true,
+      "d0": 3.25574250953781,
+      "d1": 1.7625482990513204,
+      "d2": 1.9840531768067966,
+      "attribution": 0.06803513395379704,
+      "hi_fraction": 0.562
+    },
+    "multiscale_entropy_slope": {
+      "testable": true,
+      "d0": 3.6119802880423704,
+      "d1": 1.92783419263999,
+      "d2": 2.10205315582913,
+      "attribution": 0.04823364174104167,
+      "hi_fraction": 0.562
+    },
+    "pac_slow_alpha": {
+      "testable": true,
+      "d0": -0.3601687599372629,
+      "d1": -0.24892209185967415,
+      "d2": 0.31061694871403234,
+      "attribution": 0.17129430344015595,
+      "hi_fraction": 0.0
+    },
+    "emg_index": {
+      "testable": true,
+      "d0": -2.071130732391682,
+      "d1": -1.4435473468397608,
+      "d2": 1.4987582846800114,
+      "attribution": 0.026657389114445013,
+      "hi_fraction": 1.0
+    },
+    "_SYNTH_POS_muscle": {
+      "testable": true,
+      "d0": -0.5086480824534774,
+      "d1": 0.02736603160073474,
+      "d2": 0.43944127454065324,
+      "attribution": 0.8101382019416308,
+      "hi_fraction": NaN
+    },
+    "_SYNTH_NEG_noise": {
+      "testable": true,
+      "d0": 2.263986871060002,
+      "d1": 1.5562252806274737,
+      "d2": 1.6067290675991566,
+      "attribution": 0.022307455761895363,
+      "hi_fraction": NaN
+    }
+  },
+  "ranking": [
+    "_SYNTH_POS_muscle",
+    "pac_slow_alpha",
+    "exponent_high",
+    "whole_head_exponent",
+    "critical_slowing_ar1",
+    "spectral_edge_95",
+    "exponent_low",
+    "multiscale_entropy_slope",
+    "emg_index",
+    "_SYNTH_NEG_noise",
+    "lempel_ziv",
+    "spectral_entropy",
+    "relative_delta_power",
+    "relative_alpha_power"
+  ],
+  "gate_g2_bracket": false,
+  "pos_rank": 0,
+  "neg_rank": 9,
+  "h1": {
+    "rho": 0.20988883951320841,
+    "lo": -0.4722908400663967,
+    "hi": 0.8128628777883996
+  },
+  "verdict": "METHOD FAILS -- the bracket gate did not hold (a synthetic muscle feature must rank top and pure noise must rank bottom). Nothing in the table is readable."
+}

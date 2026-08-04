@@ -1,0 +1,59 @@
+{
+  "seed": 20260628,
+  "n_epochs_total": 1509,
+  "n_cases_any_epoch": 219,
+  "target_band": [
+    55.0,
+    80.0
+  ],
+  "primary_drug": "NEPI",
+  "n_qualifying_epochs": 303,
+  "dose_response_gain": {
+    "n_cases_multidose": 68,
+    "pooled_within_patient_gain_mmHg_per_dose_per_kg": -10.58,
+    "pooled_gain_ci": [
+      -18.69,
+      -0.67
+    ],
+    "per_patient_gain_median": -1.25,
+    "per_patient_gain_iqr": [
+      -42.84,
+      28.6
+    ],
+    "frac_positive_gain": 0.5,
+    "interpretation": "pooled gain = average mmHg rise in sustained MAP per unit norepi dose/kg, estimated WITHIN patient across stable epochs (steady-state, closed-loop-free). Positive + between-patient spread in per-patient gain = a predictable 'how much will BP rise' target."
+  },
+  "controlled_variable_check": {
+    "n_cases": 58,
+    "within_patient_MAP_cv_median": 0.095,
+    "within_patient_dose_cv_median": 0.493,
+    "dose_to_MAP_variability_ratio": 5.2,
+    "interpretation": "if MAP cv << dose cv, MAP is feedback-REGULATED to target and the dose->BP gain is absorbed by titration -> not identifiable from observational BP; the vasoreactivity signal is carried by the DOSE REQUIREMENT, not by dBP."
+  },
+  "n_cases_with_phenotype": 52,
+  "requirement_phenotype_ug_per_kg_units": {
+    "median": 0.16318,
+    "iqr": [
+      0.11069,
+      0.25154
+    ],
+    "p10_p90": [
+      0.07096,
+      0.39731
+    ],
+    "fold_range_p90_p10": 5.6
+  },
+  "reliability": {
+    "n_cases_ge4_epochs": 30,
+    "splithalf_spearman": 0.817
+  },
+  "construct_validity": {
+    "vs_cumulative_exposure_spearman": 0.69,
+    "vs_achieved_MAP_spearman": -0.428,
+    "vs_EV1000_SVR_spearman": 0.182,
+    "n_svr_overlap": 15,
+    "note": "expect: vs cumulative exposure POSITIVE (vasoplegic need more), vs achieved MAP <=0, vs EV1000 SVR NEGATIVE (low tone = high requirement)"
+  },
+  "go": true,
+  "verdict": "GO -- a stable-epoch norepinephrine dose-REQUIREMENT phenotype exists in 52 patients, varies ~5.6-fold between patients (p10-p90), split-half reliability 0.817 (the GO rests on reliability + spread). [construct caveats: vs cumulative exposure 0.69 is CIRCULAR; vs EV1000 SVR 0.182 is wrong-signed n=15 -- neither is independent vasoplegia evidence; see construct_validity.py.] Closed-loop-free target a pre-epoch waveform model can predict."
+}

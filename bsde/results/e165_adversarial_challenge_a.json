@@ -1,0 +1,69 @@
+{
+ "G2": {
+  "pass": true,
+  "rows": {
+   "0.0": {
+    "agent": 0.16315789473684217,
+    "state": 0.4322813938198553
+   },
+   "2.0": {
+    "agent": 0.0,
+    "state": 0.4388560157790927
+   },
+   "8.0": {
+    "agent": 0.015789473684210575,
+    "state": 0.4072978303747534
+   }
+  }
+ },
+ "G3": {
+  "mean": 0.1866857142857143,
+  "n": 200,
+  "p95": 0.4202857142857142
+ },
+ "experiment": "E165",
+ "lambdas": [
+  0.0,
+  0.5,
+  1.0,
+  2.0,
+  4.0,
+  8.0
+ ],
+ "n_cases": 39,
+ "n_mixed": 14,
+ "n_propofol": 25,
+ "sweep": {
+  "0.0": {
+   "agent": 0.06000000000000005,
+   "agent_at_floor": true,
+   "state": 0.46515450361604205
+  },
+  "0.5": {
+   "agent": 0.06285714285714283,
+   "agent_at_floor": true,
+   "state": 0.477646285338593
+  },
+  "1.0": {
+   "agent": 0.0,
+   "agent_at_floor": true,
+   "state": 0.4822485207100592
+  },
+  "2.0": {
+   "agent": 0.03428571428571425,
+   "agent_at_floor": true,
+   "state": 0.46975673898750825
+  },
+  "4.0": {
+   "agent": 0.07999999999999996,
+   "agent_at_floor": true,
+   "state": 0.39809335963182113
+  },
+  "8.0": {
+   "agent": 0.11142857142857143,
+   "agent_at_floor": true,
+   "state": 0.26265614727153186
+  }
+ },
+ "verdict": "CONSTRUCTED -- at lambda 0.0 a linear combination keeps 100% of the pure state axis's held-out discrimination while its agent legibility (0.0600) sits inside the random-projection floor (0.4203). First constructed Challenge A candidate. Next question is whether it survives on the VitalDB agent contrast, where E161 showed the leakage is broad."
+}

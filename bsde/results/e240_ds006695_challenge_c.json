@@ -1,0 +1,60 @@
+{
+  "excluded": {},
+  "folds": 19,
+  "gates": {
+    "G1": true,
+    "G2": true,
+    "G3": true,
+    "G4": true
+  },
+  "headroom": 0.5681148621330202,
+  "increments": {
+    "__noise__": {
+      "adjusted": -0.0007599348622515656,
+      "hi": 0.007945047497934683,
+      "lo": -0.0028655887839520748,
+      "pct_headroom": -0.13376429889518224,
+      "plain": 0.00023096059539018388
+    },
+    "multiscale_entropy_slope": {
+      "adjusted": 0.00430257238186571,
+      "hi": 0.042168391546298346,
+      "lo": -0.014535151179646913,
+      "pct_headroom": 0.7573419863918808,
+      "plain": 0.008526916174970145
+    },
+    "pac_slow_alpha": {
+      "adjusted": 0.0132429825260022,
+      "hi": 0.046370749825213546,
+      "lo": -0.005286392021905106,
+      "pct_headroom": 2.331039620452923,
+      "plain": 0.02274216830414716
+    },
+    "relative_alpha_power": {
+      "adjusted": 0.01811923122544995,
+      "hi": 0.052216028794325964,
+      "lo": -0.003661936812642276,
+      "pct_headroom": 3.1893605383637116,
+      "plain": 0.010847697641552245
+    },
+    "whole_head_exponent": {
+      "adjusted": 0.12643230012166345,
+      "hi": 0.20815528840316036,
+      "lo": 0.054243807130750346,
+      "pct_headroom": 22.254707375013222,
+      "plain": 0.14155276877793427
+    }
+  },
+  "incumbent_null_p95": 0.12195445844926377,
+  "incumbent_rho": 0.4318851378669798,
+  "n_rows": 912,
+  "n_subjects": 19,
+  "placebo_p95": {
+    "multiscale_entropy_slope": 0.021127120463317876,
+    "pac_slow_alpha": 0.03183437916218933,
+    "relative_alpha_power": 0.053294902420465605,
+    "whole_head_exponent": 0.03926963400685154
+  },
+  "seed": 20260802,
+  "verdict": "REPLICATES on a clean deposit: whole_head_exponent add over the incumbent after muscle adjustment and beat the within-subject permutation placebo"
+}

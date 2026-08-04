@@ -1,0 +1,109 @@
+{
+  "experiment": "E39",
+  "phase_feature": "wpli_alpha",
+  "amplitude": [
+    "relative_alpha_power",
+    "relative_delta_power",
+    "lempel_ziv",
+    "spectral_entropy",
+    "spectral_edge_95",
+    "whole_head_exponent"
+  ],
+  "cohorts": {
+    "ds004541": {
+      "n_subjects": 8,
+      "n_rows": 124,
+      "evaluable_emg": 7,
+      "evaluable_state": 7,
+      "best_emg_leg": 0.14847883597883593,
+      "best_state_leg": 0.32539682539682546,
+      "g1": true,
+      "g2": true,
+      "per_feature": {
+        "wpli_alpha": {
+          "emg_leg": 0.04524911816578492,
+          "state_leg": 0.12698412698412698
+        },
+        "relative_alpha_power": {
+          "emg_leg": 0.006172839506172867,
+          "state_leg": 0.09523809523809529
+        },
+        "relative_delta_power": {
+          "emg_leg": 0.06492504409171074,
+          "state_leg": 0.023809523809523836
+        },
+        "lempel_ziv": {
+          "emg_leg": 0.05332341269841273,
+          "state_leg": 0.19841269841269848
+        },
+        "spectral_entropy": {
+          "emg_leg": 0.0334545855379188,
+          "state_leg": 0.12222222222222223
+        },
+        "spectral_edge_95": {
+          "emg_leg": 0.10783179012345684,
+          "state_leg": 0.0714285714285714
+        },
+        "whole_head_exponent": {
+          "emg_leg": 0.14847883597883593,
+          "state_leg": 0.32539682539682546
+        }
+      },
+      "contrast": 0.011348104056437255,
+      "ci": [
+        -0.17500643004115232,
+        0.19659850823045275
+      ]
+    },
+    "chennu": {
+      "n_subjects": 20,
+      "n_rows": 80,
+      "evaluable_emg": 20,
+      "evaluable_state": 20,
+      "best_emg_leg": 0.17500000000000004,
+      "best_state_leg": 0.4,
+      "g1": true,
+      "g2": true,
+      "per_feature": {
+        "wpli_alpha": {
+          "emg_leg": 0.09999999999999998,
+          "state_leg": 0.2
+        },
+        "relative_alpha_power": {
+          "emg_leg": 0.08750000000000002,
+          "state_leg": 0.04999999999999999
+        },
+        "relative_delta_power": {
+          "emg_leg": 0.07499999999999996,
+          "state_leg": 0.09999999999999998
+        },
+        "lempel_ziv": {
+          "emg_leg": 0.050000000000000044,
+          "state_leg": 0.4
+        },
+        "spectral_entropy": {
+          "emg_leg": 0.17500000000000004,
+          "state_leg": 0.30000000000000004
+        },
+        "spectral_edge_95": {
+          "emg_leg": 0.17500000000000004,
+          "state_leg": 0.15000000000000002
+        },
+        "whole_head_exponent": {
+          "emg_leg": 0.1375,
+          "state_leg": 0.04999999999999999
+        }
+      },
+      "contrast": 0.04166666666666671,
+      "ci": [
+        -0.1934771825396825,
+        0.2673735119047619
+      ]
+    }
+  },
+  "agree": true,
+  "p4": {
+    "status": "not_informative"
+  },
+  "verdict": "no_evidence"
+}

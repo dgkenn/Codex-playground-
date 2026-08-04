@@ -1,0 +1,38 @@
+{
+  "experiment": "E43",
+  "n_rows": 5845,
+  "n_cases": 247,
+  "gates": {
+    "n_rows": 5845,
+    "n_cases": 247,
+    "n_varying": 246,
+    "passed": true
+  },
+  "p1": {
+    "partial_bis": 0.1647571733392502,
+    "partial_state": -0.26147350102990213,
+    "asymmetry": -0.09671632769065194,
+    "ci": [
+      -0.17983914458949934,
+      -0.010000273727995408
+    ],
+    "passed": false
+  },
+  "p2": {
+    "status": "not_informative"
+  },
+  "p3": {
+    "asymmetry": -0.21202310039812133,
+    "ci": [
+      -0.28888908990489626,
+      -0.1285608434442346
+    ],
+    "agrees": true
+  },
+  "p4": {
+    "spearman_frac_emg": -0.08101341189596674,
+    "spearman_frac_bis": 0.048420648649056035,
+    "spearman_frac_state": 0.11409997714623599
+  },
+  "verdict": "refuted_wrong_direction"
+}

@@ -1,0 +1,68 @@
+{
+  "experiment": "E38",
+  "trial_files": [
+    "eegmmidb_trials.executed.s0.csv",
+    "eegmmidb_trials.executed.s1.csv",
+    "eegmmidb_trials.executed.s2.csv",
+    "eegmmidb_trials.executed.s3.csv",
+    "eegmmidb_trials.imagery.s0.csv",
+    "eegmmidb_trials.imagery.s1.csv",
+    "eegmmidb_trials.imagery.s2.csv",
+    "eegmmidb_trials.imagery.s3.csv"
+  ],
+  "g1": {
+    "n": 104,
+    "agreement": 0.9282965021800272,
+    "median_diff": 0.03476361266216341,
+    "passed": true
+  },
+  "p1": {
+    "r_half": 0.17085392917709993,
+    "r_sb": 0.2918449943575448,
+    "ci": [
+      0.11628456700710292,
+      0.434519768883672
+    ],
+    "ceiling": 0.5402267989997764,
+    "n_subjects": 105,
+    "n_splits_used": 200,
+    "viable": true
+  },
+  "p2": {
+    "r_half": 0.17881482860393938,
+    "r_sb": 0.30338069095331677,
+    "ci": [
+      0.13339282729792962,
+      0.43474257566799285
+    ],
+    "ceiling": 0.5508000462539167,
+    "n_subjects": 105
+  },
+  "p3": {
+    "r_sb": 0.02181398529959803,
+    "ci": [
+      -0.10606276317254432,
+      0.1386933973215404
+    ],
+    "passed": true
+  },
+  "p4": {
+    "8": {
+      "r_half": 0.12723918213508792,
+      "r_sb": 0.22575365397445812
+    },
+    "11": {
+      "r_half": 0.18608684410987533,
+      "r_sb": 0.31378283139044216
+    },
+    "15": {
+      "r_half": 0.16231520573232558,
+      "r_sb": 0.2792963645865024
+    },
+    "22": {
+      "r_half": 0.18574372500992276,
+      "r_sb": 0.31329489010514205
+    }
+  },
+  "verdict": "label_viable"
+}

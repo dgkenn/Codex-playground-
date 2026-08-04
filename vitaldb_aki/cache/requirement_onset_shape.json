@@ -1,0 +1,1215 @@
+{
+  "seed": 20260628,
+  "primary_drug": "NEPI",
+  "min_epochs_per_case": 4,
+  "n_nepi_only_epochs": 474,
+  "n_cases_nepi_only": 75,
+  "n_cases_ge_min_epochs": 52,
+  "n_cases_with_anes_timing": 52,
+  "rate_vs_level": {
+    "n_cases": 52,
+    "early_window_frac": 0.5,
+    "r2_level_only": 0.163,
+    "r2_level_plus_slope": 0.323,
+    "delta_r2": 0.159,
+    "partial_r2_slope_given_level": 0.191,
+    "marginal_corr_early_level_vs_latepeak": 0.404,
+    "marginal_corr_early_slope_vs_latepeak": 0.019,
+    "collinearity_early_level_vs_early_slope": 0.727,
+    "partial_corr_slope_vs_latepeak_given_level": -0.437,
+    "partial_corr_p": 0.0012,
+    "nested_F": 11.534,
+    "nested_F_p": 0.0013636066295953867,
+    "beta_intercept_level_slope": [
+      0.15843,
+      0.77444,
+      -5.12396
+    ],
+    "fast_riser_subgroup": {
+      "n_fast": 17,
+      "n_slow": 35,
+      "late_peak_fast_median": 0.22914,
+      "late_peak_slow_median": 0.24777,
+      "mannwhitney_p_fast_gt_slow": 0.3924
+    },
+    "interpretation": "does the EARLY rate-of-rise add information about the LATE/peak requirement BEYOND the EARLY level? delta_r2 / partial-r / nested-F answer that; fast_riser subgroup tests whether fast early risers reach a higher eventual requirement.",
+    "per_case": [
+      {
+        "caseid": "1165",
+        "early_level": 0.13301012499999998,
+        "early_slope_per_min": 0.002884951497976993,
+        "late_peak": 0.608769,
+        "late_end": 0.379427,
+        "n": 15,
+        "k_early": 8
+      },
+      {
+        "caseid": "1172",
+        "early_level": 0.12477612500000002,
+        "early_slope_per_min": -0.00023680919391854167,
+        "late_peak": 0.335125,
+        "late_end": 0.258065,
+        "n": 15,
+        "k_early": 8
+      },
+      {
+        "caseid": "118",
+        "early_level": 0.16666683333333335,
+        "early_slope_per_min": 0.002872524586117309,
+        "late_peak": 0.251572,
+        "late_end": 0.230608,
+        "n": 12,
+        "k_early": 6
+      },
+      {
+        "caseid": "1311",
+        "early_level": 0.068879,
+        "early_slope_per_min": 0.0023308774296155526,
+        "late_peak": 0.152338,
+        "late_end": 0.001508,
+        "n": 6,
+        "k_early": 3
+      },
+      {
+        "caseid": "1316",
+        "early_level": 0.43552816666666666,
+        "early_slope_per_min": 0.0067115389135603,
+        "late_peak": 0.514403,
+        "late_end": 0.37037,
+        "n": 12,
+        "k_early": 6
+      },
+      {
+        "caseid": "1652",
+        "early_level": 0.17751466666666668,
+        "early_slope_per_min": 0.0029449580187172176,
+        "late_peak": 0.177515,
+        "late_end": 0.073964,
+        "n": 6,
+        "k_early": 3
+      },
+      {
+        "caseid": "1668",
+        "early_level": 0.042544,
+        "early_slope_per_min": 0.001600650538568811,
+        "late_peak": 0.001316,
+        "late_end": 0.001316,
+        "n": 6,
+        "k_early": 3
+      },
+      {
+        "caseid": "1671",
+        "early_level": 0.11610525000000001,
+        "early_slope_per_min": 0.0023327685214357273,
+        "late_peak": 0.17603,
+        "late_end": 0.134831,
+        "n": 9,
+        "k_early": 4
+      },
+      {
+        "caseid": "1820",
+        "early_level": 0.1905955,
+        "early_slope_per_min": 0.0003393221483573399,
+        "late_peak": 0.227045,
+        "late_end": 0.098497,
+        "n": 12,
+        "k_early": 6
+      },
+      {
+        "caseid": "1835",
+        "early_level": 0.7124999999999999,
+        "early_slope_per_min": 0.008816790122633063,
+        "late_peak": 1.375,
+        "late_end": 0.2525,
+        "n": 15,
+        "k_early": 8
+      },
+      {
+        "caseid": "1986",
+        "early_level": 0.15046274999999998,
+        "early_slope_per_min": 0.005671617534312248,
+        "late_peak": 0.185185,
+        "late_end": 0.046296,
+        "n": 8,
+        "k_early": 4
+      },
+      {
+        "caseid": "2168",
+        "early_level": 0.05440966666666667,
+        "early_slope_per_min": -0.0005051038432103685,
+        "late_peak": 0.058419,
+        "late_end": 0.042955,
+        "n": 6,
+        "k_early": 3
+      },
+      {
+        "caseid": "2205",
+        "early_level": 0.053846,
+        "early_slope_per_min": 0.01688647773279352,
+        "late_peak": 0.140171,
+        "late_end": 0.064957,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "2432",
+        "early_level": 0.1804125,
+        "early_slope_per_min": -0.0034564371926687544,
+        "late_peak": 0.154639,
+        "late_end": 0.092784,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "2605",
+        "early_level": 0.25345625,
+        "early_slope_per_min": 0.018728892556997737,
+        "late_peak": 0.691244,
+        "late_end": 0.645161,
+        "n": 8,
+        "k_early": 4
+      },
+      {
+        "caseid": "2611",
+        "early_level": 0.016529,
+        "early_slope_per_min": -0.0018643893006767649,
+        "late_peak": 0.030992,
+        "late_end": 0.030992,
+        "n": 4,
+        "k_early": 2
+      },
+      {
+        "caseid": "2612",
+        "early_level": 0.1472972,
+        "early_slope_per_min": -0.0016281928837476904,
+        "late_peak": 0.112162,
+        "late_end": 0.028378,
+        "n": 10,
+        "k_early": 5
+      },
+      {
+        "caseid": "2738",
+        "early_level": 0.37671224999999997,
+        "early_slope_per_min": 0.002534544405093901,
+        "late_peak": 0.273973,
+        "late_end": 0.205479,
+        "n": 7,
+        "k_early": 4
+      },
+      {
+        "caseid": "280",
+        "early_level": 0.8035715000000001,
+        "early_slope_per_min": -0.023865951632140506,
+        "late_peak": 0.714286,
+        "late_end": 0.714286,
+        "n": 9,
+        "k_early": 4
+      },
+      {
+        "caseid": "2823",
+        "early_level": 0.041868,
+        "early_slope_per_min": 0.007838650008112917,
+        "late_peak": 0.130435,
+        "late_end": 0.033816,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "2891",
+        "early_level": 0.049666749999999996,
+        "early_slope_per_min": 0.0033771744486463906,
+        "late_peak": 0.086008,
+        "late_end": 0.037553,
+        "n": 9,
+        "k_early": 4
+      },
+      {
+        "caseid": "3136",
+        "early_level": 0.12119774999999999,
+        "early_slope_per_min": 0.0057267314644264735,
+        "late_peak": 0.13308,
+        "late_end": 0.13308,
+        "n": 7,
+        "k_early": 4
+      },
+      {
+        "caseid": "3142",
+        "early_level": 0.454023,
+        "early_slope_per_min": -0.0003790088850097287,
+        "late_peak": 0.265252,
+        "late_end": 0.001768,
+        "n": 9,
+        "k_early": 4
+      },
+      {
+        "caseid": "3273",
+        "early_level": 0.21830980000000003,
+        "early_slope_per_min": 0.0009398386269859699,
+        "late_peak": 0.440141,
+        "late_end": 0.440141,
+        "n": 10,
+        "k_early": 5
+      },
+      {
+        "caseid": "3470",
+        "early_level": 0.170157,
+        "early_slope_per_min": -0.0005430154262400758,
+        "late_peak": 0.157068,
+        "late_end": 0.001309,
+        "n": 8,
+        "k_early": 4
+      },
+      {
+        "caseid": "3486",
+        "early_level": 0.143258625,
+        "early_slope_per_min": 0.0006407764100276266,
+        "late_peak": 0.224719,
+        "late_end": 0.224719,
+        "n": 16,
+        "k_early": 8
+      },
+      {
+        "caseid": "3492",
+        "early_level": 0.0502915,
+        "early_slope_per_min": 0.006017409512414005,
+        "late_peak": 0.067055,
+        "late_end": 0.067055,
+        "n": 4,
+        "k_early": 2
+      },
+      {
+        "caseid": "3625",
+        "early_level": 0.15245091666666669,
+        "early_slope_per_min": 0.00029465495150922996,
+        "late_peak": 0.444118,
+        "late_end": 0.15,
+        "n": 23,
+        "k_early": 12
+      },
+      {
+        "caseid": "3665",
+        "early_level": 0.13057,
+        "early_slope_per_min": 0.0019749517867271695,
+        "late_peak": 0.265285,
+        "late_end": 0.145078,
+        "n": 4,
+        "k_early": 2
+      },
+      {
+        "caseid": "3703",
+        "early_level": 0.14088575,
+        "early_slope_per_min": 0.002090760157494621,
+        "late_peak": 0.333761,
+        "late_end": 0.333761,
+        "n": 7,
+        "k_early": 4
+      },
+      {
+        "caseid": "3777",
+        "early_level": 0.0974025,
+        "early_slope_per_min": -0.020712918660287093,
+        "late_peak": 0.325974,
+        "late_end": 0.131169,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "3782",
+        "early_level": 0.177494,
+        "early_slope_per_min": 0.0027503312501876887,
+        "late_peak": 0.362087,
+        "late_end": 0.106496,
+        "n": 6,
+        "k_early": 3
+      },
+      {
+        "caseid": "387",
+        "early_level": 0.2259035,
+        "early_slope_per_min": 0.04298848715509043,
+        "late_peak": 0.302711,
+        "late_end": 0.302711,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "397",
+        "early_level": 0.20300000000000004,
+        "early_slope_per_min": 0.007681184062356648,
+        "late_peak": 0.56,
+        "late_end": 0.16,
+        "n": 13,
+        "k_early": 6
+      },
+      {
+        "caseid": "4054",
+        "early_level": 0.1124565,
+        "early_slope_per_min": -0.004956780560271643,
+        "late_peak": 0.190311,
+        "late_end": 0.138408,
+        "n": 4,
+        "k_early": 2
+      },
+      {
+        "caseid": "409",
+        "early_level": 1.6216214999999998,
+        "early_slope_per_min": 0.18149093452714063,
+        "late_peak": 0.261622,
+        "late_end": 0.261622,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "4251",
+        "early_level": 0.264731,
+        "early_slope_per_min": -0.004852159090909088,
+        "late_peak": 0.30743,
+        "late_end": 0.001708,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "4289",
+        "early_level": 0.07036049999999999,
+        "early_slope_per_min": -0.0026002217294900246,
+        "late_peak": 0.123131,
+        "late_end": 0.087951,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "4328",
+        "early_level": 0.16009875,
+        "early_slope_per_min": 0.0032739635175960363,
+        "late_peak": 0.332512,
+        "late_end": 0.332512,
+        "n": 7,
+        "k_early": 4
+      },
+      {
+        "caseid": "4481",
+        "early_level": 0.12411059999999999,
+        "early_slope_per_min": 0.0009510744604203457,
+        "late_peak": 0.385375,
+        "late_end": 0.247036,
+        "n": 10,
+        "k_early": 5
+      },
+      {
+        "caseid": "5018",
+        "early_level": 0.0925645,
+        "early_slope_per_min": 0.012584450587422268,
+        "late_peak": 0.229135,
+        "late_end": 0.229135,
+        "n": 4,
+        "k_early": 2
+      },
+      {
+        "caseid": "5226",
+        "early_level": 0.1122995,
+        "early_slope_per_min": 0.0009406182665669934,
+        "late_peak": 0.247772,
+        "late_end": 0.247772,
+        "n": 4,
+        "k_early": 2
+      },
+      {
+        "caseid": "5282",
+        "early_level": 0.15342433333333333,
+        "early_slope_per_min": 0.008166991766246601,
+        "late_peak": 0.767123,
+        "late_end": 0.136986,
+        "n": 6,
+        "k_early": 3
+      },
+      {
+        "caseid": "536",
+        "early_level": 0.0619555,
+        "early_slope_per_min": -0.006190341382181515,
+        "late_peak": 0.092933,
+        "late_end": 0.092933,
+        "n": 5,
+        "k_early": 2
+      },
+      {
+        "caseid": "5771",
+        "early_level": 0.304487,
+        "early_slope_per_min": 0.0009329988039274812,
+        "late_peak": 0.531469,
+        "late_end": 0.531469,
+        "n": 11,
+        "k_early": 6
+      },
+      {
+        "caseid": "5983",
+        "early_level": 0.15704525,
+        "early_slope_per_min": -0.003546101815269427,
+        "late_peak": 0.168297,
+        "late_end": 0.09002,
+        "n": 7,
+        "k_early": 4
+      },
+      {
+        "caseid": "6063",
+        "early_level": 0.20985025,
+        "early_slope_per_min": -0.0070725819595753355,
+        "late_peak": 0.254818,
+        "late_end": 0.182013,
+        "n": 9,
+        "k_early": 4
+      },
+      {
+        "caseid": "6084",
+        "early_level": 0.057214,
+        "early_slope_per_min": 0.00027116528373053394,
+        "late_peak": 0.25,
+        "late_end": 0.25,
+        "n": 16,
+        "k_early": 8
+      },
+      {
+        "caseid": "617",
+        "early_level": 0.180036,
+        "early_slope_per_min": 0.008138084140302477,
+        "late_peak": 0.090909,
+        "late_end": 0.001783,
+        "n": 7,
+        "k_early": 4
+      },
+      {
+        "caseid": "703",
+        "early_level": 0.06036466666666666,
+        "early_slope_per_min": 0.0009152993973132625,
+        "late_peak": 0.208955,
+        "late_end": 0.208955,
+        "n": 6,
+        "k_early": 3
+      },
+      {
+        "caseid": "75",
+        "early_level": 0.13337725,
+        "early_slope_per_min": 0.0005244671064041697,
+        "late_peak": 0.237845,
+        "late_end": 0.11958,
+        "n": 8,
+        "k_early": 4
+      },
+      {
+        "caseid": "984",
+        "early_level": 0.18638175,
+        "early_slope_per_min": -0.010913567763601901,
+        "late_peak": 0.079523,
+        "late_end": 0.001988,
+        "n": 8,
+        "k_early": 4
+      }
+    ]
+  },
+  "onset_timing": {
+    "high_threshold_dose_per_kg": 0.274831,
+    "high_pctl": 75.0,
+    "n_cases_crossing_high": 28,
+    "n_cases_never_high": 24,
+    "n_left_censored_high_at_first_epoch": 8,
+    "left_censoring_note": "8 of 28 crossing cases are already >= HIGH at their FIRST stable epoch (onset=0). Their true onset is LEFT-CENSORED (it occurred before the norepi-only stable window began), so the 'early-onset' cluster is inflated/contaminated by entry-already-high cases -- read the bimodality with this caveat.",
+    "onset_from_first_epoch_min": {
+      "median": 13.2,
+      "iqr": [
+        0.0,
+        55.6
+      ],
+      "min_max": [
+        0.0,
+        130.9
+      ],
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.5,
+        6.4,
+        7.7,
+        7.8,
+        8.2,
+        11.6,
+        14.9,
+        20.0,
+        24.3,
+        27.6,
+        40.4,
+        52.7,
+        53.7,
+        61.5,
+        61.6,
+        66.5,
+        106.7,
+        121.0,
+        126.2,
+        130.9
+      ]
+    },
+    "two_cluster_split": {
+      "split_point_min": 46.6,
+      "n_early": 19,
+      "n_late": 9,
+      "early_mean_min": 9.1,
+      "late_mean_min": 86.8,
+      "between_over_total_ss": 0.763,
+      "note": "between/total SS is the fraction of onset-time variance explained by a 2-cluster split; high (->1) with a clear split-point gap supports bimodality."
+    },
+    "bimodality_gap": {
+      "largest_gap_min": 40.2,
+      "largest_gap_frac_of_range": 0.308,
+      "gap_location_min": 86.6,
+      "note": "largest interior gap as a fraction of the onset-time range; >~0.3 hints bimodal."
+    },
+    "onset_from_anesthesia_start_min": {
+      "n": 28,
+      "median": 153.8,
+      "iqr": [
+        46.4,
+        221.9
+      ],
+      "min_max": [
+        10.0,
+        407.6
+      ]
+    },
+    "interpretation": "when does the patient first cross a HIGH norepi requirement? a single early peak in the histogram = unimodal onset; two separated clusters (early-onset vs late-onset vasoplegia) = bimodal -> two physiologically distinct timing phenotypes."
+  },
+  "shape_classification": {
+    "class_counts": {
+      "rising": 14,
+      "plateau": 19,
+      "falling": 19
+    },
+    "plateau_tol": 0.15,
+    "per_case": {
+      "1165": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00338353,
+        "frac_slope_per_min": 0.010787,
+        "start": 0.001686,
+        "peak": 0.608769,
+        "end": 0.379427,
+        "end_vs_peak": -0.377,
+        "svr_slope_per_min": -5.295
+      },
+      "1172": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00107374,
+        "frac_slope_per_min": 0.005558,
+        "start": 0.071685,
+        "peak": 0.335125,
+        "end": 0.258065,
+        "end_vs_peak": -0.23,
+        "svr_slope_per_min": null
+      },
+      "118": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00119376,
+        "frac_slope_per_min": 0.006128,
+        "start": 0.062893,
+        "peak": 0.316562,
+        "end": 0.230608,
+        "end_vs_peak": -0.272,
+        "svr_slope_per_min": null
+      },
+      "1311": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00049351,
+        "frac_slope_per_min": -0.006135,
+        "start": 0.045249,
+        "peak": 0.152338,
+        "end": 0.001508,
+        "end_vs_peak": -0.99,
+        "svr_slope_per_min": null
+      },
+      "1316": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00093669,
+        "frac_slope_per_min": 0.002315,
+        "start": 0.205761,
+        "peak": 0.720165,
+        "end": 0.37037,
+        "end_vs_peak": -0.486,
+        "svr_slope_per_min": null
+      },
+      "1652": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00077822,
+        "frac_slope_per_min": -0.005175,
+        "start": 0.147929,
+        "peak": 0.236686,
+        "end": 0.073964,
+        "end_vs_peak": -0.688,
+        "svr_slope_per_min": 11.8068
+      },
+      "1668": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00106493,
+        "frac_slope_per_min": -0.048561,
+        "start": 0.059211,
+        "peak": 0.067105,
+        "end": 0.001316,
+        "end_vs_peak": -0.98,
+        "svr_slope_per_min": null
+      },
+      "1671": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.0004137,
+        "frac_slope_per_min": 0.003325,
+        "start": 0.067416,
+        "peak": 0.194757,
+        "end": 0.134831,
+        "end_vs_peak": -0.308,
+        "svr_slope_per_min": null
+      },
+      "1820": {
+        "shape": "plateau",
+        "overall_slope_per_min": -0.00028136,
+        "frac_slope_per_min": -0.00165,
+        "start": 0.096828,
+        "peak": 0.318865,
+        "end": 0.098497,
+        "end_vs_peak": -0.691,
+        "svr_slope_per_min": -1.182
+      },
+      "1835": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.0002893,
+        "frac_slope_per_min": -0.000465,
+        "start": 0.275,
+        "peak": 1.375,
+        "end": 0.2525,
+        "end_vs_peak": -0.816,
+        "svr_slope_per_min": null
+      },
+      "1986": {
+        "shape": "plateau",
+        "overall_slope_per_min": -0.00022075,
+        "frac_slope_per_min": -0.001658,
+        "start": 0.023148,
+        "peak": 0.231481,
+        "end": 0.046296,
+        "end_vs_peak": -0.8,
+        "svr_slope_per_min": null
+      },
+      "2168": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00021095,
+        "frac_slope_per_min": -0.004093,
+        "start": 0.060137,
+        "peak": 0.060137,
+        "end": 0.042955,
+        "end_vs_peak": -0.286,
+        "svr_slope_per_min": null
+      },
+      "2205": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.0002438,
+        "frac_slope_per_min": 0.002971,
+        "start": 0.001709,
+        "peak": 0.140171,
+        "end": 0.064957,
+        "end_vs_peak": -0.537,
+        "svr_slope_per_min": null
+      },
+      "2432": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00131544,
+        "frac_slope_per_min": -0.009382,
+        "start": 0.206186,
+        "peak": 0.206186,
+        "end": 0.092784,
+        "end_vs_peak": -0.55,
+        "svr_slope_per_min": null
+      },
+      "2605": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00448908,
+        "frac_slope_per_min": 0.010056,
+        "start": 0.078341,
+        "peak": 0.691244,
+        "end": 0.645161,
+        "end_vs_peak": -0.067,
+        "svr_slope_per_min": null
+      },
+      "2611": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00010122,
+        "frac_slope_per_min": 0.00426,
+        "start": 0.030992,
+        "peak": 0.030992,
+        "end": 0.030992,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "2612": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00222605,
+        "frac_slope_per_min": -0.021847,
+        "start": 0.112162,
+        "peak": 0.274324,
+        "end": 0.028378,
+        "end_vs_peak": -0.897,
+        "svr_slope_per_min": null
+      },
+      "2738": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00067153,
+        "frac_slope_per_min": -0.002145,
+        "start": 0.182648,
+        "peak": 0.570776,
+        "end": 0.205479,
+        "end_vs_peak": -0.64,
+        "svr_slope_per_min": 1.7264
+      },
+      "280": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00135184,
+        "frac_slope_per_min": -0.002004,
+        "start": 0.714286,
+        "peak": 1.428571,
+        "end": 0.714286,
+        "end_vs_peak": -0.5,
+        "svr_slope_per_min": null
+      },
+      "2823": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.0001649,
+        "frac_slope_per_min": -0.002626,
+        "start": 0.00161,
+        "peak": 0.130435,
+        "end": 0.033816,
+        "end_vs_peak": -0.741,
+        "svr_slope_per_min": null
+      },
+      "2891": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00033408,
+        "frac_slope_per_min": 0.006549,
+        "start": 0.001211,
+        "peak": 0.098122,
+        "end": 0.037553,
+        "end_vs_peak": -0.617,
+        "svr_slope_per_min": null
+      },
+      "3136": {
+        "shape": "plateau",
+        "overall_slope_per_min": 4.145e-05,
+        "frac_slope_per_min": 0.000349,
+        "start": 0.001901,
+        "peak": 0.268061,
+        "end": 0.13308,
+        "end_vs_peak": -0.504,
+        "svr_slope_per_min": null
+      },
+      "3142": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00386687,
+        "frac_slope_per_min": -0.014047,
+        "start": 0.328912,
+        "peak": 0.661362,
+        "end": 0.001768,
+        "end_vs_peak": -0.997,
+        "svr_slope_per_min": null
+      },
+      "3273": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00158655,
+        "frac_slope_per_min": 0.00527,
+        "start": 0.158451,
+        "peak": 0.440141,
+        "end": 0.440141,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "3470": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00172449,
+        "frac_slope_per_min": -0.012933,
+        "start": 0.314136,
+        "peak": 0.314136,
+        "end": 0.001309,
+        "end_vs_peak": -0.996,
+        "svr_slope_per_min": null
+      },
+      "3486": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00020823,
+        "frac_slope_per_min": 0.001336,
+        "start": 0.044944,
+        "peak": 0.224719,
+        "end": 0.224719,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "3492": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00014143,
+        "frac_slope_per_min": 0.002812,
+        "start": 0.033528,
+        "peak": 0.067055,
+        "end": 0.067055,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "3625": {
+        "shape": "plateau",
+        "overall_slope_per_min": 7.444e-05,
+        "frac_slope_per_min": 0.000488,
+        "start": 0.002941,
+        "peak": 0.444118,
+        "end": 0.15,
+        "end_vs_peak": -0.662,
+        "svr_slope_per_min": null
+      },
+      "3665": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00152565,
+        "frac_slope_per_min": 0.009088,
+        "start": 0.087047,
+        "peak": 0.265285,
+        "end": 0.145078,
+        "end_vs_peak": -0.453,
+        "svr_slope_per_min": null
+      },
+      "3703": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00133689,
+        "frac_slope_per_min": 0.00598,
+        "start": 0.001284,
+        "peak": 0.333761,
+        "end": 0.333761,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "3777": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00125395,
+        "frac_slope_per_min": 0.007393,
+        "start": 0.12987,
+        "peak": 0.325974,
+        "end": 0.131169,
+        "end_vs_peak": -0.598,
+        "svr_slope_per_min": null
+      },
+      "3782": {
+        "shape": "falling",
+        "overall_slope_per_min": -6.607e-05,
+        "frac_slope_per_min": -0.000327,
+        "start": 0.127796,
+        "peak": 0.362087,
+        "end": 0.106496,
+        "end_vs_peak": -0.706,
+        "svr_slope_per_min": null
+      },
+      "387": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00130327,
+        "frac_slope_per_min": 0.005073,
+        "start": 0.150602,
+        "peak": 0.302711,
+        "end": 0.302711,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "397": {
+        "shape": "plateau",
+        "overall_slope_per_min": 2.124e-05,
+        "frac_slope_per_min": 8.6e-05,
+        "start": 0.002,
+        "peak": 0.56,
+        "end": 0.16,
+        "end_vs_peak": -0.714,
+        "svr_slope_per_min": 0.9774
+      },
+      "4054": {
+        "shape": "plateau",
+        "overall_slope_per_min": 4.242e-05,
+        "frac_slope_per_min": 0.000307,
+        "start": 0.190311,
+        "peak": 0.190311,
+        "end": 0.138408,
+        "end_vs_peak": -0.273,
+        "svr_slope_per_min": null
+      },
+      "409": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.03473531,
+        "frac_slope_per_min": -0.047446,
+        "start": 1.081081,
+        "peak": 2.162162,
+        "end": 0.261622,
+        "end_vs_peak": -0.879,
+        "svr_slope_per_min": 40.0824
+      },
+      "4251": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00277862,
+        "frac_slope_per_min": -0.013313,
+        "start": 0.30743,
+        "peak": 0.30743,
+        "end": 0.001708,
+        "end_vs_peak": -0.994,
+        "svr_slope_per_min": null
+      },
+      "4289": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00075269,
+        "frac_slope_per_min": 0.008558,
+        "start": 0.087951,
+        "peak": 0.123131,
+        "end": 0.087951,
+        "end_vs_peak": -0.286,
+        "svr_slope_per_min": -2.5719
+      },
+      "4328": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00137552,
+        "frac_slope_per_min": 0.006305,
+        "start": 0.068966,
+        "peak": 0.332512,
+        "end": 0.332512,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "4481": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00108796,
+        "frac_slope_per_min": 0.005248,
+        "start": 0.001976,
+        "peak": 0.385375,
+        "end": 0.247036,
+        "end_vs_peak": -0.359,
+        "svr_slope_per_min": -0.9571
+      },
+      "5018": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.0034751,
+        "frac_slope_per_min": 0.024493,
+        "start": 0.062215,
+        "peak": 0.229135,
+        "end": 0.229135,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "5226": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00224579,
+        "frac_slope_per_min": 0.014236,
+        "start": 0.094474,
+        "peak": 0.247772,
+        "end": 0.247772,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": 0.9253
+      },
+      "5282": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00252254,
+        "frac_slope_per_min": 0.008659,
+        "start": 0.076712,
+        "peak": 0.767123,
+        "end": 0.136986,
+        "end_vs_peak": -0.821,
+        "svr_slope_per_min": null
+      },
+      "536": {
+        "shape": "rising",
+        "overall_slope_per_min": 0.00028669,
+        "frac_slope_per_min": 0.004515,
+        "start": 0.092933,
+        "peak": 0.092933,
+        "end": 0.092933,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "5771": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00200085,
+        "frac_slope_per_min": 0.005534,
+        "start": 0.178322,
+        "peak": 0.531469,
+        "end": 0.531469,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "5983": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00146217,
+        "frac_slope_per_min": -0.010696,
+        "start": 0.156556,
+        "peak": 0.313112,
+        "end": 0.09002,
+        "end_vs_peak": -0.712,
+        "svr_slope_per_min": -0.5588
+      },
+      "6063": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00014166,
+        "frac_slope_per_min": -0.000729,
+        "start": 0.353319,
+        "peak": 0.353319,
+        "end": 0.182013,
+        "end_vs_peak": -0.485,
+        "svr_slope_per_min": null
+      },
+      "6084": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00027959,
+        "frac_slope_per_min": 0.002864,
+        "start": 0.001244,
+        "peak": 0.25,
+        "end": 0.25,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "617": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.00119524,
+        "frac_slope_per_min": -0.009758,
+        "start": 0.001783,
+        "peak": 0.358289,
+        "end": 0.001783,
+        "end_vs_peak": -0.995,
+        "svr_slope_per_min": null
+      },
+      "703": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00113407,
+        "frac_slope_per_min": 0.009472,
+        "start": 0.00199,
+        "peak": 0.208955,
+        "end": 0.208955,
+        "end_vs_peak": 0.0,
+        "svr_slope_per_min": null
+      },
+      "75": {
+        "shape": "plateau",
+        "overall_slope_per_min": 0.00031124,
+        "frac_slope_per_min": 0.001918,
+        "start": 0.09067,
+        "peak": 0.237845,
+        "end": 0.11958,
+        "end_vs_peak": -0.497,
+        "svr_slope_per_min": null
+      },
+      "984": {
+        "shape": "falling",
+        "overall_slope_per_min": -0.0041666,
+        "frac_slope_per_min": -0.037933,
+        "start": 0.397614,
+        "peak": 0.397614,
+        "end": 0.001988,
+        "end_vs_peak": -0.995,
+        "svr_slope_per_min": null
+      }
+    }
+  },
+  "shape_vs_outcome": {
+    "class_counts": {
+      "rising": 14,
+      "plateau": 19,
+      "falling": 19
+    },
+    "composite": {
+      "rising": {
+        "n": 10,
+        "event_rate": 0.7,
+        "events": 7
+      },
+      "plateau": {
+        "n": 11,
+        "event_rate": 0.909,
+        "events": 10
+      },
+      "falling": {
+        "n": 13,
+        "event_rate": 0.538,
+        "events": 7
+      }
+    },
+    "organ_renal": {
+      "rising": {
+        "n": 10,
+        "event_rate": 0.0,
+        "events": 0
+      },
+      "plateau": {
+        "n": 10,
+        "event_rate": 0.3,
+        "events": 3
+      },
+      "falling": {
+        "n": 12,
+        "event_rate": 0.167,
+        "events": 2
+      }
+    },
+    "aki": {
+      "rising": {
+        "n": 10,
+        "event_rate": 0.0,
+        "events": 0
+      },
+      "plateau": {
+        "n": 10,
+        "event_rate": 0.3,
+        "events": 3
+      },
+      "falling": {
+        "n": 12,
+        "event_rate": 0.167,
+        "events": 2
+      }
+    },
+    "progressive_vs_transient": {
+      "composite": {
+        "progressive_rate": 0.81,
+        "n_progressive": 21,
+        "transient_rate": 0.538,
+        "n_transient": 13,
+        "risk_difference": 0.271,
+        "fisher_p": 0.1297
+      },
+      "organ_renal": {
+        "progressive_rate": 0.15,
+        "n_progressive": 20,
+        "transient_rate": 0.167,
+        "n_transient": 12,
+        "risk_difference": -0.017,
+        "fisher_p": 1.0
+      },
+      "aki": {
+        "progressive_rate": 0.15,
+        "n_progressive": 20,
+        "transient_rate": 0.167,
+        "n_transient": 12,
+        "risk_difference": -0.017,
+        "fisher_p": 1.0
+      }
+    },
+    "svr_slope_by_class": {
+      "rising": {
+        "n": 3,
+        "median_svr_slope_per_min": -2.5719
+      },
+      "plateau": {
+        "n": 3,
+        "median_svr_slope_per_min": 0.9253
+      },
+      "falling": {
+        "n": 4,
+        "median_svr_slope_per_min": 6.7666
+      }
+    },
+    "confounding_note": "CONFOUNDING-BY-SEVERITY: progressive (rising/plateau) cases are by construction the more vasoplegic patients, who are independently more likely to suffer organ injury; with this N no severity adjustment is possible. Treat any class-outcome difference as hypothesis-generating."
+  },
+  "verdict_flag": "PARTIAL",
+  "verdict": "PARTIAL -- the trajectory shape's main statistical signal (the early slope) is a COLLINEAR/SUPPRESSOR artifact, NOT an actionable 'fast riser = worse' effect; the early LEVEL is the dominant actionable summary. Onset timing and shape-outcome show suggestive but underpowered / left-censored structure. Net: shape adds little ACTIONABLE info beyond the level at this N. RATE-OF-RISE vs LEVEL (n=52): predicting the LATE/peak requirement, early LEVEL alone R^2=0.163; LEVEL + rate-of-rise R^2=0.323 (delta R^2 0.159; MARGINAL slope<->latepeak r 0.019; level<->slope collinearity 0.727; PARTIAL r -0.437 p 0.0012; nested-F p 0.0013636066295953867; fast-riser subgroup MWU p 0.3924). The early slope adds R^2 but as a NEGATIVE SUPPRESSOR, not an actionable signal: the marginal slope<->late-peak correlation is ~0 and the early slope is highly COLLINEAR with the early level (high-level cases also rise fast), so the negative partial coefficient is a collinearity/mathematical-coupling artifact, NOT 'fast risers are worse'. The fast-riser subgroup test is NULL. Actionably, the early LEVEL alone is the dominant summary. ONSET TIMING (28 of 52 cases cross the HIGH threshold): median first-crossing 13.2 min from first stable epoch (IQR [0.0, 55.6]); 2-cluster split-point 46.6 min (early n=19 / late n=9, between/total SS 0.763, largest gap frac 0.308; 8 already-HIGH at first epoch = left-censored). A two-cluster split exists but is CONTAMINATED by left-censoring (many onset=0 entry-already-high cases), so the early-onset cluster is not cleanly interpretable. SHAPE classes: rising 14 / plateau 19 / falling 19. Progressive vs transient (composite): 0.81 (n=21) vs 0.538 (n=13), RD 0.271, Fisher p 0.1297. CONFOUNDED BY SEVERITY; hypothesis-generating."
+}

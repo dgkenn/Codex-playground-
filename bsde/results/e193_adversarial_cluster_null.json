@@ -1,0 +1,131 @@
+{
+  "experiment": "E193",
+  "n_cases": 39,
+  "n_mixed": 14,
+  "n_propofol": 25,
+  "lambdas": [
+    0.0,
+    0.5,
+    1.0,
+    2.0,
+    4.0,
+    8.0
+  ],
+  "perms": 200,
+  "state_tol": 0.8,
+  "features": [
+    "rel_delta",
+    "rel_theta",
+    "rel_alpha",
+    "rel_beta",
+    "rel_gamma",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "exponent_1_40",
+    "alpha_peak_hz",
+    "alpha_prom_db",
+    "total_power_db"
+  ],
+  "g1": true,
+  "g2a": true,
+  "g2b": false,
+  "entangled_control": {
+    "0.0": {
+      "state": 0.4349112426035503,
+      "agent": 0.3973684210526316,
+      "floor": 0.17671052631578946,
+      "succeeds": false
+    },
+    "0.5": {
+      "state": 0.3915187376725838,
+      "agent": 0.1210526315789473,
+      "floor": 0.24881578947368413,
+      "succeeds": true
+    },
+    "1.0": {
+      "state": 0.36193293885601574,
+      "agent": 0.015789473684210575,
+      "floor": 0.21763157894736831,
+      "succeeds": true
+    },
+    "2.0": {
+      "state": 0.30604865220249833,
+      "agent": 0.05526315789473679,
+      "floor": 0.21789473684210497,
+      "succeeds": false
+    },
+    "4.0": {
+      "state": 0.31656804733727806,
+      "agent": 0.02894736842105261,
+      "floor": 0.1853947368421049,
+      "succeeds": false
+    },
+    "8.0": {
+      "state": 0.17126890203813283,
+      "agent": 0.03421052631578947,
+      "floor": 0.33815789473684194,
+      "succeeds": false
+    }
+  },
+  "table": {
+    "0.0": {
+      "state": 0.46975673898750825,
+      "agent": 0.09142857142857141,
+      "floor": 0.17442857142857135,
+      "keeps_state": true,
+      "hides_agent": true,
+      "succeeds": true,
+      "n_null": 200
+    },
+    "0.5": {
+      "state": 0.4737015121630507,
+      "agent": 0.042857142857142816,
+      "floor": 0.3371428571428572,
+      "keeps_state": true,
+      "hides_agent": true,
+      "succeeds": true,
+      "n_null": 200
+    },
+    "1.0": {
+      "state": 0.48553583168967784,
+      "agent": 0.0485714285714286,
+      "floor": 0.24899999999999983,
+      "keeps_state": true,
+      "hides_agent": true,
+      "succeeds": true,
+      "n_null": 200
+    },
+    "2.0": {
+      "state": 0.4822485207100592,
+      "agent": 0.008571428571428563,
+      "floor": 0.24085714285714255,
+      "keeps_state": true,
+      "hides_agent": true,
+      "succeeds": true,
+      "n_null": 200
+    },
+    "4.0": {
+      "state": 0.4191321499013807,
+      "agent": 0.04571428571428571,
+      "floor": 0.24357142857142836,
+      "keeps_state": true,
+      "hides_agent": true,
+      "succeeds": true,
+      "n_null": 200
+    },
+    "8.0": {
+      "state": 0.29224194608809995,
+      "agent": 0.06571428571428573,
+      "floor": 0.23199999999999982,
+      "keeps_state": false,
+      "hides_agent": true,
+      "succeeds": false,
+      "n_null": 200
+    }
+  },
+  "state_lam0": 0.46975673898750825,
+  "g4_axis_vs_duration_rho": -0.08461538461538462,
+  "g4": true,
+  "verdict": "NOT INTERPRETABLE",
+  "why": "a gate failed: G2b negative capability"
+}

@@ -1,0 +1,29 @@
+{
+  "gates": {
+    "G1_overlap": [],
+    "G1_pass": true,
+    "G2_recordings": 39,
+    "G2_cells": 64,
+    "G2_pass": true,
+    "G3_pass": false,
+    "G4_pass": true
+  },
+  "controls": {
+    "ecg_hr": {
+      "gap": 0.05617260432811532,
+      "lo": -0.24077302276127596,
+      "hi": 0.34500373867692624,
+      "n_rec": 39,
+      "class": "UNDETERMINED"
+    },
+    "_CTRL_noise": {
+      "gap": -0.00487329872457529,
+      "lo": -0.08303897055134661,
+      "hi": 0.07394046472506707,
+      "n_rec": 39,
+      "class": "STIMULUS-INVARIANT"
+    }
+  },
+  "features": {},
+  "verdict": "GATE-FAILED"
+}

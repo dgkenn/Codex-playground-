@@ -1,0 +1,23 @@
+# POLICY CHANGED 2026-07-29 after two container rollbacks destroyed hours of streaming.
+#
+# Previously this ignored *.csv so a half-written table could never be committed looking complete. That
+# reasoning was sound and the cost turned out to be higher: the rollbacks took every in-progress table with
+# them, while the tables that had been committed on completion survived untouched.
+#
+# Feature tables are now committed freely, INCLUDING partial ones, because incompleteness is already
+# machine-checkable without a naming convention: every table has a sidecar <table>.manifest.json, and the
+# runner reports n_in_shard against the row count. A reader can tell. A destroyed table cannot be read at all.
+#
+# Still never committed: raw EEG, credentials, anything patient-identifying.
+*.edf
+*.eeg
+*.vhdr
+*.vmrk
+*.mat
+*.dat
+
+# ds006695 sleep epochs: 118 MB of derived signal, too large for git and cheap to rebuild.
+# 19 subjects x 5 stages x 12 epochs of 30 s at 500 Hz, 3 channels, fetched by HTTP byte range.
+# Regenerate:  python bsde/scripts/ds006695_signal.py
+# The small companion index IS tracked: bsde/results/ds006695_epoch_index.csv
+ds006695_epochs.npz

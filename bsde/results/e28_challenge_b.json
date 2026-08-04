@@ -1,0 +1,11 @@
+{
+  "experiment": "E28",
+  "n_subjects": 104,
+  "p1": {
+    "frac_beating_null": 0.16346153846153846,
+    "median_auc": 0.5306324110671937,
+    "median_null": 0.4611191103582408,
+    "iqr": 0.2118035949557689,
+    "passed": false
+  }
+}

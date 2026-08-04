@@ -1,0 +1,165 @@
+{
+  "effects": {
+    "NO-DRUG (sleep W->N3)": {
+      "lempel_ziv": {
+        "d_z": -2.2811419899607634,
+        "lo": -2.7585006733470485,
+        "hi": -1.9077996105403825,
+        "n": 141
+      },
+      "relative_alpha_power": {
+        "d_z": -0.5008632622670822,
+        "lo": -0.7515444148748973,
+        "hi": -0.41040748218697504,
+        "n": 141
+      },
+      "relative_delta_power": {
+        "d_z": 1.509657990631264,
+        "lo": 1.3504684557589657,
+        "hi": 1.716992823462578,
+        "n": 141
+      },
+      "spectral_edge_95": {
+        "d_z": -2.867701158125397,
+        "lo": -3.5765593325723977,
+        "hi": -2.399770254163755,
+        "n": 141
+      },
+      "spectral_entropy": {
+        "d_z": -2.185744818774727,
+        "lo": -2.5715709303567564,
+        "hi": -1.874671365308023,
+        "n": 141
+      },
+      "whole_head_exponent": {
+        "d_z": 4.008442378042586,
+        "lo": 3.0168594249175458,
+        "hi": 5.366471334516893,
+        "n": 141
+      }
+    },
+    "DRUG (ds005620 propofol)": {
+      "lempel_ziv": {
+        "d_z": 1.5511514942327453,
+        "lo": 1.1020800030730038,
+        "hi": 2.443673187293356,
+        "n": 20
+      },
+      "relative_alpha_power": {
+        "d_z": 1.1837000400120925,
+        "lo": 0.78306645354033,
+        "hi": 2.0000141821223787,
+        "n": 20
+      },
+      "relative_delta_power": {
+        "d_z": -0.3332942210767237,
+        "lo": -0.9221365798533915,
+        "hi": 0.07507754837185816,
+        "n": 20
+      },
+      "spectral_edge_95": {
+        "d_z": -0.9230881067074425,
+        "lo": -1.3626892219308027,
+        "hi": -0.6391686571846141,
+        "n": 20
+      },
+      "spectral_entropy": {
+        "d_z": 0.1126595015084766,
+        "lo": -0.32529305487953375,
+        "hi": 0.5977506266185447,
+        "n": 20
+      },
+      "whole_head_exponent": {
+        "d_z": 1.1096892279973278,
+        "lo": 0.7279918732174973,
+        "hi": 1.7955786765582877,
+        "n": 20
+      }
+    },
+    "DRUG-2 (ds004541 GA)": {
+      "lempel_ziv": {
+        "d_z": 0.9472247119967037,
+        "lo": 0.5998745528258219,
+        "hi": 1.9355031275090255,
+        "n": 7
+      },
+      "relative_alpha_power": {
+        "d_z": -0.39805332225493356,
+        "lo": -1.5113280155771216,
+        "hi": 0.4496931108588255,
+        "n": 7
+      },
+      "relative_delta_power": {
+        "d_z": -0.02372221819882792,
+        "lo": -0.8211104477511453,
+        "hi": 0.8064090915931891,
+        "n": 7
+      },
+      "spectral_edge_95": {
+        "d_z": 0.20786056003978315,
+        "lo": -0.6401996448161862,
+        "hi": 1.0724545692751435,
+        "n": 7
+      },
+      "spectral_entropy": {
+        "d_z": -0.3027456594949238,
+        "lo": -1.3557752362198208,
+        "hi": 0.6080220095076765,
+        "n": 7
+      },
+      "whole_head_exponent": {
+        "d_z": 0.9374843823762544,
+        "lo": 0.16462177586498905,
+        "hi": 6.764195007095039,
+        "n": 7
+      }
+    }
+  },
+  "features": {
+    "lempel_ziv": {
+      "alive": true,
+      "sign": "REVERSE",
+      "drug2": "reverse"
+    },
+    "relative_alpha_power": {
+      "alive": true,
+      "sign": "REVERSE",
+      "drug2": "--"
+    },
+    "relative_delta_power": {
+      "alive": false,
+      "sign": "--",
+      "drug2": "--"
+    },
+    "spectral_edge_95": {
+      "alive": true,
+      "sign": "AGREE",
+      "drug2": "--"
+    },
+    "spectral_entropy": {
+      "alive": false,
+      "sign": "--",
+      "drug2": "--"
+    },
+    "whole_head_exponent": {
+      "alive": true,
+      "sign": "AGREE",
+      "drug2": "agree"
+    }
+  },
+  "agree": [
+    "spectral_edge_95",
+    "whole_head_exponent"
+  ],
+  "reverse": [
+    "lempel_ziv",
+    "relative_alpha_power"
+  ],
+  "untestable": [
+    "relative_delta_power",
+    "spectral_entropy"
+  ],
+  "agreement_rate": 0.5,
+  "placebo_rate": 0.5,
+  "verdict": "NOT INFORMATIVE -- breaking the within-subject pairing reproduces the agreement rate, so the agreement comes from the group means rather than from paired structure."
+}

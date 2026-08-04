@@ -1,0 +1,142 @@
+{
+  "experiment": "E191",
+  "n_recordings": 62,
+  "n_windows": 17196,
+  "ladder": [
+    0.0,
+    0.5,
+    0.8,
+    0.95,
+    0.99
+  ],
+  "n_reps": 20,
+  "n_surrogates_ladder": 60,
+  "alpha": 0.05,
+  "nominal": 0.05,
+  "families": {
+    "circular_shift": {
+      "rungs": {
+        "0.0": {
+          "n": 20,
+          "hits": 1,
+          "fp_rate": 0.05,
+          "ci": [
+            0.00888144879786612,
+            0.23613119350676542
+          ],
+          "surrogate_rho": 0.05289121986943177,
+          "g4_destroys": true,
+          "usable": true
+        },
+        "0.5": {
+          "n": 20,
+          "hits": 2,
+          "fp_rate": 0.1,
+          "ci": [
+            0.027866481206268723,
+            0.3010336452867371
+          ],
+          "surrogate_rho": 0.06617941327267111,
+          "g4_destroys": true,
+          "usable": true
+        },
+        "0.8": {
+          "n": 20,
+          "hits": 3,
+          "fp_rate": 0.15,
+          "ci": [
+            0.05236874588403395,
+            0.36041886479734614
+          ],
+          "surrogate_rho": 0.10693703356523396,
+          "g4_destroys": true,
+          "usable": false
+        },
+        "0.95": {
+          "n": 20,
+          "hits": 1,
+          "fp_rate": 0.05,
+          "ci": [
+            0.00888144879786612,
+            0.23613119350676542
+          ],
+          "surrogate_rho": 0.1967619103554912,
+          "g4_destroys": true,
+          "usable": true
+        },
+        "0.99": {
+          "n": 20,
+          "hits": 5,
+          "fp_rate": 0.25,
+          "ci": [
+            0.1118617013866113,
+            0.46870087767151725
+          ],
+          "surrogate_rho": 0.2771129439139308,
+          "g4_destroys": true,
+          "usable": false
+        }
+      },
+      "aliveness": {
+        "real": -0.050628695932507295,
+        "frac": 0.0,
+        "surrogate_rho": 0.05331679437214369,
+        "pass": true
+      }
+    }
+  },
+  "g1_rebuild": true,
+  "g2_incumbent_rho": 0.3986932948626475,
+  "candidate_autocorrelation": {
+    "emg_index": {
+      "ac1": 0.8420380502321423,
+      "ac9": 0.2147938454559131
+    },
+    "multiscale_entropy_slope": {
+      "ac1": 0.9389738882537823,
+      "ac9": 0.4969696721598616
+    },
+    "relative_alpha_power": {
+      "ac1": 0.9331008044439713,
+      "ac9": 0.5009315066239612
+    },
+    "bis_rbr": {
+      "ac1": 0.9545427620402838,
+      "ac9": 0.5241719806777526
+    },
+    "whole_head_exponent": {
+      "ac1": 0.9372300053573375,
+      "ac9": 0.4379848257794851
+    },
+    "wpli_theta": {
+      "ac1": 0.7074597329415417,
+      "ac9": 0.0954217695462978
+    },
+    "emg_kurtosis": {
+      "ac1": 0.7510752944403775,
+      "ac9": 0.13855335881326103
+    },
+    "emg_beta_gamma_fraction": {
+      "ac1": 0.9208970803920074,
+      "ac9": 0.38340421346957443
+    },
+    "pac_slow_alpha": {
+      "ac1": 0.6781179028161765,
+      "ac9": 0.09481086594327559
+    },
+    "wpli_delta": {
+      "ac1": 0.698952053700697,
+      "ac9": 0.10155453906578714
+    },
+    "wpli_alpha_2ch": {
+      "ac1": 0.7275937195746329,
+      "ac9": 0.09825675516566384
+    }
+  },
+  "candidates_above_top_rung": [],
+  "licensed_candidates": {
+    "circular_shift": []
+  },
+  "verdict": "NO FAMILY USABLE",
+  "why": "no family holds its false-positive rate at or below nominal on the rungs bracketing the real candidates' own autocorrelation, so E187's nine survivors stay UNLICENSED and the feature-side surrogate placebo is closed on this deposit"
+}

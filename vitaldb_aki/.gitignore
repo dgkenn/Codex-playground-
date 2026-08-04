@@ -1,0 +1,4 @@
+cache/
+*.csv
+!tests/*.csv
+__pycache__/

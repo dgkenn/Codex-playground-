@@ -1,0 +1,83 @@
+{
+  "experiment": "E213",
+  "n_cases": 115,
+  "n_sevo": 71,
+  "n_propofol": 44,
+  "bin_width_hz": 0.125,
+  "pin_threshold_hz": 8.125,
+  "pinned_rate_sevo": 0.18309859154929578,
+  "pinned_rate_propofol": 0.045454545454545456,
+  "n_restricted": {
+    "sevoflurane": 58,
+    "propofol": 42
+  },
+  "G_full_primary": -0.3741997439180538,
+  "orientation_sign": -1.0,
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "features": {
+    "relative_alpha_power": {
+      "orient": -1.0,
+      "g_full": 0.3741997439180538,
+      "g_restricted": 0.34318555008210183,
+      "delta": -0.031014193835951942,
+      "null_percentile": 18.775,
+      "null_p05": -0.04825557314629675,
+      "null_p95": 0.04862455821659317,
+      "role": "PRIMARY"
+    },
+    "lempel_ziv": {
+      "orient": 1.0,
+      "g_full": 0.018565941101152367,
+      "g_restricted": 0.029556650246305438,
+      "delta": 0.010990709145153071,
+      "null_percentile": 76.67500000000001,
+      "null_p05": -0.04073342878588142,
+      "null_p95": 0.03480023295467688,
+      "role": "placebo"
+    },
+    "whole_head_exponent": {
+      "orient": 1.0,
+      "g_full": 0.1664532650448144,
+      "g_restricted": 0.16748768472906395,
+      "delta": 0.0010344196842495545,
+      "null_percentile": 57.775,
+      "null_p05": -0.04001648343561892,
+      "null_p95": 0.04208532280411825,
+      "role": "placebo"
+    },
+    "spectral_entropy": {
+      "orient": -1.0,
+      "g_full": 0.16965428937259927,
+      "g_restricted": 0.1050903119868637,
+      "delta": -0.06456397738573558,
+      "null_percentile": 2.3,
+      "null_p05": -0.04732259807539077,
+      "null_p95": 0.05202058747469135,
+      "role": "placebo"
+    },
+    "relative_delta_power": {
+      "orient": 1.0,
+      "g_full": 0.1805377720870679,
+      "g_restricted": 0.16748768472906395,
+      "delta": -0.013050087358003948,
+      "null_percentile": 39.0,
+      "null_p05": -0.04753284597869356,
+      "null_p95": 0.04524219507220961,
+      "role": "placebo"
+    },
+    "relative_theta_power": {
+      "orient": 1.0,
+      "g_full": 0.1664532650448144,
+      "g_restricted": 0.1502463054187192,
+      "delta": -0.016206959626095196,
+      "null_percentile": 34.475,
+      "null_p05": -0.04001648343561892,
+      "null_p95": 0.04208532280411825,
+      "role": "pos-ctrl"
+    }
+  },
+  "verdict": "ABSENT",
+  "why": "delta -0.0310 sits at the 18.8th percentile of the matched-size null, i.e. inside its central range. Removing the floor-pinned cases does no more than removing the same number at random, so band placement is not supported and the peak shift stays descriptive"
+}

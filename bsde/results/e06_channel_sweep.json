@@ -1,0 +1,116 @@
+{
+  "experiment": "E06",
+  "summary": {
+    "lempel_ziv": {
+      "mono_all": 0.9,
+      "mono_ten_twenty": 0.9,
+      "mono_single_median": 0.8,
+      "mono_single_min": 0.35,
+      "mono_single_max": 1.0,
+      "n_single_channels_computable": 91,
+      "best_single_channel": "E15",
+      "best_single_mono": 1.0,
+      "auc_all": 0.7775,
+      "auc_ten_twenty": 0.76,
+      "auc_single_median": 0.7525
+    },
+    "relative_alpha_power": {
+      "mono_all": 0.45,
+      "mono_ten_twenty": 0.4,
+      "mono_single_median": 0.4,
+      "mono_single_min": 0.15,
+      "mono_single_max": 0.7,
+      "n_single_channels_computable": 91,
+      "best_single_channel": "E2",
+      "best_single_mono": 0.7,
+      "auc_all": 0.6275,
+      "auc_ten_twenty": 0.6375,
+      "auc_single_median": 0.625
+    },
+    "relative_delta_power": {
+      "mono_all": 0.4,
+      "mono_ten_twenty": 0.4,
+      "mono_single_median": 0.25,
+      "mono_single_min": 0.0,
+      "mono_single_max": 0.8,
+      "n_single_channels_computable": 91,
+      "best_single_channel": "O1",
+      "best_single_mono": 0.8,
+      "auc_all": 0.6799999999999999,
+      "auc_ten_twenty": 0.6475,
+      "auc_single_median": 0.6625
+    },
+    "spectral_edge_95": {
+      "mono_all": 0.65,
+      "mono_ten_twenty": 0.55,
+      "mono_single_median": 0.65,
+      "mono_single_min": 0.2,
+      "mono_single_max": 0.9,
+      "n_single_channels_computable": 91,
+      "best_single_channel": "E15",
+      "best_single_mono": 0.9,
+      "auc_all": 0.61,
+      "auc_ten_twenty": 0.5775,
+      "auc_single_median": 0.6575
+    },
+    "spectral_entropy": {
+      "mono_all": 0.8,
+      "mono_ten_twenty": 0.8,
+      "mono_single_median": 0.7,
+      "mono_single_min": 0.4,
+      "mono_single_max": 1.0,
+      "n_single_channels_computable": 91,
+      "best_single_channel": "Fp2",
+      "best_single_mono": 1.0,
+      "auc_all": 0.7075,
+      "auc_ten_twenty": 0.7175,
+      "auc_single_median": 0.695
+    },
+    "uce_v1": {
+      "mono_all": 0.5,
+      "mono_ten_twenty": 0.5,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": 0.5549999999999999,
+      "auc_ten_twenty": 0.5549999999999999,
+      "auc_single_median": null
+    },
+    "whole_head_exponent": {
+      "mono_all": 0.45,
+      "mono_ten_twenty": 0.55,
+      "mono_single_median": 0.4,
+      "mono_single_min": 0.05,
+      "mono_single_max": 0.8,
+      "n_single_channels_computable": 91,
+      "best_single_channel": "E50",
+      "best_single_mono": 0.8,
+      "auc_all": 0.6074999999999999,
+      "auc_ten_twenty": 0.5449999999999999,
+      "auc_single_median": 0.63
+    },
+    "wpli_alpha": {
+      "mono_all": 0.3,
+      "mono_ten_twenty": 0.4,
+      "mono_single_median": null,
+      "mono_single_min": null,
+      "mono_single_max": null,
+      "n_single_channels_computable": 0,
+      "best_single_channel": null,
+      "best_single_mono": NaN,
+      "auc_all": 0.635,
+      "auc_ten_twenty": 0.6275,
+      "auc_single_median": null
+    }
+  },
+  "predictions": {
+    "P1": true,
+    "P2": true,
+    "P3": true,
+    "P4": true
+  },
+  "frontal_single_median_mono_lempel_ziv": 0.95
+}

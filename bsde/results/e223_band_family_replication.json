@@ -1,0 +1,62 @@
+{
+  "experiment": "E223",
+  "n_points": 566,
+  "n_subjects": 142,
+  "panel": [
+    "critical_slowing_ar1",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "relative_delta_power",
+    "spatial_participation_ratio",
+    "spectral_entropy",
+    "wpli_alpha"
+  ],
+  "sensitive": [
+    "critical_slowing_ar1",
+    "exponent_low",
+    "lempel_ziv",
+    "wpli_alpha"
+  ],
+  "insensitive": [
+    "exponent_high",
+    "relative_delta_power",
+    "spatial_participation_ratio",
+    "spectral_entropy"
+  ],
+  "S": {
+    "critical_slowing_ar1": 0.9959735240557236,
+    "exponent_high": 0.004527152382071471,
+    "exponent_low": 0.995722015590053,
+    "lempel_ziv": 0.9243129062473009,
+    "relative_delta_power": 0.04577454075205598,
+    "spatial_participation_ratio": 0.015342016405908874,
+    "spectral_entropy": 0.08400382753399284,
+    "wpli_alpha": 0.3785202408343091
+  },
+  "s_threshold": 0.2314632409566874,
+  "increments": {
+    "critical_slowing_ar1": 0.009968097524614361,
+    "exponent_high": -0.0025461245292016654,
+    "exponent_low": 0.0033790549197426634,
+    "lempel_ziv": 0.0017316148460502223,
+    "relative_delta_power": 0.0023123626766125005,
+    "spatial_participation_ratio": 0.0018217020161415132,
+    "spectral_entropy": -0.0013448483422855428,
+    "wpli_alpha": 0.001970844812150152
+  },
+  "noise": -0.0005921283418068857,
+  "noise_ci": [
+    -0.0029356173228487297,
+    0.0033837039733115282
+  ],
+  "D": -0.004201630070322648,
+  "percentile": 7.142857142857142,
+  "n_partitions": 70,
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "g5": true,
+  "verdict": "ABSENT",
+  "why": "D -0.0042 sits at the 7.1th percentile of an exhaustive enumeration of 70 balanced partitions. The band-free advantage does not generalise beyond the three candidates it was observed on"
+}

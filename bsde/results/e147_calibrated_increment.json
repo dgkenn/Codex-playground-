@@ -1,0 +1,236 @@
+{
+ "G1": {
+  "fpr": 0.03333333333333333,
+  "pass": true
+ },
+ "G2": {
+  "pass": true
+ },
+ "P1": "CONFIRMED -- the replacement recovers most of the oracle's power where the old test had none",
+ "P2": "CONFIRMED",
+ "P3": "REFUTED -- the new test fails to beat the old in 2 of 24 live cells",
+ "cal_draws": 300,
+ "cells": {
+  "100|1|0.15": {
+   "n_subj": 100,
+   "new": 0.275,
+   "old": 0.0,
+   "oracle": 0.5,
+   "retained": 0.55,
+   "rho": 0.15,
+   "rows_per": 1
+  },
+  "100|1|0.25": {
+   "n_subj": 100,
+   "new": 0.6,
+   "old": 0.0,
+   "oracle": 0.825,
+   "retained": 0.7272727272727273,
+   "rho": 0.25,
+   "rows_per": 1
+  },
+  "100|1|0.35": {
+   "n_subj": 100,
+   "new": 0.9,
+   "old": 0.025,
+   "oracle": 0.975,
+   "retained": 0.9230769230769231,
+   "rho": 0.35,
+   "rows_per": 1
+  },
+  "100|1|0.5": {
+   "n_subj": 100,
+   "new": 1.0,
+   "old": 0.3,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.5,
+   "rows_per": 1
+  },
+  "100|3|0.15": {
+   "n_subj": 100,
+   "new": 0.5,
+   "old": 0.025,
+   "oracle": 0.875,
+   "retained": 0.5714285714285714,
+   "rho": 0.15,
+   "rows_per": 3
+  },
+  "100|3|0.25": {
+   "n_subj": 100,
+   "new": 0.975,
+   "old": 0.125,
+   "oracle": 1.0,
+   "retained": 0.975,
+   "rho": 0.25,
+   "rows_per": 3
+  },
+  "100|3|0.35": {
+   "n_subj": 100,
+   "new": 1.0,
+   "old": 0.65,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.35,
+   "rows_per": 3
+  },
+  "100|3|0.5": {
+   "n_subj": 100,
+   "new": 1.0,
+   "old": 0.95,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.5,
+   "rows_per": 3
+  },
+  "200|1|0.15": {
+   "n_subj": 200,
+   "new": 0.45,
+   "old": 0.025,
+   "oracle": 0.725,
+   "retained": 0.6206896551724138,
+   "rho": 0.15,
+   "rows_per": 1
+  },
+  "200|1|0.25": {
+   "n_subj": 200,
+   "new": 0.9,
+   "old": 0.05,
+   "oracle": 0.95,
+   "retained": 0.9473684210526316,
+   "rho": 0.25,
+   "rows_per": 1
+  },
+  "200|1|0.35": {
+   "n_subj": 200,
+   "new": 1.0,
+   "old": 0.425,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.35,
+   "rows_per": 1
+  },
+  "200|1|0.5": {
+   "n_subj": 200,
+   "new": 1.0,
+   "old": 0.95,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.5,
+   "rows_per": 1
+  },
+  "200|3|0.15": {
+   "n_subj": 200,
+   "new": 0.9,
+   "old": 0.075,
+   "oracle": 1.0,
+   "retained": 0.9,
+   "rho": 0.15,
+   "rows_per": 3
+  },
+  "200|3|0.25": {
+   "n_subj": 200,
+   "new": 1.0,
+   "old": 0.575,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.25,
+   "rows_per": 3
+  },
+  "200|3|0.35": {
+   "n_subj": 200,
+   "new": 1.0,
+   "old": 1.0,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.35,
+   "rows_per": 3
+  },
+  "200|3|0.5": {
+   "n_subj": 200,
+   "new": 1.0,
+   "old": 1.0,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.5,
+   "rows_per": 3
+  },
+  "60|1|0.15": {
+   "n_subj": 60,
+   "new": 0.2,
+   "old": 0.0,
+   "oracle": 0.4,
+   "retained": 0.5,
+   "rho": 0.15,
+   "rows_per": 1
+  },
+  "60|1|0.25": {
+   "n_subj": 60,
+   "new": 0.4,
+   "old": 0.0,
+   "oracle": 0.625,
+   "retained": 0.64,
+   "rho": 0.25,
+   "rows_per": 1
+  },
+  "60|1|0.35": {
+   "n_subj": 60,
+   "new": 0.675,
+   "old": 0.05,
+   "oracle": 0.925,
+   "retained": 0.7297297297297297,
+   "rho": 0.35,
+   "rows_per": 1
+  },
+  "60|1|0.5": {
+   "n_subj": 60,
+   "new": 0.95,
+   "old": 0.075,
+   "oracle": 1.0,
+   "retained": 0.95,
+   "rho": 0.5,
+   "rows_per": 1
+  },
+  "60|3|0.15": {
+   "n_subj": 60,
+   "new": 0.55,
+   "old": 0.0,
+   "oracle": 0.675,
+   "retained": 0.8148148148148149,
+   "rho": 0.15,
+   "rows_per": 3
+  },
+  "60|3|0.25": {
+   "n_subj": 60,
+   "new": 0.775,
+   "old": 0.025,
+   "oracle": 0.975,
+   "retained": 0.7948717948717949,
+   "rho": 0.25,
+   "rows_per": 3
+  },
+  "60|3|0.35": {
+   "n_subj": 60,
+   "new": 1.0,
+   "old": 0.175,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.35,
+   "rows_per": 3
+  },
+  "60|3|0.5": {
+   "n_subj": 60,
+   "new": 1.0,
+   "old": 0.825,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.5,
+   "rows_per": 3
+  }
+ },
+ "draws": 40,
+ "experiment": "E147",
+ "perms": 300,
+ "retained_mean": 0.8601771932258169,
+ "verdict": "REPLACEMENT VALIDATED -- permutation_increment is calibrated and materially more powerful; every increment-decided null in this repository is now re-runnable and the ones that were reported as NEGATIVE must be re-derived (rule 2) or relabelled ABSENT (rule 31)."
+}

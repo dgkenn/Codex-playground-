@@ -1,0 +1,19 @@
+{
+  "gates": {
+    "G1_subjects": 23,
+    "G1_pass": true,
+    "G2_pass": false
+  },
+  "excluded": [
+    "sub-001"
+  ],
+  "anchor": {
+    "contrast": "activemotor - passivemotor",
+    "d_z": 0.27107583997816764,
+    "lo": -0.19000468851216723,
+    "hi": 0.565266093581275,
+    "n": 20,
+    "alive": false
+  },
+  "verdict": "GATE-FAILED"
+}

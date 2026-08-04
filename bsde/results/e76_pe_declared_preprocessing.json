@@ -1,0 +1,133 @@
+{
+  "gates": {
+    "G2_tie_frac_median": 0.170854,
+    "G3_band_rel_delta_median": 0.203718,
+    "G2_pass": true,
+    "G3_pass": true,
+    "G4_shared_rows": 10927,
+    "G4_max_abs_diff": 0.0,
+    "G4_pass": true,
+    "G5_recordings_agreement": 43,
+    "G5_recordings_moaas": 43,
+    "G5_pass": true
+  },
+  "primaries": {
+    "P1": {
+      "reference": "PE31",
+      "per_seed": {
+        "11": {
+          "D": 0.245657351457318,
+          "lo": 0.14683267429808458,
+          "hi": 0.360096684312092,
+          "frac_wrong_side": 0.0,
+          "contrast_vs_placebo": 0.3922598012172989,
+          "contrast_lo": 0.3385449537720426,
+          "contrast_hi": 0.44690205782803605,
+          "contrast_frac_wrong_side": 0.0,
+          "verdict": "PASS"
+        },
+        "12": {
+          "D": 0.245657351457318,
+          "lo": 0.1466873390510583,
+          "hi": 0.3614903254719152,
+          "frac_wrong_side": 0.0,
+          "contrast_vs_placebo": 0.3922598012172989,
+          "contrast_lo": 0.3378051504823871,
+          "contrast_hi": 0.4468290957032496,
+          "contrast_frac_wrong_side": 0.0,
+          "verdict": "PASS"
+        },
+        "13": {
+          "D": 0.245657351457318,
+          "lo": 0.14578164077872216,
+          "hi": 0.3608750204887289,
+          "frac_wrong_side": 0.0,
+          "contrast_vs_placebo": 0.3922598012172989,
+          "contrast_lo": 0.33832855003846674,
+          "contrast_hi": 0.4460582988658936,
+          "contrast_frac_wrong_side": 0.0,
+          "verdict": "PASS"
+        }
+      },
+      "verdict": "PASS",
+      "D_placebo": -0.146602449759981
+    },
+    "P2": {
+      "reference": "MOAA/S",
+      "per_seed": {
+        "11": {
+          "D": 0.16090104285048562,
+          "lo": 0.07638742748487264,
+          "hi": 0.2613256780239398,
+          "frac_wrong_side": 0.0,
+          "contrast_vs_placebo": 0.2706438207073292,
+          "contrast_lo": 0.18224536594804608,
+          "contrast_hi": 0.3646356728704271,
+          "contrast_frac_wrong_side": 0.0,
+          "verdict": "PASS"
+        },
+        "12": {
+          "D": 0.16090104285048562,
+          "lo": 0.0764808286634467,
+          "hi": 0.2611405137201639,
+          "frac_wrong_side": 0.0,
+          "contrast_vs_placebo": 0.2706438207073292,
+          "contrast_lo": 0.18259965815861565,
+          "contrast_hi": 0.36538702900502756,
+          "contrast_frac_wrong_side": 0.0,
+          "verdict": "PASS"
+        },
+        "13": {
+          "D": 0.16090104285048562,
+          "lo": 0.07632243408878771,
+          "hi": 0.26051875899157123,
+          "frac_wrong_side": 0.0,
+          "contrast_vs_placebo": 0.2706438207073292,
+          "contrast_lo": 0.1818338152409562,
+          "contrast_hi": 0.3644612116185151,
+          "contrast_frac_wrong_side": 0.0,
+          "verdict": "PASS"
+        }
+      },
+      "verdict": "PASS",
+      "D_placebo": -0.10974277785684355
+    }
+  },
+  "descriptive": {
+    "median_rho_pe_raw_vs_PE31": 0.7240688830400083,
+    "median_rho_pe_raw_vs_MOAAS": 0.36381528523627715,
+    "median_rho_pe_band_vs_PE31": 0.8245838128551752,
+    "median_rho_pe_band_vs_MOAAS": 0.5264280553642212,
+    "median_rho_pe_tie_vs_PE31": 0.7270189284326171,
+    "median_rho_pe_tie_vs_MOAAS": 0.3699751484403364,
+    "median_rho_pe_declared_vs_PE31": 0.8288493020672937,
+    "median_rho_pe_declared_vs_MOAAS": 0.5303518827562856,
+    "median_rho_pe_placebo20_vs_PE31": 0.42667969526274335,
+    "median_rho_pe_placebo20_vs_MOAAS": 0.25625244098104466,
+    "median_rho_their_PE31_vs_MOAAS": 0.4943923993841845,
+    "pe_band_minus_raw_P1": [
+      0.2383059721098412,
+      0.14073650732799536,
+      0.35216135699362655
+    ],
+    "pe_band_minus_raw_P2": [
+      0.162020579179551,
+      0.07821931855277713,
+      0.26109236700589633
+    ],
+    "pe_tie_minus_raw_P1": [
+      0.02336475174149566,
+      0.008941883046481133,
+      0.041398834178467486
+    ],
+    "pe_tie_minus_raw_P2": [
+      0.007672083771829103,
+      -0.0020915665430135985,
+      0.018819661894866987
+    ]
+  },
+  "verdicts": {
+    "P1": "PASS",
+    "P2": "PASS"
+  }
+}

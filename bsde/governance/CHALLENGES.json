@@ -1,0 +1,33 @@
+{
+  "_source": "bsde/docs/UCE_AND_THE_THREE_CHALLENGES.md, investigator-briefed, VERBATIM. Do not edit the text of any `statement` field. There are THREE challenges. A fourth was invented by an earlier session and is recorded below as retired.",
+  "A": {
+    "statement": "predicts loss and recovery across anaesthetics while MINIMISING drug-identification information",
+    "acceptance_has_two_halves": [
+      "HALF 1: the candidate tracks LOSS AND RECOVERY of consciousness -- transitions, not dose-response -- and does so ACROSS different anaesthetic agents",
+      "HALF 2: the candidate carries as LITTLE drug-identity information as possible"
+    ],
+    "statistic": "E05's S: positive when a candidate follows behavioural STATE, negative when it follows the DRUG",
+    "not_this": "characterising how measures DIFFER between agents. That is the quantity half 2 asks to be MINIMISED, so a large between-agent difference disqualifies a candidate rather than constituting a finding."
+  },
+  "B": {
+    "statement": "spontaneous EEG predicting command-following",
+    "acceptance_has_two_halves": [
+      "HALF 1: the EEG is SPONTANEOUS -- task-free, not recorded during the command-following paradigm itself",
+      "HALF 2: the outcome is COMMAND-FOLLOWING, the covert-consciousness construct, not BCI aptitude in healthy volunteers"
+    ],
+    "incumbent_note": "rule 86 -- the incumbent must not share a measurement act with the outcome",
+    "not_this": "BCI performance prediction in healthy subjects, which is a proxy whose transfer to command-following has never been justified."
+  },
+  "C": {
+    "statement": "seeing a transition before the conventional monitor",
+    "acceptance_has_two_halves": [
+      "HALF 1: a TRANSITION, resolved in time -- earlier detection, not better discrimination at a timepoint",
+      "HALF 2: BEFORE THE CONVENTIONAL MONITOR -- the comparator is the deployed monitor (BIS), not a computed spectral-edge proxy"
+    ],
+    "known_defect_in_prior_verdicts": "E26, E34 and E37 all scored against SEF95, a computed proxy, because BIS is absent from DOSE-I. VitalDB records BIS. Those negatives do not refute the claim they appear to refute.",
+    "not_this": "discriminating depth or stage at a timepoint, however well."
+  },
+  "_retired": {
+    "D": "NOT A BRIEFED CHALLENGE. Invented by an earlier session as a transport prediction; zero hits for 'Challenge D' in RESEARCH_PROGRAM_BRIEF.md and UCE_AND_THE_THREE_CHALLENGES.md. Work filed under D is not work on the programme's goals. Retired 2026-08-02."
+  }
+}

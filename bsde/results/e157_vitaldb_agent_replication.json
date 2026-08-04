@@ -1,0 +1,160 @@
+{
+ "G1": true,
+ "G2": {
+  "pass": true,
+  "rho": 0.7228859075878293
+ },
+ "G4": true,
+ "G5": false,
+ "experiment": "E157",
+ "n_cases": 112,
+ "n_propofol": 43,
+ "n_sevoflurane": 69,
+ "n_windows": 8,
+ "nuisance": {
+  "duration_s": {
+   "p": 0.7102,
+   "raw": 0.06521739130434778,
+   "weighted": 0.02137198520193473
+  },
+  "meta_age": {
+   "p": 0.23625,
+   "raw": 0.023761375126390316,
+   "weighted": 0.0014202834536281572
+  },
+  "meta_asa": {
+   "p": 0.97835,
+   "raw": 0.1347469220246238,
+   "weighted": 0.00014008619977379233
+  },
+  "meta_bmi": {
+   "p": 0.77315,
+   "raw": 0.11307718233906305,
+   "weighted": 0.00027528004409083096
+  },
+  "meta_sex": {
+   "p": 0.0336,
+   "raw": 0.053083923154701784,
+   "weighted": 5.116702337881751e-06
+  },
+  "n_windows": {
+   "p": 0.9739,
+   "raw": 0.03774856757667677,
+   "weighted": 0.0017911949586330023
+  }
+ },
+ "per_candidate": {
+  "alpha_peak_hz": {
+   "clears": true,
+   "direction_ok": true,
+   "null_p95": 0.10782219324292273,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "raw": 0.3065385911695315,
+   "signed_auc_sevo": 0.19346140883046847,
+   "weighted": 0.2989831412555425
+  },
+  "exponent_high": {
+   "clears": false,
+   "direction_ok": null,
+   "null_p95": 0.1122405567316484,
+   "p": 0.2082,
+   "p_holm": 0.6246,
+   "raw": 0.029491068419278732,
+   "signed_auc_sevo": 0.5294910684192787,
+   "weighted": 0.07265108159143818
+  },
+  "exponent_low": {
+   "clears": true,
+   "direction_ok": null,
+   "null_p95": 0.1138236669217156,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "raw": 0.2553083923154702,
+   "signed_auc_sevo": 0.7553083923154702,
+   "weighted": 0.25592488909100874
+  },
+  "lempel_ziv": {
+   "clears": true,
+   "direction_ok": null,
+   "null_p95": 0.10758666596967045,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "raw": 0.32221098752949107,
+   "signed_auc_sevo": 0.8222109875294911,
+   "weighted": 0.3266466272601013
+  },
+  "relative_alpha_power": {
+   "clears": true,
+   "direction_ok": null,
+   "null_p95": 0.10854982220638007,
+   "p": 0.00035,
+   "p_holm": 0.00175,
+   "raw": 0.2192450286484664,
+   "signed_auc_sevo": 0.28075497135153354,
+   "weighted": 0.19936227280409696
+  },
+  "relative_delta_power": {
+   "clears": false,
+   "direction_ok": null,
+   "null_p95": 0.11267296184861143,
+   "p": 0.48395,
+   "p_holm": 0.9679,
+   "raw": 0.04398382204246709,
+   "signed_auc_sevo": 0.5439838220424671,
+   "weighted": 0.040669483021684716
+  },
+  "relative_theta_power": {
+   "clears": true,
+   "direction_ok": true,
+   "null_p95": 0.10128897545991934,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "raw": 0.30215706100438156,
+   "signed_auc_sevo": 0.8021570610043816,
+   "weighted": 0.32629746467641896
+  },
+  "spectral_edge_95": {
+   "clears": true,
+   "direction_ok": null,
+   "null_p95": 0.11197681306155327,
+   "p": 0.0028,
+   "p_holm": 0.0112,
+   "raw": 0.15689248399056288,
+   "signed_auc_sevo": 0.3431075160094371,
+   "weighted": 0.16897674693497322
+  },
+  "spectral_entropy": {
+   "clears": false,
+   "direction_ok": null,
+   "null_p95": 0.1113457960773266,
+   "p": 0.62815,
+   "p_holm": 0.9679,
+   "raw": 0.042972699696663286,
+   "signed_auc_sevo": 0.5429726996966633,
+   "weighted": 0.028021971993309802
+  },
+  "whole_head_exponent": {
+   "clears": true,
+   "direction_ok": null,
+   "null_p95": 0.11148763084780974,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "raw": 0.19295584765756657,
+   "signed_auc_sevo": 0.6929558476575666,
+   "weighted": 0.2264970646911355
+  },
+  "wpli_alpha": {
+   "clears": false,
+   "direction_ok": null,
+   "null_p95": NaN,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "raw": NaN,
+   "signed_auc_sevo": NaN,
+   "weighted": NaN
+  }
+ },
+ "perms": 20000,
+ "verdict": "NO VERDICT -- a gate failed"
+}

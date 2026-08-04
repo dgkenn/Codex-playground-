@@ -1,0 +1,9 @@
+{
+  "gate_g1": true,
+  "gate_g2": false,
+  "n_sessions": 185,
+  "n_subjects": 62,
+  "n_pairs": 122,
+  "half_abs_bias": 0.03972817837837837,
+  "half_signed_bias": 0.009428091891891886
+}

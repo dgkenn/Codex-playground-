@@ -1,0 +1,45 @@
+{
+  "experiment": "E178",
+  "base_rate_tol": 0.05,
+  "base_auc_tol": 0.03,
+  "arms": {
+    "A_e37_unmatched": {
+      "which": "e37",
+      "matched": false,
+      "real_increment": -0.010496266611226157,
+      "real_baseline_auc": 0.6330490726094422,
+      "real_base_rate": 0.2169889359942095,
+      "n_draws": 200,
+      "n_tries": 200,
+      "placebo_mean": -0.0064826013657046724,
+      "placebo_p05": -0.046934960787382005,
+      "fraction_at_or_below_real": 0.415,
+      "placebo_baseline_auc_mean": 0.45084743227129737,
+      "placebo_base_rate_mean": 0.10832605211456933,
+      "fires": true,
+      "status": "OK"
+    },
+    "B_e37_matched": {
+      "which": "e37",
+      "matched": true,
+      "real_increment": -0.010496266611226157,
+      "real_baseline_auc": 0.6330490726094422,
+      "real_base_rate": 0.2169889359942095,
+      "n_draws": 0,
+      "n_tries": 4000,
+      "status": "NOT-MATCHABLE"
+    },
+    "C_e34_matched": {
+      "which": "e34",
+      "matched": true,
+      "real_increment": -0.023561501388993822,
+      "real_baseline_auc": 0.6109825235774853,
+      "real_base_rate": 0.311938964358106,
+      "n_draws": 0,
+      "n_tries": 4000,
+      "status": "NOT-MATCHABLE"
+    }
+  },
+  "verdict_e37": "WITHDRAWN",
+  "why": "the unmatched placebo fires and no matched placebo can be built, so e37 falls with e34; and the failure to match is itself a statement that no arbitrary landmark reproduces the real one's baseline"
+}

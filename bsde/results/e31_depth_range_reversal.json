@@ -1,0 +1,15 @@
+{
+  "experiment": "E31",
+  "p1": {
+    "counts": {
+      "light (SR == 0)": 106,
+      "deep (SR > 0)": 19
+    },
+    "median_bis": {
+      "light (SR == 0)": 43.316666666666656,
+      "deep (SR > 0)": 35.83333333333334
+    },
+    "n_both": 105,
+    "passed": false
+  }
+}

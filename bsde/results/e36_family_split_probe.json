@@ -1,0 +1,147 @@
+{
+  "experiment": "E36",
+  "n_rows": 363,
+  "n_patients": 29,
+  "phase": [
+    "frontwPLI",
+    "backwPLI",
+    "longwPLI",
+    "allwPLI"
+  ],
+  "amplitude": [
+    "EffDim",
+    "NmlzCmplx",
+    "allEnvCorr",
+    "AvgDelta",
+    "AvgAlpha",
+    "AvgGamma",
+    "frontalDelta",
+    "frontalAlpha"
+  ],
+  "held_out": [
+    "frontBias"
+  ],
+  "g1": {
+    "capable": {
+      "PHASE": [
+        "frontwPLI",
+        "backwPLI",
+        "longwPLI",
+        "allwPLI"
+      ],
+      "AMPLITUDE": [
+        "EffDim",
+        "NmlzCmplx",
+        "allEnvCorr",
+        "AvgDelta",
+        "AvgAlpha",
+        "frontalDelta",
+        "frontalAlpha"
+      ]
+    },
+    "passed": true
+  },
+  "p0": {
+    "nuisance": {
+      "pctGoodSamples": 0.1298449612403101,
+      "Subdural": 0.19556025369978858
+    },
+    "floor": 0.19556025369978858
+  },
+  "p5": {
+    "drug": {
+      "frontwPLI": 0.06565656565656564,
+      "backwPLI": 0.016326051209772152,
+      "longwPLI": 0.00011745360582571251,
+      "allwPLI": 0.008926474042753152,
+      "EffDim": 0.33086680761099363,
+      "NmlzCmplx": 0.36762978623443743,
+      "allEnvCorr": 0.27084801503406153,
+      "AvgDelta": 0.2692036645525018,
+      "AvgAlpha": 0.22879962414846133,
+      "AvgGamma": 0.2789523138360348,
+      "frontalDelta": 0.21717171717171713,
+      "frontalAlpha": 0.27937267410951616,
+      "frontBias": 0.05528973950026583
+    },
+    "state": {
+      "frontwPLI": 0.3923382173382174,
+      "backwPLI": 0.2088522588522589,
+      "longwPLI": 0.347008547008547,
+      "allwPLI": 0.3388583638583639,
+      "EffDim": 0.32979242979242973,
+      "NmlzCmplx": 0.3927350427350428,
+      "allEnvCorr": 0.4155372405372405,
+      "AvgDelta": 0.2687728937728938,
+      "AvgAlpha": 0.26077533577533574,
+      "AvgGamma": 0.09920634920634919,
+      "frontalDelta": 0.2997835497835498,
+      "frontalAlpha": 0.3686507936507937,
+      "frontBias": 0.3445526695526695
+    }
+  },
+  "p1": {
+    "delta": 0.27495658156612873,
+    "D": 0.2575989392084863,
+    "S": -0.017357642357642422,
+    "ci": [
+      0.0012970829066812576,
+      0.3358114329741723
+    ],
+    "n_resamples": 2000,
+    "passed": true
+  },
+  "p2": {
+    "n_splits": 495,
+    "threshold": 0.18426306130884618,
+    "percentile": 100.0,
+    "n_at_or_above": 1,
+    "passed": true
+  },
+  "p3": {
+    "effective_tests": 9.836065573770494,
+    "adjusted": {
+      "frontwPLI": 0.8525737131434283,
+      "backwPLI": 0.992503748125937,
+      "longwPLI": 0.9995002498750625,
+      "allwPLI": 0.992503748125937,
+      "EffDim": 0.03548225887056472,
+      "NmlzCmplx": 0.011494252873563218,
+      "allEnvCorr": 0.12493753123438281,
+      "AvgDelta": 0.12493753123438281,
+      "AvgAlpha": 0.21689155422288856,
+      "AvgGamma": 0.12493753123438281,
+      "frontalDelta": 0.21689155422288856,
+      "frontalAlpha": 0.12493753123438281
+    },
+    "raw": {
+      "frontwPLI": 0.6221889055472264,
+      "backwPLI": 0.8875562218890555,
+      "longwPLI": 0.9995002498750625,
+      "allwPLI": 0.9395302348825587,
+      "EffDim": 0.0014992503748125937,
+      "NmlzCmplx": 0.0004997501249375312,
+      "allEnvCorr": 0.005497251374312844,
+      "AvgDelta": 0.030984507746126936,
+      "AvgAlpha": 0.059470264867566215,
+      "AvgGamma": 0.025987006496751622,
+      "frontalDelta": 0.09645177411294353,
+      "frontalAlpha": 0.027486256871564217
+    },
+    "survivors": [
+      "EffDim",
+      "NmlzCmplx"
+    ]
+  },
+  "p4": {
+    "band": [
+      0.957333333333333,
+      0.997466666666667
+    ],
+    "n_rows": 235,
+    "delta": 0.29196853807455814,
+    "D": 0.2802496416626852,
+    "S": -0.011718896411872959
+  },
+  "verdict": "survives"
+}

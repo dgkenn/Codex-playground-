@@ -1,0 +1,78 @@
+{
+  "experiment": "E169",
+  "n_cases": 115,
+  "n_sevoflurane": 71,
+  "n_propofol": 44,
+  "lambdas": [
+    0.0,
+    0.5,
+    1.0,
+    2.0,
+    4.0,
+    8.0
+  ],
+  "n_perm": 100,
+  "features": [
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent",
+    "exponent_low",
+    "exponent_high",
+    "lempel_ziv"
+  ],
+  "G1_pass": true,
+  "time_position": {
+    "deep": 0.4905926336805679,
+    "light": 0.4889548554089494
+  },
+  "observed": {
+    "0.0": {
+      "state": 0.23058601134215506,
+      "agent": 0.03137003841229191
+    },
+    "0.5": {
+      "state": 0.24283553875236297,
+      "agent": 0.06338028169014087
+    },
+    "1.0": {
+      "state": 0.22574669187145557,
+      "agent": 0.04865556978233032
+    },
+    "2.0": {
+      "state": 0.20835538752362948,
+      "agent": 0.016005121638924424
+    },
+    "4.0": {
+      "state": 0.1890737240075614,
+      "agent": 0.013124199743918097
+    },
+    "8.0": {
+      "state": 0.16351606805293006,
+      "agent": 0.11587708066581304
+    }
+  },
+  "G2": {
+    "exact_p95": 0.10979513444302169,
+    "exact_mean": 0.04538092189500639,
+    "pipeline_p95": 0.11017925736235597,
+    "pipeline_mean": 0.042928937259923174,
+    "mc_sd": 0.008821253914234077,
+    "pass": true
+  },
+  "G4": {
+    "state_lam0": 0.23058601134215506,
+    "floor_p95": 0.06030245746691876,
+    "pass": true
+  },
+  "G5": {
+    "agent_lam0": 0.03137003841229191,
+    "floor_p95": 0.11017925736235597,
+    "pass": false
+  },
+  "verdict": "VACUOUS",
+  "why": "the lam = 0 axis does not leak the agent above its own floor, so there is nothing for an adversarial term to remove \u2014 the same outcome as E168 and, on the only two reachable cohorts, the constructive question cannot be posed at all"
+}

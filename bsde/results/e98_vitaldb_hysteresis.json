@@ -1,0 +1,154 @@
+{
+  "gates": {
+    "G1_cases": 94,
+    "G1_cells": 110,
+    "G1_pass": true,
+    "G2_pass": true
+  },
+  "controls": {
+    "_CTRL_time": {
+      "gap": -1.4130318615190491,
+      "lo": -1.4694140278133507,
+      "hi": -1.3589408284224982,
+      "n": 94,
+      "class": "DIRECTION-DEPENDENT"
+    },
+    "_CTRL_noise": {
+      "gap": -0.05788271984205435,
+      "lo": -0.1816449679494245,
+      "hi": 0.06342580143089538,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    }
+  },
+  "features": {
+    "critical_slowing_ar1": {
+      "gap": -0.12496372927797182,
+      "lo": -0.19095073731048606,
+      "hi": -0.06487683278074126,
+      "n": 94,
+      "class": "WITHDRAWN-BY-PLACEBO"
+    },
+    "emg_beta_gamma_fraction": {
+      "gap": 0.04576830761787276,
+      "lo": -0.0271053382875582,
+      "hi": 0.11464622228074771,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    },
+    "emg_index": {
+      "gap": 0.12887738099941123,
+      "lo": -0.005669426156481333,
+      "hi": 0.263285309338534,
+      "n": 94,
+      "class": "UNDETERMINED"
+    },
+    "emg_kurtosis": {
+      "gap": 0.09016273141215699,
+      "lo": -0.043867975518535114,
+      "hi": 0.2261569683211794,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    },
+    "exponent_gamma": {
+      "gap": -0.020212750157652584,
+      "lo": -0.14772352223633042,
+      "hi": 0.10877212340955879,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    },
+    "exponent_high": {
+      "gap": -0.1663464599602428,
+      "lo": -0.26708504724624343,
+      "hi": -0.06382882192728176,
+      "n": 94,
+      "class": "WITHDRAWN-BY-PLACEBO"
+    },
+    "exponent_low": {
+      "gap": -0.09701660441581471,
+      "lo": -0.18530382738940987,
+      "hi": -0.00900012639877804,
+      "n": 94,
+      "class": "WITHDRAWN-BY-PLACEBO"
+    },
+    "lempel_ziv": {
+      "gap": -0.11703779523137381,
+      "lo": -0.1825102660451479,
+      "hi": -0.04879020881434233,
+      "n": 94,
+      "class": "WITHDRAWN-BY-PLACEBO"
+    },
+    "multiscale_entropy_slope": {
+      "gap": -0.14922556814633606,
+      "lo": -0.24749067870075742,
+      "hi": -0.05175035544958369,
+      "n": 94,
+      "class": "WITHDRAWN-BY-PLACEBO"
+    },
+    "pac_slow_alpha": {
+      "gap": 0.12565587565936576,
+      "lo": 0.006683012615331642,
+      "hi": 0.24648608283904286,
+      "n": 94,
+      "class": "WITHDRAWN-BY-PLACEBO"
+    },
+    "relative_alpha_power": {
+      "gap": 0.03436732708117575,
+      "lo": -0.11003763952116873,
+      "hi": 0.17774395884182226,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    },
+    "relative_delta_power": {
+      "gap": 0.06122227879241798,
+      "lo": -0.03762223226090549,
+      "hi": 0.16086843979665882,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    },
+    "spatial_participation_ratio": {
+      "gap": NaN,
+      "lo": NaN,
+      "hi": NaN,
+      "n": 0,
+      "class": "NOT-COMPUTABLE"
+    },
+    "spectral_edge_95": {
+      "gap": 0.07989848878226448,
+      "lo": -0.012299120743533896,
+      "hi": 0.16963635400737634,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    },
+    "spectral_entropy": {
+      "gap": -0.0516902683054779,
+      "lo": -0.14779572589068352,
+      "hi": 0.04589906578382661,
+      "n": 94,
+      "class": "DIRECTION-INVARIANT"
+    },
+    "uce_v1": {
+      "gap": NaN,
+      "lo": NaN,
+      "hi": NaN,
+      "n": 0,
+      "class": "NOT-COMPUTABLE"
+    },
+    "whole_head_exponent": {
+      "gap": -0.15856642273785906,
+      "lo": -0.24735044705814335,
+      "hi": -0.06890257258167004,
+      "n": 94,
+      "class": "WITHDRAWN-BY-PLACEBO"
+    },
+    "wpli_alpha": {
+      "gap": NaN,
+      "lo": NaN,
+      "hi": NaN,
+      "n": 0,
+      "class": "NOT-COMPUTABLE"
+    }
+  },
+  "n_features": 18,
+  "verdict": "DIRECTION-DEPENDENT []; DIRECTION-INVARIANT ['emg_beta_gamma_fraction', 'emg_kurtosis', 'exponent_gamma', 'relative_alpha_power', 'relative_delta_power', 'spectral_edge_95', 'spectral_entropy']; UNDETERMINED 11. At matched BIS these are statements about the component of the EEG BIS does NOT capture, not about drug versus state, and INVARIANT is a necessary condition passed at +-0.25 SD, never a sufficient one."
+}

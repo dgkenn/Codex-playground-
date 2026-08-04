@@ -1,0 +1,54 @@
+{
+  "n_rows": 46,
+  "excluded_subjects": [
+    "1016",
+    "1074"
+  ],
+  "status_by_arm": {
+    "awake": {
+      "ok": 16,
+      "too_few_pulses": 1
+    },
+    "sed": {
+      "ok": 37,
+      "too_few_pulses": 1
+    }
+  },
+  "gates": {
+    "G1_subjects": 14,
+    "G1_pass": true,
+    "G2_real_minus_sham_rms": {
+      "mean": 4.1139155548602835,
+      "lo": 0.09103378155804609,
+      "hi": 9.464883076473875
+    },
+    "G2_pass": true,
+    "G3_detail": {
+      "n_pulses": {
+        "awake_minus_sed": 0.476190476190476,
+        "lo": -0.16666666666666682,
+        "hi": 1.2142857142857142,
+        "differs": false
+      },
+      "iti_median": {
+        "awake_minus_sed": -0.0012261904761904838,
+        "lo": -0.035642380952380925,
+        "hi": 0.032734464285714165,
+        "differs": false
+      },
+      "det_separation": {
+        "awake_minus_sed": 103.98240565071094,
+        "lo": -411.42106797793946,
+        "hi": 629.3968637949812,
+        "differs": false
+      }
+    },
+    "G3_pass": true,
+    "G4_spont_dz": -0.47647691832149114,
+    "G4_noise_95": 0.5982369565620755,
+    "G4_pass": false,
+    "G5_spont_spread": 0.9674624644531087,
+    "G5_pass": true
+  },
+  "verdict": "ABSENT -- a precondition failed (G4 known effect and/or G5 non-degenerate regressor), so the decoupling was not testable here (rule 31)."
+}

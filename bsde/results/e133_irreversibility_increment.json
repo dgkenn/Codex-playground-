@@ -1,0 +1,58 @@
+{
+ "gates": {
+  "G1_rows": 563,
+  "G1_subjects": 142,
+  "G1_pass": true,
+  "spectral_dropped_all_nan": [
+   "uce_v1"
+  ],
+  "n_spectral": 16,
+  "n_irr": 6,
+  "spectral_cols": [
+   "critical_slowing_ar1",
+   "emg_beta_gamma_fraction",
+   "emg_index",
+   "emg_kurtosis",
+   "exponent_high",
+   "exponent_low",
+   "lempel_ziv",
+   "multiscale_entropy_slope",
+   "pac_slow_alpha",
+   "relative_alpha_power",
+   "relative_delta_power",
+   "spatial_participation_ratio",
+   "spectral_edge_95",
+   "spectral_entropy",
+   "whole_head_exponent",
+   "wpli_alpha"
+  ],
+  "G4_surrogates_held_out": true,
+  "G2_spectral_oob_rho": 0.9292587029519339,
+  "G2_pass": true,
+  "G3_negative_control": {
+   "mean": 0.0012055871581637726,
+   "lo": -0.0024219696634176836,
+   "hi": 0.006201606973642825
+  },
+  "G3_pass": true
+ },
+ "primary": {
+  "mean": -0.00012437853076810668,
+  "lo": -0.004513855405540962,
+  "hi": 0.00548117443376895,
+  "n_reps": 400
+ },
+ "S2_mirror": {
+  "mean": -0.4390304762537729,
+  "lo": -0.536995129084026,
+  "hi": -0.36025066047541326
+ },
+ "placebo": {
+  "n": 40,
+  "mean": -0.003599109922660422,
+  "p2.5": -0.005631504960907425,
+  "p97.5": -0.0016737660693295464,
+  "frac_at_least_as_helpful": 1.0
+ },
+ "verdict": "(b) NO INCREMENT -- -0.0001 [-0.0045, +0.0055] includes zero. Irreversibility is PROVABLY not a spectral transform and yet carries nothing the spectrum does not, on this data. That is rule 28's sixth occurrence, and it deflates E107 without refuting it: the headline dissociation may be available from the spectrum too. The placebo is NOT INFORMATIVE (rule 48)."
+}

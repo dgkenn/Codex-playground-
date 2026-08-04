@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""MECHANISM: WHICH haemodynamic term falls after burst suppression?
+
+The within-case result says that at a FIXED arterial pressure and a FIXED propofol concentration, a suppressed bin
+is followed by a mean-pressure fall of about 1.2 mmHg at 60-120 s, while being preceded by none. That is an
+ordering, not a mechanism. This file asks what actually moves, by decomposing the pressure into its physiological
+factors and running each through the IDENTICAL estimator.
+
+    MAP  =  CO x SVR  =  (SV x HR) x SVR
+    pulse pressure (PP) tracks stroke volume; HR is measured; so  SVR  proportional to  MAP / (PP x HR).
+
+Three mechanisms, three distinguishable signatures:
+
+  VASODILATION / SYMPATHOLYSIS   SVR proxy falls.  PP preserved or RISING (a dilated arterial tree with unchanged
+                                 stroke volume widens the pulse). HR unchanged or rising (baroreflex) .
+                                 -> This is the signature predicted if burst suppression indexes a withdrawal of
+                                    central sympathetic outflow, which is the mechanism Brown-lab work on
+                                    brainstem arousal circuitry would predict.
+  CARDIAC / REDUCED STROKE VOLUME  PP falls. SVR proxy unchanged or rising (compensatory vasoconstriction).
+  CHRONOTROPIC                   HR falls and carries the CO fall; PP may rise (longer filling).
+
+Design is deliberately identical to `analysis/vitaldb_within_case_delta.py` so the outcomes are comparable:
+  * outcome  = signed change in the quantity from t to t+k (forward) and t to t-k (backward)
+  * model    = outcome ~ exposure + MAP(t) + dose(t) + dCe + pre-trend, with CASE FIXED EFFECTS
+               (dCe and the pre-trend are carried because they were the two surviving confounds; see
+                `analysis/vitaldb_pretrend_dosekinetics.py`)
+  * rows     = bins having BOTH a forward and a backward neighbour, so direction is the only thing that differs
+
+  COLLINEARITY TRAP, and why the pre-trend is measured where it is.
+  The obvious definition of a pre-existing trend is MAP(t) - MAP(t-k). For the MAP outcome that is EXACTLY the
+  negative of the backward outcome MAP(t-k) - MAP(t), so putting it in the model makes the backward regression
+  perfectly collinear: the backward coefficient is forced to zero and "forward minus backward" silently collapses
+  into "forward". It prints a clean-looking, significant, and entirely meaningless asymmetry.
+  The pre-trend is therefore measured over the window BEFORE the backward window, MAP(t-k) - MAP(t-2k). That is a
+  genuine pre-existing trajectory and it is collinear with neither direction's outcome. It costs one further bin of
+  history per row.
+  * inference= CASE-level cluster bootstrap; the forward-minus-backward contrast is the reported statistic
+  * control  = frontal EMG through the identical pipeline
+
+SVR is analysed on the LOG scale: it is a ratio of positive quantities, so a log change is the symmetric,
+scale-free quantity, and additive models on a raw ratio are badly behaved.
+
+HONEST LIMITS, to be carried into any write-up:
+  * PP is a stroke-volume SURROGATE, not stroke volume. Arterial stiffness, line damping and -- critically --
+    vasopressor titration decouple PP from SV, and pressors are given preferentially to sicker patients. A PP
+    result is suggestive, never decisive.
+  * MAP/(PP x HR) is a SVR PROXY, not a measured resistance. It shares PP's weaknesses and adds its own: MAP
+    appears in the numerator, so any error in MAP propagates.
+  * Because MAP is the numerator of the SVR proxy, a fall in MAP mechanically lowers the proxy unless PP x HR
+    falls at least as much. The informative comparison is therefore ACROSS the four outcomes -- which of PP, HR
+    and the proxy moves, and by how much relative to MAP -- not the proxy's sign on its own.
+
+PRE-TREND WINDOW -- CORRECTED after adversarial review, and this changed a reported number.
+The pre-trend was previously MAP(t-k) - MAP(t-2k). That is not exactly collinear with the backward outcome
+MAP(t-k) - MAP(t), but it SHARES THE ENDPOINT MAP(t-k) with it. Measured on the real within-case demeaned data the
+partial correlation was 0.528 against the backward outcome and 0.023 against the forward one. The consequence was
+one-sided: adding it shrank the BACKWARD coefficient from -0.412 to -0.202 while leaving the FORWARD coefficient
+untouched at -1.278, inflating the forward-minus-backward statistic from -0.870 to -1.076, i.e. by about 24 %,
+entirely through the backward side. The pre-trend is now measured over [t-3k, t-2k], which shares NO endpoint with
+either outcome (raw correlation with the backward outcome falls from 0.389 to 0.035). Roughly half of the apparent
+benefit of pre-trend adjustment was this artefact; the corrected asymmetry is near -0.97 rather than -1.08. The
+forward coefficient is unaffected by any of this.
+"""
+import csv, os, sys
+from collections import defaultdict
+import numpy as np
+
+DATA = os.environ.get("EEG_PROBE_DIR", "/tmp/eeg_probe")
+NBOOT = int(os.environ.get("NBOOT", "300"))
+rng = np.random.default_rng(20260725)
+
+# --- physiologic range filter for arterial pressure -------------------------------------------------
+# The propofol pipeline never range-filtered MAP. bridge_bins.csv contains 4.27 % of values <= 0
+# (minimum -78 mmHg -- negative arterial pressure is impossible) and 0.62 % above 200 mmHg: transducer
+# zeroing, line flushes and disconnections. Left unfiltered they produced dMAP values up to +/-390 mmHg
+# and inflated every forward-minus-backward statistic about three-fold (-0.33 -> -0.97 mmHg). Filtering
+# implausible VALUES is the principled fix; winsorising the outcome would only mask them.
+# The filtered estimate is stable across windows [30,150], [25,160], [20,180] and [40,140]
+# (asymmetry -0.340, -0.330, -0.323, -0.333), so the exact threshold is not doing the work.
+MAP_LO = float(os.environ.get("MAP_LO", "30"))
+MAP_HI = float(os.environ.get("MAP_HI", "150"))
+
+
+def _map_ok(raw):
+    """Parse a MAP field, returning NaN unless it lies in the physiologic window."""
+    try:
+        v = float(raw) if raw not in ("", None) else float("nan")
+    except Exception:
+        return float("nan")
+    return v if (v == v and MAP_LO <= v <= MAP_HI) else float("nan")
+
+
+
+def load():
+    """(caseid, bin_t) -> [bs, MAP, Ce, EMG, PP, HR] on the intersection of the EEG and arterial streams."""
+    HD = defaultdict(dict); seen = set()
+    with open(f"{DATA}/bridge_bins.csv") as fh:
+        for d in csv.DictReader(fh):
+            try:
+                cid = d["caseid"]; t = float(d["bin_t"])
+                if (cid, t) in seen:
+                    continue
+                seen.add((cid, t))
+                HD[cid][t] = [float(d["bs"]),
+                              _map_ok(d["mbp"]),
+                              float(d["ce"]) if d["ce"] else np.nan,
+                              np.nan, np.nan, np.nan]
+            except Exception:
+                pass
+    seen = set()
+    with open(f"{DATA}/bis_bins.csv") as fh:
+        for d in csv.DictReader(fh):
+            try:
+                cid = d["caseid"]; t = float(d["bin_t"])
+                if (cid, t) in seen or cid not in HD or t not in HD[cid]:
+                    continue
+                seen.add((cid, t))
+                HD[cid][t][3] = float(d["emg"]) if d["emg"] else np.nan
+            except Exception:
+                pass
+    seen = set()
+    with open(f"{DATA}/pp_bins.csv") as fh:
+        for d in csv.DictReader(fh):
+            try:
+                cid = d["caseid"]; t = float(d["bin_t"])
+                if (cid, t) in seen or cid not in HD or t not in HD[cid]:
+                    continue
+                seen.add((cid, t))
+                pp = float(d["pp"]) if d["pp"] else np.nan
+                hr = float(d["hr"]) if d["hr"] else np.nan
+                if not (10 < pp < 120):
+                    pp = np.nan
+                if not (20 < hr < 200):
+                    hr = np.nan
+                HD[cid][t][4] = pp; HD[cid][t][5] = hr
+            except Exception:
+                pass
+    return HD
+
+
+def value(rec, which):
+    bs, m, ce, emg, pp, hr = rec
+    if which == "map":
+        return m
+    if which == "pp":
+        return pp
+    if which == "hr":
+        return hr
+    if which == "logsvr":
+        if not (m == m and pp == pp and hr == hr) or pp <= 0 or hr <= 0 or m <= 0:
+            return np.nan
+        return float(np.log(m / (pp * hr)))
+    return np.nan
+
+
+def build(HD, k, exposure, which, emg_cut):
+    case = []; e = []; m0 = []; dz = []; dce = []; pre = []; df = []; db = []
+    ci = {}
+    for c, bd in HD.items():
+        ts = sorted(t for t in bd if bd[t][2] == bd[t][2] and bd[t][2] >= 1.0)
+        if len(ts) < 32:
+            continue
+        for t in ts[20:]:
+            tf = t + 30.0 * k; tb = t - 30.0 * k; tb2 = t - 60.0 * k; tb3 = t - 90.0 * k
+            if tf not in bd or tb not in bd or tb2 not in bd or tb3 not in bd:
+                continue
+            rec = bd[t]
+            bs, m, dose, emg = rec[0], rec[1], rec[2], rec[3]
+            v0 = value(rec, which); vf = value(bd[tf], which); vb = value(bd[tb], which)
+            mb = bd[tb][1]; mb2 = bd[tb2][1]; mb3 = bd[tb3][1]; doseb = bd[tb][2]
+            if not (v0 == v0 and vf == vf and vb == vb):
+                continue
+            if not (m == m and mb == mb and mb2 == mb2 and mb3 == mb3 and dose == dose and doseb == doseb):
+                continue
+            if exposure == "bs":
+                x = 1.0 if bs > 0 else 0.0
+            else:
+                if emg != emg or emg_cut is None:
+                    continue
+                x = 1.0 if emg > emg_cut else 0.0
+            if c not in ci:
+                ci[c] = len(ci)
+            case.append(ci[c]); e.append(x); m0.append(m); dz.append(dose)
+            dce.append(dose - doseb)
+            pre.append(mb2 - mb3)         # [t-3k, t-2k]: shares NO endpoint with db (see docstring)
+            df.append(vf - v0); db.append(vb - v0)
+    if not case:
+        return None
+    return dict(case=np.array(case, np.int32), e=np.array(e), m0=np.array(m0), dz=np.array(dz),
+                dce=np.array(dce), pre=np.array(pre), df=np.array(df), db=np.array(db), ncase=len(ci))
+
+
+def demean(cols, case, ncase, w):
+    sw = np.bincount(case, weights=w, minlength=ncase)
+    sw = np.where(sw > 0, sw, 1.0)
+    return [v - (np.bincount(case, weights=w * v, minlength=ncase) / sw)[case] for v in cols]
+
+
+def coef(D, dy, w):
+    cols = [D["e"], D["m0"], D["dz"], D["dce"], D["pre"], dy]
+    dm = demean(cols, D["case"], D["ncase"], w)
+    X = np.column_stack(dm[:-1]); y = dm[-1]
+    try:
+        return np.linalg.solve((X.T * w) @ X + 1e-10 * np.eye(X.shape[1]), (X.T * w) @ y)[0]
+    except np.linalg.LinAlgError:
+        return None
+
+
+def run(HD, k, exposure, which, unit, emg_cut, scale=1.0):
+    D = build(HD, k, exposure, which, emg_cut)
+    if D is None or len(D["case"]) < 5000:
+        print(f"   {which:8s} insufficient")
+        return
+    order = np.argsort(D["case"], kind="stable")
+    for key in ("case", "e", "m0", "dz", "dce", "pre", "df", "db"):
+        D[key] = D[key][order]
+    starts = np.searchsorted(D["case"], np.arange(D["ncase"]), side="left")
+    ends = np.searchsorted(D["case"], np.arange(D["ncase"]), side="right")
+    span = ends - starts
+    w1 = np.ones(len(D["case"]))
+    pf = coef(D, D["df"], w1); pb = coef(D, D["db"], w1)
+    if pf is None or pb is None:
+        print(f"   {which:8s} fit failed")
+        return
+    diffs = []; fwd = []
+    for _ in range(NBOOT):
+        cnt = np.bincount(rng.integers(0, D["ncase"], D["ncase"]), minlength=D["ncase"]).astype(np.float64)
+        w = np.repeat(cnt, span)
+        a = coef(D, D["df"], w); b = coef(D, D["db"], w)
+        if a is not None and b is not None:
+            diffs.append((a - b) * scale); fwd.append(a * scale)
+    if len(diffs) < 50:
+        print(f"   {which:8s} bootstrap failed")
+        return
+    fl, fh = np.percentile(fwd, [2.5, 97.5])
+    dl, dh = np.percentile(diffs, [2.5, 97.5])
+    tag = "*" if (dl > 0 or dh < 0) else "ns"
+    print(f"   {which:8s} fwd={pf*scale:+8.3f} [{fl:+7.3f},{fh:+7.3f}] {unit:9s} | "
+          f"fwd-bwd={(pf-pb)*scale:+8.3f} [{dl:+7.3f},{dh:+7.3f}] {tag}   n={len(D['case'])}, cases={D['ncase']}")
+
+
+def main():
+    k = int(os.environ.get("K", "4"))
+    HD = load()
+    vals = [bd[t][3] for c, bd in HD.items() for t in bd if bd[t][3] == bd[t][3]]
+    emg_cut = float(np.median(vals)) if len(vals) > 1000 else None
+    print(f"k=+/-{k} bins (+/-{30*k}s); case fixed effects + MAP(t) + dose(t) + dCe + pre-trend; "
+          f"{NBOOT} case-level bootstrap reps")
+    print("exposure = ANY burst suppression in the bin vs none; statistic = forward minus backward change\n")
+    for expo, lab in (("bs", "BURST SUPPRESSION"), ("emg", "frontal EMG -- NEGATIVE CONTROL")):
+        print(f"=== {lab} ===")
+        run(HD, k, expo, "map", "mmHg", emg_cut)
+        run(HD, k, expo, "pp", "mmHg", emg_cut)
+        run(HD, k, expo, "hr", "bpm", emg_cut)
+        run(HD, k, expo, "logsvr", "% (x100)", emg_cut, scale=100.0)
+        print()
+    print("READING THE TABLE:")
+    print("  vasodilation/sympatholysis -> MAP falls, SVR proxy falls, PP preserved or rising, HR not falling")
+    print("  reduced stroke volume      -> MAP falls, PP falls, SVR proxy flat or rising")
+    print("  chronotropic               -> MAP falls, HR falls carrying it")
+    print("  (the SVR proxy has MAP in its numerator -- judge it against the OTHER columns, not on its own sign)")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,283 @@
+# =============================================================================
+# config.yaml -- single versioned source of truth for the HEEDB EEG phenotype-
+# discovery pipeline (Pre-Registration + Execution Spec v2).
+#
+# BINDING: every parameter that governs Phase-1 discovery or the Phase-2
+# confirmation lives here. Nothing that can change a result may live in code.
+# Values marked  TO-CONFIRM  correspond to the spec's "[fill]" slots and MUST be
+# pinned (and the config re-hashed) before the relevant stage runs.
+#
+# The integrity firewall (Sec 0, 3) is enforced from `phase` + `sites.held_out`
+# below: while phase == 1 the held-out hospital cannot be loaded and no outcome
+# variable may enter the workspace.
+# =============================================================================
+
+config_version: "2.0.0"
+
+# ----------------------------------------------------------------------------
+# FIREWALL / PHASE CONTROL  (Sec 0, 3)
+# ----------------------------------------------------------------------------
+# phase == 1 : discovery only. Held-out site is hard-blocked; no outcome labels.
+# phase == 2 : confirmation. Requires a verified, hash-stamped unlock token
+#              produced by freezing the four objects (Sec 3).
+phase: 1
+
+# Refuse to run if these four frozen-object hashes are not present at Phase 2.
+# Populated by `phase2/freeze.py` at Phase-1 close; verified before any unlock.
+frozen_manifest: "artifacts/frozen/manifest.json"
+
+# ----------------------------------------------------------------------------
+# DETERMINISM  (Sec 0)
+# ----------------------------------------------------------------------------
+seed: 20250619
+deterministic: true
+
+# ----------------------------------------------------------------------------
+# COHORT & ELIGIBILITY  (Sec 5)
+# ----------------------------------------------------------------------------
+cohort:
+  primary_min_age_years: 18
+  pediatric_sensitivity_cohort: true     # PINNED: BCH = pediatric, analysed in a
+  pediatric_site: "BCH"                  #   SEPARATE sensitivity cohort, never pooled
+  one_recording_per_patient: "earliest_qualifying"   # leakage prevention
+  split_unit: "patient"                   # all partitions patient-level
+  qc:                                     # PINNED defaults (re-hash if changed)
+    min_recording_seconds: 300            # >=5 min of usable signal
+    max_bad_channel_fraction: 0.30
+    max_flatline_fraction: 0.20
+
+# ----------------------------------------------------------------------------
+# HOSPITAL-SPLIT ARCHITECTURE  (Sec 6)
+# ----------------------------------------------------------------------------
+sites:
+  # The real BDSP bucket uses DE-IDENTIFIED site codes, not hospital names:
+  #   available SiteIDs = I0002, I0003, I0009, S0001, S0002
+  # TO-CONFIRM: map these to MGH/BWH/BIDMC/BCH and set discovery/held_out per the
+  # protocol (adults-only; BCH/pediatric excluded; one held-out adult site). The
+  # values below are the PILOT assignment used to validate the pipeline end-to-end
+  # on real data -- reconcile against the BDSP de-identification key before a real
+  # discovery run. The firewall operates on whatever SiteID labels appear here.
+  discovery: ["S0001", "S0002"]           # TO-CONFIRM mapping (pilot values)
+  held_out: "I0002"                       # TO-CONFIRM -- untouched in Phase 1
+  # Cross-site reproducibility gate on the held-out hospital (Sec 6, 9):
+  reproducibility_ari_threshold: 0.50     # PINNED: moderate-agreement bar (ARI >=)
+
+# ----------------------------------------------------------------------------
+# DATA SOURCE / ACCESS  (Sec 4)  -- disk-sparing: stream or batch-and-delete
+# ----------------------------------------------------------------------------
+data:
+  dataset: "HEEDB"
+  version: "4.0"                          # PINNED major; verify exact minor vs the
+                                          #   DUA'd BDSP release at first fetch
+  source: "HEEDB_BDSP"                    # real HEEDB transport (HEEDBBDSPClient)
+  access_mode: "stream"                   # "stream" | "batch_and_delete"
+  # Real BDSP HEEDB layout (discovered on the credentialed access point).
+  # Auth = the user's OWN AWS profile via ~/.aws (never in this repo).
+  heedb:
+    access_point: "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
+    region: "us-east-1"
+    profile: "physionet"                  # ~/.aws profile with BDSP access
+    metadata_prefix: "EEG/eeg-metadata/"  # per-site catalog CSVs
+    patients_key: "EEG/HEEDB_Metadata/HEEDB_patients.csv"  # age/sex join (eligibility)
+    bids_prefix: "EEG/bids/"              # BIDS EDF tree
+    max_duration_s: 480                   # pilot filter (null/large for full run)
+    tasks: ["Routine"]                    # ServiceName filter; full: [Routine,LTM,EMU]
+  scratch_dir: "/tmp/heedb_scratch"       # at most ONE shard of raw lives here
+  never_persist_raw: true                 # hard rule (Sec 0)
+  # BDSP S3 credentialed access point (bdsp.io/about/howto_accessdata).
+  # Auth is the CREDENTIALED USER's own AWS keys (`aws configure`) + signed DUA +
+  # CITI cert -- NEVER baked into code or this repo. Each approved user gets their
+  # OWN access-point alias from the BDSP Cloud Credentials dashboard; the ARN
+  # below is the shared endpoint and works with the user's keys.
+  s3:
+    access_point: "arn:aws:s3:us-east-1:184438910517:accesspoint/bdsp-credentialed-access-point"
+    region: "us-east-1"
+    # One-row-per-recording catalog with ACQUISITION METADATA ONLY (no outcome,
+    # no ICD, no meds). Confirm key/format/columns against the real bucket layout.
+    catalog_key: "HEEDB/index.tsv"          # TO-CONFIRM vs real bucket layout
+    catalog_format: "tsv"                   # tsv | csv | parquet
+    catalog_columns:                        # map catalog headers -> RecordingRef
+      recording_id: "recording_id"
+      patient_id: "patient_id"
+      hospital: "site"
+      object_key: "edf_path"                # S3 key of the EDF/BDF under the AP
+      sampling_rate: "sfreq"
+      age: "age"
+      sex: "sex"
+      care_setting: "care_setting"
+      device: "device"
+      duration_s: "duration_s"
+    edf_prefix: "HEEDB/"                     # fallback prefix if no catalog present
+
+# ----------------------------------------------------------------------------
+# EXTERNAL REPLICATION -- TUH EEG Corpus  (Sec 15; NOT part of the HEEDB split)
+# ----------------------------------------------------------------------------
+# Applied only AFTER the frozen pipeline is published, as the gold-standard
+# external validation. Access is rsync-over-SSH with the credentialed user's OWN
+# key (registered with NEDC) -- never stored in this repo.
+external_replication:
+  enabled: false                            # turn on only for the replication step
+  tuh:
+    host: "www.isip.piconepress.com"
+    user: "nedc-tuh-eeg"
+    ssh_key: "~/.ssh/id_ed25519"            # the user's NEDC-registered key
+    remote_root: "data/tuh_eeg"
+    test_path: "data/tuh_eeg/TEST"          # NEDC connectivity probe
+    scratch_dir: "/tmp/tuh_scratch"         # one EDF at a time; deleted after use
+    manifest: ""                            # local TSV of EDF paths + acq metadata
+    manifest_format: "tsv"
+    manifest_columns:
+      recording_id: "recording_id"
+      patient_id: "patient_id"
+      object_key: "edf_path"                # remote path under remote_root
+      sampling_rate: "sfreq"
+      age: "age"
+      sex: "sex"
+
+# ----------------------------------------------------------------------------
+# REPRESENTATION -- adapted foundation model  (Sec 7)
+# ----------------------------------------------------------------------------
+model:
+  name: "CBraMod"                         # frozen open checkpoint (Sec 7.1)
+  source: "huggingface"
+  repo_id: "weighting666/CBraMod"         # PINNED: original-author checkpoint
+                                          #   (alt: braindecode/CBraMod)
+  checkpoint_file: "pretrained_weights.pth"
+  revision: "main"                        # PIN-AT-DOWNLOAD: replace with the exact
+                                          #   commit SHA pulled, for reproducibility
+  checkpoint_sha256: "0792cb808c14e6b7a2bb2ce1dff379bc47bc54c49a779825bdfeb33bf8157178"
+                                          # PINNED: sha256 of weighting666/CBraMod
+                                          #   pretrained_weights.pth (verified on
+                                          #   download; loaded weights_only=True =
+                                          #   no pickle code execution)
+  frozen: true                            # no gradients / no activation storage
+  # PINNED to CBraMod's pretraining spec: 200 Hz, 1-second (200-sample) patches.
+  expected_sfreq_hz: 200
+  patch_seconds: 1.0                      # CBraMod patch size = 1 s @ 200 Hz
+  channels_10_20:                         # standard clinical 19-ch 10-20
+    ["Fp1","Fp2","F3","F4","C3","C4","P3","P4","O1","O2",
+     "F7","F8","T3","T4","T5","T6","Fz","Cz","Pz"]
+  window_seconds: 30                      # PINNED: 30 s window = 30 CBraMod patches
+  window_stride_seconds: 30
+
+harmonization:                            # on-the-fly, in-memory only (Sec 7.2)
+  reference: "average"                    # PINNED common reference
+  notch_hz: [50, 60]                      # both line frequencies
+  bandpass_hz: [0.5, 45]                  # PINNED (matches CBraMod band + clinical EEG)
+  resample_to_model_rate: true
+  artifact_rejection: "amplitude_zscore"  # pre-specified automated method
+  artifact_reject_z: 6.0                  # PINNED reject threshold (per-window |z|)
+
+embedding:                                # Sec 7.3
+  pooling: ["mean", "std"]                # per-recording pool over windows
+  persist_epoch_subset_fraction: 0.02     # epoch-level kept only for stability
+  max_windows_per_recording: 40           # SPEED: evenly-spaced cap (null = all);
+                                          #   long LTM/cEEG get sampled, pooling
+                                          #   ~unchanged -> the biggest CPU saving
+  dtype: "float32"
+
+features:                                 # interpretable, same Pass 1 (Sec 7.4)
+  bands:
+    delta: [0.5, 4]
+    theta: [4, 8]
+    alpha: [8, 13]
+    beta:  [13, 30]
+    gamma: [30, 45]
+  specparam: { freq_range: [1, 45] }      # aperiodic exponent + offset
+  spectral_edge_pct: 95
+  connectivity: "wpli"                    # weighted phase-lag index
+  entropy: ["sample_entropy", "permutation_entropy"]
+  microstates: { n_states: 4 }
+
+# ----------------------------------------------------------------------------
+# SITE-INVARIANCE  (Sec 8)  -- Route A operates on the compact embedding table
+# ----------------------------------------------------------------------------
+site_invariance:
+  primary_route: "A"                      # "A" embedding-space | "B" adversarial
+  route_a_method: "combat"                # "combat" | "coral" | "residualize"
+  combat:
+    batch_key: "hospital"
+    covariates_keep: ["age", "sex"]       # biology to PRESERVE (no outcome)
+  # The GATE (Sec 8): site-identity must be unpredictable after correction.
+  site_probe:
+    targets: ["hospital", "device", "sampling_rate"]
+    classifier: "logreg"
+    chance_tolerance_auc: 0.58            # PINNED: pass the gate iff AUC <= this
+    cv_folds: 5
+
+route_b:                                  # optional, opt-in, heavier (Sec 7.5)
+  enabled: false
+  method: "lora_grl"                      # adapters + gradient-reversal site head
+  stream_subset_fraction: 0.10
+
+# ----------------------------------------------------------------------------
+# PHENOTYPE DISCOVERY  (Sec 9)
+# ----------------------------------------------------------------------------
+clustering:
+  algorithm: "gmm"                        # "gmm" | "leiden"
+  k_candidates: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  k_selection: "consensus_pac"            # stability-based, never interpretability
+  consensus:
+    n_resamples: 100
+    subsample_fraction: 0.80
+    pac_low: 0.10                         # proportion-of-ambiguous-clustering band
+    pac_high: 0.90
+  stability_min: 0.80                     # PINNED: resampling-stability bar (mean ARI)
+  corroborate: ["gap_statistic", "silhouette"]
+
+# ----------------------------------------------------------------------------
+# AUDITS  (Sec 11, 13)  -- all on compact tables
+# ----------------------------------------------------------------------------
+audits:
+  leave_one_site_out: true
+  acquisition_covariates: ["sampling_rate", "montage", "recording_length"]
+  # MORGOTH-finding redundancy / novelty control (v3 Sec 9(4), 13.3). A phenotype
+  # whose membership is predictable from the backbone's task outputs at AUC >=
+  # this threshold is REDUCIBLE (re-expression of a known finding) and rejected.
+  # Only applied when the backbone emits task outputs (MORGOTH); skipped for CBraMod.
+  morgoth_redundancy:
+    max_predictable_auc: 0.80             # TO-CONFIRM novelty threshold
+  negative_controls:
+    shuffle_outcome: true                 # association must collapse to chance
+    phase_randomized_surrogate: true      # structure must collapse
+    surrogate_n: 50
+
+# ----------------------------------------------------------------------------
+# PHASE 2 -- single pre-registered outcome  (Sec 2, 12, 14)
+# ----------------------------------------------------------------------------
+phase2:
+  outcome: "electrographic_seizure_or_status"   # PINNED (one, mechanistic prior)
+  mechanistic_prior: >
+    An 'irritable-cortex' phenotype (epileptiform/periodic-leaning spectral and
+    connectivity signature) precedes electrographic seizures in ICU/AMS records.
+  temporal_precedence_required: true
+  covariates: ["age", "sex", "care_setting"]
+  effect_measure: "adjusted_odds_ratio"
+  association_criterion:                   # FIXED before unlock (Sec 2)
+    ci_excludes: 1.0
+    min_effect_size_or: 1.5               # PINNED minimum adjusted OR
+    direction: "greater"
+  # SET-AT-FREEZE (not now): phenotypes do not exist until Phase-1 discovery
+  # runs. The phenotype matching the mechanistic prior is named here at Phase-1
+  # close, BEFORE the held-out unlock (Sec 12). Guards reject TO-CONFIRM at unlock.
+  primary_phenotype: "TO-CONFIRM"
+  multiplicity: "holm"                     # across secondary phenotypes
+  min_evaluable_heldout_n: 200             # PINNED minimum evaluable held-out n
+  run_once: true                           # single test; lock enforced in code
+
+# ----------------------------------------------------------------------------
+# EXECUTION / DISK-SPARING  (Sec 0)
+# ----------------------------------------------------------------------------
+execution:
+  shard_size_recordings: 500
+  checkpoint_every_shards: 1
+  resume: true
+  array_codec: "zstd"
+  compression_level: 5
+  # Pilot cap: stop Pass 1 after this many NEW recordings (null = no cap = full
+  # run). This ephemeral environment is for a pilot subset; the full 284k run
+  # belongs on durable compute (docs/RUNBOOK.md). CLI `--limit` overrides this.
+  max_recordings: 500
+
+artifacts_dir: "artifacts"
+log_dir: "artifacts/logs"

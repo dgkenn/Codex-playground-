@@ -1,0 +1,2 @@
+# Persisted compact tables land here (embeddings.parquet, features.parquet,
+# qc.parquet, epoch subset zarr). ~1-3 GB total; raw is never written (Sec 0).

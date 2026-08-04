@@ -1,0 +1,225 @@
+{
+  "gate_m1": true,
+  "join_rate": 1.0,
+  "n_windows": 5845,
+  "n_cases": 247,
+  "capability": {
+    "bis_rbr": {
+      "finite_fraction": 1.0,
+      "sd": 1.2792562693391945,
+      "usable": true
+    },
+    "bis_bsr": {
+      "finite_fraction": 1.0,
+      "sd": 0.05639957488803821,
+      "usable": true
+    },
+    "bis_quazi": {
+      "finite_fraction": 1.0,
+      "sd": 0.0503477499390394,
+      "usable": true
+    },
+    "bis_sfs": {
+      "finite_fraction": 1.0,
+      "sd": 1.4188482162336378,
+      "usable": true
+    }
+  },
+  "gate_m2_all": true,
+  "arms": {
+    "A_ours": {
+      "n": 5845,
+      "median_abs_err": 4.806120558293202,
+      "mean_abs_err": 7.180111079744155,
+      "r2": 0.3430964297925698,
+      "by_band": [
+        {
+          "band": "[0,40)",
+          "n": 2330,
+          "median_abs_err": 5.62351094378468,
+          "mean_abs_err": 7.987020513467065
+        },
+        {
+          "band": "[40,60)",
+          "n": 2879,
+          "median_abs_err": 3.7345817547941706,
+          "mean_abs_err": 4.489447599107477
+        },
+        {
+          "band": "[60,80)",
+          "n": 468,
+          "median_abs_err": 9.774128795345653,
+          "mean_abs_err": 10.749058800401748
+        },
+        {
+          "band": "[80,100)",
+          "n": 168,
+          "median_abs_err": 32.100913045811026,
+          "mean_abs_err": 32.15662088278499
+        }
+      ]
+    },
+    "B_subparams": {
+      "n": 5845,
+      "median_abs_err": 6.800915294163765,
+      "mean_abs_err": 9.212523055833856,
+      "r2": 0.1416898789868798,
+      "by_band": [
+        {
+          "band": "[0,40)",
+          "n": 2330,
+          "median_abs_err": 8.247092750571703,
+          "mean_abs_err": 10.198528003257696
+        },
+        {
+          "band": "[40,60)",
+          "n": 2879,
+          "median_abs_err": 4.043844430252335,
+          "mean_abs_err": 5.097840175258424
+        },
+        {
+          "band": "[60,80)",
+          "n": 468,
+          "median_abs_err": 18.457392775751327,
+          "mean_abs_err": 19.009730219177353
+        },
+        {
+          "band": "[80,100)",
+          "n": 168,
+          "median_abs_err": 39.043525086540896,
+          "mean_abs_err": 38.75828218222887
+        }
+      ]
+    },
+    "C_ours_plus_subparams": {
+      "n": 5845,
+      "median_abs_err": 4.599207138829762,
+      "mean_abs_err": 6.858165935684187,
+      "r2": 0.406812533760581,
+      "by_band": [
+        {
+          "band": "[0,40)",
+          "n": 2330,
+          "median_abs_err": 5.482252121947578,
+          "mean_abs_err": 7.643534245914004
+        },
+        {
+          "band": "[40,60)",
+          "n": 2879,
+          "median_abs_err": 3.472871990901652,
+          "mean_abs_err": 4.381840173036894
+        },
+        {
+          "band": "[60,80)",
+          "n": 468,
+          "median_abs_err": 8.750190173329223,
+          "mean_abs_err": 9.958977731854489
+        },
+        {
+          "band": "[80,100)",
+          "n": 168,
+          "median_abs_err": 29.844947366374885,
+          "mean_abs_err": 29.764438478650764
+        }
+      ]
+    },
+    "D_device": {
+      "n": 5845,
+      "median_abs_err": 6.281679894008349,
+      "mean_abs_err": 8.463087387507057,
+      "r2": 0.2458866050669405,
+      "by_band": [
+        {
+          "band": "[0,40)",
+          "n": 2330,
+          "median_abs_err": 7.617768025133913,
+          "mean_abs_err": 9.83627758519402
+        },
+        {
+          "band": "[40,60)",
+          "n": 2879,
+          "median_abs_err": 3.581849921778442,
+          "mean_abs_err": 4.94572934953876
+        },
+        {
+          "band": "[60,80)",
+          "n": 468,
+          "median_abs_err": 18.3528498104678,
+          "mean_abs_err": 17.39202417255736
+        },
+        {
+          "band": "[80,100)",
+          "n": 168,
+          "median_abs_err": 25.94585722370727,
+          "mean_abs_err": 24.8214100976056
+        }
+      ]
+    },
+    "E_all": {
+      "n": 5845,
+      "median_abs_err": 4.518096807725399,
+      "mean_abs_err": 6.568971743291745,
+      "r2": 0.4498459155276058,
+      "by_band": [
+        {
+          "band": "[0,40)",
+          "n": 2330,
+          "median_abs_err": 5.266505255074605,
+          "mean_abs_err": 7.443588691719784
+        },
+        {
+          "band": "[40,60)",
+          "n": 2879,
+          "median_abs_err": 3.4607310222060335,
+          "mean_abs_err": 4.313919717629457
+        },
+        {
+          "band": "[60,80)",
+          "n": 468,
+          "median_abs_err": 8.762787216182002,
+          "mean_abs_err": 9.319195424966072
+        },
+        {
+          "band": "[80,100)",
+          "n": 168,
+          "median_abs_err": 24.761491557272365,
+          "mean_abs_err": 25.422142035082267
+        }
+      ]
+    }
+  },
+  "n_ours_features": 18,
+  "ours_features": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_gamma",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spatial_participation_ratio",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "uce_v1",
+    "whole_head_exponent",
+    "wpli_alpha"
+  ],
+  "primary_increment_C_minus_A": {
+    "mean": -0.1947075796699233,
+    "lo": -0.4238955908920215,
+    "hi": 0.03481639547158977,
+    "reps": 400
+  },
+  "placebo_within_case": {
+    "mean": 0.004075718693298134,
+    "lo": -0.07889802531847549,
+    "hi": 0.08464394577053021,
+    "reps": 400
+  },
+  "verdict": "NO GAIN -- the increment CI includes zero. The three ingredients BIS has and this repo did not buy nothing measurable here, which says the information is already present in the spectral features (rule 28)."
+}

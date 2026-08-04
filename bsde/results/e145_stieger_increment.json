@@ -1,0 +1,463 @@
+{
+ "G1": {
+  "pass": true
+ },
+ "G2": {
+  "ci": [
+   -0.5144304904966501,
+   0.2515173959163743
+  ],
+  "eegmmidb_p": 0.192,
+  "increment": -0.18914974764103112,
+  "n_reps": 3000,
+  "p": 0.138,
+  "pass": false
+ },
+ "G3": {
+  "detection_rate": {
+   "0.1": 0.0,
+   "0.15": 0.0,
+   "0.2": 0.0,
+   "0.25": 0.0,
+   "0.3": 0.0,
+   "0.4": 0.0
+  },
+  "floor": null,
+  "pass": false
+ },
+ "G4": {
+  "pass": true
+ },
+ "candidates": [
+  "mean_triallength",
+  "age",
+  "exponent_low",
+  "exponent_high",
+  "whole_head_exponent",
+  "relative_delta_power",
+  "spectral_edge_95",
+  "spectral_entropy",
+  "lempel_ziv",
+  "wpli_theta",
+  "coherence_theta",
+  "wpli_alpha",
+  "coherence_alpha",
+  "wpli_beta",
+  "coherence_beta",
+  "wpli_alpha_global_efficiency",
+  "wpli_alpha_clustering",
+  "wpli_alpha_mean_degree",
+  "ge",
+  "cl",
+  "deg",
+  "ge_norm",
+  "cl_norm",
+  "smallworld",
+  "modularity",
+  "strength_cv",
+  "iaf",
+  "alpha_prom"
+ ],
+ "experiment": "E145",
+ "holm": {
+  "age": 1.0,
+  "alpha_prom": 1.0,
+  "cl": 1.0,
+  "cl_norm": 1.0,
+  "coherence_alpha": 1.0,
+  "coherence_beta": 1.0,
+  "coherence_theta": 1.0,
+  "deg": 1.0,
+  "exponent_high": 1.0,
+  "exponent_low": 1.0,
+  "ge": 1.0,
+  "ge_norm": 1.0,
+  "iaf": 1.0,
+  "lempel_ziv": 1.0,
+  "mean_triallength": 1.0,
+  "modularity": 1.0,
+  "relative_delta_power": 1.0,
+  "smallworld": 1.0,
+  "spectral_edge_95": 1.0,
+  "spectral_entropy": 1.0,
+  "strength_cv": 1.0,
+  "whole_head_exponent": 1.0,
+  "wpli_alpha": 1.0,
+  "wpli_alpha_clustering": 1.0,
+  "wpli_alpha_global_efficiency": 1.0,
+  "wpli_alpha_mean_degree": 1.0,
+  "wpli_beta": 1.0,
+  "wpli_theta": 1.0
+ },
+ "n_candidates": 28,
+ "n_rows": 185,
+ "n_subjects": 62,
+ "primary": {
+  "age": {
+   "ci": [
+    -0.09739746710405314,
+    0.4558937781242709
+   ],
+   "helps": false,
+   "increment": 0.10522489623418324,
+   "n_rows": 179,
+   "p": 0.8263333333333334,
+   "p_holm": 1.0,
+   "placebo_p": 0.819,
+   "rho": 0.005135424984221008
+  },
+  "alpha_prom": {
+   "ci": [
+    -0.327608029366828,
+    0.27870885405186896
+   ],
+   "helps": false,
+   "increment": -0.026411505994929058,
+   "n_rows": 185,
+   "p": 0.376,
+   "p_holm": 1.0,
+   "placebo_p": 0.745,
+   "rho": 0.059032124476093066
+  },
+  "cl": {
+   "ci": [
+    -0.09016172040987891,
+    0.402075292477467
+   ],
+   "helps": false,
+   "increment": 0.06114160559806707,
+   "n_rows": 185,
+   "p": 0.6783333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.5013333333333333,
+   "rho": 0.1716303131329313
+  },
+  "cl_norm": {
+   "ci": [
+    -0.06261692920552442,
+    0.37834349635750064
+   ],
+   "helps": false,
+   "increment": 0.0628671011699131,
+   "n_rows": 185,
+   "p": 0.7296666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.8236666666666667,
+   "rho": -0.09759116181267583
+  },
+  "coherence_alpha": {
+   "ci": [
+    -0.1783811960104504,
+    0.3957239481175986
+   ],
+   "helps": false,
+   "increment": 0.07375766920889062,
+   "n_rows": 185,
+   "p": 0.7406666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.7536666666666667,
+   "rho": -0.014518038093746419
+  },
+  "coherence_beta": {
+   "ci": [
+    -0.36438776405997025,
+    0.3020410372542706
+   ],
+   "helps": false,
+   "increment": -0.05845605356667895,
+   "n_rows": 185,
+   "p": 0.28733333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.6236666666666667,
+   "rho": 0.2304748023908415
+  },
+  "coherence_theta": {
+   "ci": [
+    -0.22171398468223194,
+    0.31218313051574986
+   ],
+   "helps": false,
+   "increment": 0.021119263096779424,
+   "n_rows": 185,
+   "p": 0.5586666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.8663333333333333,
+   "rho": -0.24566093557963306
+  },
+  "deg": {
+   "ci": [
+    -0.32049236549349785,
+    0.30167090139338293
+   ],
+   "helps": false,
+   "increment": -0.028168083494566693,
+   "n_rows": 185,
+   "p": 0.37933333333333336,
+   "p_holm": 1.0,
+   "placebo_p": 0.633,
+   "rho": 0.06252801498052064
+  },
+  "exponent_high": {
+   "ci": [
+    -0.33337459204960923,
+    0.289966625685596
+   ],
+   "helps": false,
+   "increment": -0.04943591049658033,
+   "n_rows": 185,
+   "p": 0.30733333333333335,
+   "p_holm": 1.0,
+   "placebo_p": 0.6173333333333333,
+   "rho": 0.24088002812643786
+  },
+  "exponent_low": {
+   "ci": [
+    -0.2025613192777372,
+    0.36298641952160027
+   ],
+   "helps": false,
+   "increment": 0.027310142827222095,
+   "n_rows": 185,
+   "p": 0.5206666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.5963333333333334,
+   "rho": -0.20241196544109524
+  },
+  "ge": {
+   "ci": [
+    -0.3385063791586135,
+    0.31591796044626236
+   ],
+   "helps": false,
+   "increment": -0.02821099286521824,
+   "n_rows": 185,
+   "p": 0.384,
+   "p_holm": 1.0,
+   "placebo_p": 0.7956666666666666,
+   "rho": 0.03889545401564805
+  },
+  "ge_norm": {
+   "ci": [
+    -0.34807470301050086,
+    0.19632443937268687
+   ],
+   "helps": false,
+   "increment": -0.07782548367044408,
+   "n_rows": 185,
+   "p": 0.215,
+   "p_holm": 1.0,
+   "placebo_p": 0.7606666666666667,
+   "rho": 0.23119028011674086
+  },
+  "iaf": {
+   "ci": [
+    -0.31995676461927514,
+    0.2730308983677399
+   ],
+   "helps": false,
+   "increment": -0.06563421503456762,
+   "n_rows": 185,
+   "p": 0.22766666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.6593333333333333,
+   "rho": 0.2261309083880242
+  },
+  "lempel_ziv": {
+   "ci": [
+    -0.22174455535390197,
+    0.377073437824526
+   ],
+   "helps": false,
+   "increment": 0.028546307167950584,
+   "n_rows": 185,
+   "p": 0.5186666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.826,
+   "rho": -0.13388174841470507
+  },
+  "mean_triallength": {
+   "ci": [
+    -0.5492950238745908,
+    0.14949299312533054
+   ],
+   "helps": false,
+   "increment": -0.18719353740021052,
+   "n_rows": 185,
+   "p": 0.115,
+   "p_holm": 1.0,
+   "placebo_p": 0.10933333333333334,
+   "rho": -0.3492085904832242
+  },
+  "modularity": {
+   "ci": [
+    -0.1484643798660528,
+    0.3411647457716635
+   ],
+   "helps": false,
+   "increment": 0.02479342979196263,
+   "n_rows": 185,
+   "p": 0.509,
+   "p_holm": 1.0,
+   "placebo_p": 0.7373333333333333,
+   "rho": -0.1308234437886223
+  },
+  "relative_delta_power": {
+   "ci": [
+    -0.19708531238582394,
+    0.3750260090243534
+   ],
+   "helps": false,
+   "increment": 0.03379136767947742,
+   "n_rows": 185,
+   "p": 0.566,
+   "p_holm": 1.0,
+   "placebo_p": 0.5503333333333333,
+   "rho": -0.19269757846335406
+  },
+  "smallworld": {
+   "ci": [
+    -0.1293290208289768,
+    0.33605021703875665
+   ],
+   "helps": false,
+   "increment": 0.02855725894805271,
+   "n_rows": 185,
+   "p": 0.538,
+   "p_holm": 1.0,
+   "placebo_p": 0.747,
+   "rho": -0.14630524459394442
+  },
+  "spectral_edge_95": {
+   "ci": [
+    -0.21877266746323554,
+    0.3622250239484037
+   ],
+   "helps": false,
+   "increment": 0.03649293184407236,
+   "n_rows": 185,
+   "p": 0.573,
+   "p_holm": 1.0,
+   "placebo_p": 0.7413333333333333,
+   "rho": 0.11607417845630705
+  },
+  "spectral_entropy": {
+   "ci": [
+    -0.14373976389710394,
+    0.42714735440505064
+   ],
+   "helps": false,
+   "increment": 0.05519124148268284,
+   "n_rows": 185,
+   "p": 0.6326666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.8193333333333334,
+   "rho": 0.1471931950961533
+  },
+  "strength_cv": {
+   "ci": [
+    -0.08685930987575724,
+    0.3948374547900464
+   ],
+   "helps": false,
+   "increment": 0.07012220408518355,
+   "n_rows": 185,
+   "p": 0.748,
+   "p_holm": 1.0,
+   "placebo_p": 0.4236666666666667,
+   "rho": -0.10316051624328601
+  },
+  "whole_head_exponent": {
+   "ci": [
+    -0.08714327672022061,
+    0.46621680224955736
+   ],
+   "helps": false,
+   "increment": 0.1070091328334678,
+   "n_rows": 185,
+   "p": 0.823,
+   "p_holm": 1.0,
+   "placebo_p": 0.8206666666666667,
+   "rho": -0.06035599518216119
+  },
+  "wpli_alpha": {
+   "ci": [
+    -0.45518258653764576,
+    0.23651300078671036
+   ],
+   "helps": false,
+   "increment": -0.12870986120729952,
+   "n_rows": 185,
+   "p": 0.18766666666666668,
+   "p_holm": 1.0,
+   "placebo_p": 0.7923333333333333,
+   "rho": -0.07008364929654155
+  },
+  "wpli_alpha_clustering": {
+   "ci": [
+    -0.26460167296096226,
+    0.23781917464904176
+   ],
+   "helps": false,
+   "increment": -0.03368329501949936,
+   "n_rows": 185,
+   "p": 0.3233333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.683,
+   "rho": 0.20285262390803988
+  },
+  "wpli_alpha_global_efficiency": {
+   "ci": [
+    -0.42360143473353007,
+    0.24461373340557985
+   ],
+   "helps": false,
+   "increment": -0.0694296675044561,
+   "n_rows": 185,
+   "p": 0.302,
+   "p_holm": 1.0,
+   "placebo_p": 0.31666666666666665,
+   "rho": -0.062265515205588026
+  },
+  "wpli_alpha_mean_degree": {
+   "ci": [
+    -0.41753179078545877,
+    0.272893931196212
+   ],
+   "helps": false,
+   "increment": -0.06164037907473308,
+   "n_rows": 185,
+   "p": 0.308,
+   "p_holm": 1.0,
+   "placebo_p": 0.7676666666666667,
+   "rho": -0.04859562620413292
+  },
+  "wpli_beta": {
+   "ci": [
+    -0.08537871534055126,
+    0.4077686123912933
+   ],
+   "helps": false,
+   "increment": 0.07612789322797804,
+   "n_rows": 185,
+   "p": 0.7713333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.7063333333333334,
+   "rho": 0.0021350613462931254
+  },
+  "wpli_theta": {
+   "ci": [
+    -0.12397665300027609,
+    0.40192440004484287
+   ],
+   "helps": false,
+   "increment": 0.0810542749541015,
+   "n_rows": 185,
+   "p": 0.7523333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.375,
+   "rho": -0.05354521582316932
+  }
+ },
+ "reps": 3000,
+ "verdict": "NO VERDICT, AND THE INCUMBENT IS WITHDRAWN -- relative_alpha_power fails against its own permutation on the deposit with a 0.98 label ceiling as well as on the one with 0.54. It is not a Challenge B incumbent on any deposit this project can measure, and CHALLENGE_DEFINITIONS_CORRECTION.md's claim that it is must be withdrawn rather than softened. The registered prediction (G2 PASSES) is WRONG."
+}

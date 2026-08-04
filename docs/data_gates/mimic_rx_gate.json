@@ -1,0 +1,75 @@
+{
+ "rows": 500000,
+ "abx_rows": 23140,
+ "broad_rows": 15840,
+ "narrow_rows": 7300,
+ "abx_with_start_and_stop": 23093,
+ "has_starttime": true,
+ "has_stoptime": true,
+ "distinct_hadm_with_abx": 5832,
+ "top_broad": [
+  [
+   "vancomycin",
+   6325
+  ],
+  [
+   "ciprofloxacin",
+   1899
+  ],
+  [
+   "ceftriaxone",
+   1860
+  ],
+  [
+   "cefepime",
+   1851
+  ],
+  [
+   "piperacillin",
+   1374
+  ],
+  [
+   "levofloxacin",
+   817
+  ],
+  [
+   "meropenem",
+   647
+  ],
+  [
+   "ceftazidime",
+   326
+  ],
+  [
+   "daptomycin",
+   282
+  ],
+  [
+   "linezolid",
+   242
+  ]
+ ],
+ "cols": [
+  "subject_id",
+  "hadm_id",
+  "pharmacy_id",
+  "poe_id",
+  "poe_seq",
+  "order_provider_id",
+  "starttime",
+  "stoptime",
+  "drug_type",
+  "drug",
+  "formulary_drug_cd",
+  "gsn",
+  "ndc",
+  "prod_strength",
+  "form_rx",
+  "dose_val_rx",
+  "dose_unit_rx",
+  "form_val_disp",
+  "form_unit_disp",
+  "doses_per_24_hrs",
+  "route"
+ ]
+}

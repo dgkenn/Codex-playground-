@@ -1,0 +1,275 @@
+{
+ "G1": true,
+ "G2": {
+  "pass": true,
+  "sd": 0.11095170490825508
+ },
+ "G4": {
+  "floor": 0.4,
+  "pass": true,
+  "rates": {
+   "0.15": 0.11666666666666667,
+   "0.2": 0.11666666666666667,
+   "0.25": 0.31666666666666665,
+   "0.3": 0.4,
+   "0.4": 0.95
+  }
+ },
+ "ceiling": 0.9478,
+ "dropped": {
+  "age": "only 1 distinct values"
+ },
+ "experiment": "E164",
+ "holm": {
+  "alpha_prom": 1.0,
+  "cl": 1.0,
+  "cl_norm": 1.0,
+  "coherence_alpha": 1.0,
+  "coherence_beta": 1.0,
+  "coherence_theta": 1.0,
+  "deg": 1.0,
+  "exponent_high": 1.0,
+  "exponent_low": 1.0,
+  "ge": 1.0,
+  "ge_norm": 1.0,
+  "iaf": 1.0,
+  "lempel_ziv": 1.0,
+  "modularity": 1.0,
+  "relative_alpha_power": 1.0,
+  "relative_delta_power": 1.0,
+  "smallworld": 1.0,
+  "spectral_edge_95": 1.0,
+  "spectral_entropy": 1.0,
+  "strength_cv": 1.0,
+  "whole_head_exponent": 1.0,
+  "wpli_alpha": 1.0,
+  "wpli_alpha_clustering": 1.0,
+  "wpli_alpha_global_efficiency": 1.0,
+  "wpli_alpha_mean_degree": 1.0,
+  "wpli_beta": 1.0,
+  "wpli_theta": 1.0
+ },
+ "n_candidates": 27,
+ "n_pairs": 123,
+ "n_subjects": 62,
+ "perms": 20000,
+ "primary": {
+  "alpha_prom": {
+   "n": 123,
+   "p": 0.79335,
+   "p_holm": 1.0,
+   "placebo_p": 0.98895,
+   "rho": 0.024345100669409654,
+   "tracks": false
+  },
+  "cl": {
+   "n": 123,
+   "p": 0.5061,
+   "p_holm": 1.0,
+   "placebo_p": 0.10055,
+   "rho": 0.06341979337297339,
+   "tracks": false
+  },
+  "cl_norm": {
+   "n": 123,
+   "p": 0.68265,
+   "p_holm": 1.0,
+   "placebo_p": 0.48805,
+   "rho": -0.038165379009686445,
+   "tracks": false
+  },
+  "coherence_alpha": {
+   "n": 123,
+   "p": 0.9278,
+   "p_holm": 1.0,
+   "placebo_p": 0.71805,
+   "rho": -0.008467580709651623,
+   "tracks": false
+  },
+  "coherence_beta": {
+   "n": 123,
+   "p": 0.6184,
+   "p_holm": 1.0,
+   "placebo_p": 0.9539,
+   "rho": 0.04846448517367246,
+   "tracks": false
+  },
+  "coherence_theta": {
+   "n": 123,
+   "p": 0.5056,
+   "p_holm": 1.0,
+   "placebo_p": 0.89205,
+   "rho": -0.06321342430769628,
+   "tracks": false
+  },
+  "deg": {
+   "n": 123,
+   "p": 0.65375,
+   "p_holm": 1.0,
+   "placebo_p": 0.6942,
+   "rho": 0.041389895654641365,
+   "tracks": false
+  },
+  "exponent_high": {
+   "n": 123,
+   "p": 0.1339,
+   "p_holm": 1.0,
+   "placebo_p": 0.02,
+   "rho": 0.14332331583495633,
+   "tracks": false
+  },
+  "exponent_low": {
+   "n": 123,
+   "p": 0.4857,
+   "p_holm": 1.0,
+   "placebo_p": 0.9264,
+   "rho": 0.06525131882730778,
+   "tracks": false
+  },
+  "ge": {
+   "n": 123,
+   "p": 0.57775,
+   "p_holm": 1.0,
+   "placebo_p": 0.39335,
+   "rho": 0.05175349215152649,
+   "tracks": false
+  },
+  "ge_norm": {
+   "n": 123,
+   "p": 0.20745,
+   "p_holm": 1.0,
+   "placebo_p": 0.3947,
+   "rho": 0.11961022042795784,
+   "tracks": false
+  },
+  "iaf": {
+   "n": 123,
+   "p": 0.2341,
+   "p_holm": 1.0,
+   "placebo_p": 0.5251,
+   "rho": 0.11502384214735943,
+   "tracks": false
+  },
+  "lempel_ziv": {
+   "n": 123,
+   "p": 0.3828,
+   "p_holm": 1.0,
+   "placebo_p": 0.09455,
+   "rho": -0.09054660446192078,
+   "tracks": false
+  },
+  "modularity": {
+   "n": 123,
+   "p": 0.48395,
+   "p_holm": 1.0,
+   "placebo_p": 0.2328,
+   "rho": -0.06828236447356541,
+   "tracks": false
+  },
+  "relative_alpha_power": {
+   "n": 123,
+   "p": 0.83875,
+   "p_holm": 1.0,
+   "placebo_p": 0.45715,
+   "rho": 0.01997265609885078,
+   "tracks": false
+  },
+  "relative_delta_power": {
+   "n": 123,
+   "p": 0.42475,
+   "p_holm": 1.0,
+   "placebo_p": 0.62015,
+   "rho": 0.07602120442145723,
+   "tracks": false
+  },
+  "smallworld": {
+   "n": 123,
+   "p": 0.479,
+   "p_holm": 1.0,
+   "placebo_p": 0.54945,
+   "rho": -0.06718602881428073,
+   "tracks": false
+  },
+  "spectral_edge_95": {
+   "n": 123,
+   "p": 0.4625,
+   "p_holm": 1.0,
+   "placebo_p": 0.5584,
+   "rho": -0.06980433632998413,
+   "tracks": false
+  },
+  "spectral_entropy": {
+   "n": 123,
+   "p": 0.39125,
+   "p_holm": 1.0,
+   "placebo_p": 0.2391,
+   "rho": -0.08234125704556887,
+   "tracks": false
+  },
+  "strength_cv": {
+   "n": 123,
+   "p": 0.8249,
+   "p_holm": 1.0,
+   "placebo_p": 0.3869,
+   "rho": -0.02130760598986212,
+   "tracks": false
+  },
+  "whole_head_exponent": {
+   "n": 123,
+   "p": 0.17315,
+   "p_holm": 1.0,
+   "placebo_p": 0.042,
+   "rho": 0.13034786085565772,
+   "tracks": false
+  },
+  "wpli_alpha": {
+   "n": 123,
+   "p": 0.6456,
+   "p_holm": 1.0,
+   "placebo_p": 0.2182,
+   "rho": -0.04369864957242909,
+   "tracks": false
+  },
+  "wpli_alpha_clustering": {
+   "n": 123,
+   "p": 0.16275,
+   "p_holm": 1.0,
+   "placebo_p": 0.9855,
+   "rho": -0.12940630199533087,
+   "tracks": false
+  },
+  "wpli_alpha_global_efficiency": {
+   "n": 123,
+   "p": 0.33095,
+   "p_holm": 1.0,
+   "placebo_p": 0.57285,
+   "rho": 0.09294346777418065,
+   "tracks": false
+  },
+  "wpli_alpha_mean_degree": {
+   "n": 123,
+   "p": 0.2391,
+   "p_holm": 1.0,
+   "placebo_p": 0.83075,
+   "rho": 0.11268395867459467,
+   "tracks": false
+  },
+  "wpli_beta": {
+   "n": 123,
+   "p": 0.41215,
+   "p_holm": 1.0,
+   "placebo_p": 0.59585,
+   "rho": -0.07805264990777881,
+   "tracks": false
+  },
+  "wpli_theta": {
+   "n": 123,
+   "p": 0.6746,
+   "p_holm": 1.0,
+   "placebo_p": 0.5799,
+   "rho": -0.040390295494705346,
+   "tracks": false
+  }
+ },
+ "verdict": "NEGATIVE, AND INFORMATIVE -- none of 27 feature changes tracks the change in accuracy, on a label whose change-score reliability is 0.8983 (ceiling 0.9478) and with a measured floor of rho 0.4. The between-subject family is a TRAIT family and does not become a state marker by being differenced. Registered prediction confirmed."
+}

@@ -1,0 +1,284 @@
+{
+  "experiment": "E03",
+  "contrast": "unconscious_vs_awake",
+  "search_space_size": 8,
+  "analytic_dof": 1,
+  "n_logged": 8,
+  "summary": {
+    "lempel_ziv": {
+      "verdict": "INCOMPLETE",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "leave_one_dataset_out"
+      ]
+    },
+    "relative_alpha_power": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "beats_trivial_baseline",
+        "directional_discrimination",
+        "calibration",
+        "probe:n_channels",
+        "beats_trivial_baseline",
+        "leave_one_dataset_out"
+      ]
+    },
+    "relative_delta_power": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": [
+        "beats_trivial_baseline",
+        "directional_discrimination",
+        "calibration",
+        "probe:n_channels",
+        "beats_trivial_baseline",
+        "leave_one_dataset_out"
+      ]
+    },
+    "spectral_edge_95": {
+      "verdict": "INCOMPLETE",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": []
+    },
+    "spectral_entropy": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "calibration",
+        "probe:n_channels"
+      ]
+    },
+    "uce_v1": {
+      "verdict": "INCOMPLETE",
+      "datasets": [
+        "ds005620"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 0,
+          "n_pos": 0,
+          "n_neg": 0,
+          "n_subjects": 0,
+          "dropped": {
+            "N3:non-finite-uce_v1": 145,
+            "W:non-finite-uce_v1": 145
+          }
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": [
+        "beats_trivial_baseline",
+        "complexity_is_earned"
+      ]
+    },
+    "whole_head_exponent": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 290,
+          "n_pos": 145,
+          "n_neg": 145,
+          "n_subjects": 145,
+          "dropped": {}
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": [
+        "label_leakage"
+      ]
+    },
+    "wpli_alpha": {
+      "verdict": "REJECT",
+      "datasets": [
+        "ds005620",
+        "sleep_edfx_staged"
+      ],
+      "per_dataset": {
+        "sleep_edfx_staged": {
+          "n": 289,
+          "n_pos": 145,
+          "n_neg": 144,
+          "n_subjects": 145,
+          "dropped": {
+            "W:non-finite-wpli_alpha": 1
+          }
+        },
+        "ds005620": {
+          "n": 75,
+          "n_pos": 54,
+          "n_neg": 21,
+          "n_subjects": 21,
+          "dropped": {
+            "awake:acq=EO": 21,
+            "sed2": 51,
+            "awake:acq=tms": 17,
+            "sed:acq=tms": 38
+          }
+        }
+      },
+      "failed": [
+        "directional_discrimination",
+        "directional_discrimination",
+        "calibration",
+        "probe:n_channels",
+        "leave_one_dataset_out"
+      ]
+    }
+  },
+  "inverting_candidates": [
+    "lempel_ziv",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "wpli_alpha"
+  ]
+}

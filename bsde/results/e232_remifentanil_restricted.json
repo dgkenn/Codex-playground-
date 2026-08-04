@@ -1,0 +1,391 @@
+{
+  "capability": {
+    "exposure": {
+      "C": 1.0,
+      "S": 1.0,
+      "n": 108
+    },
+    "noise": {
+      "C": 0.06286733446900965,
+      "S": 0.16546356375104013,
+      "n": 108
+    },
+    "sign_flipped": {
+      "C": 0.09259259259259259,
+      "S": 1.0,
+      "n": 108
+    }
+  },
+  "counts": {
+    "propofol_C": 14,
+    "propofol_S": 7,
+    "sevoflurane_C": 11,
+    "sevoflurane_S": 13
+  },
+  "direction_agreement": {
+    "agree": 10,
+    "features": [
+      "critical_slowing_ar1",
+      "emg_beta_gamma_fraction",
+      "emg_index",
+      "exponent_low",
+      "lempel_ziv",
+      "multiscale_entropy_slope",
+      "relative_alpha_power",
+      "relative_delta_power",
+      "spectral_edge_95",
+      "spectral_entropy",
+      "whole_head_exponent"
+    ],
+    "n": 11
+  },
+  "donor_mean_C": {
+    "propofol": 0.13674330916467906,
+    "sevoflurane": 0.1804087526834318
+  },
+  "donor_mean_S": {
+    "propofol": 0.23370972262345918,
+    "sevoflurane": 0.23444540596382935
+  },
+  "evaluable": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_gamma",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent"
+  ],
+  "excluded": {
+    "spatial_participation_ratio": {
+      "propofol": 0,
+      "sevoflurane": 0
+    },
+    "wpli_alpha": {
+      "propofol": 0,
+      "sevoflurane": 0
+    }
+  },
+  "gates": {
+    "G1": true,
+    "G3": true,
+    "G4": true
+  },
+  "per_feature": {
+    "propofol": {
+      "critical_slowing_ar1": {
+        "C": 0.5967969544489533,
+        "C_null95": 0.24913478019037397,
+        "C_pass": true,
+        "S": 0.2697350303047612,
+        "S_null95": 0.2630842424588353,
+        "S_pass": true,
+        "mean_signed": 0.1609770445940776,
+        "n": 107
+      },
+      "emg_beta_gamma_fraction": {
+        "C": 0.45595096944573715,
+        "C_null95": 0.21603671595491314,
+        "C_pass": true,
+        "S": 0.2356377437029203,
+        "S_null95": 0.26276148717346987,
+        "S_pass": false,
+        "mean_signed": -0.10743925767935265,
+        "n": 107
+      },
+      "emg_index": {
+        "C": 0.6650182423948464,
+        "C_null95": 0.252248814134348,
+        "C_pass": true,
+        "S": 0.24457729123080368,
+        "S_null95": 0.2424173594487816,
+        "S_pass": true,
+        "mean_signed": -0.16264836034400154,
+        "n": 107
+      },
+      "emg_kurtosis": {
+        "C": 0.27403425172299983,
+        "C_null95": 0.23023148794028667,
+        "C_pass": true,
+        "S": 0.20748111258544105,
+        "S_null95": 0.23403853299807995,
+        "S_pass": false,
+        "mean_signed": -0.05685693143400682,
+        "n": 107
+      },
+      "exponent_gamma": {
+        "C": 0.378882148943225,
+        "C_null95": 0.3010977111612439,
+        "C_pass": true,
+        "S": 0.1911953630290924,
+        "S_null95": 0.23107621878959245,
+        "S_pass": false,
+        "mean_signed": -0.07244051001244256,
+        "n": 107
+      },
+      "exponent_high": {
+        "C": 0.8116546364822969,
+        "C_null95": 0.3077990064917713,
+        "C_pass": true,
+        "S": 0.30259783334094725,
+        "S_null95": 0.27053180285894807,
+        "S_pass": true,
+        "mean_signed": 0.24560493442067718,
+        "n": 107
+      },
+      "exponent_low": {
+        "C": 0.44409863201568317,
+        "C_null95": 0.25092608580156334,
+        "C_pass": true,
+        "S": 0.257425108894377,
+        "S_null95": 0.26429933613661993,
+        "S_pass": false,
+        "mean_signed": 0.11432213870648109,
+        "n": 107
+      },
+      "lempel_ziv": {
+        "C": 0.917235963955395,
+        "C_null95": 0.4289548363369099,
+        "C_pass": true,
+        "S": 0.35899484259188846,
+        "S_null95": 0.27906927918591773,
+        "S_pass": true,
+        "mean_signed": -0.3292829804997861,
+        "n": 107
+      },
+      "multiscale_entropy_slope": {
+        "C": 0.7092585090376776,
+        "C_null95": 0.23576436747221813,
+        "C_pass": true,
+        "S": 0.30414638108857367,
+        "S_null95": 0.2772479224434353,
+        "S_pass": true,
+        "mean_signed": 0.21571840878008708,
+        "n": 107
+      },
+      "pac_slow_alpha": {
+        "C": 0.30859315059371767,
+        "C_null95": 0.3324785777890623,
+        "C_pass": false,
+        "S": 0.2258971764527064,
+        "S_null95": 0.24437409754148212,
+        "S_pass": false,
+        "mean_signed": 0.06971032139176564,
+        "n": 107
+      },
+      "relative_alpha_power": {
+        "C": 0.463792530427622,
+        "C_null95": 0.24155150343982806,
+        "C_pass": true,
+        "S": 0.24490061526640797,
+        "S_null95": 0.26812502795061394,
+        "S_pass": false,
+        "mean_signed": 0.11358307605768886,
+        "n": 107
+      },
+      "relative_delta_power": {
+        "C": 0.6955979761921836,
+        "C_null95": 0.4067992298321713,
+        "C_pass": true,
+        "S": 0.2506106390622397,
+        "S_null95": 0.26373462395304664,
+        "S_pass": false,
+        "mean_signed": 0.1743242533439237,
+        "n": 107
+      },
+      "spectral_edge_95": {
+        "C": 0.44820234742388293,
+        "C_null95": 0.24213515172954886,
+        "C_pass": true,
+        "S": 0.2620079548539534,
+        "S_null95": 0.2706382291339352,
+        "S_pass": false,
+        "mean_signed": -0.11743258040927265,
+        "n": 107
+      },
+      "spectral_entropy": {
+        "C": 0.6231254234316463,
+        "C_null95": 0.3616469949210311,
+        "C_pass": true,
+        "S": 0.27145606982658044,
+        "S_null95": 0.26691927652273645,
+        "S_pass": true,
+        "mean_signed": -0.1691511784537785,
+        "n": 107
+      },
+      "whole_head_exponent": {
+        "C": 0.6787870292526202,
+        "C_null95": 0.2249763726184566,
+        "C_pass": true,
+        "S": 0.26796552427312265,
+        "S_null95": 0.2663237541662376,
+        "S_pass": true,
+        "mean_signed": 0.18189152216347382,
+        "n": 107
+      }
+    },
+    "sevoflurane": {
+      "critical_slowing_ar1": {
+        "C": 0.9273197261719612,
+        "C_null95": 0.4769595767144491,
+        "C_pass": true,
+        "S": 0.5522451753017233,
+        "S_null95": 0.3010494681807135,
+        "S_pass": true,
+        "mean_signed": 0.5121078447405808,
+        "n": 45
+      },
+      "emg_beta_gamma_fraction": {
+        "C": 0.8412426516163615,
+        "C_null95": 0.47866267905256066,
+        "C_pass": true,
+        "S": 0.41056596199100953,
+        "S_null95": 0.2920684258095485,
+        "S_pass": true,
+        "mean_signed": -0.3453855985287391,
+        "n": 45
+      },
+      "emg_index": {
+        "C": 0.44148475084553035,
+        "C_null95": 0.35356475854056196,
+        "C_pass": true,
+        "S": 0.2902493405414416,
+        "S_null95": 0.27016576621257093,
+        "S_pass": true,
+        "mean_signed": -0.12814065779201783,
+        "n": 45
+      },
+      "emg_kurtosis": {
+        "C": 0.19477374744067627,
+        "C_null95": 0.3409319213720091,
+        "C_pass": false,
+        "S": 0.27589508833117504,
+        "S_null95": 0.2630765454510606,
+        "S_pass": true,
+        "mean_signed": -0.05373712025473936,
+        "n": 45
+      },
+      "exponent_gamma": {
+        "C": 0.015278262638833941,
+        "C_null95": 0.3513420438552346,
+        "C_pass": false,
+        "S": 0.17236167660674703,
+        "S_null95": 0.22646212297025134,
+        "S_pass": false,
+        "mean_signed": -0.0026333869640676414,
+        "n": 45
+      },
+      "exponent_high": {
+        "C": 0.1165069209911801,
+        "C_null95": 0.3266921526335438,
+        "C_pass": false,
+        "S": 0.2333216806993865,
+        "S_null95": 0.2555364826467955,
+        "S_pass": false,
+        "mean_signed": 0.027183590618772773,
+        "n": 45
+      },
+      "exponent_low": {
+        "C": 0.9073109457642585,
+        "C_null95": 0.4697270472043491,
+        "C_pass": true,
+        "S": 0.5121079046000883,
+        "S_null95": 0.2985703008997928,
+        "S_pass": true,
+        "mean_signed": 0.4646411072560588,
+        "n": 45
+      },
+      "lempel_ziv": {
+        "C": 0.9072591378952845,
+        "C_null95": 0.29717786759031284,
+        "C_pass": true,
+        "S": 0.3532902547491738,
+        "S_null95": 0.2751644804123776,
+        "S_pass": true,
+        "mean_signed": -0.32052581195054086,
+        "n": 45
+      },
+      "multiscale_entropy_slope": {
+        "C": 0.9044315797102459,
+        "C_null95": 0.48309831713504425,
+        "C_pass": true,
+        "S": 0.47948606340320404,
+        "S_null95": 0.2925160145414498,
+        "S_pass": true,
+        "mean_signed": 0.43366233777280694,
+        "n": 45
+      },
+      "pac_slow_alpha": {
+        "C": 0.25681776393628414,
+        "C_null95": 0.4737082712420889,
+        "C_pass": false,
+        "S": 0.2697594956181422,
+        "S_null95": 0.2540865812144887,
+        "S_pass": true,
+        "mean_signed": 0.06927903046523112,
+        "n": 45
+      },
+      "relative_alpha_power": {
+        "C": 0.7101753986964563,
+        "C_null95": 0.33460984689815154,
+        "C_pass": true,
+        "S": 0.3720057099391291,
+        "S_null95": 0.2757134964727041,
+        "S_pass": true,
+        "mean_signed": -0.2641893033733793,
+        "n": 45
+      },
+      "relative_delta_power": {
+        "C": 0.8374621041042699,
+        "C_null95": 0.3365398878309702,
+        "C_pass": true,
+        "S": 0.3817617439415128,
+        "S_null95": 0.27148679228385325,
+        "S_pass": true,
+        "mean_signed": 0.3197109933477748,
+        "n": 45
+      },
+      "spectral_edge_95": {
+        "C": 0.9254352774422504,
+        "C_null95": 0.49586280186155157,
+        "C_pass": true,
+        "S": 0.452150967221932,
+        "S_null95": 0.2913083580475526,
+        "S_pass": true,
+        "mean_signed": -0.4184364557968105,
+        "n": 45
+      },
+      "spectral_entropy": {
+        "C": 0.8471294679546683,
+        "C_null95": 0.33953835552616857,
+        "C_pass": true,
+        "S": 0.38043329194796893,
+        "S_null95": 0.27471122565463885,
+        "S_pass": true,
+        "mean_signed": -0.3222762522001259,
+        "n": 45
+      },
+      "whole_head_exponent": {
+        "C": 0.8482762283795952,
+        "C_null95": 0.4933202450361169,
+        "C_pass": true,
+        "S": 0.3566496910468265,
+        "S_null95": 0.2776033894687936,
+        "S_pass": true,
+        "mean_signed": 0.30253745477394983,
+        "n": 45
+      }
+    }
+  },
+  "seed": 20260802,
+  "sign_balance": 0.5462962962962963,
+  "verdict": "CONSISTENT BUT WEAK -- 14 features exceed the donor null on consistency: critical_slowing_ar1, emg_beta_gamma_fraction, emg_index, emg_kurtosis, exponent_gamma, exponent_high, exponent_low, lempel_ziv, multiscale_entropy_slope, relative_alpha_power, relative_delta_power, spectral_edge_95, spectral_entropy, whole_head_exponent"
+}

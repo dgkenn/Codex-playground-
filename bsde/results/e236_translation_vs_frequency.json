@@ -1,0 +1,126 @@
+{
+  "advantage": {
+    "critical_slowing_ar1": 0.31792946194644633,
+    "emg_beta_gamma_fraction": 0.21832072626816795,
+    "emg_index": -0.032961331988140496,
+    "emg_kurtosis": -0.0205106412390203,
+    "exponent_gamma": -0.062296080223858886,
+    "exponent_high": -0.19049757705656642,
+    "exponent_low": 0.32138135532751144,
+    "lempel_ziv": 0.02590375059125416,
+    "multiscale_entropy_slope": 0.20967259586884285,
+    "pac_slow_alpha": 0.009841840282044961,
+    "relative_alpha_power": 0.12931009453254705,
+    "relative_delta_power": 0.15825816367417983,
+    "spectral_edge_95": 0.262260542008137,
+    "spectral_entropy": 0.16894608133808126,
+    "whole_head_exponent": 0.11316188761734786
+  },
+  "arms": {
+    "propofol": 114,
+    "sevoflurane": 87
+  },
+  "capability": {
+    "fixed_30_45": {
+      "centroid": 36.751952792060095,
+      "sens": 0.16113138946260303
+    },
+    "fixed_8_13": {
+      "centroid": 12.454367296804456,
+      "sens": 1.6252028602405264
+    },
+    "total_power": {
+      "centroid": 23.00143863044743,
+      "sens": 0.0002099397126092758
+    }
+  },
+  "centroid": {
+    "critical_slowing_ar1": 24.04379354052582,
+    "emg_beta_gamma_fraction": 31.96543895092686,
+    "emg_index": 31.427529827442328,
+    "emg_kurtosis": 23.065939311552597,
+    "exponent_gamma": 22.999903052931995,
+    "exponent_high": 29.333625735907027,
+    "exponent_low": 14.329943596824183,
+    "lempel_ziv": 26.70193340494092,
+    "multiscale_entropy_slope": 26.97115714608185,
+    "pac_slow_alpha": 14.333918969170295,
+    "relative_alpha_power": 14.360767548569086,
+    "relative_delta_power": 24.296071495511857,
+    "spectral_edge_95": 31.822680104611457,
+    "spectral_entropy": 21.087412220813693,
+    "whole_head_exponent": 28.583652505310024
+  },
+  "collinearity": 0.36428571428571416,
+  "gates": {
+    "G1": true,
+    "G2": true,
+    "G3": true,
+    "G4": true
+  },
+  "geometry": {
+    "f0": 9.6875,
+    "shift": 2.1750000000000003
+  },
+  "measures": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_gamma",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent"
+  ],
+  "p1": {
+    "est": 0.6383015202307973,
+    "p_hi": 0.0096,
+    "p_lo": 0.9904
+  },
+  "p2": {
+    "est": 0.23872550490657699,
+    "p_hi": 0.204,
+    "p_lo": 0.796
+  },
+  "p3": {
+    "dropped": [
+      "emg_index",
+      "emg_kurtosis",
+      "exponent_gamma",
+      "exponent_high"
+    ],
+    "n": 11,
+    "p1": 0.07874170935642591,
+    "p1_hi": 0.4209,
+    "p1_lo": 0.5791,
+    "p2": 0.10354173461681561,
+    "p2_hi": 0.3817,
+    "p2_lo": 0.6184
+  },
+  "seed": 20260802,
+  "sensitivity": {
+    "critical_slowing_ar1": 13.067083240928227,
+    "emg_beta_gamma_fraction": 0.26663697297593025,
+    "emg_index": 0.005612008885407703,
+    "emg_kurtosis": 0.005603293186438542,
+    "exponent_gamma": 9.502972867526388e-07,
+    "exponent_high": 1.1262663029086371e-05,
+    "exponent_low": 1.9227145206615937,
+    "lempel_ziv": 0.32769997118397654,
+    "multiscale_entropy_slope": 0.6673287509714746,
+    "pac_slow_alpha": 22.106832571139545,
+    "relative_alpha_power": 22.367157658270795,
+    "relative_delta_power": 0.22452501549780773,
+    "spectral_edge_95": 1.373136949846944,
+    "spectral_entropy": 0.31210801932738713,
+    "whole_head_exponent": 0.32908143952092916
+  },
+  "verdict": "TRANSLATION -- it survives conditioning on where each measure looks in the spectrum, so E235's withdrawn verdict is reinstated with the confound controlled | THRESHOLD CONTRAST, not dose-response: translation does not survive P3 on the non-zero-sensitivity subset (rule 89)"
+}

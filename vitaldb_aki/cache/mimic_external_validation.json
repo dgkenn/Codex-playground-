@@ -1,0 +1,44 @@
+{
+  "seed": 20260628,
+  "n_stays_with_norepi": 15949,
+  "reliability_splithalf": {
+    "r": 0.947,
+    "ci": [
+      0.944,
+      0.95
+    ],
+    "n": 13585
+  },
+  "early_predicts_late": {
+    "r": 0.617,
+    "ci": [
+      0.605,
+      0.628
+    ],
+    "n": 13585
+  },
+  "n_stays_ge4_segments": 13585,
+  "trait_across_stays": {
+    "r": 0.123,
+    "ci": [
+      0.074,
+      0.168
+    ],
+    "n": 1712
+  },
+  "n_multistay_subjects": 1712,
+  "mortality": {
+    "n": 15949,
+    "deaths": 5258,
+    "mortality_rate": 0.33,
+    "adj_or_per_sd": 3.798,
+    "ci": [
+      3.441,
+      4.174
+    ],
+    "auc_age_alone": 0.559,
+    "auc_age_plus_requirement": 0.764,
+    "delta_auc": 0.2051
+  },
+  "verdict": "EXTERNAL (MIMIC-IV ICU, 15949 norepi stays): REPLICATES -- reliability 0.947 [0.944, 0.95]; early->late 0.617 [0.605, 0.628]. Requirement->mortality age-adjusted OR 3.798 [3.441, 4.174] (AUC +0.2051 over age). Independent ICU population (critical-illness vasoplegia) + hard endpoint + real timestamps -> strong generalisation of the requirement concept. Does NOT validate the arterial-waveform tone estimator (needs MIMIC-IV-Waveform)."
+}

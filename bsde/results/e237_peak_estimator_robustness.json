@@ -1,0 +1,91 @@
+{
+  "bin_width_hz": 0.25,
+  "estimates": {
+    "loglog_ols": [
+      6.0,
+      6.5,
+      7.0,
+      7.5,
+      8.0,
+      8.5,
+      9.0,
+      9.5,
+      10.0,
+      10.5,
+      11.0,
+      11.5,
+      12.0,
+      12.5,
+      13.0,
+      13.5,
+      14.0
+    ],
+    "loglog_robust": [
+      6.0,
+      6.5,
+      7.0,
+      7.5,
+      8.0,
+      8.5,
+      9.0,
+      9.5,
+      10.0,
+      10.5,
+      11.0,
+      11.5,
+      12.0,
+      12.5,
+      13.0,
+      13.5,
+      14.0
+    ]
+  },
+  "gates": {
+    "G1": true,
+    "G2_differ": false,
+    "G3": true,
+    "max_diff_hz": 0.0
+  },
+  "nan_fraction_on_background": {
+    "ols": 0.08333333333333333,
+    "robust": 0.08333333333333333
+  },
+  "p1": {
+    "inversions": 0,
+    "monotone": true,
+    "range": [
+      7.5,
+      11.0
+    ],
+    "spearman": 1.0
+  },
+  "p2": {
+    "diff": 0.0,
+    "exceeds_bin": false,
+    "prop_bias": 0.0,
+    "sevo_bias": 0.0
+  },
+  "p3": {
+    "mean_abs_ols_minus_robust": 0.0
+  },
+  "truths": [
+    6.0,
+    6.5,
+    7.0,
+    7.5,
+    8.0,
+    8.5,
+    9.0,
+    9.5,
+    10.0,
+    10.5,
+    11.0,
+    11.5,
+    12.0,
+    12.5,
+    13.0,
+    13.5,
+    14.0
+  ],
+  "verdict": "E233 SAFE -- the estimator is monotone over the operating range and its bias does not differ between the arms' operating points by as much as one PSD bin; rule 90's defect is real, documented, and inert for these statistics"
+}

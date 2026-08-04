@@ -1,0 +1,343 @@
+{
+  "experiment": "E05",
+  "n_subjects_complete": 20,
+  "search_space_size": 20,
+  "analytic_dof": 1,
+  "summary": {
+    "critical_slowing_ar1": {
+      "S": -0.0036801790368671027,
+      "ci": [
+        -0.23464281290815342,
+        0.23718148347534224
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.13843564330172192,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.0009516821901788461,
+        "q025": -0.23414701717889172,
+        "q975": 0.2319534230512527,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.4,
+      "verdict": "undetermined"
+    },
+    "emg_beta_gamma_fraction": {
+      "S": 0.09715899956060767,
+      "ci": [
+        -0.12817954886726302,
+        0.31045787576127276
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.27910559890108105,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0013129695676096485,
+        "q025": -0.2175973345757706,
+        "q975": 0.2225599236124366,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.75,
+      "verdict": "undetermined"
+    },
+    "emg_index": {
+      "S": -0.0996379491324991,
+      "ci": [
+        -0.3246856269719151,
+        0.11952802297015158
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.1511155104013892,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0010227729644111834,
+        "q025": -0.21379378137116928,
+        "q975": 0.21699722409426717,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.35,
+      "verdict": "undetermined"
+    },
+    "emg_kurtosis": {
+      "S": -0.2633565725651364,
+      "ci": [
+        -0.4648064640914593,
+        -0.05166116772284767
+      ],
+      "n_subjects": 20,
+      "follows": "DRUG",
+      "placebo_S": -0.06868666367794167,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0034070541591318636,
+        "q025": -0.23596227964660488,
+        "q975": 0.22613764741459225,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.3,
+      "verdict": "DRUG"
+    },
+    "exponent_gamma": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "exponent_high": {
+      "S": -0.13213096030905894,
+      "ci": [
+        -0.379289588584557,
+        0.11099863180482897
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.40158423975864954,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.001574392342941077,
+        "q025": -0.21885584965872296,
+        "q975": 0.20997647198499675,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.95,
+      "verdict": "undetermined"
+    },
+    "exponent_low": {
+      "S": 0.024713050378300676,
+      "ci": [
+        -0.19811663830711793,
+        0.26242050790313254
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.2286072604425981,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.003146047928305416,
+        "q025": -0.21310201899810807,
+        "q975": 0.20799749833879533,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.0,
+      "verdict": "undetermined"
+    },
+    "icoh_alpha": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "lempel_ziv": {
+      "S": 0.018611110221087454,
+      "ci": [
+        -0.17704888430281532,
+        0.21230146339301298
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.1448153688241979,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.0026452466863106194,
+        "q025": -0.17970174933677371,
+        "q975": 0.1740132890614309,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.9,
+      "verdict": "undetermined"
+    },
+    "lrtc_alpha": {
+      "verdict": "NOT_EVALUABLE",
+      "n_subjects": 0
+    },
+    "multiscale_entropy_slope": {
+      "S": -0.04833055908077057,
+      "ci": [
+        -0.2708867978706734,
+        0.17497779274334205
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.19348997188017505,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0024301444760699343,
+        "q025": -0.2057185880502333,
+        "q975": 0.19707467527461153,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.05,
+      "verdict": "undetermined"
+    },
+    "pac_slow_alpha": {
+      "S": -0.1537452160204728,
+      "ci": [
+        -0.3569091951734797,
+        0.05958822482061813
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.03953137554400177,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0020370418454166888,
+        "q025": -0.2247785238646275,
+        "q975": 0.2241721182325335,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.25,
+      "verdict": "undetermined"
+    },
+    "relative_alpha_power": {
+      "S": -0.16137136447252343,
+      "ci": [
+        -0.3561082972284067,
+        0.07486857482186944
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.12504339753114474,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.004234607150525202,
+        "q025": -0.21936282723628858,
+        "q975": 0.22423085835200515,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.45,
+      "verdict": "undetermined"
+    },
+    "relative_delta_power": {
+      "S": -0.28040837701296206,
+      "ci": [
+        -0.5084006957596064,
+        -0.038983442340578135
+      ],
+      "n_subjects": 20,
+      "follows": "DRUG",
+      "placebo_S": -0.07797358776629387,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.002997003720594175,
+        "q025": -0.21976903113630733,
+        "q975": 0.22796773601224926,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.4,
+      "verdict": "DRUG"
+    },
+    "spatial_participation_ratio": {
+      "S": 0.09389746612590569,
+      "ci": [
+        -0.09799945961664394,
+        0.294584084928481
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.24494710938125586,
+      "placebo_gate": true,
+      "null": {
+        "mean": 0.0006543171400283569,
+        "q025": -0.19167981790946761,
+        "q975": 0.19511520183339787,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.65,
+      "verdict": "undetermined"
+    },
+    "spectral_edge_95": {
+      "S": -0.004686033308673179,
+      "ci": [
+        -0.19206701939066653,
+        0.16280696063171352
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.1504386139870174,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0007282359032433176,
+        "q025": -0.19289773171304356,
+        "q975": 0.20206424318055988,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.65,
+      "verdict": "undetermined"
+    },
+    "spectral_entropy": {
+      "S": -0.0776294698389883,
+      "ci": [
+        -0.29223418944606777,
+        0.1412253680611809
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.19574098089576947,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0022328354347251923,
+        "q025": -0.24590599051028794,
+        "q975": 0.23214015631171486,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.8,
+      "verdict": "undetermined"
+    },
+    "uce_v1": {
+      "S": 0.1795467545869179,
+      "ci": [
+        -0.02190082818672765,
+        0.3740484938801653
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.09021281701136055,
+      "placebo_gate": false,
+      "null": {
+        "mean": 0.0006196133131450805,
+        "q025": -0.20852214580574777,
+        "q975": 0.21472974370958306,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.5,
+      "verdict": "INDETERMINATE"
+    },
+    "whole_head_exponent": {
+      "S": 0.060472100591532865,
+      "ci": [
+        -0.14539952292642516,
+        0.2610152284384941
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.05986216115961516,
+      "placebo_gate": false,
+      "null": {
+        "mean": 0.0008483962946672425,
+        "q025": -0.19341734190454887,
+        "q975": 0.20262095242906394,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.45,
+      "verdict": "INDETERMINATE"
+    },
+    "wpli_alpha": {
+      "S": -0.13835819771466004,
+      "ci": [
+        -0.3770989185972955,
+        0.10988043514159396
+      ],
+      "n_subjects": 20,
+      "follows": "undetermined",
+      "placebo_S": 0.16083564259784508,
+      "placebo_gate": true,
+      "null": {
+        "mean": -0.0018441652049468135,
+        "q025": -0.231313083123025,
+        "q975": 0.23100414886689197,
+        "n": 2000
+      },
+      "monotone_fraction_levels_1_3": 0.3,
+      "verdict": "undetermined"
+    }
+  }
+}

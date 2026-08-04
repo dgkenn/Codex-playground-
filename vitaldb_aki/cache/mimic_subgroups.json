@@ -1,0 +1,211 @@
+{
+  "seed": 20260628,
+  "n_total": 15949,
+  "overall": {
+    "n": 15949,
+    "deaths": 5258,
+    "mortality_rate": 0.33,
+    "adj_or_per_sd": 3.798,
+    "ci": [
+      3.441,
+      4.174
+    ],
+    "auc_age_alone": 0.559,
+    "auc_age_plus_requirement": 0.764,
+    "delta_auc": 0.2051
+  },
+  "by_icu_type": {
+    "MICU": {
+      "n": 5083,
+      "deaths": 1896,
+      "mortality_rate": 0.373,
+      "adj_or_per_sd": 3.779,
+      "ci": [
+        3.287,
+        4.298
+      ],
+      "auc_age_alone": 0.557,
+      "auc_age_plus_requirement": 0.751,
+      "delta_auc": 0.194
+    },
+    "SICU": {
+      "n": 1650,
+      "deaths": 570,
+      "mortality_rate": 0.345,
+      "adj_or_per_sd": 2.684,
+      "ci": [
+        2.276,
+        3.16
+      ],
+      "auc_age_alone": 0.583,
+      "auc_age_plus_requirement": 0.739,
+      "delta_auc": 0.156
+    },
+    "CVICU": {
+      "n": 2363,
+      "deaths": 363,
+      "mortality_rate": 0.154,
+      "adj_or_per_sd": 4.096,
+      "ci": [
+        2.568,
+        7.103
+      ],
+      "auc_age_alone": 0.532,
+      "auc_age_plus_requirement": 0.793,
+      "delta_auc": 0.2617
+    },
+    "CCU": {
+      "n": 1854,
+      "deaths": 738,
+      "mortality_rate": 0.398,
+      "adj_or_per_sd": 4.882,
+      "ci": [
+        3.504,
+        6.641
+      ],
+      "auc_age_alone": 0.58,
+      "auc_age_plus_requirement": 0.796,
+      "delta_auc": 0.2151
+    },
+    "MICU/SICU": {
+      "n": 2848,
+      "deaths": 986,
+      "mortality_rate": 0.346,
+      "adj_or_per_sd": 3.32,
+      "ci": [
+        2.798,
+        4.045
+      ],
+      "auc_age_alone": 0.565,
+      "auc_age_plus_requirement": 0.755,
+      "delta_auc": 0.1898
+    },
+    "TSICU": {
+      "n": 1569,
+      "deaths": 512,
+      "mortality_rate": 0.326,
+      "adj_or_per_sd": 3.918,
+      "ci": [
+        2.472,
+        5.842
+      ],
+      "auc_age_alone": 0.564,
+      "auc_age_plus_requirement": 0.769,
+      "delta_auc": 0.2051
+    }
+  },
+  "surgical_cardiac_units": [
+    "CVICU",
+    "SICU"
+  ],
+  "sepsis": {
+    "septic": {
+      "n": 7894,
+      "deaths": 3062,
+      "mortality_rate": 0.388,
+      "adj_or_per_sd": 3.519,
+      "ci": [
+        3.208,
+        3.863
+      ],
+      "auc_age_alone": 0.565,
+      "auc_age_plus_requirement": 0.754,
+      "delta_auc": 0.1894
+    },
+    "non_septic": {
+      "n": 8055,
+      "deaths": 2196,
+      "mortality_rate": 0.273,
+      "adj_or_per_sd": 3.855,
+      "ci": [
+        3.275,
+        4.578
+      ],
+      "auc_age_alone": 0.553,
+      "auc_age_plus_requirement": 0.766,
+      "delta_auc": 0.2131
+    }
+  },
+  "by_age": {
+    "<55": {
+      "n": 3730,
+      "deaths": 1069,
+      "mortality_rate": 0.287,
+      "adj_or_per_sd": 3.63,
+      "ci": [
+        2.877,
+        4.496
+      ],
+      "auc_age_alone": 0.521,
+      "auc_age_plus_requirement": 0.765,
+      "delta_auc": 0.2441
+    },
+    "55-70": {
+      "n": 6174,
+      "deaths": 1864,
+      "mortality_rate": 0.302,
+      "adj_or_per_sd": 3.911,
+      "ci": [
+        3.445,
+        4.401
+      ],
+      "auc_age_alone": 0.503,
+      "auc_age_plus_requirement": 0.765,
+      "delta_auc": 0.262
+    },
+    ">70": {
+      "n": 6045,
+      "deaths": 2325,
+      "mortality_rate": 0.385,
+      "adj_or_per_sd": 3.75,
+      "ci": [
+        3.198,
+        4.36
+      ],
+      "auc_age_alone": 0.544,
+      "auc_age_plus_requirement": 0.753,
+      "delta_auc": 0.2092
+    }
+  },
+  "by_sex": {
+    "male": {
+      "n": 9315,
+      "deaths": 2969,
+      "mortality_rate": 0.319,
+      "adj_or_per_sd": 3.701,
+      "ci": [
+        3.227,
+        4.229
+      ],
+      "auc_age_alone": 0.547,
+      "auc_age_plus_requirement": 0.764,
+      "delta_auc": 0.217
+    },
+    "female": {
+      "n": 6634,
+      "deaths": 2289,
+      "mortality_rate": 0.345,
+      "adj_or_per_sd": 3.926,
+      "ci": [
+        3.357,
+        4.532
+      ],
+      "auc_age_alone": 0.572,
+      "auc_age_plus_requirement": 0.764,
+      "delta_auc": 0.1916
+    }
+  },
+  "heterogeneity": {
+    "n_subgroups": 13,
+    "all_CI_lower_bound_above_1": true,
+    "all_subgroup_CIs_overlap": false,
+    "OR_range": [
+      2.684,
+      4.882
+    ],
+    "subgroups_not_overlapping_overall_CI": [
+      "ICU:SICU"
+    ]
+  },
+  "verdict": "GENERALIZABILITY (MIMIC-IV, n=15949 norepi ICU stays; age-adjusted, observational): overall requirement->mortality OR 3.798/SD [3.441, 4.174]. SURGICAL/SICU OR 2.684 [2.276, 3.16] (n=1650). CARDIAC/CVICU OR 4.096 [2.568, 7.103] (n=2363) -- bridges back to the intraoperative origin. WITHIN SEPSIS OR 3.519 [3.208, 3.863] (n=7894, deaths=3062): requirement still stratifies mortality where vasoplegia is expected and everyone is sick. MOSTLY GENERALIZES with HETEROGENEITY in MAGNITUDE: every subgroup OR>1 (CI excludes 1.0) but some CIs do not all overlap (OR range [2.684, 4.882]; outliers vs overall: ['ICU:SICU']). DIRECTION is consistent; effect SIZE varies by population. CAVEAT: age-adjusted only; the OR is confounded by illness severity within each stratum (sicker -> more pressor AND more death). Shows the requirement MARKS risk broadly, not a treatment effect."
+}

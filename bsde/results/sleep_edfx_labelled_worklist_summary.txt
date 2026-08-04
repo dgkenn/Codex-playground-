@@ -1,0 +1,6 @@
+# sleep_edfx_labelled_worklist summary, built from 197 PSG recordings
+# usable (both W>=120s and N3>=120s blocks): 145
+# rows written to sleep_edfx_labelled_worklist.json: 290 (2 per usable recording)
+# skipped, n3_block_too_short: 32
+# skipped, no_n3_block: 19
+# skipped, wake_block_too_short: 1

@@ -1,0 +1,33 @@
+{
+  "experiment": "E192",
+  "primary": "mu_mean",
+  "outcome": "mean_dist",
+  "e181_mu_mean": 0.4803109240837656,
+  "e181_floor": 0.02,
+  "n_trial_rows": 1680,
+  "n_subjects": 28,
+  "total_pairs": 1230,
+  "G2": {
+    "vel_alignment": -0.07377479579652654,
+    "null_p95": 0.0415523249821051,
+    "pass": false
+  },
+  "G3": {
+    "within_run_sd": 0.06414548409060164,
+    "subject_sd": 0.08325283062799017,
+    "ratio": 0.7797558442025142,
+    "pass": true
+  },
+  "G4": {
+    "signed_gap": 0.0,
+    "null": [
+      -0.055284552845528454,
+      0.05365853658536585
+    ],
+    "index_mean": 0.5,
+    "index_p": 1.0,
+    "pass": true
+  },
+  "verdict": "NOT INTERPRETABLE",
+  "why": "a design gate failed: G2 BCI alive"
+}

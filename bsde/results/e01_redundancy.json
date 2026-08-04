@@ -1,0 +1,16 @@
+{
+  "experiment": "E01",
+  "n_subjects_usable": 96,
+  "r_frontal_posterior": 0.9325988864880215,
+  "implied_pc1_ve": 0.9662994432440107,
+  "corr_uce_v1_vs_whole_head_baseline": 0.9951771821629343,
+  "median_whole_head_exponent": 1.4931456031517487,
+  "median_fit_r2": 0.9755961411792061,
+  "fit_range_hz": [
+    1.0,
+    40.0
+  ],
+  "fit_mode": "loglog_robust",
+  "dataset_doi": "10.6084/m9.figshare.23552964",
+  "labels_available": false
+}

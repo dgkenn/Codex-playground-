@@ -1,0 +1,130 @@
+{
+  "experiment": "E208",
+  "n_rows": 80,
+  "n_subjects": 20,
+  "dosei_survivors": {
+    "multiscale_entropy_slope": -0.02769,
+    "relative_alpha_power": -0.03331,
+    "whole_head_exponent": -0.01664,
+    "wpli_theta": -0.00828,
+    "pac_slow_alpha": -0.00157
+  },
+  "primary_incumbent": "spectral_edge_95",
+  "tested": [
+    "multiscale_entropy_slope",
+    "relative_alpha_power",
+    "whole_head_exponent",
+    "pac_slow_alpha"
+  ],
+  "not_in_deposit": [
+    "wpli_theta"
+  ],
+  "g1": true,
+  "g2": {
+    "incumbent_rho": 0.03485957362644761,
+    "null_p95": 0.15110656845575413,
+    "pass": false
+  },
+  "g3": {
+    "increment": 0.02614468021983571,
+    "ci": [
+      -0.1399396484523897,
+      0.33266349483399144
+    ],
+    "pass": true
+  },
+  "arm_primary": {
+    "multiscale_entropy_slope": {
+      "increment": 0.1370174907817316,
+      "ci": [
+        -0.0004957521650118197,
+        0.4154295359207431
+      ],
+      "base_rho": 0.03485957362644761,
+      "with_rho": 0.17187706440817918,
+      "call": "absent",
+      "dosei": -0.02769
+    },
+    "relative_alpha_power": {
+      "increment": -0.028565483943894566,
+      "ci": [
+        -0.1022185250291905,
+        0.25470817819247105
+      ],
+      "base_rho": 0.03485957362644761,
+      "with_rho": 0.00629408968255304,
+      "call": "absent",
+      "dosei": -0.03331
+    },
+    "whole_head_exponent": {
+      "increment": 0.03389125213682406,
+      "ci": [
+        -0.04987902880320893,
+        0.356870952210014
+      ],
+      "base_rho": 0.03485957362644761,
+      "with_rho": 0.06875082576327167,
+      "call": "absent",
+      "dosei": -0.01664
+    },
+    "pac_slow_alpha": {
+      "increment": 0.0,
+      "ci": [
+        -0.0019369843967884184,
+        0.004360093916985357
+      ],
+      "base_rho": 0.03485957362644761,
+      "with_rho": 0.03485957362644761,
+      "call": "absent",
+      "dosei": -0.00157
+    }
+  },
+  "arm_secondary": {
+    "multiscale_entropy_slope": {
+      "increment": -0.002904964468870619,
+      "ci": [
+        -0.021923833968582947,
+        0.020654301558662144
+      ],
+      "base_rho": 0.4710884047018545,
+      "with_rho": 0.46818344023298386,
+      "call": "absent",
+      "dosei": -0.02769
+    },
+    "relative_alpha_power": {
+      "increment": -0.02517635873021218,
+      "ci": [
+        -0.05379902636438704,
+        0.01583025047237881
+      ],
+      "base_rho": 0.4710884047018545,
+      "with_rho": 0.4459120459716423,
+      "call": "absent",
+      "dosei": -0.03331
+    },
+    "whole_head_exponent": {
+      "increment": 0.00048416074481177906,
+      "ci": [
+        -0.040827921081135414,
+        0.051725364792903135
+      ],
+      "base_rho": 0.4710884047018545,
+      "with_rho": 0.47157256544666626,
+      "call": "absent",
+      "dosei": -0.01664
+    },
+    "pac_slow_alpha": {
+      "increment": 0.0,
+      "ci": [
+        -2.709588811695973e-06,
+        0.0
+      ],
+      "base_rho": 0.4710884047018545,
+      "with_rho": 0.4710884047018545,
+      "call": "absent",
+      "dosei": -0.00157
+    }
+  },
+  "verdict": "NOT INTERPRETABLE",
+  "why": "a gate failed: G2 incumbent alive"
+}
