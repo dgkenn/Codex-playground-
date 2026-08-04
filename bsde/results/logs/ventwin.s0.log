@@ -262,3 +262,9 @@ streaming vitaldb-targeted:10s over 2608 planned cases (56731 windows) -> bsde/r
    [2580/14110] ok=2549 err=31
    [2590/14110] ok=2556 err=34
    [2600/14110] ok=2566 err=34
+   [2610/14110] ok=2576 err=34
+   [2620/14110] ok=2586 err=34
+   [2630/14110] ok=2596 err=34
+   [2640/14110] ok=2606 err=34
+   [2650/14110] ok=2616 err=34
+   [2660/14110] ok=2626 err=34
