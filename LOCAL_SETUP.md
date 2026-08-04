@@ -18,6 +18,10 @@ sandbox at the time of writing — version numbers, test counts and failures are
 3. **`bsde/docs/DECISIONS_2026_08_02_LINES_AND_BLOCKERS.md`** — which lines are running, which are
    abandoned and why, and what is blocked on you.
 4. This file, for the mechanics.
+5. **`bsde/docs/EXTRACTION_TAKEOVER.md`** — the paused extraction: exactly where it stopped, the
+   one-command resume, and the optimisations ranked by measured benefit.
+6. **`PROMPT_FOR_LOCAL_SESSION.md`** — two prompts to paste into Claude Code locally: one to take
+   over and tune the machine, one for the standing research loop.
 
 ## 1. What is actually in this tree
 
@@ -167,8 +171,9 @@ python3 -m bsde.experiments.e248_agent_leakage_at_scale --smoke
 python3 -m bsde.experiments.e248_agent_leakage_at_scale
 ```
 
-Step 3 resumes from whatever is already in the shard CSVs — just re-run it. Expect ~35 more minutes on a
-decent connection.
+**Step 3 is PAUSED at 35,988 of 56,731 windows** (35,679 ok, 305 legitimate device-disconnected
+errors, 1,654 of 2,608 cases touched). Re-running the command resumes it — see
+`bsde/docs/EXTRACTION_TAKEOVER.md` for the state in detail and for how to raise the shard count safely.
 
 ## 7. What changes for the better on your machine
 
