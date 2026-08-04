@@ -1,4 +1,0 @@
-[checkpoint] every 300s on branch claude/heedb-eeg-phenotype-discovery-2mnwzx while 'vitaldb_vent_landmarks' is alive; paths: bsde/results/vitaldb_vent_landmarks.s0.csv bsde/results/vitaldb_vent_landmarks.s1.csv bsde/results/vitaldb_vent_landmarks.s2.csv bsde/results/vitaldb_vent_landmarks.s3.csv
-[checkpoint] pushed at 731 rows
-[checkpoint] pushed at 1454 rows
-[checkpoint] pushed at 2480 rows

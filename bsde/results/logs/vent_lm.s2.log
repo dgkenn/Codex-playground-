@@ -1,9 +1,0 @@
-[emit] sustain 120 s = 12 grid steps | 732 cases to fetch
-[emit] 100/732
-[emit] 200/732
-[emit] 300/732
-[emit] 400/732
-[emit] 500/732
-[emit] 600/732
-[emit] 700/732
-[emit] plan: 659 cases, 14404 windows (10 s each, 21 fixed offsets per landmark) -> bsde/results/vitaldb_ventwin_plan.s2.json

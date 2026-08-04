@@ -63,3 +63,8 @@ bsde/results/vitaldb_iaf.s*.csv
 bsde/results/vitaldb_iaf.s*.csv.manifest.json
 bsde/results/mimic_cohort.csv
 bsde/results/mimic_cohort.csv.manifest.json
+
+# Transient extractor logs. These are process diagnostics, not results -- they are rewritten on
+# every run and their constant churn left the working tree dirty between checkpoints. The results
+# are the CSVs and the JSON reports, which are tracked.
+bsde/results/logs/
