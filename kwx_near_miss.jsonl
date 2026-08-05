@@ -1138,3 +1138,5 @@
 {"ticker": "KXHIGHPHIL-26AUG05-B82.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.2, "extreme_f": 84.2, "station": "KPHL", "kind": "max", "date": "2026-08-05", "ts": 1785947266541}
 {"ticker": "KXHIGHMIA-26AUG05-B86.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.6, "extreme_f": 89.6, "station": "KMIA", "kind": "max", "date": "2026-08-05", "ts": 1785947573464}
 {"ticker": "KXHIGHTATL-26AUG05-T84", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.0, "extreme_f": 86.0, "station": "KATL", "kind": "max", "date": "2026-08-05", "ts": 1785949213292}
+{"ticker": "KXHIGHTBOS-26AUG05-B83.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.0, "extreme_f": 86.0, "station": "KBOS", "kind": "max", "date": "2026-08-05", "ts": 1785952130937}
+{"ticker": "KXHIGHTMIN-26AUG05-T75", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 2.0, "extreme_f": 77.0, "station": "KMSP", "kind": "max", "date": "2026-08-05", "ts": 1785952132841}
