@@ -1127,3 +1127,4 @@
 {"ticker": "KXLOWTDEN-26AUG05-T53", "side": "yes", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.0, "extreme_f": 50.0, "station": "KDEN", "kind": "min", "date": "2026-08-05", "ts": 1785928861676}
 {"ticker": "KXLOWTDEN-26AUG05-B53.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 3.0, "extreme_f": 50.0, "station": "KDEN", "kind": "min", "date": "2026-08-05", "ts": 1785928861676}
 {"ticker": "KXLOWTDEN-26AUG05-B55.5", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 5.0, "extreme_f": 50.0, "station": "KDEN", "kind": "min", "date": "2026-08-05", "ts": 1785928861676}
+{"ticker": "KXLOWTDAL-26AUG05-T82", "side": "no", "ask_c": 100, "reason": "ask>98", "cushion_f": 1.4, "extreme_f": 80.6, "station": "KDFW", "kind": "min", "date": "2026-08-05", "ts": 1785931128141}
