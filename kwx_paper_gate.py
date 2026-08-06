@@ -40,8 +40,12 @@ def _report_metrics():
     from collections import defaultdict
     import kwx_forward as F
     rows = F._load_jsonl(F.SETTLED)
+    # FIX 2: surface zero-fill/rejected counts even when there's nothing settled yet -- an operator must
+    # be able to see "N attempted, 0 filled" rather than a silent "no data" (that silence is exactly how
+    # the phantom-win gate went unnoticed). See FORWARD_DATA_2026-08-02.md.
+    tally = F._plan_fill_tally()
     if not rows:
-        return None
+        return {"n": 0, **tally} if (tally["n_zero_fill"] or tally["n_unfilled"]) else None
     pnls = [r["pnl"] for r in rows]
     wins = sum(1 for r in rows if r["won"])
     n = len(rows)
@@ -50,7 +54,8 @@ def _report_metrics():
         byday[r.get("date", "?")].append(r["pnl"])
     dm = [st.mean(v) for v in byday.values()]
     t = (st.mean(dm) / (st.stdev(dm) / math.sqrt(len(dm)))) if len(dm) > 1 and st.stdev(dm) > 0 else float("nan")
-    return {"n": n, "win": wins / n, "ev": st.mean(pnls), "t": t, "days": len(byday), "worst": min(pnls)}
+    return {"n": n, "win": wins / n, "ev": st.mean(pnls), "t": t, "days": len(byday), "worst": min(pnls),
+            **tally}
 
 
 def _near_misses_today():
@@ -94,6 +99,12 @@ def _write_status(m, last_poll_locks, next_sleep_s, watch_summary=None):
              ""]
     if not m:
         lines.append("no settled paper fires yet -- accruing. (bar: win>=99%, EV>=+0.12, t>=3, n>=30)")
+    elif "win" not in m:
+        # FIX 2: nothing SETTLED yet, but the plan log has zero-fill/rejected attempts -- surface that
+        # explicitly ("N attempted, 0 filled") instead of the misleading plain "accruing" silence.
+        lines.append("no settled paper fires yet -- accruing. (bar: win>=99%, EV>=+0.12, t>=3, n>=30)")
+        lines.append(f"  ({m['n_zero_fill']} zero-fill / {m['n_unfilled']} rejected-or-blocked attempt(s) "
+                     f"in the plan log -- 0 real fills, not counted toward the gate)")
     else:
         passed = (m["win"] >= PASS["win"] and m["ev"] >= PASS["ev"] and
                   (m["t"] >= PASS["t"] or m["t"] != m["t"]) and m["n"] >= PASS["n"])
@@ -107,6 +118,8 @@ def _write_status(m, last_poll_locks, next_sleep_s, watch_summary=None):
             f"EV/contract   : {m['ev']:+.3f}   (bar +{PASS['ev']:.2f}, backtest ~+0.20)",
             f"day-clustered t: {m['t']:.2f}   (bar {PASS['t']})",
             f"worst fire    : {m['worst']:+.3f}",
+            f"n_zero_fill   : {m['n_zero_fill']}   (empty book at fire time -- not scored)",
+            f"n_unfilled    : {m['n_unfilled']}   (rejected/blocked -- not scored)",
             "",
             f"VERDICT: {verdict}",
         ]

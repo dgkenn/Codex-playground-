@@ -165,13 +165,40 @@ def _iem_daily(station, date_iso):
 
 
 def _bracket_won(lo, hi, settle_val):
-    """Did rung (floor=lo, cap=hi) settle YES given the realized whole-degF value? Mirrors Kalshi '>' convention:
-    cap-only -> X <= cap; top rung -> X > floor; full bracket -> floor < X <= cap."""
-    if lo is not None and not (settle_val > lo):
-        return False
-    if hi is not None and not (settle_val <= hi):
-        return False
-    return True
+    """Did rung (floor=lo, cap=hi) settle YES given the realized whole-degF value?
+
+    FIX 3 -- DERIVED FROM DATA, 2026-08-02 (do not guess; see FIX_SPEC.md / livefix_selftest.py for the
+    full candidate table). Measured against Kalshi's official `result` field over all 616 rows of
+    venue_expansion/paper2/wx_forecast_settled.jsonl, per rung shape:
+
+        shape (n)              candidates tried                  disagreement    WINNER
+        full bracket (503)     lo<X<=hi                           24.4%
+                                lo<=X<=hi                           7.6%          <-- lo<=X<=hi
+                                lo<=X<hi                           20.3%
+        top rung (66)          X>lo                                 1.5%         <-- X>lo (unchanged)
+                                X>=lo                               13.6%
+        cap-only (47)          X<=hi                               23.4%
+                                X<hi                                 8.5%         <-- X<hi
+
+    Old convention (exclusive floor everywhere, "mirroring Kalshi's '>' settlement") mis-scored 135/616
+    (21.9%) of the sample; the winners above drop that to 43/616 (7.0%) overall. The RESIDUAL disagreement
+    in both fixed shapes (38/503 full, 4/47 cap) is NOT boundary-shaped -- it is entirely concentrated in
+    the 2026-07-27..31 rows of the sample and the realized value is often >1F away from lo/hi (i.e. not an
+    off-by-one at all), which points at an IEM ASOS data-revision-lag artifact for the most recent days in
+    the sample rather than a bracket-convention effect. Documented here rather than silently "fixed away"
+    because it is a real, separate data-quality caveat on the forecast sleeve, not a code bug.
+
+    So: full bracket is INCLUSIVE on both ends (Kalshi's bracket includes its floor); cap-only rungs are
+    EXCLUSIVE on the cap; top rungs are unchanged (exclusive floor was already the best fit, 1.5% vs
+    13.6% for the inclusive candidate -- the earlier bug was specific to two-sided brackets, not
+    single-sided top rungs)."""
+    if lo is not None and hi is not None:
+        return lo <= settle_val <= hi     # full bracket: inclusive both ends
+    if lo is None and hi is not None:
+        return settle_val < hi            # cap-only: exclusive cap
+    if hi is None and lo is not None:
+        return settle_val > lo            # top rung: exclusive floor (unchanged)
+    return True                            # no bound at all (shouldn't occur) -> unconstrained
 
 
 def settle(verbose=True):
