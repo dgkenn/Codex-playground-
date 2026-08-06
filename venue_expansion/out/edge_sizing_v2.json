@@ -1,0 +1,212 @@
+{
+ "spec": "venue_expansion/EDGE_SIZING_SPEC.md (frozen)",
+ "sampling": {
+  "method": "stratified by series, shuffled work order, never re-sorted",
+  "per_series": 45,
+  "seed": 20260806,
+  "series_in_population": 40,
+  "series_covered": 34,
+  "planned": 1800,
+  "scanned": 82,
+  "usable": 66,
+  "complete": false
+ },
+ "coverage": {
+  "skips": {
+   "no_candles": 16
+  },
+  "coverage_pct": 80.49
+ },
+ "window": {
+  "observed_close_min": "2026-05-23",
+  "observed_close_max": "2026-08-04",
+  "months_observed": 2.398,
+  "note": "months derived from OBSERVED close span, not the nominal frozen window"
+ },
+ "stage1": {
+  "capturable_markets": 14,
+  "usable_markets": 66,
+  "capturable_rate_sample": 0.21212,
+  "capturable_rate_population_weighted": 0.22295,
+  "best_net_c_mean": 6.57,
+  "best_net_c_median": 3,
+  "capturable_volume_mean": 309.9,
+  "capturable_volume_median": 94.2
+ },
+ "oracle_framing": "CEILING, NOT ACHIEVABLE. Assumes perfect foreknowledge of the winner, zero detection latency, zero competition, and that 100% of printed volume was available to one taker. No strategy can beat it and none can reach it. Stage 2 (lock-rule replay) exists to falsify it.",
+ "depth_caveat": "Candlesticks carry NO order-book depth. Volume traded during capturable minutes is an UPPER BOUND on what one participant could have taken.",
+ "capturable_markets_detail": [
+  {
+   "ticker": "KXLOWTDC-26MAY28-B63.5",
+   "series": "KXLOWTDC",
+   "result": "yes",
+   "close_time": "2026-05-29T05:00:00Z",
+   "n_data_minutes": 11,
+   "capturable": true,
+   "n_capturable_minutes": 9,
+   "best_winner_cost_c": 69,
+   "best_net_c": 29,
+   "capturable_volume": 71.75999999999999
+  },
+  {
+   "ticker": "KXLOWTDC-26JUL04-B76.5",
+   "series": "KXLOWTDC",
+   "result": "yes",
+   "close_time": "2026-07-05T05:00:00Z",
+   "n_data_minutes": 54,
+   "capturable": true,
+   "n_capturable_minutes": 52,
+   "best_winner_cost_c": 86,
+   "best_net_c": 13,
+   "capturable_volume": 2449.85
+  },
+  {
+   "ticker": "KXLOWTSFO-26JUN15-B57.5",
+   "series": "KXLOWTSFO",
+   "result": "yes",
+   "close_time": "2026-06-16T08:00:00Z",
+   "n_data_minutes": 29,
+   "capturable": true,
+   "n_capturable_minutes": 25,
+   "best_winner_cost_c": 87,
+   "best_net_c": 12,
+   "capturable_volume": 0.0
+  },
+  {
+   "ticker": "KXLOWTNYC-26JUN19-B67.5",
+   "series": "KXLOWTNYC",
+   "result": "no",
+   "close_time": "2026-06-20T05:00:00Z",
+   "n_data_minutes": 12,
+   "capturable": true,
+   "n_capturable_minutes": 8,
+   "best_winner_cost_c": 88,
+   "best_net_c": 11,
+   "capturable_volume": 375.97
+  },
+  {
+   "ticker": "KXLOWTATL-26JUL03-B76.5",
+   "series": "KXLOWTATL",
+   "result": "yes",
+   "close_time": "2026-07-04T05:00:00Z",
+   "n_data_minutes": 42,
+   "capturable": true,
+   "n_capturable_minutes": 42,
+   "best_winner_cost_c": 90,
+   "best_net_c": 9,
+   "capturable_volume": 427.6
+  },
+  {
+   "ticker": "KXLOWTPHX-26JUL18-B80.5",
+   "series": "KXLOWTPHX",
+   "result": "yes",
+   "close_time": "2026-07-19T07:00:00Z",
+   "n_data_minutes": 54,
+   "capturable": true,
+   "n_capturable_minutes": 42,
+   "best_winner_cost_c": 93,
+   "best_net_c": 6,
+   "capturable_volume": 477.09999999999997
+  },
+  {
+   "ticker": "KXLOWTCHI-26JUL31-B67.5",
+   "series": "KXLOWTCHI",
+   "result": "no",
+   "close_time": "2026-08-01T06:00:00Z",
+   "n_data_minutes": 19,
+   "capturable": true,
+   "n_capturable_minutes": 2,
+   "best_winner_cost_c": 96,
+   "best_net_c": 3,
+   "capturable_volume": 1.0
+  },
+  {
+   "ticker": "KXLOWTMIA-26JUL21-B80.5",
+   "series": "KXLOWTMIA",
+   "result": "no",
+   "close_time": "2026-07-22T05:00:00Z",
+   "n_data_minutes": 8,
+   "capturable": true,
+   "n_capturable_minutes": 7,
+   "best_winner_cost_c": 97,
+   "best_net_c": 2,
+   "capturable_volume": 37.089999999999996
+  },
+  {
+   "ticker": "KXLOWTAUS-26JUL16-B72.5",
+   "series": "KXLOWTAUS",
+   "result": "no",
+   "close_time": "2026-07-17T06:00:00Z",
+   "n_data_minutes": 12,
+   "capturable": true,
+   "n_capturable_minutes": 8,
+   "best_winner_cost_c": 97,
+   "best_net_c": 2,
+   "capturable_volume": 94.2
+  },
+  {
+   "ticker": "KXLOWTHOU-26JUN27-B77.5",
+   "series": "KXLOWTHOU",
+   "result": "yes",
+   "close_time": "2026-06-28T06:00:00Z",
+   "n_data_minutes": 18,
+   "capturable": true,
+   "n_capturable_minutes": 3,
+   "best_winner_cost_c": 98,
+   "best_net_c": 1,
+   "capturable_volume": 0.0
+  },
+  {
+   "ticker": "KXLOWTDAL-26MAY30-B76.5",
+   "series": "KXLOWTDAL",
+   "result": "yes",
+   "close_time": "2026-05-31T06:00:00Z",
+   "n_data_minutes": 10,
+   "capturable": true,
+   "n_capturable_minutes": 7,
+   "best_winner_cost_c": 98,
+   "best_net_c": 1,
+   "capturable_volume": 300.82
+  },
+  {
+   "ticker": "KXLOWTHOU-26JUN04-B74.5",
+   "series": "KXLOWTHOU",
+   "result": "yes",
+   "close_time": "2026-06-05T06:00:00Z",
+   "n_data_minutes": 12,
+   "capturable": true,
+   "n_capturable_minutes": 6,
+   "best_winner_cost_c": 98,
+   "best_net_c": 1,
+   "capturable_volume": 0.0
+  },
+  {
+   "ticker": "KXLOWTSFO-26MAY31-B48.5",
+   "series": "KXLOWTSFO",
+   "result": "no",
+   "close_time": "2026-06-01T08:00:00Z",
+   "n_data_minutes": 18,
+   "capturable": true,
+   "n_capturable_minutes": 1,
+   "best_winner_cost_c": 98,
+   "best_net_c": 1,
+   "capturable_volume": 102.7
+  },
+  {
+   "ticker": "KXLOWTATL-26JUL17-B73.5",
+   "series": "KXLOWTATL",
+   "result": "no",
+   "close_time": "2026-07-18T05:00:00Z",
+   "n_data_minutes": 7,
+   "capturable": true,
+   "n_capturable_minutes": 2,
+   "best_winner_cost_c": 98,
+   "best_net_c": 1,
+   "capturable_volume": 0.06
+  }
+ ],
+ "oracle_capacity_usd_per_month": {
+  "mean_estimator": 32719.53,
+  "median_estimator": 4541.43
+ }
+}
