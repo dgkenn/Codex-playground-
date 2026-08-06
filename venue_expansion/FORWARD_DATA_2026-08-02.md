@@ -107,3 +107,54 @@ corrupting a growing sample — every additional row makes the cleanup worse.
    corrupts every bracket study downstream, not just this sleeve.
 4. Then, and only then, is the "does live capture work?" question actually testable: the mechanism
    produced one verified +46c instance, and the execution path has never once functioned.
+
+---
+
+# UPDATE 2026-08-06 — four more days, no winners, and the forecast axis is now definitively closed
+
+Data: forecast settled 616 → **798** (17 days), near-misses 857 → **1,206**, live fires **still 2**,
+early-lock **still 3**. **The three fixes have NOT been applied to the live branch** (0 references to
+the v2 endpoint or `_is_scoreable`), so the bot still cannot place an order, and
+`kwx_gate_status.txt` still advertises the phantom `2 fires / 100.0% win / +0.240 EV`.
+
+## No new opportunities
+
+1,206 near-misses: **1,205 at ask=100c, 1 at 99c, zero tradeable.** Four more days (349 new locks)
+produced no new attemptable fire. The single verified real opportunity (KXLOWTSEA at 52c, +46c)
+remains **n=1 in ~3.5 weeks** — consistent with the earlier ~0.1% estimate, still far too thin to
+size on.
+
+## The forecast sleeve: killed by the market, not by its own bug
+
+The one genuinely open question was whether the sleeve looked bad only because its own
+`bracket_prob` carried the off-by-one. Re-ran it with the corrected, data-derived interval
+(`lo<=X<=hi` with a ±0.5 continuity shift), re-selecting trades at the same frozen `EDGE_THR=0.15`
+and scoring against Kalshi's **official** settlement at executable prices:
+
+| | n | EV/contract | day-clustered t |
+|---|---:|---:|---:|
+| As-traded (buggy model) | 798 | **−0.0375** | **−4.34** (17d) |
+| Counterfactual (fixed `bracket_prob`) | 607 | **−0.0363** | **−3.61** (17d) |
+
+**Fixing the model does not rescue the sleeve.** Both arms are significantly negative, and the
+as-traded arm got *more* significant with the extra data (t −3.01 → −4.34).
+
+Brier scores confirm the mechanism:
+
+| model (buggy) | model (FIXED) | market | constant base-rate (0.361) |
+|---:|---:|---:|---:|
+| 0.3173 | **0.3189** | **0.1760** | 0.2307 |
+
+The corrected model is *marginally worse* than the buggy one, and **both are worse than always
+predicting the base rate**. The market's 0.176 is in a different class. The bracket bug was a real
+accounting defect worth fixing — it was never the reason the sleeve lost money. The forecast axis
+is closed on its own merits, for the third independent time.
+
+*(Method note: this counterfactual is a post-hoc re-analysis on data already read. It is
+exploratory, not confirmatory — it can kill, which is what it did, but a positive here would have
+required a fresh pre-registered forward test to count.)*
+
+## Standing answer
+
+No winners. The only live-capturable instance in the program's history is still that one 52c fire,
+and the execution path that lost it is still broken until the `livefix/` changes are applied.
