@@ -1,2 +1,3 @@
 {"ticker": "KXLOWTSEA-26JUL29-T57", "side": "no", "cap_c": 52, "extreme_f": 55.94, "station": "KSEA", "kind": "min", "status": "live_error", "trigger": "obs-poll", "requested": 1, "filled": null, "fill_vwap_c": null, "ts": 1785398323197}
 {"ticker": "KXLOWTSFO-26JUL30-T59", "side": "no", "cap_c": 97, "extreme_f": 57.2, "station": "KSFO", "kind": "min", "status": "live_error", "trigger": "obs-poll", "requested": 1, "filled": null, "fill_vwap_c": null, "ts": 1785401954125}
+{"ticker": "KXLOWTAUS-26AUG06-B77.5", "side": "no", "cap_c": 97, "extreme_f": 75.2, "station": "KAUS", "kind": "min", "status": "live_error", "trigger": "obs-poll", "requested": 1, "filled": null, "fill_vwap_c": null, "ts": 1786002548991}
