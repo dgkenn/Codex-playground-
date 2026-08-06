@@ -36,13 +36,18 @@ by exactly how much.
   honestly-bounded structural-revenue plan); and what we'd tell someone starting tonight
   with $1,000 and a bot framework.
 
+- **Appendix — Provenance.** All 42 cases with verbatim verdicts, their source study document,
+  and whether a runnable reproduction artifact actually survives (11 do; 31 don't).
+
 ## Scope note
 
 Every factual claim here is sourced from the underlying research corpus — pre-registered
 study specs, backtest outputs, and adversarial-review notes covering roughly 2021–2026
 market history and a live-trading window through late July 2026 — and hedged exactly as its
 source document hedges it: an optimistic bound stays an optimistic bound, a proxy stays a
-proxy, an unverified figure stays unverified. Reproduction harnesses exist for every
-numbered case and are referenced by filename throughout. **This is a record of research
+proxy, an unverified figure stays unverified. Every numbered case is tied to a named study
+document, but a runnable reproduction harness survives for only **11 of the 42** — the
+appendix lists which, and says plainly what a reader can and cannot check for themselves.
+**This is a record of research
 findings, not investment advice** — it documents what didn't work and why, for readers doing
 their own diligence, not a recommendation to trade any instrument named here.
