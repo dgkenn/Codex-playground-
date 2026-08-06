@@ -75,3 +75,33 @@ The three live-path fixes remain worth applying, for a different reason than tra
 - The **order-endpoint migration** is a prerequisite for any future live work on Kalshi at all.
 
 Apply them; then leave `KWX_SWITCH=off`.
+
+---
+
+## Addendum 2026-08-06 (evening) — two more attempts surfaced, and they strengthen the verdict
+
+While applying the fixes I found the live branch's `kwx_exec_log.jsonl` had grown from 2 order
+attempts to **4** — two more today, both again HTTP 410:
+
+| attempt (UTC) | ticker | bot's recorded price | **true executable NO ask** |
+|---|---|---|---|
+| 07-30 07:58 | KXLOWTSEA-26JUL29-T57 | 52c | **52c** — real, but detection not reproducible on IEM |
+| 07-30 08:59 | KXLOWTSFO-26JUL30-T59 | 97c | **100c** — phantom |
+| 08-06 07:49 | KXLOWTAUS-26AUG06-B77.5 | — | **unverifiable**, zero candles within ±15 min (empty book) |
+| 08-06 08:53 | KXLOWTOKC-26AUG06-B77.5 | — | **100c / briefly 99c** — phantom |
+
+At first glance 4 attempts in 7 days looks like a much higher opportunity rate than the "1 in 3.5
+weeks" I had quoted, which would argue *against* retiring. Checked against Kalshi's own book history,
+it argues the opposite: **3 of the 4 attempts were at prices that were not actually available**, and
+the fourth's detection cannot be reproduced from independent obs data.
+
+The bot's `cap_c` is its own max-pay cap computed from whatever quote it saw, not a verified
+executable ask. Every time we have checked it against the real book, it has been wrong more often
+than right. That is a fifth independent line of evidence for the same conclusion, and it explains
+the near-miss log's shape: the gate is not filtering to genuinely tradeable prices.
+
+Both new markets were still `active` at time of check (close 2026-08-07T06:00Z), so no settlement
+exists yet; the price verification does not depend on it.
+
+**Verdict unchanged: retire.** Nothing here reopens the strategy — it removes the last reason to
+think the opportunity count was being undercounted.
