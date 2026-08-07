@@ -200,12 +200,17 @@ does not. This is the mechanism VitalDB implied but could not test — two front
 connectivity measure NaN there — and it is consistent with the VitalDB finding that leakage lives in the
 signal *level* (a per-drug median shift removes 51–98 % of it).
 
-**A post-hoc observation, labelled as post-hoc.** Within the connectivity family the split is not random:
-the two **amplitude-derived** members behave like the spectral family (`allEnvCorr` +0.1632,
-`InsAwPLI` +0.1693) while all four **phase-derived** wPLI variants sit at or below zero (−0.0263,
-+0.0158, +0.0553, +0.0566). That is exactly what "the agent moves the amplitude spectrum" predicts, and
-it was not a registered hypothesis. It should be tested as one in a successor rather than reported as a
-finding here.
+**A post-hoc observation that I checked and then withdrew.** Two of the six connectivity members are
+higher than the rest — `allEnvCorr` +0.1632 and `InsAwPLI` +0.1693 — and I initially read that as an
+amplitude-versus-phase split, which would have matched the mechanism neatly. **It does not.** Measured
+directly, `InsAwPLI` correlates with the other wPLI variants at +0.20 to +0.78 (`allwPLI` +0.7841) and
+with `allEnvCorr` at only +0.0660: it is a phase-based wPLI variant, and I had inferred "amplitude" from
+a letter in its name (catalogue rule 61 — parse a structured identifier, never substring-read it).
+
+**So no mechanistic sub-story is supported.** The two elevated members do not share an instrument type,
+and the connectivity family as a whole remains at its null. The one defensible related observation is
+that `allEnvCorr` correlates with `AvgDelta` at +0.5460, so envelope correlation is partly a delta-power
+measure — which is why it tracks the spectral family rather than the phase family.
 
 **The ladder is not uniformly threshold-like.** E305's secondary showed the middle rung nearly flat in
 aggregate; per family the reason is visible. Complexity is **graded** — it already separates the arms at
