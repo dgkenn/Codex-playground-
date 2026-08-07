@@ -1,0 +1,422 @@
+{
+ "E270": {
+  "rho_ctrl": 0.41228070175438597,
+  "rho_peri": -0.18070175438596492,
+  "corner_obs": -0.026684817919183913,
+  "corner_null_p95": -0.012428352476523952,
+  "corner_p": 0.09683522531819745,
+  "prediction_met": true
+ },
+ "E271": {
+  "terciles": {
+   "deep": 242,
+   "mid": 243,
+   "light": 241
+  },
+  "detail": {
+   "multiscale_entropy_slope": {
+    "deep": 0.4727891156462585,
+    "mid": 0.4503599848427434,
+    "light": 0.2894736842105263
+   },
+   "critical_slowing_ar1": {
+    "deep": 0.4604010025062657,
+    "mid": 0.42926613616268794,
+    "light": 0.32367149758454106
+   },
+   "whole_head_exponent": {
+    "deep": 0.47326649958228906,
+    "mid": 0.41234053303018825,
+    "light": 0.3059581320450886
+   },
+   "emg_beta_gamma_fraction": {
+    "deep": 0.46842105263157896,
+    "mid": 0.38884678539850953,
+    "light": 0.22725442834138487
+   },
+   "exponent_low": {
+    "deep": 0.4458646616541353,
+    "mid": 0.39528861942655047,
+    "light": 0.27375201288244766
+   },
+   "alpha_peak_hz": {
+    "deep": 0.38245614035087716,
+    "mid": 0.36724769483390174,
+    "light": 0.3227657004830918
+   }
+  },
+  "n_monotone": 6,
+  "prediction_met": true
+ },
+ "E272": {
+  "detail": {
+   "multiscale_entropy_slope": {
+    "sevo_vs_des": {
+     "raw": 0.05737704918032788,
+     "aligned": 0.004682665086575832,
+     "removed": 0.9183878370625355
+    },
+    "sevo_vs_ppf": {
+     "raw": 0.36319260782969276,
+     "aligned": 0.021476148496424707,
+     "removed": 0.9408684316986561
+    },
+    "des_vs_ppf": {
+     "raw": 0.3873117419698787,
+     "aligned": 0.017234772757563632,
+     "removed": 0.9555015485203029
+    }
+   },
+   "critical_slowing_ar1": {
+    "sevo_vs_des": {
+     "raw": 0.09184278095990517,
+     "aligned": 0.02749522680887484,
+     "removed": 0.7006272401433691
+    },
+    "sevo_vs_ppf": {
+     "raw": 0.34892415189212134,
+     "aligned": 0.013068534299800816,
+     "removed": 0.9625462031535115
+    },
+    "des_vs_ppf": {
+     "raw": 0.3849960015993602,
+     "aligned": 0.040108956417433006,
+     "removed": 0.8958198104634558
+    }
+   },
+   "whole_head_exponent": {
+    "sevo_vs_des": {
+     "raw": 0.10267298703008754,
+     "aligned": 0.018113437355981254,
+     "removed": 0.8235812760500165
+    },
+    "sevo_vs_ppf": {
+     "raw": 0.35249942860874395,
+     "aligned": 0.0059343063310151045,
+     "removed": 0.9831650611337532
+    },
+    "des_vs_ppf": {
+     "raw": 0.3787651606024257,
+     "aligned": 0.02383213381314142,
+     "removed": 0.9370793930063778
+    }
+   },
+   "emg_beta_gamma_fraction": {
+    "sevo_vs_des": {
+     "raw": 0.11750279807755615,
+     "aligned": 0.04145269603002172,
+     "removed": 0.6472194985292059
+    },
+    "sevo_vs_ppf": {
+     "raw": 0.31416723805792274,
+     "aligned": 0.011958402716557237,
+     "removed": 0.9619361879027231
+    },
+    "des_vs_ppf": {
+     "raw": 0.3566906570705051,
+     "aligned": 0.047872517659602876,
+     "removed": 0.8657870154133581
+    }
+   },
+   "exponent_low": {
+    "sevo_vs_des": {
+     "raw": 0.11317400750543155,
+     "aligned": 0.02288662848113765,
+     "removed": 0.7977748691099478
+    },
+    "sevo_vs_ppf": {
+     "raw": 0.28352434126750903,
+     "aligned": 0.02591667482939891,
+     "removed": 0.9085910059307882
+    },
+    "des_vs_ppf": {
+     "raw": 0.3547747567639611,
+     "aligned": 0.051554378248700516,
+     "removed": 0.8546841981685842
+    }
+   },
+   "alpha_peak_hz": {
+    "sevo_vs_des": {
+     "raw": 0.07815688985449998,
+     "aligned": 0.038259595760089526,
+     "removed": 0.510476992734548
+    },
+    "sevo_vs_ppf": {
+     "raw": 0.29314830170885975,
+     "aligned": 0.051647887094938505,
+     "removed": 0.8238165229207686
+    },
+    "des_vs_ppf": {
+     "raw": 0.35448330789141835,
+     "aligned": 0.054871573637751414,
+     "removed": 0.8452068900954877
+    }
+   }
+  },
+  "median_removed": 0.8958198104634558,
+  "prediction_met": true
+ },
+ "E273": {
+  "detail": {
+   "sevo_vs_des": {
+    "bis": 0.0747256182272854,
+    "median_candidate": 0.09184278095990517,
+    "above": false
+   },
+   "sevo_vs_ppf": {
+    "bis": 0.04694788751166201,
+    "median_candidate": 0.2240751624383714,
+    "above": false
+   },
+   "des_vs_ppf": {
+    "bis": 0.12180480914978642,
+    "median_candidate": 0.2076835932293749,
+    "above": false
+   }
+  },
+  "prediction_met": false
+ },
+ "E274": {
+  "detail": {
+   "sevo_vs_des": {
+    "spearman": 0.3684210526315789,
+    "n": 19
+   },
+   "sevo_vs_ppf": {
+    "spearman": 0.28596491228070176,
+    "n": 19
+   },
+   "des_vs_ppf": {
+    "spearman": 0.3473684210526316,
+    "n": 19
+   }
+  },
+  "prediction_met": true
+ },
+ "E275": {
+  "n": 738,
+  "detail": {
+   "alpha_peak_hz": 0.572846674546621,
+   "alpha_peak_hz_wide": 0.4216653646938536,
+   "critical_slowing_ar1": 0.6280691886797071,
+   "emg_beta_gamma_fraction": 0.6901446354800729,
+   "emg_index": 0.19786735577545914,
+   "emg_kurtosis": 0.9464713423309074,
+   "exponent_gamma": 0.557585470915387,
+   "exponent_high": 0.41762468921277013,
+   "exponent_low": 0.5586938038624679,
+   "lempel_ziv": 0.6530492406724633,
+   "multiscale_entropy_slope": 0.5260682690650057,
+   "pac_slow_alpha": 0.5167134237868295,
+   "relative_alpha_power": 0.4935697346113594,
+   "relative_alpha_power_iaf": 0.4586089362562533,
+   "relative_delta_power": 0.5339664763729602,
+   "relative_theta_power": 0.5527269024423375,
+   "spectral_edge_95": 0.5561922704287228,
+   "spectral_entropy": 0.5829587409459092,
+   "whole_head_exponent": 0.5458194277611639
+  },
+  "aperiodic_median": 0.5458194277611639,
+  "muscle_median": 0.6901446354800729,
+  "prediction_met": false
+ },
+ "E277": {
+  "detail": {
+   "multiscale_entropy_slope": {
+    "sevo_vs_des": {
+     "all": 0.05737704918032788,
+     "sqi_hi": 0.0677445123645457,
+     "ratio": 1.180690072639225
+    },
+    "sevo_vs_ppf": {
+     "all": 0.36319260782969276,
+     "sqi_hi": 0.376416100226576,
+     "ratio": 1.036409035073434
+    },
+    "des_vs_ppf": {
+     "all": 0.3873117419698787,
+     "sqi_hi": 0.41267052501033485,
+     "ratio": 1.0654738297152588
+    }
+   },
+   "critical_slowing_ar1": {
+    "sevo_vs_des": {
+     "all": 0.09184278095990517,
+     "sqi_hi": 0.09813489858293972,
+     "ratio": 1.06850965919446
+    },
+    "sevo_vs_ppf": {
+     "all": 0.34892415189212134,
+     "sqi_hi": 0.36686991869918695,
+     "ratio": 1.05143171290881
+    },
+    "des_vs_ppf": {
+     "all": 0.3849960015993602,
+     "sqi_hi": 0.41062077993661295,
+     "ratio": 1.0665585570520255
+    }
+   },
+   "whole_head_exponent": {
+    "sevo_vs_des": {
+     "all": 0.10267298703008754,
+     "sqi_hi": 0.1175152820227841,
+     "ratio": 1.1445589090375559
+    },
+    "sevo_vs_ppf": {
+     "all": 0.35249942860874395,
+     "sqi_hi": 0.3691523390643743,
+     "ratio": 1.047242375743293
+    },
+    "des_vs_ppf": {
+     "all": 0.3787651606024257,
+     "sqi_hi": 0.4058322998484222,
+     "ratio": 1.0714615335870548
+    }
+   },
+   "emg_beta_gamma_fraction": {
+    "sevo_vs_des": {
+     "all": 0.11750279807755615,
+     "sqi_hi": 0.130435537649347,
+     "ratio": 1.1100632477130867
+    },
+    "sevo_vs_ppf": {
+     "all": 0.31416723805792274,
+     "sqi_hi": 0.33045115287218446,
+     "ratio": 1.0518319953249213
+    },
+    "des_vs_ppf": {
+     "all": 0.3566906570705051,
+     "sqi_hi": 0.38194157365302467,
+     "ratio": 1.0707922006982322
+    }
+   },
+   "exponent_low": {
+    "sevo_vs_des": {
+     "all": 0.11317400750543155,
+     "sqi_hi": 0.12482634065018061,
+     "ratio": 1.1029594462685244
+    },
+    "sevo_vs_ppf": {
+     "all": 0.28352434126750903,
+     "sqi_hi": 0.2985139277622284,
+     "ratio": 1.0528687816633582
+    },
+    "des_vs_ppf": {
+     "all": 0.3547747567639611,
+     "sqi_hi": 0.3806324927656056,
+     "ratio": 1.0728849375798408
+    }
+   },
+   "alpha_peak_hz": {
+    "sevo_vs_des": {
+     "all": 0.07815688985449998,
+     "sqi_hi": 0.08604820783550982,
+     "ratio": 1.1009676561554667
+    },
+    "sevo_vs_ppf": {
+     "all": 0.29314830170885975,
+     "sqi_hi": 0.3044448887111822,
+     "ratio": 1.0385353997839006
+    },
+    "des_vs_ppf": {
+     "all": 0.35448330789141835,
+     "sqi_hi": 0.36633595149510817,
+     "ratio": 1.0334363941540525
+    }
+   }
+  },
+  "prediction_met": true
+ },
+ "E278": {
+  "detail": {
+   "sevo_vs_des": {
+    "n_kept": 225,
+    "n_full": 493,
+    "features": {
+     "multiscale_entropy_slope": {
+      "full": 0.05737704918032788,
+      "trimmed": 0.05699604743083003,
+      "retained": 0.9933596837944662
+     },
+     "critical_slowing_ar1": {
+      "full": 0.09184278095990517,
+      "trimmed": 0.08300395256916998,
+      "retained": 0.9037613158230274
+     },
+     "whole_head_exponent": {
+      "full": 0.10267298703008754,
+      "trimmed": 0.12110671936758893,
+      "retained": 1.179538288216934
+     },
+     "emg_beta_gamma_fraction": {
+      "full": 0.11750279807755615,
+      "trimmed": 0.1502766798418972,
+      "retained": 1.2789200112724897
+     }
+    }
+   },
+   "sevo_vs_ppf": {
+    "n_kept": 257,
+    "n_full": 496,
+    "features": {
+     "multiscale_entropy_slope": {
+      "full": 0.36319260782969276,
+      "trimmed": 0.37431693989071035,
+      "retained": 1.0306292909635264
+     },
+     "critical_slowing_ar1": {
+      "full": 0.34892415189212134,
+      "trimmed": 0.3445051608986035,
+      "retained": 0.987335382289948
+     },
+     "whole_head_exponent": {
+      "full": 0.35249942860874395,
+      "trimmed": 0.35786278081360046,
+      "retained": 1.0152152082232437
+     },
+     "emg_beta_gamma_fraction": {
+      "full": 0.31416723805792274,
+      "trimmed": 0.31074681238615665,
+      "retained": 0.9891127232333008
+     }
+    }
+   },
+   "des_vs_ppf": {
+    "n_kept": 224,
+    "n_full": 491,
+    "features": {
+     "multiscale_entropy_slope": {
+      "full": 0.3873117419698787,
+      "trimmed": 0.39008706765716117,
+      "retained": 1.0071656120549484
+     },
+     "critical_slowing_ar1": {
+      "full": 0.3849960015993602,
+      "trimmed": 0.368679606997364,
+      "retained": 0.9576193141377723
+     },
+     "whole_head_exponent": {
+      "full": 0.3787651606024257,
+      "trimmed": 0.3780254013898874,
+      "retained": 0.9980469185408665
+     },
+     "emg_beta_gamma_fraction": {
+      "full": 0.3566906570705051,
+      "trimmed": 0.35398194743989136,
+      "retained": 0.9924059978109313
+     }
+    }
+   }
+  },
+  "prediction_met": true
+ },
+ "E279": {
+  "survivors": [
+   "emg_index"
+  ],
+  "median_state": 0.1799223966007563,
+  "median_peri": 0.1046223194281447,
+  "median_ctrl": 0.29499374014275725,
+  "prediction_met": true
+ }
+}
