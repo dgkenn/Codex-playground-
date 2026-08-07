@@ -1,0 +1,740 @@
+{
+ "E250": {
+  "rho": -0.18070175438596492,
+  "n": 19,
+  "gate": true,
+  "corner": [
+   "emg_beta_gamma_fraction",
+   "emg_index",
+   "multiscale_entropy_slope",
+   "spectral_edge_95",
+   "whole_head_exponent"
+  ],
+  "leakage": {
+   "alpha_peak_hz": 0.29215049081271705,
+   "alpha_peak_hz_wide": 0.26520551774559453,
+   "critical_slowing_ar1": 0.15352008945370876,
+   "emg_beta_gamma_fraction": 0.07135599780666385,
+   "emg_index": 0.04354228274494054,
+   "emg_kurtosis": 0.04527382125863377,
+   "exponent_gamma": 0.11259394252169141,
+   "exponent_high": 0.11657344042919637,
+   "exponent_low": 0.17032222688126952,
+   "lempel_ziv": 0.0990897105668257,
+   "multiscale_entropy_slope": 0.10305454310873141,
+   "pac_slow_alpha": 0.05358990005406711,
+   "relative_alpha_power": 0.15168962143448483,
+   "relative_alpha_power_iaf": 0.13112892655195008,
+   "relative_delta_power": 0.10148450717105362,
+   "relative_theta_power": 0.18088572073670295,
+   "spectral_edge_95": 0.07353051855196807,
+   "spectral_entropy": 0.1046223194281447,
+   "whole_head_exponent": 0.0668328665481015
+  },
+  "state": {
+   "alpha_peak_hz": 0.015650599652331402,
+   "alpha_peak_hz_wide": 0.06424885664167876,
+   "critical_slowing_ar1": 0.2296184795564133,
+   "emg_beta_gamma_fraction": 0.3385854143632602,
+   "emg_index": 0.18084124821410102,
+   "emg_kurtosis": 0.049873339256616085,
+   "exponent_gamma": 0.051029585578826406,
+   "exponent_high": 0.3587141567239134,
+   "exponent_low": 0.13714545229573594,
+   "lempel_ziv": 0.10929987907926955,
+   "multiscale_entropy_slope": 0.31606419336528463,
+   "pac_slow_alpha": 0.055133099614607085,
+   "relative_alpha_power": 0.22870009104731562,
+   "relative_alpha_power_iaf": 0.1799223966007563,
+   "relative_delta_power": 0.10561436822333685,
+   "relative_theta_power": 0.1696264590596844,
+   "spectral_edge_95": 0.3259939639973511,
+   "spectral_entropy": 0.18466391690165596,
+   "whole_head_exponent": 0.36287797570998515
+  }
+ },
+ "E251": {
+  "bis_state": 0.36027387136277933,
+  "n": 2389,
+  "alive": true,
+  "pairs": {
+   "sevo_vs_des": {
+    "obs": 0.11980808729682446,
+    "null_p95": 0.03254612920403355,
+    "p": 0.0,
+    "median_candidate": 0.07584284647391443,
+    "n": [
+     1226,
+     386
+    ]
+   },
+   "sevo_vs_ppf": {
+    "obs": 0.06686907135520515,
+    "null_p95": 0.025149995514323953,
+    "p": 0.0,
+    "median_candidate": 0.0581056342802902,
+    "n": [
+     1226,
+     891
+    ]
+   },
+   "des_vs_ppf": {
+    "obs": 0.18320801567779116,
+    "null_p95": 0.03421957048900054,
+    "p": 0.0,
+    "median_candidate": 0.08138190927759681,
+    "n": [
+     386,
+     891
+    ]
+   }
+  },
+  "prediction_met": true
+ },
+ "E252": {
+  "detail": {
+   "whole_head_exponent": {
+    "placebo": -0.3239290513708555,
+    "real": -0.36287797570998515
+   },
+   "exponent_high": {
+    "placebo": -0.3113267212665257,
+    "real": -0.3587141567239134
+   },
+   "emg_beta_gamma_fraction": {
+    "placebo": 0.3014781438605542,
+    "real": 0.3385854143632602
+   },
+   "spectral_edge_95": {
+    "placebo": 0.29369743281558264,
+    "real": 0.3259939639973511
+   },
+   "multiscale_entropy_slope": {
+    "placebo": -0.2862159866129775,
+    "real": -0.31606419336528463
+   },
+   "critical_slowing_ar1": {
+    "placebo": -0.20586023586665714,
+    "real": -0.2296184795564133
+   }
+  },
+  "worst_abs": 0.3239290513708555,
+  "prediction_met": false
+ },
+ "E253": {
+  "detail": {
+   "whole_head_exponent": {
+    "raw_consistency": 0.8592375366568915,
+    "adj_consistency": 0.1772098868873062,
+    "retained": 0.20624085811799117,
+    "n": 2387
+   },
+   "spectral_edge_95": {
+    "raw_consistency": 0.7938835358190197,
+    "adj_consistency": 0.10515291160452445,
+    "retained": 0.13245382585751972,
+    "n": 2387
+   },
+   "emg_beta_gamma_fraction": {
+    "raw_consistency": 0.7779639715123585,
+    "adj_consistency": 0.04398826979472137,
+    "retained": 0.05654281098546038,
+    "n": 2387
+   },
+   "multiscale_entropy_slope": {
+    "raw_consistency": 0.7536656891495601,
+    "adj_consistency": 0.1772098868873062,
+    "retained": 0.23513062812673705,
+    "n": 2387
+   }
+  },
+  "prediction_met": false
+ },
+ "E254": {
+  "level_wins": 16,
+  "n_candidates": 19,
+  "prediction_met": true,
+  "detail": {
+   "alpha_peak_hz": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.11348308107587002,
+      "change": 0.0833914971560783
+     },
+     "sevo_vs_ppf": {
+      "level": 0.1540137503631258,
+      "change": 0.01604619840312682
+     },
+     "des_vs_ppf": {
+      "level": 0.2714012167961323,
+      "change": 0.07049540985387581
+     }
+    },
+    "level_wins": 3
+   },
+   "alpha_peak_hz_wide": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.10887978405475751,
+      "change": 0.01996047430830039
+     },
+     "sevo_vs_ppf": {
+      "level": 0.06901942832997349,
+      "change": 0.05866528165356477
+     },
+     "des_vs_ppf": {
+      "level": 0.18829784344614048,
+      "change": 0.04124477157911893
+     }
+    },
+    "level_wins": 3
+   },
+   "critical_slowing_ar1": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.12431312060156174,
+      "change": 0.05746071531861563
+     },
+     "sevo_vs_ppf": {
+      "level": 0.08879988027852848,
+      "change": 0.06990941662191785
+     },
+     "des_vs_ppf": {
+      "level": 0.21566896626650012,
+      "change": 0.0011081536205117537
+     }
+    },
+    "level_wins": 3
+   },
+   "emg_beta_gamma_fraction": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.11486551624409524,
+      "change": 0.055592403354863595
+     },
+     "sevo_vs_ppf": {
+      "level": 0.04295712034648802,
+      "change": 0.11043161351092018
+     },
+     "des_vs_ppf": {
+      "level": 0.17162257591395513,
+      "change": 0.0391438970068988
+     }
+    },
+    "level_wins": 2
+   },
+   "emg_index": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.008610816542948041,
+      "change": 0.005874867444326637
+     },
+     "sevo_vs_ppf": {
+      "level": 0.003882144774950025,
+      "change": 0.009571555586855296
+     },
+     "des_vs_ppf": {
+      "level": 0.010598077027540898,
+      "change": 0.014818838611548646
+     }
+    },
+    "level_wins": 1
+   },
+   "emg_kurtosis": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.02111250361515471,
+      "change": 0.04090427070278613
+     },
+     "sevo_vs_ppf": {
+      "level": 0.012117397466482382,
+      "change": 0.07310052202082806
+     },
+     "des_vs_ppf": {
+      "level": 0.028708783747080246,
+      "change": 0.03240262914878589
+     }
+    },
+    "level_wins": 0
+   },
+   "exponent_gamma": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.013833992094861691,
+      "change": 0.05490793405957772
+     },
+     "sevo_vs_ppf": {
+      "level": 0.10252207364631105,
+      "change": 0.04546334850392175
+     },
+     "des_vs_ppf": {
+      "level": 0.08802216307241029,
+      "change": 0.0054511380303112755
+     }
+    },
+    "level_wins": 2
+   },
+   "exponent_high": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.11447218740962117,
+      "change": 0.03066229634628359
+     },
+     "sevo_vs_ppf": {
+      "level": 0.18843543403434948,
+      "change": 0.02597163657490953
+     },
+     "des_vs_ppf": {
+      "level": 0.07629148785919926,
+      "change": 0.062360801781737196
+     }
+    },
+    "level_wins": 3
+   },
+   "exponent_low": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.1490060734599441,
+      "change": 0.09801021883736627
+     },
+     "sevo_vs_ppf": {
+      "level": 0.0059138885710010025,
+      "change": 0.10199301037879527
+     },
+     "des_vs_ppf": {
+      "level": 0.17651963713401053,
+      "change": 0.004907925471236918
+     }
+    },
+    "level_wins": 2
+   },
+   "lempel_ziv": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.1393695170153283,
+      "change": 0.08709534368070954
+     },
+     "sevo_vs_ppf": {
+      "level": 0.17814158824616844,
+      "change": 0.16919196809774906
+     },
+     "des_vs_ppf": {
+      "level": 0.031115215383779704,
+      "change": 0.07466864033896464
+     }
+    },
+    "level_wins": 2
+   },
+   "multiscale_entropy_slope": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.10661139496770461,
+      "change": 0.11000482020630487
+     },
+     "sevo_vs_ppf": {
+      "level": 0.04440434166395235,
+      "change": 0.06936538817046223
+     },
+     "des_vs_ppf": {
+      "level": 0.17355641262425991,
+      "change": 0.043880710522027244
+     }
+    },
+    "level_wins": 1
+   },
+   "pac_slow_alpha": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.042643401137568704,
+      "change": 0.021910729779234583
+     },
+     "sevo_vs_ppf": {
+      "level": 0.1390705740468498,
+      "change": 0.10615245120909889
+     },
+     "des_vs_ppf": {
+      "level": 0.0979873974686295,
+      "change": 0.0827991743169102
+     }
+    },
+    "level_wins": 3
+   },
+   "relative_alpha_power": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.13724091391111537,
+      "change": 0.09657572544104887
+     },
+     "sevo_vs_ppf": {
+      "level": 0.014490699578333932,
+      "change": 0.006986099985034855
+     },
+     "des_vs_ppf": {
+      "level": 0.15600521484056712,
+      "change": 0.10594546145906891
+     }
+    },
+    "level_wins": 3
+   },
+   "relative_alpha_power_iaf": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.09510845464185869,
+      "change": 0.035316687554227344
+     },
+     "sevo_vs_ppf": {
+      "level": 0.028872241344401695,
+      "change": 0.021733848605156814
+     },
+     "des_vs_ppf": {
+      "level": 0.06265142050084199,
+      "change": 0.058126459883752535
+     }
+    },
+    "level_wins": 3
+   },
+   "relative_delta_power": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.1259423503325942,
+      "change": 0.08521931938686977
+     },
+     "sevo_vs_ppf": {
+      "level": 0.09481060239266881,
+      "change": 0.12638537989559584
+     },
+     "des_vs_ppf": {
+      "level": 0.05337063392905639,
+      "change": 0.03481720897387153
+     }
+    },
+    "level_wins": 2
+   },
+   "relative_theta_power": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.05303769401330377,
+      "change": 0.08140750024101029
+     },
+     "sevo_vs_ppf": {
+      "level": 0.18018081463418933,
+      "change": 0.06795690027025364
+     },
+     "des_vs_ppf": {
+      "level": 0.22579716443044162,
+      "change": 0.1467135640176001
+     }
+    },
+    "level_wins": 2
+   },
+   "spectral_edge_95": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.12461004530993924,
+      "change": 0.09447604357466499
+     },
+     "sevo_vs_ppf": {
+      "level": 0.020999674287173087,
+      "change": 0.09761965544864742
+     },
+     "des_vs_ppf": {
+      "level": 0.16119017871693192,
+      "change": 0.013335868325275668
+     }
+    },
+    "level_wins": 2
+   },
+   "spectral_entropy": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.1348500915839198,
+      "change": 0.08004048973296057
+     },
+     "sevo_vs_ppf": {
+      "level": 0.09713548773295066,
+      "change": 0.1448013591908237
+     },
+     "des_vs_ppf": {
+      "level": 0.0668694660220544,
+      "change": 0.04727035689065129
+     }
+    },
+    "level_wins": 2
+   },
+   "whole_head_exponent": {
+    "pairs": {
+     "sevo_vs_des": {
+      "level": 0.10595584691024779,
+      "change": 0.10040104116456183
+     },
+     "sevo_vs_ppf": {
+      "level": 0.08963616996927737,
+      "change": 0.06851765451552416
+     },
+     "des_vs_ppf": {
+      "level": 0.20012222282579173,
+      "change": 0.04297082948557773
+     }
+    },
+    "level_wins": 3
+   }
+  }
+ },
+ "E255": {
+  "detail": {
+   "alpha_peak_hz": {
+    "sevo_vs_des": {
+     "pre": 0.11348308107587002,
+     "post": 0.003422346476429139,
+     "ratio": 0.030157327805905288
+    },
+    "sevo_vs_ppf": {
+     "pre": 0.1540137503631258,
+     "post": 0.16578914936133876,
+     "ratio": 0.9289736448761893
+    },
+    "des_vs_ppf": {
+     "pre": 0.2714012167961323,
+     "post": 0.1832934977456679,
+     "ratio": 0.6753598967220251
+    }
+   },
+   "alpha_peak_hz_wide": {
+    "sevo_vs_des": {
+     "pre": 0.10887978405475751,
+     "post": 0.06318519232623154,
+     "ratio": 0.5803206984177579
+    },
+    "sevo_vs_ppf": {
+     "pre": 0.06901942832997349,
+     "post": 0.1241863781613951,
+     "ratio": 0.5557729386412611
+    },
+    "des_vs_ppf": {
+     "pre": 0.18829784344614048,
+     "post": 0.19647047639741433,
+     "ratio": 0.958402742737069
+    }
+   },
+   "relative_theta_power": {
+    "sevo_vs_des": {
+     "pre": 0.05303769401330377,
+     "post": 0.044235997300684504,
+     "ratio": 0.8340482768649127
+    },
+    "sevo_vs_ppf": {
+     "pre": 0.18018081463418933,
+     "post": 0.12364499062475243,
+     "ratio": 0.6862272816103184
+    },
+    "des_vs_ppf": {
+     "pre": 0.22579716443044162,
+     "post": 0.07915965017111193,
+     "ratio": 0.35057858397286296
+    }
+   },
+   "exponent_low": {
+    "sevo_vs_des": {
+     "pre": 0.1490060734599441,
+     "post": 0.01016677913814712,
+     "ratio": 0.06823063585310943
+    },
+    "sevo_vs_ppf": {
+     "pre": 0.0059138885710010025,
+     "post": 0.0995633687509353,
+     "ratio": 0.059398236974032154
+    },
+    "des_vs_ppf": {
+     "pre": 0.17651963713401053,
+     "post": 0.0890624151230377,
+     "ratio": 0.5045467834007789
+    }
+   },
+   "critical_slowing_ar1": {
+    "sevo_vs_des": {
+     "pre": 0.12431312060156174,
+     "post": 0.026227706545840168,
+     "ratio": 0.21098100038774725
+    },
+    "sevo_vs_ppf": {
+     "pre": 0.08879988027852848,
+     "post": 0.09861087880841923,
+     "ratio": 0.9005079495442737
+    },
+    "des_vs_ppf": {
+     "pre": 0.21566896626650012,
+     "post": 0.057539790319952155,
+     "ratio": 0.26679680120899163
+    }
+   },
+   "relative_alpha_power": {
+    "sevo_vs_des": {
+     "pre": 0.13724091391111537,
+     "post": 0.07645040007712334,
+     "ratio": 0.5570525428491153
+    },
+    "sevo_vs_ppf": {
+     "pre": 0.014490699578333932,
+     "post": 0.012384129862584414,
+     "ratio": 0.8546260859000073
+    },
+    "des_vs_ppf": {
+     "pre": 0.15600521484056712,
+     "post": 0.09520071704057798,
+     "ratio": 0.6102406072634841
+    }
+   }
+  },
+  "fraction_within_30pct": 0.2777777777777778
+ },
+ "E256": {
+  "k": 14,
+  "n": 2573,
+  "pc1_eigenvalue": 6.663502470843721,
+  "pc1_share": 0.4759644622031229,
+  "prediction_met": false
+ },
+ "E257": {
+  "rate": {
+   "sevo": 0.13568521031207603,
+   "des": 0.10434782608695647,
+   "ppf": 0.09337349397590367
+  },
+  "spread": 0.04231171633617237,
+  "p": 0.0325,
+  "null_p95": 0.03854548629299809,
+  "opdur_dropped": 13200.0,
+  "opdur_kept": 11100.0,
+  "age_dropped": 59.0,
+  "age_kept": 59.0,
+  "prediction_met": true
+ },
+ "E258": {
+  "median_age": 59.0,
+  "n_old": 1287,
+  "n_young": 1286,
+  "fraction_older_larger": 0.4583333333333333,
+  "prediction_met": false,
+  "detail": {
+   "alpha_peak_hz": {
+    "sevo_vs_des": {
+     "old": 0.09150303030303031,
+     "young": 0.14112617924528303
+    },
+    "sevo_vs_ppf": {
+     "old": 0.16925517241379312,
+     "young": 0.15546875
+    },
+    "des_vs_ppf": {
+     "old": 0.258364898989899,
+     "young": 0.3019846100339101
+    }
+   },
+   "alpha_peak_hz_wide": {
+    "sevo_vs_des": {
+     "old": 0.09877171717171718,
+     "young": 0.12268573113207548
+    },
+    "sevo_vs_ppf": {
+     "old": 0.0790810344827586,
+     "young": 0.07017749135944701
+    },
+    "des_vs_ppf": {
+     "old": 0.18509992163009403,
+     "young": 0.19974893487522827
+    }
+   },
+   "relative_theta_power": {
+    "sevo_vs_des": {
+     "old": 0.06709494949494949,
+     "young": 0.05831367924528302
+    },
+    "sevo_vs_ppf": {
+     "old": 0.20291724137931033,
+     "young": 0.1862795218894009
+    },
+    "des_vs_ppf": {
+     "old": 0.24771421107628,
+     "young": 0.2435983827493261
+    }
+   },
+   "exponent_low": {
+    "sevo_vs_des": {
+     "old": 0.14633535353535354,
+     "young": 0.153346108490566
+    },
+    "sevo_vs_ppf": {
+     "old": 0.014120689655172436,
+     "young": 0.004817108294930872
+    },
+    "des_vs_ppf": {
+     "old": 0.16497953674677812,
+     "young": 0.19411355534301367
+    }
+   },
+   "critical_slowing_ar1": {
+    "sevo_vs_des": {
+     "old": 0.11746262626262627,
+     "young": 0.1334610849056604
+    },
+    "sevo_vs_ppf": {
+     "old": 0.08293103448275863,
+     "young": 0.09840149769585249
+    },
+    "des_vs_ppf": {
+     "old": 0.20552507836990597,
+     "young": 0.23141465959481788
+    }
+   },
+   "relative_alpha_power": {
+    "sevo_vs_des": {
+     "old": 0.17165252525252528,
+     "young": 0.10560141509433962
+    },
+    "sevo_vs_ppf": {
+     "old": 0.01363448275862067,
+     "young": 0.045823732718894006
+    },
+    "des_vs_ppf": {
+     "old": 0.16796194705677464,
+     "young": 0.15410616468133204
+    }
+   },
+   "relative_alpha_power_iaf": {
+    "sevo_vs_des": {
+     "old": 0.10288484848484847,
+     "young": 0.0907502948113208
+    },
+    "sevo_vs_ppf": {
+     "old": 0.06632413793103453,
+     "young": 0.011034706221198176
+    },
+    "des_vs_ppf": {
+     "old": 0.03419975618251481,
+     "young": 0.09856751586818535
+    }
+   },
+   "exponent_high": {
+    "sevo_vs_des": {
+     "old": 0.13041616161616165,
+     "young": 0.10603626179245285
+    },
+    "sevo_vs_ppf": {
+     "old": 0.17986551724137934,
+     "young": 0.19809547811059913
+    },
+    "des_vs_ppf": {
+     "old": 0.04396334029954718,
+     "young": 0.10396922006782017
+    }
+   }
+  }
+ },
+ "E259": {
+  "n": 2573,
+  "low_high": -0.2310053547246336,
+  "whole_low": 0.7504722905311866,
+  "whole_high": 0.27801987375262666,
+  "prediction_met": false
+ }
+}
