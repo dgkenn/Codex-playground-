@@ -183,6 +183,37 @@ branch is reachable and the null is not an artefact of an unfireable gate.
 large D_sleep would be detectable, so this is a clean null rather than a strong one. The point estimate
 being exactly zero is as favourable as such a null gets, but the interval is wide.
 
+### 6b.2 What carries it: complexity and amplitude, not phase
+
+The aggregate results above are medians over 17 features. Decomposed by instrument family, with families
+assigned before any statistic was computed and the same cluster-level null:
+
+| family | D (unresponsive − wake) | null₉₅ | p |
+|---|---|---|---|
+| **complexity** (2 measures) | **+0.3632** | +0.1747 | **0.0002** |
+| **spectral** (8 measures) | **+0.1500** | +0.1237 | **0.0218** |
+| connectivity (6 measures) | +0.0566 | +0.1554 | 0.2856 — **at null** |
+| spatial (1 measure) | — | — | not computable (rule 74) |
+
+**Prediction met.** Complexity and spectral measures carry the state-dependence; phase-based connectivity
+does not. This is the mechanism VitalDB implied but could not test — two frontal channels make every
+connectivity measure NaN there — and it is consistent with the VitalDB finding that leakage lives in the
+signal *level* (a per-drug median shift removes 51–98 % of it).
+
+**A post-hoc observation, labelled as post-hoc.** Within the connectivity family the split is not random:
+the two **amplitude-derived** members behave like the spectral family (`allEnvCorr` +0.1632,
+`InsAwPLI` +0.1693) while all four **phase-derived** wPLI variants sit at or below zero (−0.0263,
++0.0158, +0.0553, +0.0566). That is exactly what "the agent moves the amplitude spectrum" predicts, and
+it was not a registered hypothesis. It should be tested as one in a successor rather than reported as a
+finding here.
+
+**The ladder is not uniformly threshold-like.** E305's secondary showed the middle rung nearly flat in
+aggregate; per family the reason is visible. Complexity is **graded** — it already separates the arms at
+the sedated rung (D = +0.1582, p = 0.0038). Spectral is **threshold-like** — flat at sedated
+(D = −0.0196, p = 0.8606) and firing only at unresponsiveness. The aggregate looked threshold-like
+because the eight spectral measures dominate the median. *(This comparison is confirmatory rather than
+blind: E305's sedated point estimate was seen before it was written, and it is labelled as such.)*
+
 ## 7. Remaining gaps
 
 ### 7.1 Circularity — substantially closed, not eliminated

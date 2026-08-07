@@ -1,0 +1,73 @@
+{
+ "families": {
+  "complexity": {
+   "D": 0.3631578947368421,
+   "n_ok": 2,
+   "null_p95": 0.1746588693957115,
+   "p": 0.0002,
+   "status": "ok"
+  },
+  "spectral": {
+   "D": 0.15000000000000002,
+   "n_ok": 8,
+   "null_p95": 0.12368421052631579,
+   "p": 0.0218,
+   "status": "ok"
+  },
+  "connectivity": {
+   "D": 0.056578947368421006,
+   "n_ok": 6,
+   "null_p95": 0.15541795665634678,
+   "p": 0.2856,
+   "status": "ok"
+  },
+  "spatial": {
+   "D": -0.022058823529411797,
+   "n_ok": 1,
+   "status": "NOT COMPUTABLE"
+  }
+ },
+ "per_feature": {
+  "EffDim": 0.3526315789473684,
+  "NmlzCmplx": 0.3631578947368421,
+  "AvgDelta": 0.1302631578947368,
+  "AvgAlpha": 0.18552631578947365,
+  "AvgGamma": 0.20657894736842108,
+  "temporalDelta": 0.09473684210526317,
+  "parietalDelta": 0.17812499999999998,
+  "limbicDelta": 0.10789473684210527,
+  "frontalDelta": 0.10441176470588237,
+  "frontalAlpha": 0.15000000000000002,
+  "allEnvCorr": 0.16315789473684206,
+  "frontwPLI": -0.02631578947368418,
+  "backwPLI": 0.01578947368421052,
+  "longwPLI": 0.05526315789473685,
+  "allwPLI": 0.056578947368421006,
+  "InsAwPLI": 0.16931216931216936,
+  "frontBias": -0.022058823529411797
+ },
+ "sedated": {
+  "complexity": {
+   "D_sedated": 0.15824561403508774,
+   "p": 0.0038
+  },
+  "spectral": {
+   "D_sedated": -0.019649122807017527,
+   "p": 0.8606
+  },
+  "connectivity": {
+   "D_sedated": 0.046296296296296335,
+   "p": 0.2776
+  }
+ },
+ "n_patients": {
+  "ppf": 19,
+  "dex": 10
+ },
+ "gates": {
+  "G2": true,
+  "alive": 11
+ },
+ "prediction_met": true,
+ "p2_declared_not_blind": true
+}
