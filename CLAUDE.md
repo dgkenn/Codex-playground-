@@ -135,6 +135,30 @@ E248 is registered and its extraction is in flight. Four things a new session mu
 all-NaN on two frontal channels in a 10 s window. E248 therefore says nothing about the project's
 flagship candidate, and that is a limit of the deposit, not evidence about the measure.
 
+### 2026-08-07 — `bsde/docs/CROSS_FIELD_SEARCH_STRATEGY.md` DOES NOT EXIST. Do not go looking for it.
+
+A session between 2026-08-04 and 2026-08-07 wrote a cross-field search strategy — a stated rationale, four
+candidates with their analogies, and a protocol — and its closing note said the file was committed at that
+path. **It is not in the repository.** Checked before this was written: `research`, `main`,
+`claude/heedb-eeg-phenotype-discovery-2mnwzx`, all 72 remote heads, and the GitHub contents API. The
+`research` tip is still `4aff42c`, the 35,988-row extraction pause. The commit never reached the remote and
+the container was reclaimed with it. **Nothing else from that session is missing**, because there was
+nothing else — the extraction shards were pushed by the checkpoint loop before the pause.
+
+**This is a failure mode rule 38 does not cover, and the distinction is the point.** Rule 38 is about a
+**rollback**, where the remote is ahead of you and a `git fetch` proves the work survived. This was
+**reclamation**, where the remote never received the commit at all — and there `git fetch` returns a clean
+tree, `git status` is empty, and `git log` looks correct, because locally everything *was* committed. There
+is no local signal that distinguishes "committed and pushed" from "committed and lost". **The only check
+that discriminates is `git ls-remote` against the branch, or a contents-API read of the specific path.** A
+document is an artifact boundary like any extraction shard; push it on the same schedule.
+
+**Do not reconstruct the four candidates from this file or from any summary of it.** They were stated
+precisely and precision is exactly what did not survive; a plausible reconstruction would be indistinguishable
+from the original and is not the same object. If the cross-field search is worth doing, it is worth
+re-deriving from the programme's own recorded blockers, and it should be written as a new strategy rather
+than presented as a recovered one.
+
 **The burst-suppression programme above continues and is not being wound down** — R418 and everything in
 `docs/research/` remains live and correct. `bsde/` is now a **second active thread alongside it, not a
 replacement for it.** Check which project a task belongs to before applying either project's conventions —
