@@ -54,28 +54,41 @@ significance by orders of magnitude. Empirical and analytic nulls agree to the t
 
 ## 3. Principal result
 
+Maintenance values are on the **complete eligible cohort**: 2,339 cases, 1,171 sevoflurane / 351
+desflurane / 817 propofol, analytic leakage floors 0.0344 / 0.0258 / 0.0361.
+
 | pair | maintenance | peri-landmark | analytic null₉₅ |
 |---|---|---|---|
-| sevoflurane vs propofol, `whole_head_exponent` | **0.3525** | 0.0668 | 0.0246 |
-| desflurane vs propofol, `whole_head_exponent` | **0.3788** | 0.0635 | 0.0337 |
-| desflurane vs propofol, `alpha_peak_hz` | **0.3545** | 0.2922 | 0.0337 |
-| sevoflurane vs propofol, `relative_alpha_power` | **0.2212** | 0.0015 | 0.0246 |
+| sevoflurane vs propofol, `whole_head_exponent` | **0.3629** | 0.0668 | 0.0258 |
+| desflurane vs propofol, `whole_head_exponent` | **0.3893** | 0.0635 | 0.0361 |
+| desflurane vs propofol, `multiscale_entropy_slope` | **0.3941** | — | 0.0361 |
+| sevoflurane vs propofol, `multiscale_entropy_slope` | **0.3711** | — | 0.0258 |
+| sevoflurane vs **desflurane**, `whole_head_exponent` | 0.1162 | — | 0.0344 |
+
+*(The 750-case balanced subsample gave 0.3525 / 0.3788 for the first two rows; the full-cohort values are
+the more precise estimates of the same quantities and both are on record.)* **Desflurane remains the
+limiting arm at 351 cases and no further extraction fixes that** — it is the smallest single-agent group
+in the deposit.
 
 In readable units: `whole_head_exponent` at maintenance is sevoflurane **2.6151**, desflurane **2.7342**,
 propofol **2.2532** — a volatile-minus-propofol difference of **0.36–0.48 exponent units**, Cliff's δ
 **+0.705 / +0.758**. Sevoflurane versus desflurane is −0.12 (δ −0.205).
 
 **The graded form.** Across within-cohort BIS quintiles, leakage declines monotonically as BIS rises:
-median Spearman **−0.90**, permutation p **0.0000**, four of six top candidates at exactly −1.0.
-Replicated independently in the peri-landmark cohort at 3.5× the n (deep 0.3649 vs light 0.0788,
-6 of 6 candidates).
+median Spearman **−0.90**, permutation **p = 0.0100**, on the complete eligible maintenance cohort
+(2,339 cases; 462–463 per quintile). `whole_head_exponent` runs 0.478 → 0.445 → 0.403 → 0.412 → 0.305.
+Replicated independently in the peri-landmark cohort (deep 0.3649 vs light 0.0788, 6 of 6 candidates).
+
+*The 750-case balanced subsample on which this was first computed gave the identical point estimate
+(median ρ = −0.90) at p = 0.0000; both are reported, and the difference is Monte Carlo resolution at 200
+permutation draws, not a change in the estimate.*
 
 ## 4. What it is not
 
 | alternative explanation | test | outcome |
 |---|---|---|
 | cohort size | subsample peri-landmark to 250/arm × 200 | maintenance above the 99th percentile for all top candidates |
-| the arms sit at different depths | 1:1 matching on maintenance BIS | leakage **rises** (median retention 1.086) |
+| the arms sit at different depths | 1:1 matching on maintenance BIS, 252/626/241 pairs | leakage **rises** (median retention **1.0481**; subsample gave 1.086) |
 | case mix (age, BMI, duration) | trim to joint 10–90th overlap | retained (0.379 → 0.378) |
 | signal quality | restrict to monitor SQI ≥ 50 | leakage **increases** |
 | burst suppression | median max SR = 0.00 in every arm; restrict to SR-free | unchanged |
@@ -85,6 +98,14 @@ Replicated independently in the peri-landmark cohort at 3.5× the n (deep 0.3649
 **Mechanism.** The effect is a location offset: subtracting each arm's own median removes **51–98 %** of
 leakage, and the residual sits at or below its permutation null in **16 of 18** cells. Level out-leaks
 change in **19 of 19** candidates at maintenance.
+
+**A refinement the full cohort makes visible, and it matters.** BIS matching does not act uniformly. For
+the two **cross-class** pairs it leaves leakage unchanged or higher (`whole_head_exponent` sevo/ppf
+0.363 → 0.416; des/ppf 0.389 → 0.408). For the **within-class** volatile pair it removes almost all of it
+(sevo/des 0.116 → 0.019; `multiscale_entropy_slope` 0.074 → 0.023). So the small sevoflurane-versus-
+desflurane separation *was* largely a depth difference, while the volatile-versus-propofol separation is
+not. That is independently consistent with the gradient being carried by the cross-class contrast, and it
+means the two should never be pooled into one "agent identity" number.
 
 **Two observations that cut against the simple story, reported because they do.**
 * **BIS is the exception.** The incumbent index leaks *less* than our median candidate at maintenance

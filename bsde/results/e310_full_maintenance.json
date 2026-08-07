@@ -1,0 +1,220 @@
+{
+ "counts": {
+  "sevo": 1171,
+  "des": 351,
+  "ppf": 817
+ },
+ "n_cases": 2339,
+ "floors": {
+  "sevo_vs_des": 0.03444097339737177,
+  "sevo_vs_ppf": 0.02579796131515726,
+  "des_vs_ppf": 0.03612435824346591
+ },
+ "A3_leakage": {
+  "whole_head_exponent": {
+   "sevo_vs_des": 0.11616316441252394,
+   "sevo_vs_ppf": 0.36287486813683634,
+   "des_vs_ppf": 0.38932182559633544
+  },
+  "multiscale_entropy_slope": {
+   "sevo_vs_des": 0.07358869741448731,
+   "sevo_vs_ppf": 0.3710660822826142,
+   "des_vs_ppf": 0.39408762080330706
+  },
+  "critical_slowing_ar1": {
+   "sevo_vs_des": 0.11208308091314068,
+   "sevo_vs_ppf": 0.35258535523517687,
+   "des_vs_ppf": 0.3906380928439752
+  },
+  "exponent_low": {
+   "sevo_vs_des": 0.1332377177808433,
+   "sevo_vs_ppf": 0.2854774702366002,
+   "des_vs_ppf": 0.36597815764482433
+  },
+  "emg_beta_gamma_fraction": {
+   "sevo_vs_des": 0.14311555857243308,
+   "sevo_vs_ppf": 0.31706393061067295,
+   "des_vs_ppf": 0.3734812300988771
+  },
+  "alpha_peak_hz": {
+   "sevo_vs_des": 0.08610387303811728,
+   "sevo_vs_ppf": 0.3003364666507091,
+   "des_vs_ppf": 0.36398016508175624
+  }
+ },
+ "A1_rhos": {
+  "whole_head_exponent": -0.9,
+  "multiscale_entropy_slope": -1.0,
+  "critical_slowing_ar1": -0.9,
+  "exponent_low": -0.9,
+  "emg_beta_gamma_fraction": -1.0,
+  "alpha_peak_hz": -0.7
+ },
+ "A1_median_rho": -0.9,
+ "A1_p": 0.01,
+ "A1_quintile_n": [
+  463,
+  463,
+  462,
+  463,
+  462
+ ],
+ "A1_gradient": {
+  "whole_head_exponent": [
+   0.4782366071428571,
+   0.44547015886646635,
+   0.40329088387340817,
+   0.4115332499478841,
+   0.3046056260341975
+  ],
+  "multiscale_entropy_slope": [
+   0.4868861607142857,
+   0.440361002659424,
+   0.43179476053587895,
+   0.39415259537210756,
+   0.2752344180915609
+  ],
+  "critical_slowing_ar1": [
+   0.47451636904761907,
+   0.43065693430656937,
+   0.4032922926723437,
+   0.424953095684803,
+   0.2728902371759515
+  ],
+  "exponent_low": [
+   0.4787946428571429,
+   0.4180978960927436,
+   0.35796242592359095,
+   0.37664165103189495,
+   0.23428019856591287
+  ],
+  "emg_beta_gamma_fraction": [
+   0.4765625,
+   0.4317303563761271,
+   0.37681250788046905,
+   0.3409943714821764,
+   0.22021511307225594
+  ],
+  "alpha_peak_hz": [
+   0.3936941964285714,
+   0.3550343495062258,
+   0.34333627537511036,
+   0.39202626641651034,
+   0.3065361279646994
+  ]
+ },
+ "A2": {
+  "sevo_vs_des": {
+   "n_matched": 252,
+   "features": {
+    "whole_head_exponent": {
+     "full": 0.11616316441252394,
+     "matched": 0.01869173595364071,
+     "retained": 0.16090932136853436
+    },
+    "multiscale_entropy_slope": {
+     "full": 0.07358869741448731,
+     "matched": 0.022848954396573418,
+     "retained": 0.3104954320345827
+    },
+    "critical_slowing_ar1": {
+     "full": 0.11208308091314068,
+     "matched": 0.03845427059712775,
+     "retained": 0.34308720177783186
+    },
+    "exponent_low": {
+     "full": 0.1332377177808433,
+     "matched": 0.05377614008566389,
+     "retained": 0.4036104864398671
+    },
+    "emg_beta_gamma_fraction": {
+     "full": 0.14311555857243308,
+     "matched": 0.06226379440665153,
+     "retained": 0.4350595772236659
+    },
+    "alpha_peak_hz": {
+     "full": 0.08610387303811728,
+     "matched": 0.039706160241874566,
+     "retained": 0.46114255771394935
+    }
+   }
+  },
+  "sevo_vs_ppf": {
+   "n_matched": 626,
+   "features": {
+    "whole_head_exponent": {
+     "full": 0.36287486813683634,
+     "matched": 0.4157309965397218,
+     "retained": 1.1456593802548871
+    },
+    "multiscale_entropy_slope": {
+     "full": 0.3710660822826142,
+     "matched": 0.4322158029580786,
+     "retained": 1.1647946918222807
+    },
+    "critical_slowing_ar1": {
+     "full": 0.35258535523517687,
+     "matched": 0.409611713909502,
+     "retained": 1.161737740458018
+    },
+    "exponent_low": {
+     "full": 0.2854774702366002,
+     "matched": 0.35015923404342186,
+     "retained": 1.2265739701042406
+    },
+    "emg_beta_gamma_fraction": {
+     "full": 0.31706393061067295,
+     "matched": 0.37786697832987987,
+     "retained": 1.191769046709598
+    },
+    "alpha_peak_hz": {
+     "full": 0.3003364666507091,
+     "matched": 0.33374332697077647,
+     "retained": 1.1112314488234274
+    }
+   }
+  },
+  "des_vs_ppf": {
+   "n_matched": 241,
+   "features": {
+    "whole_head_exponent": {
+     "full": 0.38932182559633544,
+     "matched": 0.4075945662092595,
+     "retained": 1.046934796385831
+    },
+    "multiscale_entropy_slope": {
+     "full": 0.39408762080330706,
+     "matched": 0.4191646149343159,
+     "retained": 1.063633042012058
+    },
+    "critical_slowing_ar1": {
+     "full": 0.3906380928439752,
+     "matched": 0.41449871730858634,
+     "retained": 1.0610811513308849
+    },
+    "exponent_low": {
+     "full": 0.36597815764482433,
+     "matched": 0.3820956939446635,
+     "retained": 1.0440396126467224
+    },
+    "emg_beta_gamma_fraction": {
+     "full": 0.3734812300988771,
+     "matched": 0.3914619238649472,
+     "retained": 1.0481435004412667
+    },
+    "alpha_peak_hz": {
+     "full": 0.36398016508175624,
+     "matched": 0.37088720924226515,
+     "retained": 1.0189764301001332
+    }
+   }
+  }
+ },
+ "A2_median_retention": 1.0481435004412667,
+ "subsample_reference": {
+  "A1_median_rho": -0.9,
+  "A1_p": 0.0,
+  "A2_median_retention": 1.086
+ },
+ "note": "precision upgrade of E296/E281 on the complete eligible cohort; method unchanged; not blind and not independent confirmation"
+}
