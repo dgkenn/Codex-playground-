@@ -146,9 +146,31 @@ output and NOT consciousness, and that belongs in the first result clause of any
 > 0.0302 / 0.0232 / 0.0319: still an order below E154's 0.1904, which is the point, but each slightly
 > above its registered value. Point 4 below says 415 for `des`; it is 412.
 >
-> **The successor must implement P2/G1/G3 with the registered thresholds unchanged, and must record
-> that P1 was seen first** — completing an unimplemented gate is not goalpost-moving, but doing it after
-> seeing the primary is a fact the write-up owes the reader (rule 58's neighbourhood).
+> **DONE THE SAME DAY — E249 completes it, all four gates PASS, verdict (c) LEAKAGE.**
+> `e249_e248_gate_completion.py`, notes in `results/e249_result_note.md`. Every threshold transcribed
+> unchanged; the docstring declares that P1 was seen first, and P1 is **not** recomputed (Holm is applied
+> to E248's existing p-values). **P2: the state axis is emphatically alive** —
+> `whole_head_exponent` **−0.3629** against a null 95th of 0.0051 over 2,573 patients, with directions
+> that are physiologically right and unfitted (exponent flattens, spectral edge and entropy rise, alpha
+> falls at the return of spontaneous breathing); the analytic null is validated against a 200-draw
+> empirical within-patient permutation. **G1** 14/19 (needed 9.5) and returns **0/19 FAIL** under the
+> permuted smoke, so it can fail. **G3** planted positive detected at 0.4979–0.5000, planted negative
+> below its null, `corr(arm, negative) = −0.0211` measured before use (rule 77). **G4** 412/903/412.
+> Holm leaves **11 / 17 / 14 of 19** candidates at adj-p < 0.05.
+>
+> **AND THE PART THAT IS NOT A WIN — READ CHALLENGE A's STATEMENT BEFORE QUOTING ANY OF THIS.**
+> Registering E249 made the ledger echo it: *"predicts loss and recovery across anaesthetics while
+> **MINIMISING** drug-identification information."* **Leakage is the quantity A asks a candidate to
+> minimise**, so a large, Holm-surviving, nuisance-free value is a **disqualifier for every candidate in
+> this panel**, not progress on the challenge. Rule 95 records that this project has already spent a
+> whole session making exactly this mistake. The *measurement* is the novel and reportable thing — no
+> published work quotes a leakage value against a null — and the panel still fails A's minimisation half.
+> Both sentences, in that order.
+>
+> **Corrected in passing:** the 341-case gap is **330 cases with no usable window plus 11 failing
+> `MIN_WIN`**, not 341 failing `MIN_WIN`. Drop rate by arm is sevo 13.57 % / des 10.43 % / ppf 9.34 %;
+> E249 labels that "even across arms" on a **0.05 threshold invented for the occasion**, which is rule 63
+> — the three rates are the honest report, and the one-sidedness against sevoflurane is untested.
 
 E248 is registered and its extraction is in flight. Four things a new session must carry:
 

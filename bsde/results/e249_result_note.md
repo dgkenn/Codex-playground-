@@ -84,6 +84,29 @@ state axis independently established as alive.
 E248's own framing of what this means, unchanged: *"a quantified criticism of every 'drug-independent'
 estimator, Ramaswamy 2019's included."*
 
+### 3.1 READ THE CHALLENGE STATEMENT BEFORE READING THIS AS A WIN — rule 95, and the ledger printed it
+
+Registering E249 made `registry_ledger` echo Challenge A verbatim, which is what that anchor exists for:
+
+> **A: "predicts loss and recovery across anaesthetics while MINIMISING drug-identification
+> information"**
+
+**Leakage is the quantity Challenge A asks a candidate to MINIMISE.** So against the briefed acceptance
+criterion, a large, Holm-surviving, nuisance-free leakage value is **a disqualifier for every candidate in
+this panel**, not a success for the programme. Eleven, seventeen and fourteen of nineteen candidates fail
+the minimisation half of Challenge A on this deposit.
+
+Rule 95 records that this project has already made exactly this error once — *"an entire session was spent
+measuring how much drug-identification information the panel carries — the quantity A asks a candidate to
+MINIMISE — and reporting a large value as a finding rather than as a disqualifier."* The result below is
+worth reporting as a **measurement**, which is what E248 registered it as and the only thing its own
+literature check found unclaimed. It is not worth reporting as progress on Challenge A.
+
+**Both sentences are true and the order matters.** The measurement is novel: no published work quotes a
+leakage value against a null, and the floor here is an order below anything this project could reach
+before. And the panel does not satisfy Challenge A. A write-up that states the first without the second
+is the drift rule 95 was written to stop.
+
 ## 4. Scope, and it is not a limitations paragraph
 
 * **The state label is the AIRWAY RECORD** — measured respiratory rate against the ventilator's set rate.
