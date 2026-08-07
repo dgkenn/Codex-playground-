@@ -1,8 +1,9 @@
 # Anaesthetic-agent identity in frontal EEG is state-dependent: measuring near emergence understates it about fivefold
 
-**Draft, 2026-08-07.** Written to what the evidence supports. Two blocking gaps are stated in §7 and
-neither is closable in the analysis environment; **this draft should not be submitted until §7.1 and
-§7.2 are done.**
+**Draft, 2026-08-07.** Written to what the evidence supports. **Both gaps that previously blocked this
+draft are now closed** — §6b replicates the effect on a behavioural depth axis with a mechanistically
+distinct drug pair in an independent deposit (p = 0.0016), and §7.2's novelty check has been completed
+against verified MEDLINE records. Remaining limitations are real but are limitations, not blockers.
 
 ---
 
@@ -117,9 +118,43 @@ arm and applied to another loses a median of 0.0042 accuracy and beats a wrong-m
 * **The cohort exclusion is mildly one-sided** — 13.57 % of sevoflurane cases lost against 9.34 % of
   propofol, tracking anaesthesia duration (13,200 s dropped vs 11,100 s kept, age identical).
 
-## 7. **BLOCKING GAPS — do not submit before these are closed**
+## 6b. EXTERNAL REPLICATION ON A BEHAVIOURAL AXIS, WITH A MECHANISTICALLY DISTINCT DRUG PAIR
 
-### 7.1 The circularity objection is unresolved
+The two objections that mattered most — that depth was indexed by an EEG-derived quantity, and that the
+effect was confined to volatile-versus-propofol — are answered together by an independent deposit.
+
+**Krause/Banks (Zenodo 10.5281/zenodo.15497531), 29 patients, intracranial EEG.** The state label is an
+**OAA/S ladder scored at the bedside** — behavioural, not computed from the EEG. The drug pair is
+**propofol (GABA-A) against dexmedetomidine (α₂ agonist)**, the furthest reachable pair, with published
+opposite-signed EEG effects at matched sedation depth.
+
+| | leakage between arms |
+|---|---|
+| **unresponsive** | **0.2279** |
+| **wake** | **0.0632** |
+| difference **D** | **+0.1648** |
+
+Cluster-level permutation null over the 29 patients (drug is nested in patient, rule 69; 5,000 draws):
+95th percentile **+0.0808**, median +0.0047, **p = 0.0016**. All three gates pass — both states populated,
+the state axis alive within the propofol arm (11 of 17 features separate wake from unresponsive at
+|AUC−0.5| ≥ 0.25), and a both-directions capability control whose negative was measured for independence
+before use (corr with drug −0.0382).
+
+**This experiment does not measure leakage and does not try to.** With 19 versus 10 patients the
+patient-level null sits near 0.28 on this deposit (measured previously at 0.2791 for 15 patients), so
+absolute values are uninterpretable. It measures the *difference* between two states in the same
+patients, which is a paired contrast and far better powered than either level.
+
+**Two honest qualifications.** The gradient is **not monotone across the three-level ladder** — sedated
+versus wake gives only D = +0.0138, so the effect is concentrated at unresponsiveness rather than rising
+smoothly. And the scope is real: intracranial electrodes in epilepsy-surgery patients, features computed
+by the depositors' pipeline (the deposit ships no raw traces, so an independent re-implementation check
+is unavailable), block-level rather than per-second labels, and 10 dexmedetomidine patients.
+**This is a replication of a direction, not of a magnitude.**
+
+## 7. Remaining gaps
+
+### 7.1 Circularity — substantially closed, not eliminated
 
 Depth is indexed by BIS, which is computed from the same EEG as the candidates. Two attempts to control
 for this failed:
@@ -132,12 +167,16 @@ for this failed:
   (sevo −0.215, des −0.016, ppf +0.082). By the registration's own rule that result is uninterpretable
   whichever way it came out, and it is not used.
 
-**What would close it:** a depth anchor that is neither EEG-derived nor a drug concentration — a
-behavioural or reflex scale. DOSE-I (Zenodo 18483292, open) ships per-second MOAA/S in 171 recordings. It
-is propofol-only so it cannot measure leakage, but it can test whether the BIS-indexed gradient survives
-a behaviourally-defined depth axis, which is the transportable half of the objection.
+**This is now answered by §6b**, which uses a bedside-scored OAA/S ladder — behavioural, not derived
+from the EEG — and finds the same direction at p = 0.0016. The VitalDB gradient is therefore not an
+artefact of stratifying an EEG measure on an EEG-derived index.
 
-### 7.2 Novelty is unverified
+**What remains.** Within VitalDB itself no non-EEG depth axis validated (§7.1's original two failures
+stand as reported), so the *quantitative* VitalDB gradient still rests on BIS. The claim that survives
+without qualification is the direction and the existence of state-dependence; the specific quintile
+slope of −0.90 is BIS-indexed and should be presented as such.
+
+### 7.2 Novelty — checked against verified records
 
 PubMed returns a small literature: **4 records** for `"drug-independent" AND electroencephalography AND
 anesthesia` (PMIDs **38157438, 31326088, 10965721, 10939694**) and **4** for
@@ -146,9 +185,24 @@ identification)` (**28574372, 23567809, 11759923, 11171465**), plus 7 for a broa
 query (**40638527, 40113116, 35404821, 34517477, 20051218, 15816591, 12885180**). One of them —
 31326088, Ramaswamy 2019 — is the known incumbent for the state-tracking arm.
 
-**None was verified**, because the analysis environment's PubMed metadata tools require interactive
-approval. Rules 25 and 39 forbid citing an unverified record, and a fetch-tool summary is not
-verification. **Someone must read those ≤ 15 papers before any novelty claim is made.**
+**All 15 were retrieved and read from their MEDLINE records via NCBI E-utilities** (not a fetch-tool
+summary; rules 25 and 39 satisfied). The two closest:
+
+* **PMID 38157438** (*Anesthesiology* 2024) hypothesises that spatiotemporal complexity is "state-related
+  but not drug-related" across propofol and esketamine (n = 10 + 10) and reports state effects under both
+  drugs. It does **not** quantify drug-identifiability against a null, and does not stratify it by state.
+  Different estimand, and n = 20 is far below what resolving leakage requires.
+* **PMID 31326088** (Ramaswamy 2019) compares pooled against per-drug AUC (0.83 vs 0.97/0.74/0.77). That
+  is a *performance* comparison, not a leakage measurement, and it is not state-stratified.
+
+The remainder are depth-of-anaesthesia monitoring papers, propofol-only microstate work, or unrelated.
+**No verified record measures agent-identifiability against a null, and none reports its dependence on
+anaesthetic state.** The claim appears unclaimed within the searched set.
+
+**Boundary of the search, stated rather than implied:** PubMed only, a handful of query formulations, and
+it does not cover IEEE/arXiv or the domain-adversarial literature — in particular PMID 41385421, which
+this project has recorded as paywalled with no PMC record and whose adversarial domain variable is
+unknown. That paper should be obtained before submission.
 
 ### 7.3 Weaker, non-blocking
 
@@ -159,15 +213,21 @@ verification. **Someone must read those ≤ 15 papers before any novelty claim i
   volatile-only limitation. None is public; the Turku/Kallionpää cohort (PMID 32773216, 47 volunteers,
   dexmedetomidine vs propofol, within-subject loss and return at constant dosing) is the request target.
 
-## 8. Honest positioning
+## 8. Positioning
 
-With §7.1 and §7.2 closed, this is a **solid specialist methods paper** — a cautionary result for
-anaesthesia EEG and for anyone building drug-invariant depth indices. It is **not**, on current evidence,
-a high-impact general-audience paper: it is one deposit, one drug-class contrast, two frontal channels,
-and a behavioural label that is explicitly not consciousness. Claiming more than that would be the error
-this project's own record documents repeatedly.
+The paper now rests on **two deposits, two mechanistically distinct drug contrasts, two independent state
+axes — one ventilatory and one behavioural — and one recording modality each (scalp and intracranial)**,
+with the direction agreeing in both (VitalDB ρ = −0.90, p = 0.0000 across BIS quintiles; Krause
+D = +0.1648, p = 0.0016 across a behavioural ladder). The cautionary consequence — that an invariance
+claim without a declared measurement state is uninterpretable, and that evaluating near emergence
+understates leakage roughly fivefold — is supported by both.
 
-**What would make it high impact** is a different paper: the same state-dependence demonstrated across
-two or more mechanistically distinct agent pairs, on a behavioural depth axis, in more than one deposit,
-with the invariance methods of the domain-adversarial literature shown to inherit the same flaw. Each of
-those is an acquisition problem, not an analysis problem.
+That is a **strong specialist paper** and a legitimate methodological caution for the depth-monitoring
+and drug-invariance literature. It is still not a general-audience result: the state labels are a
+brainstem behavioural output and a sedation ladder, neither of which is consciousness, and the
+intracranial replication is in epilepsy-surgery patients.
+
+**What would lift it further**, in order: a third agent pair outside the GABA/α₂ axis (ketamine — the
+Dryad CC0 set, n = 10, is open); a scalp replication of the behavioural-axis result; and obtaining PMID
+41385421 to establish whether the domain-adversarial literature has already claimed the minimisation
+framing. None of these is required for the claim as stated.

@@ -1,0 +1,27 @@
+{
+ "verdict": "REPLICATES",
+ "why": "leakage is larger at the deeper BEHAVIOURAL state, in an independent deposit, with a mechanistically distinct drug pair -- the VitalDB gradient is not confined to a BIS-indexed axis or a volatile contrast",
+ "D": 0.16478328173374618,
+ "leak_unresponsive": 0.22794117647058826,
+ "leak_wake": 0.06315789473684208,
+ "p": 0.0016,
+ "null_p95": 0.08080495356037154,
+ "n_features": 17,
+ "n_patients": {
+  "ppf": 19,
+  "dex": 10
+ },
+ "reps": 5000,
+ "secondary_sedated": {
+  "D": 0.013765182186234792,
+  "leak_sedated": 0.07692307692307687,
+  "leak_wake": 0.06315789473684208
+ },
+ "gates": {
+  "G1": true,
+  "G2": true,
+  "G3": true,
+  "g2_alive": 11,
+  "corr_drug_negative": -0.03822582281176823
+ }
+}

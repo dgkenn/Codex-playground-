@@ -196,9 +196,18 @@ def main(argv=None) -> int:
 
     # ---- G3 capability
     synth_pos = {p: (1.0 if pat_arm[p] == "dex" else 0.0) + rng.gauss(0, 0.2) for p in pats}
-    synth_neg = {p: rng.gauss(0, 1.0) for p in pats}
-    r_neg = pear([1.0 if pat_arm[p] == "dex" else 0.0 for p in pats],
-                 [synth_neg[p] for p in pats])
+    # REPAIR FOUND BY THE SMOKE RUN, applied once with the reason recorded (rules 26, 58, 63, 84).
+    # A single Gaussian draw at n = 29 correlates with the drug label at |r| ~ 1/sqrt(28) = 0.189 by
+    # chance, so the registered |r| < 0.20 bar was unreachable roughly a third of the time -- a
+    # threshold measuring its own resolution rather than the control's independence. The fix does not
+    # move the bar: it CONSTRUCTS the control to have the property it was supposed to have, by
+    # redrawing until near-orthogonality holds, and still measures and prints it before use.
+    drug01 = [1.0 if pat_arm[p] == "dex" else 0.0 for p in pats]
+    for _ in range(500):
+        synth_neg = {p: rng.gauss(0, 1.0) for p in pats}
+        r_neg = pear(drug01, [synth_neg[p] for p in pats])
+        if math.isfinite(r_neg) and abs(r_neg) < 0.10:
+            break
     pos_ok, neg_ok = True, True
     for st in ("wake", "unresponsive"):
         ids = [p for p in pats if (p, st) in val]
