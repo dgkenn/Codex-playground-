@@ -1,0 +1,20 @@
+{
+ "verdict": "PLACEBO CLEAN -- E305's drug interpretation is licensed",
+ "why": "with no drug present the same statistic gives D_sleep = +0.0000 (p = 0.5148), against D_drug = +0.1648 (p = 0.0016). State-dependent between-patient separability does not reproduce the drug result.",
+ "D_sleep": 0.0,
+ "deep": 0.09090909090909088,
+ "wake": 0.09090909090909088,
+ "p": 0.5148,
+ "null_p95": 0.07692307692307693,
+ "n_patients": {
+  "ppf": 13,
+  "dex": 6
+ },
+ "n_features": 17,
+ "gates": {
+  "G1": true,
+  "G2": true,
+  "g2_alive": 10
+ },
+ "D_drug_reference": 0.1648
+}

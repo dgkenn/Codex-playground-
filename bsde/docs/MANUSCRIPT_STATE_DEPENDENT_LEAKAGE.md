@@ -155,6 +155,34 @@ by the depositors' pipeline (the deposit ships no raw traces, so an independent 
 is unavailable), block-level rather than per-second labels, and 10 dexmedetomidine patients.
 **This is a replication of a direction, not of a magnitude.**
 
+### 6b.1 The no-drug placebo: the same statistic, the same people, the drug removed
+
+§6b's two arms are different *people* — different electrode coverage, different epileptic foci. If
+between-patient differences of any kind became more legible at deeper states, arm separability would rise
+with depth **with no drug involved**, and §6b's reading would be wrong.
+
+The deposit settles it. Nineteen of these patients also have staged natural overnight sleep — 13 from the
+propofol arm, 6 from the dexmedetomidine arm. During sleep **neither group is receiving any drug**, yet
+they remain the same two groups of people, with the same electrodes, traversing a graded depth ladder.
+
+| | deep | wake | **D** | p |
+|---|---|---|---|---|
+| **drug** (unresponsive vs wake, §6b) | 0.2279 | 0.0632 | **+0.1648** | **0.0016** |
+| **no drug** (N2/N3 vs wake sleep) | 0.0909 | 0.0909 | **+0.0000** | 0.5148 |
+
+Deep-sleep and wake-sleep separability are **identical to four decimals**, against a cluster permutation
+null 95th of +0.0769. The sleep depth axis is alive (10 of 17 features separate wake from deep sleep
+within the propofol group), and the two patient groups are not detectably different at baseline
+(separability 0.0909 at wake sleep, against a patient-level null near 0.29 at these arm sizes).
+
+**The alternative explanation is excluded: state-dependent between-patient separability does not
+reproduce the drug result.** Under permuted arm labels the same test returned "placebo fires", so the
+branch is reachable and the null is not an artefact of an unfireable gate.
+
+**Power caveat, registered before the run and not softened after it:** with 13 versus 6 patients only a
+large D_sleep would be detectable, so this is a clean null rather than a strong one. The point estimate
+being exactly zero is as favourable as such a null gets, but the interval is wide.
+
 ## 7. Remaining gaps
 
 ### 7.1 Circularity — substantially closed, not eliminated
@@ -202,10 +230,17 @@ The remainder are depth-of-anaesthesia monitoring papers, propofol-only microsta
 **No verified record measures agent-identifiability against a null, and none reports its dependence on
 anaesthetic state.** The claim appears unclaimed within the searched set.
 
+**PMID 41385421 has now been retrieved from its MEDLINE record** (*IEEE J Biomed Health Inform* 2025,
+"EEG-based Cross-subject Prediction for Consciousness State Transitions under Sedation using a Deep
+Learning Framework"). It uses domain-adversarial training on propofol and midazolam — **both GABAergic**,
+not a distinct-class pair — and reports cross-anaesthetic performance as *external validation*
+(93.93 % / 97.42 %), not as an adversarial objective on drug identity. Its title names the adversarial
+setting as **cross-subject**. Strictly, the abstract does not state the adversarial domain variable, so
+that inference is labelled as an inference (rule 42) — but on either reading the paper reports transfer
+*accuracy* and does not quantify agent-identifiability against a null, nor its dependence on state.
+
 **Boundary of the search, stated rather than implied:** PubMed only, a handful of query formulations, and
-it does not cover IEEE/arXiv or the domain-adversarial literature — in particular PMID 41385421, which
-this project has recorded as paywalled with no PMC record and whose adversarial domain variable is
-unknown. That paper should be obtained before submission.
+no coverage of IEEE/arXiv beyond what PubMed indexes.
 
 ### 7.3 Weaker, non-blocking
 
