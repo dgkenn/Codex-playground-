@@ -108,9 +108,20 @@ not. That is independently consistent with the gradient being carried by the cro
 means the two should never be pooled into one "agent identity" number.
 
 **Two observations that cut against the simple story, reported because they do.**
-* **BIS is the exception.** The incumbent index leaks *less* than our median candidate at maintenance
-  (0.0747 / 0.0469 / 0.1218 against 0.0918 / 0.2241 / 0.2077), and its own gradient runs the *other* way
-  (deep 0.0884 → light 0.1286). Every candidate worsens with depth; the commercial index does not.
+* **BIS is the exception, and we tried to explain it away and failed.** The incumbent index leaks *less*
+  than our median candidate at maintenance (0.0747 / 0.0469 / 0.1218 against 0.0918 / 0.2241 / 0.2077),
+  and its own gradient runs the *other* way (deep 0.0884 → light 0.1286). Every candidate worsens with
+  depth; the commercial index does not.
+  **We pre-registered the deflationary explanation — that BIS looks invariant at depth only because it
+  has stopped resolving anything there — and it is refuted.** BIS's within-case dynamic range falls with
+  depth no faster than the candidates' (Spearman against mean BIS +0.1995 vs a candidate median of
+  +0.1135, a gap of +0.086 against a registered threshold of 0.15), and its state-tracking advantage over
+  the candidates *widens* toward depth rather than narrowing (+0.1000 in the deepest tercile against
+  +0.0800 in the lightest; absolute |AUC−0.5| 0.5000 vs 0.4000). **BIS is genuinely more agent-invariant
+  at depth, and it tracks the transition better than any measure in our panel at every depth.**
+  This is reported prominently because it cuts against our own panel: nothing here supports replacing the
+  incumbent, and a reader should not take the paper's caution about invariance claims as a claim that
+  these candidates are better.
 * **Within VitalDB the gradient is carried entirely by volatile-versus-propofol.** Removing propofol
   collapses it to −0.0086, while removing either volatile leaves it intact. Between two volatiles leakage
   sits at 0.05–0.12 everywhere, so this is plausibly a floor effect — there is little signal to grade.

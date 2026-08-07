@@ -1,0 +1,58 @@
+{
+ "verdict": "GENUINE INVARIANCE -- BIS keeps its range and its state resolution at depth, so its falling agent-identifiability is a real point in the incumbent's favour",
+ "P1_slopes": {
+  "meta_bis": 0.19950088465653876,
+  "whole_head_exponent": -0.007799666460760717,
+  "multiscale_entropy_slope": -0.0513548656423178,
+  "critical_slowing_ar1": 0.19300086940043076,
+  "exponent_low": 0.11346572259292548,
+  "spectral_edge_95": 0.039492199850106616,
+  "alpha_peak_hz": 0.19642243497690473
+ },
+ "P1_candidate_median": 0.11346572259292548,
+ "P1_gap": 0.08603516206361328,
+ "P1_met": false,
+ "P1_n": 2312,
+ "P2": {
+  "deep": {
+   "meta_bis": 0.5,
+   "whole_head_exponent": 0.45,
+   "multiscale_entropy_slope": 0.42,
+   "critical_slowing_ar1": 0.37,
+   "exponent_low": 0.29000000000000004,
+   "spectral_edge_95": 0.4,
+   "alpha_peak_hz": 0.15000000000000002,
+   "_candidate_median": 0.4,
+   "_bis_minus_candidate": 0.09999999999999998
+  },
+  "mid": {
+   "meta_bis": 0.475,
+   "whole_head_exponent": 0.43,
+   "multiscale_entropy_slope": 0.38,
+   "critical_slowing_ar1": 0.32,
+   "exponent_low": 0.24,
+   "spectral_edge_95": 0.39,
+   "alpha_peak_hz": 0.15500000000000003,
+   "_candidate_median": 0.38,
+   "_bis_minus_candidate": 0.09499999999999997
+  },
+  "light": {
+   "meta_bis": 0.4,
+   "whole_head_exponent": 0.38,
+   "multiscale_entropy_slope": 0.32,
+   "critical_slowing_ar1": 0.3,
+   "exponent_low": 0.24,
+   "spectral_edge_95": 0.36,
+   "alpha_peak_hz": 0.15000000000000002,
+   "_candidate_median": 0.32,
+   "_bis_minus_candidate": 0.08000000000000002
+  }
+ },
+ "P2_met": false,
+ "P2_terciles": {
+  "deep": 796,
+  "mid": 799,
+  "light": 794
+ },
+ "G1": true
+}
