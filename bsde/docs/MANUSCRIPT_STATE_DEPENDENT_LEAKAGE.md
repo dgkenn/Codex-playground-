@@ -90,9 +90,12 @@ change in **19 of 19** candidates at maintenance.
 * **BIS is the exception.** The incumbent index leaks *less* than our median candidate at maintenance
   (0.0747 / 0.0469 / 0.1218 against 0.0918 / 0.2241 / 0.2077), and its own gradient runs the *other* way
   (deep 0.0884 → light 0.1286). Every candidate worsens with depth; the commercial index does not.
-* **The effect is carried entirely by volatile-versus-propofol.** Removing propofol collapses the
-  gradient to −0.0086, while removing either volatile leaves it intact. Between two volatiles leakage
-  sits at 0.05–0.12 everywhere, so this may be a floor effect — but the claim must name the contrast.
+* **Within VitalDB the gradient is carried entirely by volatile-versus-propofol.** Removing propofol
+  collapses it to −0.0086, while removing either volatile leaves it intact. Between two volatiles leakage
+  sits at 0.05–0.12 everywhere, so this is plausibly a floor effect — there is little signal to grade.
+  **This is a limitation of VitalDB's drug set, not of the phenomenon: §6b demonstrates the same
+  state-dependence for propofol versus dexmedetomidine, a GABA-A/α₂ contrast outside the volatile axis
+  entirely.** Any statement restricted to VitalDB must still name its contrast.
 
 ## 5. The state axis, for completeness
 
