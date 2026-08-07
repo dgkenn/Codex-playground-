@@ -66,10 +66,16 @@ advance by someone who knew it — and then not implemented.
 
 ## 4. Two registered numbers that came in lower, and they are not rounding
 
-* **Arms are 1,274 / 412 / 903 (2,589 cases)**, against a registered 1,474 / 460 / 996 (2,930). The
-  landmark stage does find 2,930 single-agent cases; **341 of them carry fewer than 15 windows** and are
-  dropped by `MIN_WIN`. That drop is G4's own criterion operating as an unreported filter — exactly the
-  shape rule 14 warns about, and whether it is outcome-related is untested.
+* **Arms are 1,274 / 412 / 903 (2,589 cases)**, against a registered 1,474 / 460 / 996 (2,930).
+  **CORRECTED 2026-08-07 by E249, which counted it:** the 341-case gap is *not* what this note first
+  said. It is **330 landmarked cases with NO usable window in the table at all**, plus only **11**
+  dropped by `MIN_WIN >= 15`. Those are different failures — the first is extraction coverage, the
+  second is the registered support criterion — and attributing the whole gap to `MIN_WIN` overstated
+  what the gate discarded by a factor of thirty.
+  **The drop is mildly one-sided and the direction is worth recording**: by arm it runs
+  **sevo 13.57 % / des 10.43 % / ppf 9.34 %**, a spread of 4.23 points against sevoflurane. E249 labels
+  that "even across arms" on a 0.05 threshold **which was invented for the occasion and is exactly what
+  rule 63 forbids** — the honest statement is the three rates, not the label.
 * **Floors are 0.0321 / 0.0246 / 0.0337** against a registered 0.0302 / 0.0232 / 0.0319, which follows
   from the smaller arms. The design's central claim — that the floor falls from E154's 0.1904 to the
   0.02–0.03 range — survives intact. `CLAUDE.md` quotes 415 for `des`; it is 412.

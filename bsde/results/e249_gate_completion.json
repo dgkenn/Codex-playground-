@@ -1,0 +1,414 @@
+{
+ "verdict": "LEAKAGE",
+ "why": "One or more candidates exceed their patient-level null after Holm. This is a quantified criticism of every 'drug-independent' estimator, Ramaswamy 2019's included.",
+ "counts": {
+  "sevo": 1274,
+  "des": 412,
+  "ppf": 903
+ },
+ "n_cases": 2589,
+ "p2": {
+  "alpha_peak_hz": {
+   "obs": -0.015650599652331402,
+   "abs_obs": 0.015650599652331402,
+   "n": 2573,
+   "analytic_null_p95": 0.005033029980018606,
+   "margin": 0.010617569672312796
+  },
+  "alpha_peak_hz_wide": {
+   "obs": -0.06424885664167876,
+   "abs_obs": 0.06424885664167876,
+   "n": 2573,
+   "analytic_null_p95": 0.005238294829545535,
+   "margin": 0.059010561812133225
+  },
+  "critical_slowing_ar1": {
+   "obs": -0.2296184795564133,
+   "abs_obs": 0.2296184795564133,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.2245241014511994
+  },
+  "emg_beta_gamma_fraction": {
+   "obs": 0.3385854143632602,
+   "abs_obs": 0.3385854143632602,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.33349103625804627
+  },
+  "emg_index": {
+   "obs": 0.18084124821410102,
+   "abs_obs": 0.18084124821410102,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.17574687010888712
+  },
+  "emg_kurtosis": {
+   "obs": 0.049873339256616085,
+   "abs_obs": 0.049873339256616085,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.04477896115140218
+  },
+  "exponent_gamma": {
+   "obs": 0.051029585578826406,
+   "abs_obs": 0.051029585578826406,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.0459352074736125
+  },
+  "exponent_high": {
+   "obs": -0.3587141567239134,
+   "abs_obs": 0.3587141567239134,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.3536197786186995
+  },
+  "exponent_low": {
+   "obs": -0.13714545229573594,
+   "abs_obs": 0.13714545229573594,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.13205107419052203
+  },
+  "lempel_ziv": {
+   "obs": 0.10929987907926955,
+   "abs_obs": 0.10929987907926955,
+   "n": 2573,
+   "analytic_null_p95": 0.0050810263124543426,
+   "margin": 0.10421885276681521
+  },
+  "multiscale_entropy_slope": {
+   "obs": -0.31606419336528463,
+   "abs_obs": 0.31606419336528463,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.3109698152600707
+  },
+  "pac_slow_alpha": {
+   "obs": 0.055133099614607085,
+   "abs_obs": 0.055133099614607085,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.05003872150939318
+  },
+  "relative_alpha_power": {
+   "obs": -0.22870009104731562,
+   "abs_obs": 0.22870009104731562,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.22360571294210171
+  },
+  "relative_alpha_power_iaf": {
+   "obs": -0.1799223966007563,
+   "abs_obs": 0.1799223966007563,
+   "n": 2573,
+   "analytic_null_p95": 0.005265000494258152,
+   "margin": 0.17465739610649814
+  },
+  "relative_delta_power": {
+   "obs": -0.10561436822333685,
+   "abs_obs": 0.10561436822333685,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.10051999011812295
+  },
+  "relative_theta_power": {
+   "obs": -0.1696264590596844,
+   "abs_obs": 0.1696264590596844,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.1645320809544705
+  },
+  "spectral_edge_95": {
+   "obs": 0.3259939639973511,
+   "abs_obs": 0.3259939639973511,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.3208995858921372
+  },
+  "spectral_entropy": {
+   "obs": 0.18466391690165596,
+   "abs_obs": 0.18466391690165596,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.17956953879644205
+  },
+  "whole_head_exponent": {
+   "obs": -0.36287797570998515,
+   "abs_obs": 0.36287797570998515,
+   "n": 2573,
+   "analytic_null_p95": 0.005094378105213906,
+   "margin": 0.35778359760477124
+  }
+ },
+ "p2_null_check": {
+  "whole_head_exponent": {
+   "analytic_p95": 0.005094378105213906,
+   "empirical_p95": 0.0045954770605092276,
+   "reps": 200
+  },
+  "exponent_high": {
+   "analytic_p95": 0.005094378105213906,
+   "empirical_p95": 0.005897292299693324,
+   "reps": 200
+  },
+  "emg_beta_gamma_fraction": {
+   "analytic_p95": 0.005094378105213906,
+   "empirical_p95": 0.005367614375747266,
+   "reps": 200
+  }
+ },
+ "gates": {
+  "G1": {
+   "pass": true,
+   "n_live": 14,
+   "n_testable": 19,
+   "required": 9.5,
+   "live": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "relative_alpha_power",
+    "relative_alpha_power_iaf",
+    "relative_delta_power",
+    "relative_theta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent"
+   ]
+  },
+  "G2": {
+   "pass": true,
+   "detail": {
+    "sevo_vs_des": {
+     "median_candidate": 0.07584284647391443,
+     "nuisance": {
+      "opdur_s": 0.015231820883693237,
+      "age": 0.007010066909512114,
+      "bmi": 0.05054125832558565
+     }
+    },
+    "sevo_vs_ppf": {
+     "median_candidate": 0.0581056342802902,
+     "nuisance": {
+      "opdur_s": 0.03477115354191762,
+      "age": 0.017363193680232147,
+      "bmi": 0.01614320657984636
+     }
+    },
+    "des_vs_ppf": {
+     "median_candidate": 0.08138190927759681,
+     "nuisance": {
+      "opdur_s": 0.013631745314969468,
+      "age": 0.02569509402315906,
+      "bmi": 0.03590512746078334
+     }
+    }
+   }
+  },
+  "G3": {
+   "pass": true,
+   "positive_detected": true,
+   "negative_null": true,
+   "corr_arm_negative": -0.021124850472489153,
+   "corr_arm_positive": 0.9650678269057017,
+   "detail": {
+    "sevo_vs_des": {
+     "positive": {
+      "obs": 0.4978947889835546,
+      "null_p95": 0.031139976528326063
+     },
+     "negative": {
+      "obs": 0.011899681455853406,
+      "null_p95": 0.03210589687704807
+     }
+    },
+    "sevo_vs_ppf": {
+     "positive": {
+      "obs": 0.5,
+      "null_p95": 0.025303758099201823
+     },
+     "negative": {
+      "obs": 0.016348783316035287,
+      "null_p95": 0.02359742772652118
+     }
+    },
+    "des_vs_ppf": {
+     "positive": {
+      "obs": 0.4981184616542485,
+      "null_p95": 0.034319259426507154
+     },
+     "negative": {
+      "obs": 0.005238740336956593,
+      "null_p95": 0.034319259426507154
+     }
+    }
+   }
+  },
+  "G4": {
+   "pass": true,
+   "arm_half": true,
+   "counts": {
+    "sevo": 1274,
+    "des": 412,
+    "ppf": 903
+   },
+   "min_arm": 300,
+   "min_win": 15,
+   "dropped_cases": 11,
+   "drop_rate_by_arm": {
+    "sevo": 0.13568521031207598,
+    "des": 0.10434782608695652,
+    "ppf": 0.09337349397590361
+   },
+   "drop_rate_spread": 0.04231171633617237
+  }
+ },
+ "holm": {
+  "sevo_vs_des": {
+   "adjusted": {
+    "alpha_peak_hz": 0.0,
+    "alpha_peak_hz_wide": 0.0,
+    "critical_slowing_ar1": 0.0,
+    "exponent_high": 0.0,
+    "exponent_low": 0.0,
+    "lempel_ziv": 0.0,
+    "relative_alpha_power": 0.0,
+    "relative_alpha_power_iaf": 0.0,
+    "relative_delta_power": 0.0,
+    "spectral_entropy": 0.0,
+    "multiscale_entropy_slope": 0.0207,
+    "emg_kurtosis": 0.0516,
+    "emg_index": 0.504,
+    "emg_beta_gamma_fraction": 0.6900000000000001,
+    "spectral_edge_95": 0.6900000000000001,
+    "pac_slow_alpha": 1.0,
+    "exponent_gamma": 1.0,
+    "whole_head_exponent": 1.0,
+    "relative_theta_power": 1.0
+   },
+   "n_sig": 11,
+   "sig": [
+    "alpha_peak_hz",
+    "alpha_peak_hz_wide",
+    "critical_slowing_ar1",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "relative_alpha_power",
+    "relative_alpha_power_iaf",
+    "relative_delta_power",
+    "spectral_entropy"
+   ]
+  },
+  "sevo_vs_ppf": {
+   "adjusted": {
+    "alpha_peak_hz": 0.0,
+    "alpha_peak_hz_wide": 0.0,
+    "critical_slowing_ar1": 0.0,
+    "emg_beta_gamma_fraction": 0.0,
+    "exponent_gamma": 0.0,
+    "exponent_high": 0.0,
+    "lempel_ziv": 0.0,
+    "pac_slow_alpha": 0.0,
+    "relative_alpha_power_iaf": 0.0,
+    "relative_theta_power": 0.0,
+    "spectral_edge_95": 0.0,
+    "whole_head_exponent": 0.0,
+    "multiscale_entropy_slope": 0.00035,
+    "emg_kurtosis": 0.0018,
+    "emg_index": 0.00325,
+    "relative_delta_power": 0.034,
+    "exponent_low": 0.034,
+    "spectral_entropy": 0.5052,
+    "relative_alpha_power": 0.9068
+   },
+   "n_sig": 17,
+   "sig": [
+    "alpha_peak_hz",
+    "alpha_peak_hz_wide",
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_gamma",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power_iaf",
+    "relative_delta_power",
+    "relative_theta_power",
+    "spectral_edge_95",
+    "whole_head_exponent"
+   ]
+  },
+  "des_vs_ppf": {
+   "adjusted": {
+    "alpha_peak_hz": 0.0,
+    "alpha_peak_hz_wide": 0.0,
+    "critical_slowing_ar1": 0.0,
+    "exponent_gamma": 0.0,
+    "exponent_low": 0.0,
+    "multiscale_entropy_slope": 0.0,
+    "relative_alpha_power": 0.0,
+    "relative_theta_power": 0.0,
+    "spectral_edge_95": 0.0,
+    "spectral_entropy": 0.0,
+    "whole_head_exponent": 0.0,
+    "emg_beta_gamma_fraction": 0.0004,
+    "relative_delta_power": 0.0004,
+    "relative_alpha_power_iaf": 0.0048000000000000004,
+    "pac_slow_alpha": 0.22175,
+    "exponent_high": 0.4002,
+    "emg_index": 1.0,
+    "lempel_ziv": 1.0,
+    "emg_kurtosis": 1.0
+   },
+   "n_sig": 14,
+   "sig": [
+    "alpha_peak_hz",
+    "alpha_peak_hz_wide",
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "exponent_gamma",
+    "exponent_low",
+    "multiscale_entropy_slope",
+    "relative_alpha_power",
+    "relative_alpha_power_iaf",
+    "relative_delta_power",
+    "relative_theta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent"
+   ]
+  }
+ },
+ "min_win_exclusion": {
+  "landmarked_by_arm": {
+   "sevo": 1474,
+   "des": 460,
+   "ppf": 996
+  },
+  "kept_by_arm": {
+   "sevo": 1274,
+   "des": 412,
+   "ppf": 903
+  },
+  "drop_rate_by_arm": {
+   "sevo": 0.13568521031207598,
+   "des": 0.10434782608695652,
+   "ppf": 0.09337349397590361
+  },
+  "spread": 0.04231171633617237,
+  "n_dropped": 11
+ },
+ "p1_seen_before_this_file_was_written": true
+}
