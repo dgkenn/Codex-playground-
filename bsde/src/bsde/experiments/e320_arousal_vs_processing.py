@@ -289,17 +289,28 @@ def main(argv=None) -> int:
             mx = sum(xs) / len(xs); my = sum(ys) / len(ys)
             sxx = sum((v - mx) ** 2 for v in xs)
             b = sum((v - mx) * (w - my) for v, w in zip(xs, ys)) / sxx if sxx > 0 else 0.0
-            res = {}
-            for st in (WAKE, REM, DEEP):
+            res, adj_all = {}, []
+            for st in (WAKE, REM, DEEP, "N1", "N2"):
                 rs = by.get((p, st))
-                if not rs:
-                    res = {}; break
-                res[st] = med([f(x.get(c)) - b * (f(x.get("AvgDelta")) - mx) for x in rs
-                               if math.isfinite(f(x.get(c))) and math.isfinite(f(x.get("AvgDelta")))])
+                adj = [f(x.get(c)) - b * (f(x.get("AvgDelta")) - mx) for x in (rs or [])
+                       if math.isfinite(f(x.get(c))) and math.isfinite(f(x.get("AvgDelta")))]
+                adj_all += adj
+                if st in (WAKE, REM, DEEP):
+                    if not adj:
+                        res = {}; break
+                    res[st] = med(adj)
             if len(res) != 3 or not all(math.isfinite(v) for v in res.values()):
                 continue
             den = res[WAKE] - res[DEEP]
-            if abs(den) > (POOL[p].get(c, 0) or 0) and den != 0:
+            # REPAIR FOUND BY THE SMOKE RUN, applied once with the reason recorded (rules 26, 58).
+            # The guard must be evaluated on the SAME scale as the quantity it guards. The first draft
+            # compared the delta-ADJUSTED denominator against the UNADJUSTED pooled IQR; residualising
+            # shrinks the numerator, so almost every patient failed a bar set on the larger scale and
+            # P2 returned n = 0-3 for most measures. The threshold is unchanged in kind -- the
+            # denominator must exceed that measure's own pooled within-patient IQR -- only the IQR is
+            # now computed on the adjusted values.
+            pool_adj = iqr(adj_all)
+            if math.isfinite(pool_adj) and abs(den) > pool_adj and den != 0:
                 vals.append((res[REM] - res[DEEP]) / den)
         P2[c] = {"D_adj": med(vals) if len(vals) >= MIN_PATIENTS else float("nan"),
                  "n": len(vals)}

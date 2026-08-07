@@ -1,0 +1,210 @@
+{
+ "verdict": "NO DISSOCIATION -- every measure in this panel places REM by its arousal/delta content, so the panel contains only arousal-axis information and Brief 01's separation is not achievable with these features",
+ "n_patients": 18,
+ "P1": {
+  "EffDim": {
+   "D": 0.9504460106664795,
+   "n": 17,
+   "dropped_by_guard": 1,
+   "p": 0.0946,
+   "null_p95": 0.9953418393700076
+  },
+  "NmlzCmplx": {
+   "D": 0.9692740944270739,
+   "n": 17,
+   "dropped_by_guard": 1,
+   "p": 0.091,
+   "null_p95": 0.9856125221080829
+  },
+  "allEnvCorr": {
+   "D": NaN,
+   "n": 11,
+   "dropped_by_guard": 7,
+   "status": "NOT INTERPRETABLE (G1)"
+  },
+  "AvgDelta": {
+   "D": 0.8802555115054636,
+   "n": 17,
+   "dropped_by_guard": 1,
+   "p": 0.166,
+   "null_p95": 0.9603753717274733
+  },
+  "AvgAlpha": {
+   "D": NaN,
+   "n": 10,
+   "dropped_by_guard": 8,
+   "status": "NOT INTERPRETABLE (G1)"
+  },
+  "AvgGamma": {
+   "D": 0.8082631771389271,
+   "n": 15,
+   "dropped_by_guard": 3,
+   "p": 0.144,
+   "null_p95": 0.8922847873082203
+  },
+  "temporalDelta": {
+   "D": 0.9690337924087135,
+   "n": 18,
+   "dropped_by_guard": 0,
+   "p": 0.0702,
+   "null_p95": 0.9725337501053373
+  },
+  "parietalDelta": {
+   "D": 0.8200436394376984,
+   "n": 16,
+   "dropped_by_guard": 2,
+   "p": 0.1838,
+   "null_p95": 1.0101175477727005
+  },
+  "limbicDelta": {
+   "D": 0.9002890400173841,
+   "n": 16,
+   "dropped_by_guard": 2,
+   "p": 0.1474,
+   "null_p95": 0.9473465201494186
+  },
+  "frontalDelta": {
+   "D": 0.8716309351081284,
+   "n": 15,
+   "dropped_by_guard": 3,
+   "p": 0.1516,
+   "null_p95": 1.0396434718964362
+  },
+  "frontalAlpha": {
+   "D": NaN,
+   "n": 10,
+   "dropped_by_guard": 8,
+   "status": "NOT INTERPRETABLE (G1)"
+  },
+  "frontwPLI": {
+   "D": NaN,
+   "n": 8,
+   "dropped_by_guard": 10,
+   "status": "NOT INTERPRETABLE (G1)"
+  },
+  "backwPLI": {
+   "D": 0.5118980488774043,
+   "n": 12,
+   "dropped_by_guard": 6,
+   "p": 0.5684,
+   "null_p95": 0.9999597831668462
+  },
+  "longwPLI": {
+   "D": NaN,
+   "n": 7,
+   "dropped_by_guard": 11,
+   "status": "NOT INTERPRETABLE (G1)"
+  },
+  "allwPLI": {
+   "D": NaN,
+   "n": 7,
+   "dropped_by_guard": 11,
+   "status": "NOT INTERPRETABLE (G1)"
+  },
+  "InsAwPLI": {
+   "D": NaN,
+   "n": 5,
+   "dropped_by_guard": 13,
+   "status": "NOT INTERPRETABLE (G1)"
+  },
+  "frontBias": {
+   "D": NaN,
+   "n": 10,
+   "dropped_by_guard": 8,
+   "status": "NOT INTERPRETABLE (G1)"
+  }
+ },
+ "P2": {
+  "EffDim": {
+   "D_adj": NaN,
+   "n": 2
+  },
+  "NmlzCmplx": {
+   "D_adj": NaN,
+   "n": 5
+  },
+  "allEnvCorr": {
+   "D_adj": NaN,
+   "n": 3
+  },
+  "AvgAlpha": {
+   "D_adj": NaN,
+   "n": 3
+  },
+  "AvgGamma": {
+   "D_adj": NaN,
+   "n": 6
+  },
+  "temporalDelta": {
+   "D_adj": NaN,
+   "n": 4
+  },
+  "parietalDelta": {
+   "D_adj": NaN,
+   "n": 4
+  },
+  "limbicDelta": {
+   "D_adj": NaN,
+   "n": 4
+  },
+  "frontalDelta": {
+   "D_adj": NaN,
+   "n": 6
+  },
+  "frontalAlpha": {
+   "D_adj": NaN,
+   "n": 3
+  },
+  "frontwPLI": {
+   "D_adj": NaN,
+   "n": 3
+  },
+  "backwPLI": {
+   "D_adj": NaN,
+   "n": 2
+  },
+  "longwPLI": {
+   "D_adj": NaN,
+   "n": 3
+  },
+  "allwPLI": {
+   "D_adj": NaN,
+   "n": 3
+  },
+  "InsAwPLI": {
+   "D_adj": NaN,
+   "n": 1
+  },
+  "frontBias": {
+   "D_adj": NaN,
+   "n": 3
+  }
+ },
+ "P3": {
+  "NmlzCmplx": {
+   "D_U": -0.04263656935636663,
+   "n": 12
+  },
+  "temporalDelta": {
+   "D_U": 0.9549054971700432,
+   "n": 13
+  },
+  "EffDim": {
+   "D_U": -0.061648434637155365,
+   "n": 12
+  },
+  "limbicDelta": {
+   "D_U": 0.7697817833975846,
+   "n": 12
+  }
+ },
+ "survivors": [],
+ "gates": {
+  "G2": true,
+  "G3": true,
+  "g3_detail": {
+   "arousal_like": 0.012463116150480229,
+   "processing_like": 1.0010363514873202
+  }
+ }
+}
