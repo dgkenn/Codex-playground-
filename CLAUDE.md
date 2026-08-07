@@ -217,6 +217,41 @@ from the original and is not the same object. If the cross-field search is worth
 re-deriving from the programme's own recorded blockers, and it should be written as a new strategy rather
 than presented as a recovered one.
 
+### 2026-08-07 — THE STATE-DEPENDENT-LEAKAGE LINE: what it established, and why it stops here
+
+`bsde/docs/MANUSCRIPT_STATE_DEPENDENT_LEAKAGE.md` is a complete draft; `bsde/docs/PROVENANCE_MAP.md`
+maps every number to the pre-registered script that produced it. **Do not re-litigate the impact
+question — it was asked and answered.**
+
+**What is established.** Anaesthetic-agent identity in frontal EEG is state-dependent: |AUC−0.5| ≈ 0.36–0.39
+at maintenance against 0.06–0.07 near emergence in the same patients, graded across BIS quintiles at
+median ρ = −0.90 (p = 0.0100, 2,339 cases), surviving seven alternative explanations including BIS
+matching (which makes it *larger*), and **replicated in an independent deposit on a behavioural OAA/S axis
+with a GABA-A/α₂ drug pair** (D = +0.1648, p = 0.0016) whose **no-drug natural-sleep placebo is exactly
+null** (D = +0.0000, p = 0.5148). Novelty checked against 16 verified MEDLINE records including 41385421.
+
+**WHY IT IS A SPECIALIST PAPER AND NOT A HIGH-IMPACT ONE — the reason is structural.** E311
+pre-registered the deflationary reading of BIS's anomalous behaviour (its leakage *falls* with depth
+while every candidate's rises), because "the incumbent only looks invariant because it has stopped
+resolving anything" would have made this a clinical result about titrating to a fixed index value.
+**It is refuted.** BIS's dynamic range falls with depth no faster than the candidates' (+0.1995 vs a
+candidate median +0.1135, gap +0.086 against a registered 0.15) and its state-tracking advantage
+*widens* toward depth (+0.1000 deep vs +0.0800 light; absolute 0.5000 vs 0.4000).
+
+So the caution this line delivers applies to **research measures, not clinical practice** — the widely
+used instrument came out fine, and nothing here supports replacing it. A methodological caution that
+leaves the incumbent intact is a specialist result by construction. **More analysis of VitalDB will not
+change that**, and three sessions of trying is enough evidence.
+
+**The high-impact path is a different question with different data**, and it is Brief 01's actual one:
+separating arousal from cognitive processing. Nothing in this line touches it. The named acquisition
+targets remain Turku/Kallionpää (PMID 32773216), DOSE-I's per-second MOAA/S, and the Bath DoC request.
+
+**Two reversals inside this line are on the record and must not be quietly re-adopted**: the
+low-leakage/high-tracking "corner" (E250/E261, overturned by E260/E270 — it was an artefact of measuring
+leakage at emergence) and "BIS leaks more than our panel" (E251, overturned by E273 — also a
+peri-landmark artefact). Both are in `PROVENANCE_MAP.md`.
+
 **The burst-suppression programme above continues and is not being wound down** — R418 and everything in
 `docs/research/` remains live and correct. `bsde/` is now a **second active thread alongside it, not a
 replacement for it.** Check which project a task belongs to before applying either project's conventions —
