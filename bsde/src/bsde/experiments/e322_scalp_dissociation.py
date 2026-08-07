@@ -175,7 +175,8 @@ def main(argv=None) -> int:
         res[c] = {"P1": o1, "p1": p1, "P2": o2, "p2": p2, "n": n2, "passes": ok, "note": note}
         print(f"{c:28s} {o1:+10.4f} {o2:+11.4f} {p2:8.4f} {n2:5d}  {note}")
 
-    alive = [c for c in res if math.isfinite(res[c].get("p1", 1)) and res[c]["p1"] < 0.05]
+    alive = [c for c in res if math.isfinite(res[c].get("p1", float("nan")))
+             and res[c]["p1"] < 0.05]
     testable = [c for c in res if "status" not in res[c]]
     G2 = len(alive) >= len(testable) / 2
     print(f"\n[G2] {len(alive)} of {len(testable)} measures pass P1 -> {'PASS' if G2 else 'FAIL'}")

@@ -1,0 +1,166 @@
+{
+ "verdict": "REPLICATES ON SCALP: lempel_ziv, spectral_entropy, multiscale_entropy_slope",
+ "n_subjects": 141,
+ "results": {
+  "critical_slowing_ar1": {
+   "P1": -2.0727012667637643,
+   "p1": 0.0,
+   "P2": -1.4649549999817375,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "emg_beta_gamma_fraction": {
+   "P1": 2.645391482238372,
+   "p1": 0.0,
+   "P2": 0.9185732342046475,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "emg_index": {
+   "P1": 1.887191096311303,
+   "p1": 0.0,
+   "P2": 1.2701700610069213,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "emg_kurtosis": {
+   "P1": 1.1378244727325413,
+   "p1": 0.0,
+   "P2": 1.0033584271160667,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "exponent_high": {
+   "P1": -1.9753581446644568,
+   "p1": 0.0,
+   "P2": 0.8224683915424917,
+   "p2": 0.0,
+   "n": 141,
+   "passes": false,
+   "note": "REM separates but OPPOSITE sign to arousal"
+  },
+  "exponent_low": {
+   "P1": -2.6311474779757833,
+   "p1": 0.0,
+   "P2": -2.049159319410803,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "lempel_ziv": {
+   "P1": 2.668571427828314,
+   "p1": 0.0,
+   "P2": 1.8592057767351,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "multiscale_entropy_slope": {
+   "P1": -2.5186304999755795,
+   "p1": 0.0,
+   "P2": -1.5550216592167272,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "pac_slow_alpha": {
+   "P1": 0.5323068019594731,
+   "p1": 0.004,
+   "P2": -0.6253972418011271,
+   "p2": 0.0,
+   "n": 141,
+   "passes": false,
+   "note": "REM separates but OPPOSITE sign to arousal"
+  },
+  "relative_alpha_power": {
+   "P1": 0.5371655337700759,
+   "p1": 0.0,
+   "P2": 1.313805110116858,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "relative_delta_power": {
+   "P1": -1.700186367645058,
+   "p1": 0.0,
+   "P2": -1.7461374365141438,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "spatial_participation_ratio": {
+   "P1": -1.0,
+   "p1": 0.0,
+   "P2": 0.1730721005583296,
+   "p2": 0.336,
+   "n": 141,
+   "passes": false,
+   "note": "REM ~ N3"
+  },
+  "spectral_edge_95": {
+   "P1": 2.01778598265902,
+   "p1": 0.0,
+   "P2": 1.2142550853205514,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "spectral_entropy": {
+   "P1": 2.393736413744449,
+   "p1": 0.0,
+   "P2": 2.3073418956919847,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "uce_v1": {
+   "status": "NOT INTERPRETABLE (G1)",
+   "n": 0
+  },
+  "whole_head_exponent": {
+   "P1": -2.8288969222475044,
+   "p1": 0.0,
+   "P2": -1.5697622257415593,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  },
+  "wpli_alpha": {
+   "P1": -1.1273009595631727,
+   "p1": 0.0,
+   "P2": -1.0,
+   "p2": 0.0,
+   "n": 141,
+   "passes": true,
+   "note": "dissociates (same sign as arousal)"
+  }
+ },
+ "gates": {
+  "G2": true,
+  "G3_atonia": true,
+  "emg_rem_minus_n3": -0.33199999999999985,
+  "emg_p": 0.0
+ },
+ "complexity_hits": [
+  "lempel_ziv",
+  "spectral_entropy",
+  "multiscale_entropy_slope"
+ ],
+ "n_pass_P2": 13
+}
