@@ -3,6 +3,31 @@
 *Paused 2026-08-04 at 35,988 of 56,731 windows. Everything below is measured on the sandbox unless
 marked as a projection.*
 
+> ## COMPLETED 2026-08-07 IN THE SANDBOX — THIS DOCUMENT IS NOW HISTORY FOR §1-2 AND STILL LIVE FOR §3-4
+>
+> The handover never happened, so the extraction was resumed here instead and **finished: 56,731 of
+> 56,731 windows, 56,237 `ok`, 494 `error`.** Verified before being called done — 56,731 unique
+> `recording_id`s with **zero duplicates**, so the four shards form a clean partition (rule 56), and
+> identical headers across all four. Pushed on `claude/research-program-continuation-5upe54`.
+> **E248 has since been run on the finished table**; see `results/e248_agent_leakage.json`.
+>
+> **The resume needed no changes at all** — the `--of 4` partition was preserved, `stream_features`
+> picked up from row 35,988 on its own, and 20,747 windows were processed at a **measured 562
+> windows/min** across four shards. §1's remaining-work estimate was accurate.
+>
+> **§3's optimisations were therefore never needed and remain unmeasured.** They are still the right
+> advice for a re-extraction on a different window grid — that is the case §3.2 was written for, and it
+> has not gone away — but nothing below §3 has been tested since it was written.
+>
+> **One defect found in the tooling, and it is not in this document's §4 list.**
+> `scripts/checkpoint_loop.sh` **cannot self-terminate.** Its liveness check greps `ps` for the process
+> pattern it was handed as an argument, and its own command line contains that argument, so the match is
+> always ≥ 1 and the `alive -eq 0` exit branch is unreachable. It ran 48 minutes past the last extractor
+> and had to be killed by PID. The same self-match trap caught two things I did by hand: an `until` loop
+> waiting on the extractors never returned, and a `pkill -f checkpoint_loop.sh` killed the shell running
+> it. **Any `ps`-pattern check must exclude its own PID**, and rule 56's "confirm it is dead" advice
+> inherits the same flaw it was written to prevent.
+
 ---
 
 ## 1. Exactly where it stopped
@@ -26,11 +51,16 @@ was disconnected and the signal is entirely NaN, which will error identically on
 > **CORRECTED 2026-08-07 ON RESUME. There are THREE error classes, not one, and the paragraph above
 > generalised from the only class present at 35,988 rows.** Tallied across the resumed table:
 >
-> | `error` | count at 45,501 rows |
-> |---|---|
-> | `window at Ns is entirely NaN (device disconnected)` | 274 |
-> | `window at Ns runs past the record (N of N samples)` | 95 |
-> | `window at Ns is N% NaN` | 24 |
+> | `error` | at 45,501 rows | **FINAL, 56,731 rows** |
+> |---|---|---|
+> | `window at Ns is entirely NaN (device disconnected)` | 274 | **334** |
+> | `window at Ns runs past the record (N of N samples)` | 95 | **124** |
+> | `window at Ns is N% NaN` | 24 | **36** |
+> | total | 393 | **494** |
+>
+> The middle column is the mid-run tally this correction was first written from; the right column is the
+> finished table. **No fourth class appeared in the remaining 11,000 windows**, which is the check that
+> matters — the taxonomy was complete by 45,501 rows even though the counts were not.
 >
 > **The safety argument survives, and it is worth restating as the argument rather than the example.** What
 > makes never-retrying safe is not that the failure is a disconnected strip — it is that every one of these

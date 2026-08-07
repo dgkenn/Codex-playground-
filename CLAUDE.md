@@ -114,6 +114,42 @@ rate versus the ventilator's set rate, which separates controlled from spontaneo
 both directions inside one case, and is neither the drug nor the EEG. **It is a brainstem behavioural
 output and NOT consciousness, and that belongs in the first result clause of any abstract.**
 
+> **UPDATED 2026-08-07 — THE EXTRACTION IS COMPLETE. E248 IS `NOT INTERPRETABLE` — ITS OWN BRANCH (d).**
+>
+> The extraction finished at 56,731 of 56,731 windows (56,237 `ok`), verified as a clean partition —
+> zero duplicate `recording_id`s across the four shards. That part is done and durable.
+>
+> **The experiment file implements P1 ONLY.** `e248_agent_leakage_at_scale.py` is 369 lines and its
+> registration names two primaries and four gates. Grep the file: **P2 (within-patient state tracking),
+> G1 (the aliveness gate), and G3 (the both-directions capability control) do not exist in code at all.**
+> `MIN_ARM = 300` is defined at line 171 and never referenced — G4's arm-size half is unenforced; only
+> `MIN_WIN = 15` is applied, silently, as a cohort filter rather than a reported gate. **Holm correction
+> is named three times in the docstring and never implemented.** There is no verdict branch; the file
+> ends after writing P1's JSON. The registered rule is explicit — *"(d) NOT INTERPRETABLE — G1, G3 or G4
+> fails"* — and rule 31 says an unevaluated gate makes the downstream verdict **absent, not negative**.
+>
+> **What DID run, and it is a measurement awaiting a licence, not a result.** P1 leakage at 20,000
+> patient-level permutations: 13/22, 18/22 and 16/22 features above their null floor in the three arm
+> pairs, maxima **0.1442 / 0.2059 / 0.2922** against floors of 0.0321 / 0.0246 / 0.0337. Empirical and
+> analytic nulls agree to the third decimal. **G2 — the placebo E154 FAILED — PASSES in all three
+> pairs**: every nuisance sits below the median candidate leakage (worst is `bmi` 0.0505 against a
+> median of 0.0758). G4's arm-size half also passes on inspection (412 / 903 / 412 ≥ 300).
+>
+> **Why this is not yet claimable.** G1 exists precisely because, in its own words, *"if nothing tracks
+> the ventilation transition, a leakage comparison at matched state is a comparison between two cohorts,
+> not two agents"* — rule 32, which this project has already paid for once. Nothing has established the
+> state axis is alive here.
+>
+> **Two numbers the registration got wrong, both downward-revising.** Arms are **1,274 / 412 / 903
+> (2,589 cases)**, not the predicted 1,474 / 460 / 996 (2,930) — 2,930 cases have landmarks but 341 lack
+> ≥ 15 windows. The floors are correspondingly **0.0321 / 0.0246 / 0.0337** against a predicted
+> 0.0302 / 0.0232 / 0.0319: still an order below E154's 0.1904, which is the point, but each slightly
+> above its registered value. Point 4 below says 415 for `des`; it is 412.
+>
+> **The successor must implement P2/G1/G3 with the registered thresholds unchanged, and must record
+> that P1 was seen first** — completing an unimplemented gate is not goalpost-moving, but doing it after
+> seeing the primary is a fact the write-up owes the reader (rule 58's neighbourhood).
+
 E248 is registered and its extraction is in flight. Four things a new session must carry:
 
 1. **The state-tracking half of Challenge A is PUBLISHED** — PMID 31326088 (Ramaswamy 2019, *BJA*), 102
