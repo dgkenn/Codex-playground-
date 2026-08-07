@@ -23,6 +23,23 @@ All four shards are committed and pushed on branch `research`. Nothing is lost.
 problem if they were transient network failures — they aren't. Every one is a window where the BIS strip
 was disconnected and the signal is entirely NaN, which will error identically on any retry.
 
+> **CORRECTED 2026-08-07 ON RESUME. There are THREE error classes, not one, and the paragraph above
+> generalised from the only class present at 35,988 rows.** Tallied across the resumed table:
+>
+> | `error` | count at 45,501 rows |
+> |---|---|
+> | `window at Ns is entirely NaN (device disconnected)` | 274 |
+> | `window at Ns runs past the record (N of N samples)` | 95 |
+> | `window at Ns is N% NaN` | 24 |
+>
+> **The safety argument survives, and it is worth restating as the argument rather than the example.** What
+> makes never-retrying safe is not that the failure is a disconnected strip — it is that every one of these
+> refusals is a **deterministic property of the record**: a window's NaN fraction and its position relative
+> to the end of the recording are fixed the moment the record is written, so a retry returns the identical
+> refusal. A transient network failure is the class that would break the guarantee, and none of the three
+> is one. **Check the class, not the count, before trusting a resume on any future extraction** — a
+> taxonomy read off one checkpoint is a sample, and this one was.
+
 ## 2. Resume it unchanged — one command
 
 ```bash
