@@ -1,0 +1,281 @@
+{
+ "G0": {
+  "n": 225,
+  "free_text": 11,
+  "unclassified": 0,
+  "pass": true,
+  "classes": {
+   "closed": 5,
+   "gate_failed": 54,
+   "blocked": 6,
+   "withdrawn": 8,
+   "negative": 59,
+   "absent": 18,
+   "positive": 72,
+   "mixed": 3
+  }
+ },
+ "T1": {
+  "stats": {
+   "machinery_failure": {
+    "point": 0.24,
+    "reg_ci": [
+     0.18666666666666668,
+     0.29777777777777775
+    ],
+    "chal_ci": [
+     0.13253012048192772,
+     0.2914691943127962
+    ],
+    "reg_width": 0.11111111111111108,
+    "chal_width": 0.1589390738308685
+   },
+   "true_positive": {
+    "point": 0.32,
+    "reg_ci": [
+     0.2577777777777778,
+     0.38222222222222224
+    ],
+    "chal_ci": [
+     0.27485380116959063,
+     0.44594594594594594
+    ],
+    "reg_width": 0.12444444444444447,
+    "chal_width": 0.17109214477635531
+   },
+   "no_incumbent": {
+    "point": 0.64,
+    "reg_ci": [
+     0.5777777777777777,
+     0.7022222222222222
+    ],
+    "chal_ci": [
+     0.5333333333333333,
+     0.7529411764705882
+    ],
+    "reg_width": 0.12444444444444447,
+    "chal_width": 0.2196078431372549
+   },
+   "analyst_defect": {
+    "point": 0.2962962962962963,
+    "reg_ci": [
+     0.18518518518518517,
+     0.42592592592592593
+    ],
+    "chal_ci": [
+     0.1891891891891892,
+     0.43243243243243246
+    ],
+    "reg_width": 0.24074074074074076,
+    "chal_width": 0.24324324324324326
+   }
+  },
+  "n_wider": 3,
+  "n_challenges": 11
+ },
+ "T2": {
+  "decided": 187,
+  "coverage": 0.8311111111111111,
+  "agreement": 0.35294117647058826,
+  "gate": true,
+  "plants_ok": true,
+  "confusion": {
+   "closed->gate_failed": 1,
+   "negative->negative": 16,
+   "absent->gate_failed": 4,
+   "gate_failed->absent": 7,
+   "positive->positive": 17,
+   "negative->withdrawn": 21,
+   "positive->negative": 20,
+   "negative->blocked": 2,
+   "gate_failed->gate_failed": 20,
+   "mixed->negative": 1,
+   "mixed->positive": 1,
+   "gate_failed->negative": 5,
+   "absent->absent": 7,
+   "negative->absent": 9,
+   "absent->negative": 1,
+   "positive->withdrawn": 14,
+   "negative->positive": 3,
+   "positive->gate_failed": 2,
+   "absent->withdrawn": 3,
+   "gate_failed->positive": 5,
+   "closed->absent": 1,
+   "positive->absent": 8,
+   "closed->positive": 1,
+   "withdrawn->withdrawn": 6,
+   "negative->gate_failed": 4,
+   "positive->blocked": 1,
+   "withdrawn->gate_failed": 1,
+   "blocked->withdrawn": 1,
+   "blocked->negative": 2,
+   "blocked->absent": 1,
+   "absent->positive": 1,
+   "gate_failed->withdrawn": 1
+  }
+ },
+ "T3": {
+  "n_rows": 225,
+  "n_roots": 37,
+  "sizes": [
+   32,
+   27,
+   21,
+   18,
+   16,
+   11,
+   10,
+   10,
+   8,
+   7,
+   7,
+   6,
+   6,
+   5,
+   4,
+   4,
+   3,
+   3,
+   3,
+   3
+  ],
+  "singletons": 14
+ },
+ "T4": {
+  "slope": 0.03644708423326136,
+  "p_rising": 0.046,
+  "verdict": "RISES -- the machinery-failure rate is partly a property of the format",
+  "by_gate_count": {
+   "0": [
+    8,
+    0
+   ],
+   "1": [
+    17,
+    3
+   ],
+   "2": [
+    22,
+    4
+   ],
+   "3": [
+    45,
+    9
+   ],
+   "4": [
+    94,
+    29
+   ],
+   "5": [
+    33,
+    7
+   ],
+   "6": [
+    4,
+    2
+   ],
+   "7": [
+    2,
+    0
+   ]
+  }
+ },
+ "T5": {
+  "p_positive_incumbent": 0.32098765432098764,
+  "p_positive_none": 0.3194444444444444,
+  "diff": 0.0015432098765432167,
+  "p": 1.0,
+  "n": [
+   81,
+   144
+  ],
+  "verdict": "NULL -- the incumbent field does not move the outcome"
+ },
+ "T6": {
+  "status": "ok",
+  "unselected_rate": 0.0,
+  "n_unselected": 119,
+  "control_rate": 0.2,
+  "n_control": 60,
+  "gate": true
+ },
+ "T7": {
+  "gate": false,
+  "n_held": 0,
+  "n_seen": 189
+ },
+ "T8": {
+  "gate": true,
+  "capability": [
+   0.9833333333333333,
+   0.0
+  ],
+  "sweep": {
+   "0.15": [
+    0.0,
+    0.97
+   ],
+   "0.3": [
+    0.0,
+    0.9675
+   ],
+   "0.5": [
+    0.0,
+    0.97
+   ],
+   "0.8": [
+    0.005,
+    0.9625
+   ],
+   "1.2": [
+    0.1125,
+    0.69
+   ],
+   "2.0": [
+    0.11,
+    0.2125
+   ],
+   "3.0": [
+    0.025,
+    0.03
+   ]
+  },
+  "verdict": "BIASED -- the false-dissociation rate rises from 0.000 to 0.113 as noise grows, so criterion (c) rewards imprecision"
+ },
+ "T9": {
+  "n_boot": 300,
+  "n_patients": 18,
+  "verdict": "UNSTABLE -- 9 of 17 measures have a selection frequency between 0.2 and 0.8, so 'six of seventeen dissociate' is one draw from a distribution",
+  "selection_frequency": {
+   "EffDim": 0.6366666666666667,
+   "NmlzCmplx": 0.6166666666666667,
+   "allEnvCorr": 0.45666666666666667,
+   "AvgDelta": 0.21,
+   "AvgAlpha": 0.0,
+   "AvgGamma": 0.6633333333333333,
+   "temporalDelta": 0.24333333333333335,
+   "parietalDelta": 0.21333333333333335,
+   "limbicDelta": 0.24666666666666667,
+   "frontalDelta": 0.12666666666666668,
+   "frontalAlpha": 0.03,
+   "frontwPLI": 0.23666666666666666,
+   "backwPLI": 0.0,
+   "longwPLI": 0.02,
+   "allwPLI": 0.0033333333333333335,
+   "InsAwPLI": 0.02,
+   "frontBias": 0.056666666666666664
+  }
+ },
+ "T10": {
+  "gate": true,
+  "early": 0.20212765957446807,
+  "late": 0.2736842105263158,
+  "diff": 0.07155655095184774,
+  "p": 0.3134,
+  "verdict": "NO CHANGE -- the machinery-failure rate is flat across the programme",
+  "span": [
+   "2026-07-30",
+   "2026-08-07"
+  ]
+ }
+}

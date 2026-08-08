@@ -246,6 +246,17 @@ as a consciousness measure if the drug arm were absent. That is the contribution
 > (b) intact at p ≤ 0.0406 and 0.0022. And E340's graded ladder stands: `NmlzCmplx` and `EffDim` order the
 > intermediate behavioural state on both steps and **0 of 5 delta measures do**.
 >
+> **⚠⚠ E344/T9 (same day) qualifies E342 further: the dissociating SET IS UNSTABLE.** 300 patient-level
+> bootstraps of the 18 patients put every measure's selection frequency at **0.663 or below** — `AvgGamma`
+> 0.663, `EffDim` 0.637, `NmlzCmplx` 0.617, `allEnvCorr` 0.457, `frontwPLI` 0.237, `parietalDelta` 0.213 —
+> against non-members `limbicDelta` 0.247, `temporalDelta` 0.243, `AvgDelta` 0.210. **Never quote "six of
+> seventeen" as a list.** E342's conclusion nonetheless survives and hardens: the most stably selected
+> measure of all 17 is a gamma **band power**, ahead of both complexity measures. **And E344/T8 shows the
+> criterion itself is noise-biased** — criterion (c) accepts a null, so on synthetics with a KNOWN drug
+> response the false-dissociation rate rises to 11 % at intermediate noise, and by noise 2.0 the criterion
+> returns 0.110 for a drug-responsive measure against 0.212 for a true dissociator, i.e. nearly
+> uninformative. Any successor must use an equivalence test with a stated margin, not a failure to reject.
+>
 > Notes: `results/e342_result_note.md` (and `e341_result_note.md` for the predecessor that returned NOT
 > INTERPRETABLE on its own positive control and was **not** repaired and re-run, per rule 58).
 > **Also retired here: the state-profile rank correlation as an identity instrument.** With only 6 of 8
