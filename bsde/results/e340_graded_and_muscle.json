@@ -1,0 +1,233 @@
+{
+ "P1": {
+  "detail": {
+   "EffDim": {
+    "stepA": 0.26303103288250596,
+    "pA": 0.0088,
+    "stepB": 0.8507719361952524,
+    "pB": 0.006,
+    "n": 15,
+    "graded": true
+   },
+   "NmlzCmplx": {
+    "stepA": 0.14364120003760955,
+    "pA": 0.0078,
+    "stepB": 0.9396972508164534,
+    "pB": 0.0058,
+    "n": 15,
+    "graded": true
+   },
+   "allEnvCorr": {
+    "stepA": -0.0874101006203919,
+    "pA": 0.0396,
+    "stepB": -0.9866060268410639,
+    "pB": 0.037,
+    "n": 15,
+    "graded": true
+   },
+   "AvgDelta": {
+    "stepA": -0.5241718026924937,
+    "pA": 0.1216,
+    "stepB": -0.6096319819290522,
+    "pB": 0.2338,
+    "n": 15,
+    "graded": false
+   },
+   "AvgAlpha": {
+    "stepA": -0.21867911669318757,
+    "pA": 0.0088,
+    "stepB": -0.8053573940291907,
+    "pB": 0.1146,
+    "n": 15,
+    "graded": false
+   },
+   "AvgGamma": {
+    "stepA": -0.4870182495950785,
+    "pA": 0.0092,
+    "stepB": 0.20710651351995701,
+    "pB": 0.5764,
+    "n": 15,
+    "graded": false
+   },
+   "temporalDelta": {
+    "stepA": -0.2792597539892943,
+    "pA": 0.1146,
+    "stepB": 0.07391472034613775,
+    "pB": 1.0,
+    "n": 15,
+    "graded": false
+   },
+   "parietalDelta": {
+    "stepA": -0.49241363434125496,
+    "pA": 0.075,
+    "stepB": -0.12200181685285617,
+    "pB": 0.548,
+    "n": 12,
+    "graded": false
+   },
+   "limbicDelta": {
+    "stepA": -0.3353762621578239,
+    "pA": 0.038,
+    "stepB": -0.6316387507424737,
+    "pB": 0.1146,
+    "n": 15,
+    "graded": false
+   },
+   "frontalDelta": {
+    "stepA": -0.15125127360359328,
+    "pA": 0.3354,
+    "stepB": -0.9985147957306608,
+    "pB": 0.0186,
+    "n": 13,
+    "graded": false
+   },
+   "frontalAlpha": {
+    "stepA": -0.2525370013571594,
+    "pA": 0.0162,
+    "stepB": -0.8008575695210072,
+    "pB": 0.017,
+    "n": 13,
+    "graded": true
+   },
+   "frontwPLI": {
+    "stepA": -0.1868213267886462,
+    "pA": 0.0368,
+    "stepB": -0.8817031983426447,
+    "pB": 0.0394,
+    "n": 15,
+    "graded": true
+   },
+   "backwPLI": {
+    "stepA": -0.019037200658397604,
+    "pA": 0.7796,
+    "stepB": -0.9112930688197924,
+    "pB": 0.0068,
+    "n": 15,
+    "graded": false
+   },
+   "longwPLI": {
+    "stepA": 0.006769623518655368,
+    "pA": 0.7944,
+    "stepB": -1.1047195645897896,
+    "pB": 0.0094,
+    "n": 15,
+    "graded": false
+   },
+   "allwPLI": {
+    "stepA": -0.07417581867461479,
+    "pA": 0.6052,
+    "stepB": -1.027094853159802,
+    "pB": 0.0074,
+    "n": 15,
+    "graded": false
+   },
+   "InsAwPLI": {
+    "stepA": -0.1561312241323361,
+    "pA": 0.5076,
+    "stepB": -0.8976516933390911,
+    "pB": 0.1256,
+    "n": 10,
+    "graded": false
+   },
+   "frontBias": {
+    "stepA": -0.3117503512101222,
+    "pA": 0.0142,
+    "stepB": -0.7308923210025591,
+    "pB": 0.013,
+    "n": 13,
+    "graded": true
+   }
+  },
+  "graded": [
+   "EffDim",
+   "NmlzCmplx",
+   "allEnvCorr",
+   "frontalAlpha",
+   "frontwPLI",
+   "frontBias"
+  ],
+  "complexity_graded": [
+   "NmlzCmplx",
+   "EffDim"
+  ],
+  "delta_graded": [],
+  "prediction_met": true,
+  "n_patients": 15
+ },
+ "P2": {
+  "detail": {
+   "critical_slowing_ar1": {
+    "rho": -0.05370684981633674,
+    "n": 113
+   },
+   "emg_beta_gamma_fraction": {
+    "rho": 0.11492034853452325,
+    "n": 113
+   },
+   "emg_index": {
+    "rho": -0.16664795213473285,
+    "n": 113
+   },
+   "emg_kurtosis": {
+    "rho": -0.07878194293146201,
+    "n": 113
+   },
+   "exponent_high": {
+    "rho": -0.022995310935594555,
+    "n": 113
+   },
+   "exponent_low": {
+    "rho": -0.08088882057671903,
+    "n": 113
+   },
+   "lempel_ziv": {
+    "rho": -0.1803024727526687,
+    "n": 113
+   },
+   "multiscale_entropy_slope": {
+    "rho": -0.025959281133155796,
+    "n": 113
+   },
+   "pac_slow_alpha": {
+    "rho": 0.1500460686878567,
+    "n": 113
+   },
+   "relative_alpha_power": {
+    "rho": -0.0864892077894917,
+    "n": 113
+   },
+   "relative_delta_power": {
+    "rho": 0.1587732323282115,
+    "n": 113
+   },
+   "spatial_participation_ratio": {
+    "rho": -0.10107772049219826,
+    "n": 113
+   },
+   "spectral_edge_95": {
+    "rho": 0.05227621977631662,
+    "n": 113
+   },
+   "spectral_entropy": {
+    "rho": -0.10389764328831233,
+    "n": 113
+   },
+   "uce_v1": {
+    "rho": NaN,
+    "n": 0
+   },
+   "whole_head_exponent": {
+    "rho": 0.07365249421150098,
+    "n": 113
+   },
+   "wpli_alpha": {
+    "rho": 0.11780148266113882,
+    "n": 113
+   }
+  },
+  "n_subjects": 113,
+  "control_ok": false,
+  "prediction_met": null,
+  "G2": true
+ }
+}
