@@ -39,14 +39,48 @@ Healthy volunteers, within-subject, three sessions:
 Yielding, per subject, a 2×2 that has never existed in one cohort: **{responsive, unresponsive} ×
 {experience reported, none}**, crossed with **{no drug, drug A, drug B}**.
 
-### Sample size, from measured quantities rather than convention
+### Sample size — and why the honest answer is "run a prevalence pilot first"
 
-E321's within-patient dissociation on 18 patients gave z-differences of +1.79 to +2.01 with sign-flip
-p ≈ 0.002. The binding constraint is not subjects but **awakenings per subject**: E323 failed because 13
-patients × 5 coarse labels could not support a multi-measure comparison, and E322 showed a contrast
-passed by 13 of 16 measures is uninformative. **~40 subjects × ~15 awakenings each** puts the
-unresponsive-with-experience cell — the rare and decisive one — at a usable size, and that cell's
-prevalence is the number the pilot must establish first.
+E321's within-patient dissociation on 18 patients gave z-differences of **+1.62 to +2.01** with sign-flip
+p ≈ 0.002. **Those cannot be used to size this study**, and it is worth being explicit about why: they
+are REM-versus-N3, which E322 showed is an *easy* contrast passed by 13 of 16 measures. The hard contrast
+is **experience versus none at matched responsiveness**, and no measured effect size for it exists
+anywhere, including here.
+
+So the design has two independent constraints and they must be satisfied jointly.
+
+**(1) Subjects, from the paired-contrast effect size** (α = 0.05 two-sided, power 0.90):
+
+| dz | subjects |
+|---|---|
+| 1.0 | 11 |
+| 0.8 | 17 |
+| 0.6 | 30 |
+| 0.5 | 43 |
+| 0.4 | 66 |
+
+**(2) Awakenings per subject, from the prevalence of the rare cell.** Every subject must contribute at
+least ~2–3 usable unresponsive-with-experience trials, or they cannot enter a within-subject paired test
+at all. At a report prevalence of *p* and *k* awakenings, that requires `p·k ≥ 2`:
+
+| report prevalence | awakenings needed per subject |
+|---|---|
+| 10 % | 20–30 |
+| 20 % | 10–15 |
+| 30 % | 7–10 |
+
+**`p` is unknown and it is the single most important number for feasibility.** Published serial-awakening
+sleep work gives report rates for sleep; **nobody has published a report rate for awakening from
+propofol or dexmedetomidine unresponsiveness at a defined behavioural depth**, which is precisely why
+ds005620's unshared report labels matter (see below).
+
+**Therefore: a prevalence pilot precedes the main study.** ~8 subjects, one anaesthetic, ~15 awakenings
+each, measuring `p` and nothing else. That number then determines whether the main study is 40 subjects ×
+15 awakenings or 40 × 30 — a doubling of theatre time, and not something to guess.
+
+*(An earlier draft of this section computed "subjects needed for 8+ paired cells each" and read it as a
+subject count. It is not — it conflates cells-per-subject with the subject count required for the paired
+test. The two constraints above are independent and both bind.)*
 
 ### What it would settle
 
