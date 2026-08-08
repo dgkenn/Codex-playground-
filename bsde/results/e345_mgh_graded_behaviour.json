@@ -1,0 +1,8 @@
+{
+ "G0": false,
+ "probe": {
+  "data_dir": "/tmp/eeg_probe/physionet/eeg-power-anesthesia/1.0.0",
+  "exists": false,
+  "error": "deposit not on disk. Fetch it with bsde/scripts/physionet_fetch.sh eeg-power-anesthesia 1.0.0 /tmp/eeg_probe/physionet/eeg-power-anesthesia/1.0.0"
+ }
+}
