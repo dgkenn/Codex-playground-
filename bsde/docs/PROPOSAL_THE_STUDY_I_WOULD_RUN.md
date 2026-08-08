@@ -89,11 +89,51 @@ A positive names the first genuine cognitive-processing marker. **A negative is 
 this programme's own evidence leans that way**: E322 found 13 of 16 measures "dissociate" REM from N3, so
 most of what looks like a consciousness signal is sleep-stage physiology.
 
-### Why it is not incremental
+### ⚠ PRIOR ART — THIS STUDY HAS SUBSTANTIALLY BEEN DONE, AND I ASSERTED OTHERWISE WITHOUT SEARCHING
 
-The serial-awakening paradigm exists for sleep. Anaesthesia awakening studies exist (ds005620, whose
-report labels were never deposited — Q11). **Nobody has run both, in the same subjects, with two drugs
-and a muscle channel.** That is the gap, and it is an acquisition problem, not an analysis problem.
+An earlier version of this section read: *"Nobody has run both, in the same subjects, with two drugs and
+a muscle channel. That is the gap."* **That claim was false and I made it without running a literature
+search** — the same failure this project's catalogue records as rule 50's corollary (search the record
+before claiming a finding is new) and rule 25 (verify from the MEDLINE record). I had searched the
+novelty of the *leakage* line and never the novelty of this design.
+
+**Casey CP et al., "Distinct EEG signatures differentiate unconsciousness and disconnection during
+anaesthesia and sleep", *Br J Anaesth* 2022 — PMID 35148892, PMC9428919, NCT03284307** (retrieved and
+read from its MEDLINE record):
+
+> Volunteers were recruited for sedation with **dexmedetomidine i.v., propofol i.v., or natural sleep**
+> with **high-density EEG** monitoring and **serial awakenings** to establish whether subjects were in
+> states of **disconnected consciousness or unconsciousness** in the preceding 20 s.
+
+That is this design. Derivation on dexmedetomidine, validation on sleep/propofol. Their results:
+
+| | derivation (dex) | validation (sleep/propofol) |
+|---|---|---|
+| occipital delta (primary) | AUC 0.605 [0.516, 0.694] | **0.512 [0.380, 0.645]** |
+| sensory disconnection (SVM, source-localised) | 0.999 | **0.743 [0.678, 0.805]** |
+| unconsciousness (SVM, source-localised) | 0.972 | **0.622 [0.518, 0.724]** |
+
+**Related work in the same space**, also verified: PMID 30413741 (TMS-EEG across sleep and anaesthesia
+with dream reports after serial NREM awakenings) and PMID 38419667 (2024 protocol, serial awakening +
+propofol + fMRI). This is an active area, not an empty one.
+
+### What actually remains open, stated narrowly
+
+1. **Their generalisation is weak and they report it.** Source-localised signatures fall from 0.999/0.972
+   in derivation to **0.743/0.622** in validation, and the pre-registered primary — occipital delta —
+   **fails outright on sleep/propofol at 0.512**. A measure that transports is not established.
+2. **No interpretable head-to-head.** An SVM over source-localised activity is not a comparison of named
+   candidate measures, and it cannot say *which* measures fail or why.
+3. **The drug check as a primary.** E321's contribution — that delta separates REM from N3 as strongly as
+   complexity does and would look like a consciousness measure if the drug arm were absent — is a claim
+   about measure classes that this literature has not made in that form.
+
+### And the acquisition question changes completely
+
+**This dataset may be obtainable rather than collectable.** PMC9428919 is open access and the study is
+registered as NCT03284307. **Requesting the Casey/Wisconsin data is now the first action for Study A**,
+ahead of ds005620 and Turku, because it is the actual cohort rather than a partial substitute. If it is
+shared, Study A becomes an analysis rather than a multi-year acquisition programme.
 
 ---
 
@@ -124,6 +164,8 @@ two friendly groups would establish whether the rates are anywhere near ours bef
 ---
 
 ## Which I would choose
+
+**B first. A is now a data request, not a study to run** — see the prior-art correction above.
 
 **B first, A as the flagship.** B is cheap, fast, needs nothing I do not already have a working method
 for, and converts this session's most novel result from an anecdote into evidence. A is the science that
