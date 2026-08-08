@@ -73,6 +73,55 @@ at 4 gates it rose (23.5 % → 34.4 %). **P3 fails as registered.** What the dat
 statement that the raw rise is confounded with gating intensity, and that the deflationary reading is not
 established.
 
+
+## 4b. A taxonomy of the 54 machinery failures — and 30 % of them were my own gate
+
+All 54 were classified by reading every `outcome_detail` in full; none was left unclassified.
+
+| class | n |
+|---|---|
+| coverage / support floor not met | 6 |
+| **incumbent or phenomenon not alive in the cohort** | **6** |
+| gate itself defective | 4 |
+| positive / capability control silent | 5 |
+| artefact or sentinel exposed | 2 |
+| exposure shape (off-state, no variance) | 2 |
+| surrogate or placebo unusable | 4 |
+| implementation defect | 2 |
+| confound exposed by the gate | 2 |
+| *(21 further classes at n = 1)* | 21 |
+
+Collapsing by whether the gate caught something real:
+
+    THE GATE CAUGHT A REAL PROBLEM IN THE DATA OR COHORT    38   70.4 %
+    THE GATE OR THE CODE WAS ITSELF DEFECTIVE               16   29.6 %
+
+**Nearly a third of machinery failures were the analyst's own apparatus, not the data** — vacuous success
+bars, verdict rules that could not express the wrong-direction case, thresholds set below what the
+arithmetic could resolve, placebos insensitive to the estimand, and in one case a file whose registered
+gates were never implemented at all. That number is the most useful thing in this document for anyone
+adopting the method: **budget for the fact that a third of your refusals will be your own mistakes, and
+that you will only find them because the gate refused.**
+
+The single most actionable data-side class is **"incumbent or phenomenon not alive"** at 6 of 54. These
+are designs that would have produced a publishable-looking comparison against something that does not
+work in that cohort — a bar nothing needed to clear. None of them would have been detectable from the
+result alone.
+
+## 4c. The external comparison I can make, and the one I cannot
+
+Fanelli 2010 (*PLoS One*, **PMID 20383332**, retrieved and read from its MEDLINE record) analysed 2,434
+papers that declared to have tested a hypothesis, and found the odds of reporting a positive result
+around **5 times higher** in Psychology/Psychiatry and Economics/Business than in Space Science, **2.3
+times higher** in social than physical sciences, and **3.4 times higher** for behavioural methodologies
+on people than physical studies on non-biological material, with biological studies intermediate.
+
+**That paper reports odds ratios, not absolute positive-result rates, so no percentage is quoted from it
+here** (rule 42: a quotation supports only what it literally says). It establishes that published
+positive-result rates are high and vary systematically by field; it does not supply the number against
+which our 31.6 % could be directly benchmarked. **That benchmark does not exist in a form I could
+verify, and inventing one would be the exact error this document is about.**
+
 ## 5. More gates means more machinery failure, and that is the mechanism working
 
 | gates carried | machinery failure |
