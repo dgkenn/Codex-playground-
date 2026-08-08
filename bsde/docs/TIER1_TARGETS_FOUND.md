@@ -72,3 +72,48 @@ that no study may depend on it, and `eeg-power-anesthesia` gives an independent 
 on paperwork.
 
 **The next action is credentialing, not correspondence.**
+
+
+---
+
+## MEASURED ACCESS STATE, 2026-08-07 — what is blocked and exactly what unblocks it
+
+Tested from this environment rather than assumed:
+
+| target | route | result |
+|---|---|---|
+| `propofol-anesthesia-dynamics` (open) | `https://physionet.org/files/.../1.0/` | **200 — downloadable now** |
+| `eeg-power-anesthesia` (restricted) | same | **403 — credentials required** |
+| `s3://physionet-open/...`, `s3://physionet-restricted/...` | unsigned boto3 | **wrong bucket names / NoSuchBucket** |
+| AWS CLI | `aws` | **not installed**; `boto3` installs fine |
+| `scripts/bdsp_bootstrap.sh` | — | **"AWS: no working credentials", "PhysioNet: no credentials"** |
+
+**The investigator has registered an AWS identity with PhysioNet**
+(`arn:aws:iam::281627750420:user/physionet-user`). **That identity's keys are not present in this
+environment**, so the S3 route cannot be used from here yet.
+
+### What to set, in the Claude Code web environment's environment-variable settings
+
+Either route works; the first is simpler and needs no bucket discovery.
+
+1. **HTTPS (recommended):** `PHYSIONET_USER`, `PHYSIONET_PASSWORD`. `bdsp_bootstrap.sh` already probes for
+   exactly these two and reports them missing. Files then come from
+   `https://physionet.org/files/eeg-power-anesthesia/1.0.0/` with HTTP basic auth.
+2. **S3:** the access key and secret for `physionet-user` in account `281627750420`. **The bucket name
+   must be read off the project's own Files page**, which is itself behind the 403 — so route 1 has to
+   work first, or the URI has to be supplied. Guessing bucket names failed and should not be repeated.
+
+**Note the existing trap (catalogue rule 36):** this sandbox injects placeholder
+`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` that outrank profile credentials and produce 403s that look
+like expiry. Anything touching S3 must run through `scripts/heedb_run.sh`.
+
+### What was obtained now, and its honest value
+
+`propofol-anesthesia-dynamics` (open, 9 volunteers) is **autonomic only — EDA and HRV, no EEG.** Its
+landmark structure was read: per-subject `LOC` and `ROC` as single behavioural instants (S1: 3625.32 s and
+10920.93 s) with ~10 stepped infusion events spanning ~2 h.
+
+**Value: a design reference, not data.** It shows what a purpose-built protocol treats as a landmark — a
+behavioural instant at response cessation — against our ventilation rule's 120 s sustain. That is a
+comparison worth making in a methods section and it is **not** a validation of our landmark, because the
+cohorts, drugs and measurement acts differ.
