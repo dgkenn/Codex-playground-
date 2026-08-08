@@ -61,8 +61,14 @@ CHANGE 3 -- CRITERION (c) CAN NO LONGER BE SATISFIED BY MISSING DATA.
 E341 scored (c) as passing whenever its p was NaN, which a 9-patient drug arm produced. That is rule 48:
 a criterion a missing measurement satisfies. Here (c) has three states -- EXCLUDES ZERO / DOES NOT EXCLUDE
 ZERO / **INSUFFICIENT** -- and a measure with INSUFFICIENT (c) is reported as `AROUSAL+REM ONLY`, never as
-dissociating. Separately, the residualisation coefficient is fitted on the SLEEP blocks only and applied
-to every block including the drug blocks, so removing a competitor no longer costs drug-state patients.
+dissociating. Separately, the residualisation slope is fitted IN THE Z SPACE over the SLEEP states -- the
+space the primary is computed in, so the residual is orthogonal to the competitor by construction -- and
+APPLIED to every state including the drug blocks, so removing a competitor no longer costs drug-state
+patients. On the drug blocks the removal is an EXTRAPOLATION of a slope fitted elsewhere, which is stated
+here and reported beside G3 rather than assumed. (This mechanism is the one repair spent on E342, made
+during `--smoke` before any real statistic existed; the first draft fitted the slope on raw row-level
+values to buy the drug-state patients back and thereby reintroduced the aggregation mismatch E341's own
+smoke had exposed, leaving |rho| = 0.35 and 0.22 with the column it was removing.)
 
 ------------------------------------------------------------------------------------------------------
 FAMILY PARTITION -- carried over from E341 UNCHANGED, including the assignment made against the favoured
@@ -114,8 +120,10 @@ GATES.
   G2  SUPPORT: >= 10 POWER+CONNECTIVITY competitors, and >= 12 patients on (a) and (b) for both
       dissociators in P3.
   G3  THE ADJUSTMENT MUST ADJUST (rule 55): after P3, residual-vs-competitor |rho| < 0.10 against the
-      within-patient-centred competitor, printed. Carried over from E341, where it passed at 0.0077 and
-      0.0097.
+      within-patient-centred competitor, over the SLEEP states the slope was fitted on, printed. The same
+      quantity over ALL states -- where the drug blocks are an extrapolation of the removal -- is printed
+      beside it and is descriptive, not gated, because no within-patient fit ever claimed to remove a
+      competitor from blocks it was not fitted on. Carried over from E341, where it passed at 0.0077/0.0097.
   G4  SMOKE MUST BITE: under `--smoke` every measure's values are shuffled independently across rows and
       the file prints the resulting maximum competitor |rho| and the count of dissociating measures, both
       of which must fall.
@@ -252,38 +260,56 @@ def main(argv=None) -> int:
 
     plant_r, plant_f = "_planted_reducible", "_planted_free"
 
-    def zbuild(rowset, extra_cols=(), adjust=None):
-        """within-patient z per (patient, state). `adjust` = (target_col, competitor_col): fit the
-        competitor's slope on SLEEP blocks only and apply it to every block, so removing a competitor
-        does not cost drug-state patients."""
+    def zbuild(rowset, extra_cols=()):
+        """within-patient z per (patient, state), median-centred and IQR-scaled over sleep blocks."""
         use = list(cols) + list(extra_cols)
         Z = {}
         for p in pats:
             blocks = {st: rowset.get((p, st), []) for st in ALL_STATES if (p, st) in rowset}
             for c in use:
                 raw = {st: [f(x.get(c)) for x in rs] for st, rs in blocks.items()}
-                if adjust and c == adjust[0]:
-                    comp = adjust[1]
-                    xs, ys = [], []
-                    for st in SLEEP:
-                        for x in blocks.get(st, []):
-                            xd, yc = f(x.get(comp)), f(x.get(c))
-                            if math.isfinite(xd) and math.isfinite(yc):
-                                xs.append(xd); ys.append(yc)
-                    if len(xs) < 10:
-                        continue
-                    mx = sum(xs) / len(xs); my = sum(ys) / len(ys)
-                    sxx = sum((v - mx) ** 2 for v in xs)
-                    b = sum((v - mx) * (w - my) for v, w in zip(xs, ys)) / sxx if sxx > 0 else 0.0
-                    raw = {st: [f(x.get(c)) - b * (f(x.get(comp)) - mx) for x in rs
-                                if math.isfinite(f(x.get(c))) and math.isfinite(f(x.get(comp)))]
-                           for st, rs in blocks.items()}
                 pool = [v for st in SLEEP for v in raw.get(st, []) if math.isfinite(v)]
                 m0, s0 = med(pool), iqr(pool)
                 if not (math.isfinite(m0) and math.isfinite(s0) and s0 > 0):
                     continue
                 Z[(p, c)] = {st: (med(v) - m0) / s0 for st, v in raw.items() if med(v) == med(v)}
         return Z
+
+    def residualise(Z, target, comp):
+        """ONE REPAIR, found by --smoke before any real statistic existed (rules 26, 58).
+
+        E341's fix residualised in the z space and was orthogonal by construction, but required
+        >= 4 shared states per patient, which cost drug-state patients and left criterion (c)
+        vacuous at n = 9. The first draft of E342 tried to buy those patients back by fitting the
+        slope on RAW row-level values -- and reintroduced exactly the aggregation mismatch E341's
+        smoke had exposed, leaving |rho| = 0.35 and 0.22 with the very column being removed.
+
+        Both goals are available at once: fit the slope IN THE Z SPACE over the SLEEP states, where
+        every patient has data, and APPLY it to every state including the drug blocks. Orthogonality
+        holds by construction over the states the slope was fitted on -- which is what "removed the
+        competitor" means -- and the drug states are an explicit extrapolation of that removal,
+        reported as such rather than silently assumed.
+        """
+        out = {k: dict(v) for k, v in Z.items()}
+        for p in pats:
+            if (p, target) not in Z or (p, comp) not in Z:
+                continue
+            sts = [st for st in SLEEP
+                   if st in Z[(p, target)] and st in Z[(p, comp)]
+                   and math.isfinite(Z[(p, target)][st]) and math.isfinite(Z[(p, comp)][st])]
+            if len(sts) < 3:
+                out.pop((p, target), None)
+                continue
+            xs = [Z[(p, comp)][st] for st in sts]
+            ys = [Z[(p, target)][st] for st in sts]
+            mx = sum(xs) / len(xs); my = sum(ys) / len(ys)
+            sxx = sum((v - mx) ** 2 for v in xs)
+            b = sum((v - mx) * (w - my) for v, w in zip(xs, ys)) / sxx if sxx > 0 else 0.0
+            out[(p, target)] = {st: Z[(p, target)][st] - b * (Z[(p, comp)][st] - mx)
+                                for st in Z[(p, target)]
+                                if st in Z[(p, comp)] and math.isfinite(Z[(p, comp)][st])
+                                and math.isfinite(Z[(p, target)][st])}
+        return out
 
     # -------------------------------------------------------------- G1: plants, built by SEARCH
     print("\n" + "=" * 96)
@@ -430,29 +456,41 @@ def main(argv=None) -> int:
     p3, G3, G2_n = {}, True, True
     for D in DISSOCIATORS:
         comp = worst[D]
-        Za = zbuild(src, extra_cols=(plant_r, plant_f), adjust=(D, comp))
+        Za = residualise(Z, D, comp)
+        # verified against the WITHIN-PATIENT CENTRED competitor -- the component a within-patient
+        # regression can remove -- over the SLEEP states the slope was fitted on. The same quantity
+        # over all states, where the removal is an extrapolation, is reported beside it.
         cm = {}
         for p in pats:
             if (p, comp) in Z:
-                fv = [v for v in Z[(p, comp)].values() if math.isfinite(v)]
+                fv = [Z[(p, comp)][st] for st in SLEEP
+                      if st in Z[(p, comp)] and math.isfinite(Z[(p, comp)][st])]
                 cm[p] = sum(fv) / len(fv) if fv else 0.0
-        vD = [Za[(p, D)].get(st, float("nan")) if (p, D) in Za else float("nan") for p, st in keys]
-        vC = [Z[(p, comp)].get(st, float("nan")) - cm.get(p, 0.0) if (p, comp) in Z
-              else float("nan") for p, st in keys]
-        rres = pear(vD, vC)
+        skeys = [(p, st) for p in pats for st in SLEEP]
+        gD = lambda ks: [Za[(p, D)].get(st, float("nan")) if (p, D) in Za else float("nan")
+                         for p, st in ks]
+        gC = lambda ks: [Z[(p, comp)].get(st, float("nan")) - cm.get(p, 0.0) if (p, comp) in Z
+                         else float("nan") for p, st in ks]
+        rres = pear(gD(skeys), gC(skeys))
+        rres_all = pear(gD(keys), gC(keys))
         ok_adj = math.isfinite(rres) and abs(rres) < ADJUST_BAR
         G3 = G3 and ok_adj
         r = criteria(Za, D, pats, rng, a.reps)
         n_ok = r["n"][0] >= MIN_PATIENTS and r["n"][1] >= MIN_PATIENTS
         G2_n = G2_n and n_ok
-        print(f"\n  {D} residualised on {comp}  (slope fitted on sleep blocks, applied everywhere)")
-        print(f"    [G3] residual-vs-{comp} |rho| = {abs(rres):.4f} (bar {ADJUST_BAR:.2f}) -> "
+        print(f"\n  {D} residualised on {comp}  (slope fitted in z space on sleep blocks, "
+              f"applied to every block)")
+        print(f"    [G3] residual-vs-{comp} |rho| over the fitted sleep states = {abs(rres):.4f} "
+              f"(bar {ADJUST_BAR:.2f}) -> "
               f"{'PASS' if ok_adj else 'FAIL -- the adjustment did not adjust'}")
+        print(f"         same quantity over ALL states (drug blocks are an extrapolation of the "
+              f"removal) = {abs(rres_all):.4f}")
         print(f"    (a) wake-N3  {r['a']:+.4f} p={r['pa']:.4f}  n={r['n'][0]}")
         print(f"    (b) REM -N3  {r['b']:+.4f} p={r['pb']:.4f}  n={r['n'][1]}")
         print(f"    (c) drugU-N3 {r['c']:+.4f} p={r['pc']:.4f}  n={r['n'][2]}   [{r['c_state']}]")
         print(f"    -> {'SURVIVES' if r['dissociates'] else 'does NOT survive'}")
-        p3[D] = dict(r, competitor=comp, residual_rho=rres, adjust_ok=ok_adj, n_ok=n_ok)
+        p3[D] = dict(r, competitor=comp, residual_rho=rres, residual_rho_all=rres_all,
+                     adjust_ok=ok_adj, n_ok=n_ok)
 
     G2 = G2_comp and G2_n
     print(f"\n[G2] support -> {'PASS' if G2 else 'FAIL'}")
