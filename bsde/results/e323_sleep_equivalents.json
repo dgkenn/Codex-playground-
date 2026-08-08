@@ -1,0 +1,238 @@
+{
+ "verdict": "MEASURES DISAGREE -- 'anaesthesia resembles stage X' is measure-dependent, not a fact about the brain",
+ "n_patients": 23,
+ "U": {
+  "EffDim": {
+   "modal": "N3",
+   "frac": 0.6923076923076923,
+   "n": 13,
+   "dist": {
+    "N2": 0.3076923076923077,
+    "N3": 0.6923076923076923
+   }
+  },
+  "NmlzCmplx": {
+   "modal": "N3",
+   "frac": 0.6923076923076923,
+   "n": 13,
+   "dist": {
+    "N2": 0.3076923076923077,
+    "N3": 0.6923076923076923
+   }
+  },
+  "allEnvCorr": {
+   "modal": "N2",
+   "frac": 0.5384615384615384,
+   "n": 13,
+   "dist": {
+    "N2": 0.5384615384615384,
+    "N3": 0.38461538461538464,
+    "wake": 0.07692307692307693
+   }
+  },
+  "AvgDelta": {
+   "modal": "R",
+   "frac": 0.3076923076923077,
+   "n": 13,
+   "dist": {
+    "REM": 0.3076923076923077,
+    "wake": 0.3076923076923077,
+    "N2": 0.3076923076923077,
+    "N1": 0.07692307692307693
+   }
+  },
+  "AvgAlpha": {
+   "modal": "N2",
+   "frac": 0.3076923076923077,
+   "n": 13,
+   "dist": {
+    "N2": 0.3076923076923077,
+    "N3": 0.3076923076923077,
+    "N1": 0.07692307692307693,
+    "wake": 0.23076923076923078,
+    "REM": 0.07692307692307693
+   }
+  },
+  "AvgGamma": {
+   "modal": "WS",
+   "frac": 0.38461538461538464,
+   "n": 13,
+   "dist": {
+    "wake": 0.38461538461538464,
+    "N3": 0.3076923076923077,
+    "N2": 0.15384615384615385,
+    "N1": 0.15384615384615385
+   }
+  },
+  "temporalDelta": {
+   "modal": "WS",
+   "frac": 0.46153846153846156,
+   "n": 13,
+   "dist": {
+    "wake": 0.46153846153846156,
+    "N1": 0.15384615384615385,
+    "REM": 0.15384615384615385,
+    "N2": 0.23076923076923078
+   }
+  },
+  "parietalDelta": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 11
+  },
+  "limbicDelta": {
+   "modal": "WS",
+   "frac": 0.3076923076923077,
+   "n": 13,
+   "dist": {
+    "REM": 0.23076923076923078,
+    "wake": 0.3076923076923077,
+    "N2": 0.3076923076923077,
+    "N1": 0.15384615384615385
+   }
+  },
+  "frontalDelta": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 11
+  },
+  "frontalAlpha": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 11
+  },
+  "frontwPLI": {
+   "modal": "N1",
+   "frac": 0.38461538461538464,
+   "n": 13,
+   "dist": {
+    "N1": 0.38461538461538464,
+    "N2": 0.3076923076923077,
+    "N3": 0.07692307692307693,
+    "wake": 0.23076923076923078
+   }
+  },
+  "backwPLI": {
+   "modal": "N1",
+   "frac": 0.23076923076923078,
+   "n": 13,
+   "dist": {
+    "N2": 0.15384615384615385,
+    "N1": 0.23076923076923078,
+    "REM": 0.15384615384615385,
+    "N3": 0.23076923076923078,
+    "wake": 0.23076923076923078
+   }
+  },
+  "longwPLI": {
+   "modal": "N2",
+   "frac": 0.38461538461538464,
+   "n": 13,
+   "dist": {
+    "N2": 0.38461538461538464,
+    "wake": 0.23076923076923078,
+    "N3": 0.23076923076923078,
+    "N1": 0.15384615384615385
+   }
+  },
+  "allwPLI": {
+   "modal": "WS",
+   "frac": 0.3076923076923077,
+   "n": 13,
+   "dist": {
+    "N2": 0.23076923076923078,
+    "REM": 0.07692307692307693,
+    "wake": 0.3076923076923077,
+    "N3": 0.23076923076923078,
+    "N1": 0.15384615384615385
+   }
+  },
+  "InsAwPLI": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 9
+  },
+  "frontBias": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 11
+  }
+ },
+ "U_dex": {
+  "EffDim": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "NmlzCmplx": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "allEnvCorr": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "AvgDelta": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "AvgAlpha": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "AvgGamma": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "temporalDelta": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "parietalDelta": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "limbicDelta": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "frontalDelta": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "frontalAlpha": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "frontwPLI": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "backwPLI": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "longwPLI": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "allwPLI": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  },
+  "InsAwPLI": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 4
+  },
+  "frontBias": {
+   "status": "NOT INTERPRETABLE (G2)",
+   "n": 5
+  }
+ },
+ "distinct_stages": [
+  "N1",
+  "N2",
+  "N3",
+  "REM",
+  "wake"
+ ],
+ "modal_stage": "wake",
+ "modal_frac": 0.3333333333333333,
+ "P1_met": true,
+ "P2_met": false,
+ "G1": true
+}
