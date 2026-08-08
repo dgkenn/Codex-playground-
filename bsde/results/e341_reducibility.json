@@ -1,0 +1,312 @@
+{
+ "verdict": "NOT INTERPRETABLE",
+ "why": "gate failed: G1 -- rule 31: the downstream verdict is absent, not negative.",
+ "n_patients": 18,
+ "gates": {
+  "G1": false,
+  "G2": true,
+  "G3": true,
+  "plant_reducible_corr": 0.7542013793896156,
+  "plant_free_max_corr": 0.18084990276180127
+ },
+ "bars": {
+  "colinearity": 0.9,
+  "profile": 0.95,
+  "adjust": 0.1
+ },
+ "P1_P2": {
+  "NmlzCmplx": {
+   "table": [
+    {
+     "measure": "EffDim",
+     "family": "COMPLEXITY",
+     "rho_pooled": 0.9587616982989974,
+     "rho_profile": 0.9428571428571428
+    },
+    {
+     "measure": "allEnvCorr",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.8722756958902873,
+     "rho_profile": -0.9428571428571428
+    },
+    {
+     "measure": "frontBias",
+     "family": "POWER",
+     "rho_pooled": -0.46419244791262243,
+     "rho_profile": -0.7714285714285715
+    },
+    {
+     "measure": "frontwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.45142932091153265,
+     "rho_profile": -0.8285714285714286
+    },
+    {
+     "measure": "InsAwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.41254275520084066,
+     "rho_profile": -1.0
+    },
+    {
+     "measure": "frontalAlpha",
+     "family": "POWER",
+     "rho_pooled": -0.38609214889873633,
+     "rho_profile": -1.0
+    },
+    {
+     "measure": "AvgDelta",
+     "family": "POWER",
+     "rho_pooled": -0.3712592138777648,
+     "rho_profile": -0.6
+    },
+    {
+     "measure": "parietalDelta",
+     "family": "POWER",
+     "rho_pooled": -0.3662443083200206,
+     "rho_profile": -0.6571428571428571
+    },
+    {
+     "measure": "frontalDelta",
+     "family": "POWER",
+     "rho_pooled": -0.3617241492460846,
+     "rho_profile": -0.6
+    },
+    {
+     "measure": "longwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.3423477349820327,
+     "rho_profile": -0.7714285714285715
+    },
+    {
+     "measure": "AvgGamma",
+     "family": "POWER",
+     "rho_pooled": 0.30550130570645695,
+     "rho_profile": 0.8857142857142857
+    },
+    {
+     "measure": "allwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.30459672732436355,
+     "rho_profile": -0.7714285714285715
+    },
+    {
+     "measure": "limbicDelta",
+     "family": "POWER",
+     "rho_pooled": -0.30271717178680013,
+     "rho_profile": -0.3142857142857143
+    },
+    {
+     "measure": "temporalDelta",
+     "family": "POWER",
+     "rho_pooled": -0.19078613964888785,
+     "rho_profile": -0.08571428571428572
+    },
+    {
+     "measure": "backwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.12044260069290944,
+     "rho_profile": -0.6571428571428571
+    },
+    {
+     "measure": "AvgAlpha",
+     "family": "POWER",
+     "rho_pooled": -0.1126134457330226,
+     "rho_profile": -0.4857142857142857
+    }
+   ],
+   "P1_best": {
+    "measure": "allEnvCorr",
+    "rho": -0.8722756958902873
+   },
+   "P2_best": {
+    "measure": "InsAwPLI",
+    "rho": -1.0
+   },
+   "overall_best": {
+    "measure": "EffDim",
+    "family": "COMPLEXITY",
+    "rho": 0.9587616982989974
+   },
+   "reducible_colinearity": false,
+   "reducible_profile": true
+  },
+  "EffDim": {
+   "table": [
+    {
+     "measure": "NmlzCmplx",
+     "family": "COMPLEXITY",
+     "rho_pooled": 0.9587616982989974,
+     "rho_profile": 0.9428571428571428
+    },
+    {
+     "measure": "allEnvCorr",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.7921307447600545,
+     "rho_profile": -1.0
+    },
+    {
+     "measure": "parietalDelta",
+     "family": "POWER",
+     "rho_pooled": -0.526072123147696,
+     "rho_profile": -0.7714285714285715
+    },
+    {
+     "measure": "AvgDelta",
+     "family": "POWER",
+     "rho_pooled": -0.5224037590068574,
+     "rho_profile": -0.6571428571428571
+    },
+    {
+     "measure": "frontalDelta",
+     "family": "POWER",
+     "rho_pooled": -0.5202171818561456,
+     "rho_profile": -0.6571428571428571
+    },
+    {
+     "measure": "frontBias",
+     "family": "POWER",
+     "rho_pooled": -0.49252444616534724,
+     "rho_profile": -0.8285714285714286
+    },
+    {
+     "measure": "frontwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.4898785611499515,
+     "rho_profile": -0.7714285714285715
+    },
+    {
+     "measure": "InsAwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.4518690895530583,
+     "rho_profile": -0.9428571428571428
+    },
+    {
+     "measure": "limbicDelta",
+     "family": "POWER",
+     "rho_pooled": -0.4200011229183857,
+     "rho_profile": -0.42857142857142855
+    },
+    {
+     "measure": "frontalAlpha",
+     "family": "POWER",
+     "rho_pooled": -0.39486015311547923,
+     "rho_profile": -0.9428571428571428
+    },
+    {
+     "measure": "longwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.3518015063696388,
+     "rho_profile": -0.6
+    },
+    {
+     "measure": "allwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.33028985052615334,
+     "rho_profile": -0.6
+    },
+    {
+     "measure": "AvgGamma",
+     "family": "POWER",
+     "rho_pooled": 0.32643718300528607,
+     "rho_profile": 0.9428571428571428
+    },
+    {
+     "measure": "temporalDelta",
+     "family": "POWER",
+     "rho_pooled": -0.32066000682620444,
+     "rho_profile": -0.14285714285714285
+    },
+    {
+     "measure": "backwPLI",
+     "family": "CONNECTIVITY",
+     "rho_pooled": -0.13276518649308974,
+     "rho_profile": -0.42857142857142855
+    },
+    {
+     "measure": "AvgAlpha",
+     "family": "POWER",
+     "rho_pooled": -0.11267661181827036,
+     "rho_profile": -0.2571428571428571
+    }
+   ],
+   "P1_best": {
+    "measure": "allEnvCorr",
+    "rho": -0.7921307447600545
+   },
+   "P2_best": {
+    "measure": "allEnvCorr",
+    "rho": -1.0
+   },
+   "overall_best": {
+    "measure": "NmlzCmplx",
+    "family": "COMPLEXITY",
+    "rho": 0.9587616982989974
+   },
+   "reducible_colinearity": false,
+   "reducible_profile": true
+  }
+ },
+ "P3": {
+  "NmlzCmplx": {
+   "competitor": "allEnvCorr",
+   "residual_rho": 0.007698839086396934,
+   "adjust_ok": true,
+   "a": 0.3371094048532495,
+   "pa": 0.0018,
+   "b": 0.6764176878492826,
+   "pb": 0.0012,
+   "c": NaN,
+   "pc": NaN,
+   "n": [
+    18,
+    18,
+    9
+   ],
+   "survives": true,
+   "n_ok": true
+  },
+  "EffDim": {
+   "competitor": "allEnvCorr",
+   "residual_rho": 0.009701284608882955,
+   "adjust_ok": true,
+   "a": 0.5109018955278202,
+   "pa": 0.0028,
+   "b": 0.5480537012350715,
+   "pb": 0.0022,
+   "c": NaN,
+   "pc": NaN,
+   "n": [
+    18,
+    18,
+    9
+   ],
+   "survives": true,
+   "n_ok": true
+  }
+ },
+ "families": {
+  "COMPLEXITY": [
+   "EffDim",
+   "NmlzCmplx"
+  ],
+  "POWER": [
+   "AvgAlpha",
+   "AvgDelta",
+   "AvgGamma",
+   "frontBias",
+   "frontalAlpha",
+   "frontalDelta",
+   "limbicDelta",
+   "parietalDelta",
+   "temporalDelta"
+  ],
+  "CONNECTIVITY": [
+   "InsAwPLI",
+   "allEnvCorr",
+   "allwPLI",
+   "backwPLI",
+   "frontwPLI",
+   "longwPLI"
+  ]
+ }
+}

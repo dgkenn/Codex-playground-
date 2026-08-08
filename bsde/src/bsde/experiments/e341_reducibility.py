@@ -382,12 +382,44 @@ def main(argv=None) -> int:
     G3 = True
     for D in DISSOCIATORS:
         comp = worst[D]
-        Za = build(src, adjust_on=comp)
+        # ONE REPAIR, found by --smoke before any real statistic existed (rules 26, 58).
+        # E321's adjustment fits its coefficient on RAW ROW-LEVEL values within patient and the
+        # primary is then computed on BLOCK-MEDIAN z. Those are different spaces, and the smoke
+        # measured the cost: the "adjusted" series still carried |rho| = 0.20 and 0.51 with the
+        # very column it was adjusted for. An adjustment that does not remove its target cannot
+        # license any statement about removing it (rule 55). The repair residualises in the space
+        # the primary lives in -- within patient, across that patient's block-median z -- which
+        # makes the residual orthogonal to the competitor by construction and therefore makes G3
+        # a check that the code did what it says rather than a test that can fail on aggregation
+        # mismatch. E321's P4 inherits this defect and its delta-adjusted arm is re-derived in the
+        # write-up, not quietly reused.
+        Za = {k: dict(v) for k, v in Z.items()}
+        for p in pats:
+            if (p, D) not in Z or (p, comp) not in Z:
+                continue
+            sts = [st for st in PROFILE_STATES
+                   if st in Z[(p, D)] and st in Z[(p, comp)]
+                   and math.isfinite(Z[(p, D)][st]) and math.isfinite(Z[(p, comp)][st])]
+            if len(sts) < 4:
+                Za.pop((p, D), None)
+                continue
+            xs = [Z[(p, comp)][st] for st in sts]
+            ys = [Z[(p, D)][st] for st in sts]
+            mx = sum(xs) / len(xs); my = sum(ys) / len(ys)
+            sxx = sum((v - mx) ** 2 for v in xs)
+            b = sum((v - mx) * (w - my) for v, w in zip(xs, ys)) / sxx if sxx > 0 else 0.0
+            Za[(p, D)] = {st: Z[(p, D)][st] - b * (Z[(p, comp)][st] - mx) for st in sts}
         adj_keys = [(p, st) for p in pats for st in PROFILE_STATES]
         vD = [Za[(p, D)].get(st, float("nan")) if (p, D) in Za else float("nan")
               for p, st in adj_keys]
-        vC = [Z[(p, comp)].get(st, float("nan")) if (p, comp) in Z else float("nan")
-              for p, st in adj_keys]
+        # verified against the WITHIN-PATIENT CENTRED competitor, which is the component the
+        # regression can remove; correlating against the uncentred series would test between-patient
+        # offsets that no within-patient adjustment ever claimed to touch.
+        cmean = {p: (sum(v for v in Z[(p, comp)].values() if math.isfinite(v))
+                     / max(1, sum(1 for v in Z[(p, comp)].values() if math.isfinite(v))))
+                 for p in pats if (p, comp) in Z}
+        vC = [Z[(p, comp)].get(st, float("nan")) - cmean.get(p, 0.0)
+              if (p, comp) in Z else float("nan") for p, st in adj_keys]
         rres = pear(vD, vC)
         ok_adj = math.isfinite(rres) and abs(rres) < ADJUST_BAR
         G3 = G3 and ok_adj
