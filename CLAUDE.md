@@ -1705,3 +1705,33 @@ unverified on GitHub.
     on. **Every registered parameter that can be overridden from the command line must be compared against
     its registered value before the artifact is written**, and the artifact should carry those values so
     the check survives the session that wrote it.
+
+101. **A LESSONS-LEARNED REGISTER WRITTEN AS PROSE IS NOT MACHINE-AUDITABLE, SO NOBODY — INCLUDING ITS
+    AUTHOR — CAN MEASURE WHETHER IT WORKS.** **E343** set out to measure whether writing a failure mode
+    down prevents it, on the most favourable artifact imaginable: this catalogue, 100 rules, one analyst,
+    self-written, with full git history and rules cited by number inside the experiment files. **Its own
+    extraction gates refused the run**, and the four reasons are properties of the record rather than of
+    the parser. **(1) Recurrences go undated** — rule 38 records a SECOND, THIRD and FOURTH occurrence and
+    its whole body contains exactly *one* ISO date, so two of the three cannot be placed before or after
+    the rule meant to prevent them. **(2) "Nth occurrence" means two opposite things** — rule 36 was
+    *written at* its third occurrence and has failed zero times, rule 37 *accumulated* its third, fourth
+    and fifth and has failed four times, and prose does not separate them; guessing from a nearby date
+    scored rules 36 and 39 as recurrences, a **false positive that inflates**. **(3) A recurrence is
+    usually filed under a NEW identifier** — rule 84 *is* a second occurrence of rule 77, written up as
+    its own rule, and rule 77's body contains no marker and no date, so any scan of rule 77 finds nothing.
+    That is a **false negative and the structural one**, because a fresh instance of an old failure is
+    interesting and therefore gets a new number; **so the naive count is most likely an undercount.**
+    **(4)** Markers split across a line wrap are invisible to a single-line pattern, which is how (3)
+    stayed hidden.
+    **The fix is a change to the record, not to the analysis**, and it is now `preregistry/SPEC.md` v1.1
+    with `recurrence.py` and 16 tests: a recurrence is an EVENT carrying `rule_id` (which rule FAILED,
+    never where the write-up was filed), `filed_as`, `occurred_on`, `first_stated_on` (carried on the row
+    so before/after survives renumbering), `noticed_by` and `was_cited`. `occurred_on < first_stated_on`
+    is legal and is how a rule written at its own third occurrence correctly yields **zero**
+    post-statement failures. **No rate is reported**, deliberately: the numerator is a lower bound of
+    unknown tightness, and `noticed_by` exists to turn that caveat into an estimable quantity rather than
+    a disclaimer. Two habits generalise past this catalogue. **Any claim you might one day want to make
+    about your own process needs a structured field written at the time the event happens** — prose is
+    write-only for this purpose. And **a process deviation cost the run here**: E343 was executed without
+    `--smoke` first (rule 26), which is what made the primaries visible before the gates could refuse
+    them, and therefore made the run unrepairable under rule 58.
