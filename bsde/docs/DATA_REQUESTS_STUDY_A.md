@@ -1,6 +1,49 @@
 # Study A: the three asks, in order of cost to the person being asked
 
-*Each is a request for something that already exists. None requires new data collection by the recipient.*
+*Each is a request for something that already exists. None requires new data collection by the recipient.
+Ordered after the 2026-08-07 prior-art correction: the Casey/Sanders cohort is Study A's actual design and
+displaces the others to supporting roles.*
+
+---
+
+## 0. **THE PRIORITY** — Casey/Sanders UNCONSCIOUS cohort (NCT03284307)
+
+**This is Study A's cohort, already collected.** Requesting it replaces a multi-year acquisition
+programme with an analysis.
+
+**What, verified from the trial registry and the MEDLINE record rather than from a summary:**
+
+| | |
+|---|---|
+| trial | **NCT03284307** — "UNderstanding CONSciousness Connectedness and Intraoperative Unresponsiveness" |
+| status | **COMPLETED 2020-03-12** |
+| enrolment | **35 (actual)** |
+| paper | Casey CP et al., *Br J Anaesth* 2022 — **PMID 35148892**, PMC9428919 |
+| design | dexmedetomidine / propofol / natural sleep, high-density EEG, **serial awakenings** classifying disconnected consciousness vs unconsciousness in the preceding 20 s |
+| sponsor | University of Wisconsin–Madison |
+| PI | Robert A. Pearce |
+| corresponding author | Robert D. Sanders, `robert.sanders@sydney.edu.au` (Sydney) |
+| **IPD sharing statement** | **empty — no declared plan.** So this is a request, not a download. |
+
+**What to ask for, smallest first.** Per subject, per awakening: the state classification (connected /
+disconnected / unconscious), the drug or sleep condition, the behavioural score, and the pre-awakening
+EEG epoch. Derived per-epoch features would be enough for the analysis below and are a far smaller ask
+than raw hd-EEG.
+
+**What we would do with it that they did not.** Their own validation is the opening:
+
+* source-localised SVM signatures fall **0.999 → 0.743** (disconnection) and **0.972 → 0.622**
+  (unconsciousness) from derivation to validation;
+* their pre-registered primary, occipital delta, **fails outright at AUC 0.512** on sleep/propofol.
+
+An SVM over source-localised activity cannot say *which* named measures fail or why. The head-to-head of
+interpretable candidates with the **drug check as a primary** — E321's contribution, that delta separates
+REM from N3 as strongly as complexity does and would pass as a consciousness measure if the drug arm were
+absent — is not what their analysis asked.
+
+**The honest limitation to acknowledge in the request.** 35 subjects across three conditions is roughly
+12 per arm, which is very likely why the validation AUCs fell so far. A re-analysis inherits that, and
+should be framed as *which measure classes fail and why*, not as a better classifier.
 
 ---
 
