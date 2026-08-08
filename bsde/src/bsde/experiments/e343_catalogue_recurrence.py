@@ -92,6 +92,7 @@ import argparse, datetime, json, os, re, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
+REPO = os.path.abspath(os.path.join(ROOT, ".."))  # the catalogue and its git history live at the repo root
 RESULTS = os.path.join(ROOT, "results")
 CAT = "CLAUDE.md"
 EXPOSURE_FLOOR_DAYS = 7
@@ -106,7 +107,7 @@ CITED_RE = re.compile(
 
 
 def sh(*args):
-    return subprocess.run(args, cwd=ROOT, capture_output=True, text=True).stdout
+    return subprocess.run(args, cwd=REPO, capture_output=True, text=True).stdout
 
 
 def parse_rules(text):
@@ -124,7 +125,7 @@ def main(argv=None) -> int:
     ap.add_argument("--smoke", action="store_true")
     a = ap.parse_args(argv)
 
-    cur = open(os.path.join(ROOT, CAT)).read()
+    cur = open(os.path.join(REPO, CAT)).read()
     rules, order = parse_rules(cur)
     today = datetime.date.today()
     print(f"[catalogue] {len(rules)} rules parsed from {CAT}")
