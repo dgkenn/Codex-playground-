@@ -160,6 +160,7 @@ CONNECTIVITY = {"allwPLI", "frontwPLI", "backwPLI", "longwPLI", "InsAwPLI", "all
 COLINEAR_BAR = 0.90
 PLANT_LO, PLANT_HI = 0.90, 0.98
 ADJUST_BAR = 0.10
+REGISTERED_REPS = 5000
 
 
 def f(v):
@@ -241,7 +242,7 @@ def criteria(Z, col, pats, rng, reps):
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default=os.path.join(RESULTS, "krause_dexprosleep_allData.csv"))
-    ap.add_argument("--reps", type=int, default=5000)
+    ap.add_argument("--reps", type=int, default=REGISTERED_REPS)
     ap.add_argument("--seed", type=int, default=342)
     ap.add_argument("--out", default=os.path.join(RESULTS, "e342_reducibility2.json"))
     ap.add_argument("--smoke", action="store_true")
@@ -557,6 +558,14 @@ def main(argv=None) -> int:
            "P1": report, "P2": sub, "P2_rival_dissociators": rival_diss, "P3": p3,
            "families": {"COMPLEXITY": sorted(COMPLEXITY), "POWER": sorted(POWER),
                         "CONNECTIVITY": sorted(CONNECTIVITY)}}
+    if a.reps != REGISTERED_REPS:
+        # A diagnostic invocation must never overwrite the registered artifact. This guard exists
+        # because a `--reps 20` run made to inspect G1's search trace silently clobbered the real
+        # 5,000-replicate JSON -- only `--smoke` suppressed the write, and a reduced replicate count
+        # is just as much "not the registered run" as a permuted one. Same family as rule 56: the
+        # thing that looks like a harmless re-invocation is writing to the artifact you rely on.
+        print(f"\nNOT WRITING {a.out}: --reps {a.reps} != the registered {REGISTERED_REPS}.")
+        return 0
     json.dump(out, open(a.out, "w"), indent=1, default=float)
     print(f"\nwrote {a.out}")
     return 0

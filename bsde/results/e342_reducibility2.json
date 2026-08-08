@@ -1,0 +1,596 @@
+{
+ "verdict": "REDUCIBLE -- E321 AND E340 MUST BE REWRITTEN",
+ "why": "a power or connectivity measure already in the inventory reproduces the dissociation. behavioural substitution: allEnvCorr, AvgGamma, parietalDelta, frontwPLI dissociate too. The behaviour is real and the NAME is wrong.",
+ "n_patients": 18,
+ "gates": {
+  "G1": true,
+  "G2": true,
+  "G3": true,
+  "plant_mult": 0.35,
+  "plant_corr": 0.9386580700231028,
+  "plant_free_max": -0.24376795521045005
+ },
+ "bars": {
+  "colinearity": 0.9,
+  "plant_window": [
+   0.9,
+   0.98
+  ],
+  "adjust": 0.1
+ },
+ "P1": {
+  "NmlzCmplx": {
+   "table": [
+    {
+     "measure": "EffDim",
+     "family": "COMPLEXITY",
+     "rho": 0.9613359646049265
+    },
+    {
+     "measure": "allEnvCorr",
+     "family": "CONNECTIVITY",
+     "rho": -0.8754642915605969
+    },
+    {
+     "measure": "AvgDelta",
+     "family": "POWER",
+     "rho": -0.46877042695011356
+    },
+    {
+     "measure": "frontBias",
+     "family": "POWER",
+     "rho": -0.46806940976989536
+    },
+    {
+     "measure": "parietalDelta",
+     "family": "POWER",
+     "rho": -0.45661518715544874
+    },
+    {
+     "measure": "frontalDelta",
+     "family": "POWER",
+     "rho": -0.4392588544319257
+    },
+    {
+     "measure": "frontwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.43433791913115577
+    },
+    {
+     "measure": "frontalAlpha",
+     "family": "POWER",
+     "rho": -0.4271504114995634
+    },
+    {
+     "measure": "InsAwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.3996404766811098
+    },
+    {
+     "measure": "limbicDelta",
+     "family": "POWER",
+     "rho": -0.3945750788684325
+    },
+    {
+     "measure": "temporalDelta",
+     "family": "POWER",
+     "rho": -0.3163146892845868
+    },
+    {
+     "measure": "longwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.3058437319455779
+    },
+    {
+     "measure": "allwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.29222883267349414
+    },
+    {
+     "measure": "AvgGamma",
+     "family": "POWER",
+     "rho": 0.28475749922456467
+    },
+    {
+     "measure": "AvgAlpha",
+     "family": "POWER",
+     "rho": -0.14241492187485036
+    },
+    {
+     "measure": "backwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.13058452284068617
+    }
+   ],
+   "P1_best": {
+    "measure": "allEnvCorr",
+    "rho": -0.8754642915605969
+   },
+   "overall_best": {
+    "measure": "EffDim",
+    "family": "COMPLEXITY",
+    "rho": 0.9613359646049265
+   },
+   "reducible_colinearity": false
+  },
+  "EffDim": {
+   "table": [
+    {
+     "measure": "NmlzCmplx",
+     "family": "COMPLEXITY",
+     "rho": 0.9613359646049265
+    },
+    {
+     "measure": "allEnvCorr",
+     "family": "CONNECTIVITY",
+     "rho": -0.7925973788453049
+    },
+    {
+     "measure": "AvgDelta",
+     "family": "POWER",
+     "rho": -0.5981667831991344
+    },
+    {
+     "measure": "parietalDelta",
+     "family": "POWER",
+     "rho": -0.5859782251899207
+    },
+    {
+     "measure": "frontalDelta",
+     "family": "POWER",
+     "rho": -0.5740599230884686
+    },
+    {
+     "measure": "limbicDelta",
+     "family": "POWER",
+     "rho": -0.4947661876672372
+    },
+    {
+     "measure": "frontBias",
+     "family": "POWER",
+     "rho": -0.4822659650870998
+    },
+    {
+     "measure": "frontwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.46454350566411057
+    },
+    {
+     "measure": "InsAwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.44524988396171944
+    },
+    {
+     "measure": "frontalAlpha",
+     "family": "POWER",
+     "rho": -0.4403203173074729
+    },
+    {
+     "measure": "temporalDelta",
+     "family": "POWER",
+     "rho": -0.42765351431294873
+    },
+    {
+     "measure": "allwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.3241467858517051
+    },
+    {
+     "measure": "longwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.3117839599343964
+    },
+    {
+     "measure": "AvgGamma",
+     "family": "POWER",
+     "rho": 0.2896478876959562
+    },
+    {
+     "measure": "AvgAlpha",
+     "family": "POWER",
+     "rho": -0.16663946236439972
+    },
+    {
+     "measure": "backwPLI",
+     "family": "CONNECTIVITY",
+     "rho": -0.15473456890433587
+    }
+   ],
+   "P1_best": {
+    "measure": "allEnvCorr",
+    "rho": -0.7925973788453049
+   },
+   "overall_best": {
+    "measure": "NmlzCmplx",
+    "family": "COMPLEXITY",
+    "rho": 0.9613359646049265
+   },
+   "reducible_colinearity": false
+  }
+ },
+ "P2": {
+  "EffDim": {
+   "a": 1.6707631088131056,
+   "pa": 0.002,
+   "b": 1.791623252969127,
+   "pb": 0.002,
+   "c": -0.13981347812129474,
+   "pc": 0.5498,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "COMPLEXITY"
+  },
+  "NmlzCmplx": {
+   "a": 1.9295309111117973,
+   "pa": 0.0016,
+   "b": 2.0101421277355946,
+   "pb": 0.0022,
+   "c": -0.21642127969643976,
+   "pc": 0.5442,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "COMPLEXITY"
+  },
+  "allEnvCorr": {
+   "a": -1.191743643617519,
+   "pa": 0.0096,
+   "b": -1.2325843444840108,
+   "pb": 0.0118,
+   "c": -0.42744129856216373,
+   "pc": 1.0,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "CONNECTIVITY"
+  },
+  "AvgDelta": {
+   "a": -1.9335096754477012,
+   "pa": 0.0116,
+   "b": -1.7720072316476647,
+   "pb": 0.0132,
+   "c": -1.6967537243217319,
+   "pc": 0.014,
+   "c_state": "EXCLUDES",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": true,
+   "family": "POWER"
+  },
+  "AvgAlpha": {
+   "a": 0.5907775409078905,
+   "pa": 0.2958,
+   "b": -0.39270091401719176,
+   "pb": 0.1736,
+   "c": 0.1948752990657301,
+   "pc": 0.5428,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "POWER"
+  },
+  "AvgGamma": {
+   "a": 1.9489065642203443,
+   "pa": 0.0014,
+   "b": 1.6200272985587252,
+   "pb": 0.0016,
+   "c": 0.20070544842788562,
+   "pc": 0.7694,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "POWER"
+  },
+  "temporalDelta": {
+   "a": -1.7595752051087676,
+   "pa": 0.0102,
+   "b": -1.9831058201393557,
+   "pb": 0.0118,
+   "c": -1.8355429869086637,
+   "pc": 0.0162,
+   "c_state": "EXCLUDES",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": true,
+   "family": "POWER"
+  },
+  "parietalDelta": {
+   "a": -1.9453791318101428,
+   "pa": 0.0192,
+   "b": -1.437304822940658,
+   "pb": 0.022,
+   "c": -0.9986727019705741,
+   "pc": 0.0694,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    16,
+    16,
+    12
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "POWER"
+  },
+  "limbicDelta": {
+   "a": -1.6967564206944443,
+   "pa": 0.009,
+   "b": -1.4799627090614536,
+   "pb": 0.012,
+   "c": -1.3245433733612435,
+   "pc": 0.0154,
+   "c_state": "EXCLUDES",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": true,
+   "family": "POWER"
+  },
+  "frontalDelta": {
+   "a": -1.573581264073786,
+   "pa": 0.0198,
+   "b": -1.5253855480122578,
+   "pb": 0.0224,
+   "c": NaN,
+   "pc": NaN,
+   "c_state": "INSUFFICIENT",
+   "n": [
+    16,
+    16,
+    11
+   ],
+   "dissociates": false,
+   "arousal_rem_only": true,
+   "ambiguous": false,
+   "family": "POWER"
+  },
+  "frontalAlpha": {
+   "a": -0.7808541311587899,
+   "pa": 0.2718,
+   "b": -0.951406697950138,
+   "pb": 0.0648,
+   "c": NaN,
+   "pc": NaN,
+   "c_state": "INSUFFICIENT",
+   "n": [
+    16,
+    16,
+    11
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "POWER"
+  },
+  "frontwPLI": {
+   "a": -0.937303449232552,
+   "pa": 0.033,
+   "b": -1.0090765474450576,
+   "pb": 0.0108,
+   "c": -0.12238575065131066,
+   "pc": 1.0,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "CONNECTIVITY"
+  },
+  "backwPLI": {
+   "a": 0.42447833873832364,
+   "pa": 0.6388,
+   "b": -0.8536188773519992,
+   "pb": 0.0398,
+   "c": 0.4537056470308831,
+   "pc": 0.562,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "CONNECTIVITY"
+  },
+  "longwPLI": {
+   "a": -0.4891005179791341,
+   "pa": 0.4608,
+   "b": -1.033228677793103,
+   "pb": 0.0122,
+   "c": 0.5197373135250148,
+   "pc": 0.3544,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "CONNECTIVITY"
+  },
+  "allwPLI": {
+   "a": -0.31357916942717556,
+   "pa": 0.6214,
+   "b": -0.9273849663467182,
+   "pb": 0.0132,
+   "c": 0.9967443283312759,
+   "pc": 0.0692,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "CONNECTIVITY"
+  },
+  "InsAwPLI": {
+   "a": -0.6157245485024014,
+   "pa": 0.1884,
+   "b": -0.9296349006614585,
+   "pb": 0.0164,
+   "c": NaN,
+   "pc": NaN,
+   "c_state": "INSUFFICIENT",
+   "n": [
+    13,
+    13,
+    9
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "CONNECTIVITY"
+  },
+  "frontBias": {
+   "a": -0.8411121291421231,
+   "pa": 0.1506,
+   "b": -0.7760610373073512,
+   "pb": 0.0662,
+   "c": NaN,
+   "pc": NaN,
+   "c_state": "INSUFFICIENT",
+   "n": [
+    16,
+    16,
+    11
+   ],
+   "dissociates": false,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "family": "POWER"
+  }
+ },
+ "P2_rival_dissociators": [
+  "allEnvCorr",
+  "AvgGamma",
+  "parietalDelta",
+  "frontwPLI"
+ ],
+ "P3": {
+  "NmlzCmplx": {
+   "a": 0.12456174380449869,
+   "pa": 0.0384,
+   "b": 0.2120651189752285,
+   "pb": 0.0022,
+   "c": 0.07356288565455882,
+   "pc": 1.0,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "competitor": "allEnvCorr",
+   "residual_rho": -6.827730275707551e-17,
+   "residual_rho_all": 0.7093090181699662,
+   "adjust_ok": true,
+   "n_ok": true
+  },
+  "EffDim": {
+   "a": 0.10009734865165631,
+   "pa": 0.0406,
+   "b": 0.14258486539657872,
+   "pb": 0.0022,
+   "c": 0.5101614302237483,
+   "pc": 0.7792,
+   "c_state": "DOES NOT EXCLUDE",
+   "n": [
+    18,
+    18,
+    13
+   ],
+   "dissociates": true,
+   "arousal_rem_only": false,
+   "ambiguous": false,
+   "competitor": "allEnvCorr",
+   "residual_rho": -3.2611004282172715e-17,
+   "residual_rho_all": 0.7731883571236406,
+   "adjust_ok": true,
+   "n_ok": true
+  }
+ },
+ "families": {
+  "COMPLEXITY": [
+   "EffDim",
+   "NmlzCmplx"
+  ],
+  "POWER": [
+   "AvgAlpha",
+   "AvgDelta",
+   "AvgGamma",
+   "frontBias",
+   "frontalAlpha",
+   "frontalDelta",
+   "limbicDelta",
+   "parietalDelta",
+   "temporalDelta"
+  ],
+  "CONNECTIVITY": [
+   "InsAwPLI",
+   "allEnvCorr",
+   "allwPLI",
+   "backwPLI",
+   "frontwPLI",
+   "longwPLI"
+  ]
+ }
+}

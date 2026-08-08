@@ -221,11 +221,41 @@ than presented as a recovered one.
 
 The leakage line stopped (below). What followed is a different question and a different asset.
 
-**E321 is the one result to quote.** Krause, 18 patients, within-patient, behavioural OAA/S ladder.
-Complexity places REM with wake and drug-unresponsiveness with N3 (`NmlzCmplx` +2.0101 / −0.2164;
-`EffDim` +1.7916 / −0.1398). **Every delta measure fails the drug check** — it separates REM from N3 and
-the drug from N3 by almost exactly as much (−1.77 vs −1.70). Delta would pass as a consciousness measure
-if the drug arm were absent. That is the contribution.
+**E321 is the one result to quote — BUT READ THE E342 CORRECTION BELOW BEFORE QUOTING IT.** Krause, 18
+patients, within-patient, behavioural OAA/S ladder. Complexity places REM with wake and
+drug-unresponsiveness with N3 (`NmlzCmplx` +2.0101 / −0.2164; `EffDim` +1.7916 / −0.1398). Delta
+separates REM from N3 and the drug from N3 by almost exactly as much (−1.77 vs −1.70), so it would pass
+as a consciousness measure if the drug arm were absent. That is the contribution.
+
+> **⚠ E342 (2026-08-08), all gates PASS, verdict REDUCIBLE — the BEHAVIOUR survives and the ATTRIBUTION
+> TO COMPLEXITY does not.** Rule 68's check had never been run on E321. Running E321's own three criteria
+> across all 17 measures in the same inventory, **four power and connectivity measures dissociate exactly
+> as the complexity measures do**: `allEnvCorr` (−1.192 / −1.233 / −0.427), `AvgGamma` (+1.949 / +1.620 /
+> +0.201), `frontwPLI` (−0.937 / −1.009 / −0.122) and `parietalDelta` (−1.945 / −1.437 / −0.999). A
+> property shared by an envelope correlation, a gamma power, a frontal phase-lag index and a parietal
+> delta power is **not a property of complexity**. Say "several measures in this inventory dissociate and
+> most do not"; never "complexity separates arousal from cognitive processing".
+>
+> **Three further corrections that travel with it.** (1) **"Every delta measure fails the drug check" is
+> false** — `parietalDelta` dissociates, marginally (its (c) passes at p = 0.069, on the panel's
+> second-smallest support). The correct sentence is *4 of 5*. (2) **`NmlzCmplx` and `EffDim` are ONE
+> instrument, not two** — they correlate at **+0.9613**, above the 0.90 bar that would have called either
+> reducible to a rival family, so E321 must not be read as two measures corroborating each other
+> (rule 28). (3) **What DOES survive**: the dissociation is not a re-description of its strongest rival —
+> residualising both complexity measures on `allEnvCorr` (orthogonality verified at 0.0000) leaves (a) and
+> (b) intact at p ≤ 0.0406 and 0.0022. And E340's graded ladder stands: `NmlzCmplx` and `EffDim` order the
+> intermediate behavioural state on both steps and **0 of 5 delta measures do**.
+>
+> Notes: `results/e342_result_note.md` (and `e341_result_note.md` for the predecessor that returned NOT
+> INTERPRETABLE on its own positive control and was **not** repaired and re-run, per rule 58).
+> **Also retired here: the state-profile rank correlation as an identity instrument.** With only 6 of 8
+> states finite for every measure, a Spearman over k points is quantised at 6·2/(k(k²−1)) — at k = 6 the
+> largest value below 1.0000 is **0.9429**, so a 0.95 bar is a *synonym for identical ordering*, and
+> identical ordering occurs in **6 of 136 pairs (4.4 %)**, including `NmlzCmplx`/`frontalAlpha` at profile
+> 1.0000 with pooled correlation only −0.3861. **This revises how E119 should be read** — its +1.0000 was
+> over 5 stages (resolution 0.1000) and means only "identical ordering of five states". E119's conclusion
+> is not withdrawn; it rested independently on the VitalDB residualisation (20 % and 6.6 % retained). But
+> rule 68's prescription is the **residualisation**, not the profile correlation.
 
 **Three designs after it each failed on their own controls, and the cause is the cohort, not the
 analyses.** E320's ratio null was built from rearrangements of its own terms (95th at +0.99–1.04, could
@@ -1622,3 +1652,56 @@ unverified on GitHub.
     enlarge the drop — which did **not** hold at SQI >= 80 (+0.8905 against +0.8952 at SQI > 0), because
     the placebo's own silent rate rises with the threshold too. The gate passing and the prediction
     failing are different facts and only one of them was in the gate.
+
+### M. Added 2026-08-08 (BSDE, from E340–E342 — the rule-68 audit of E321)
+
+98. **A RANK CORRELATION BETWEEN GROUP PROFILES IS QUANTISED, SO FOR SMALL k ANY BAR NEAR 1 IS A SYNONYM
+    FOR "IDENTICAL ORDERING" — AND IDENTICAL ORDERING OF A FEW MONOTONE STATES IS COMMON, NOT DIAGNOSTIC.**
+    Rule 68 prescribes an identity check on any component a discovery method reports, and E119's
+    instrument for it was a stage-rank profile correlation, which hit **+1.0000** against
+    `relative_alpha_power` and duly overturned E116/E118. **E341 reused that instrument and it fired on
+    three unrelated pairs at exactly 1.0000.** The calibration explains why. A Spearman over k points has
+    resolution `6·2/(k(k²−1))`, so with the 6 states that were finite for every measure here the largest
+    attainable value **below** 1.0000 is **0.9429** — there is nothing in between, and a registered bar of
+    0.95 could not have meant anything except "orders the states identically". Measured across the whole
+    inventory, that happens in **6 of 136 pairs (4.4 %)**, and in **2 of 105** pairs whose
+    observation-level correlation is under 0.5 — including `NmlzCmplx`/`frontalAlpha` at profile 1.0000
+    with a pooled correlation of only **−0.3861**. Two measures that agree a third of the time
+    observation-by-observation are not the same measure, and the instrument cannot tell that from identity.
+    **Before registering any threshold on a rank statistic over few items, print the achievable grid and
+    the rate at which arbitrary pairs in your own inventory reach it** (rule 63 generalised from float
+    precision to combinatorics; rule 75's shape — a statistic's spread is not its null). **This revises
+    how E119 should be read**: its +1.0000 was over 5 stages, resolution 0.1000, so it means only
+    "identical ordering of five stages". E119's conclusion survives because it rested independently on the
+    VitalDB residualisation (20 % and 6.6 % retained) — **so rule 68's prescription is the residualisation,
+    not the profile correlation.**
+
+99. **REDUCIBILITY MUST BE TESTED AGAINST THE DECISION — "DOES A RIVAL ALREADY DO THE JOB?" — NOT ONLY
+    AGAINST THE CORRELATION, BECAUSE A MEASURE CAN BE NON-REDUNDANT AND STILL NOT SPECIAL.** Rule 68 as
+    written asks whether a reported component correlates with a single measure already in the inventory.
+    **E342 ran both tests on the same claim and only one fired.** Neither complexity dissociator reached
+    the 0.90 co-linearity bar against any power or connectivity measure (`allEnvCorr` at −0.8755 and
+    −0.7926), and residualising on that strongest rival left the effect fully intact (orthogonality
+    verified at 0.0000; (a) and (b) surviving at p ≤ 0.0406 and 0.0022). **A correlation-only rule-68 audit
+    would have returned NOT REDUCIBLE and licensed the headline.** Then the substitution test — run the
+    experiment's own criteria on every measure in the inventory, no threshold required — found **four**
+    power and connectivity measures dissociating exactly as the complexity measures did. The claim
+    "complexity separates arousal from cognitive processing" was dead, while "complexity is a
+    re-description of X" remained false. **The two questions are different and the second is the one a
+    reader cares about**: not *is my measure redundant with a rival* but *does a rival already produce my
+    result*. It is also the cheaper test, because it needs no bar at all — the criteria are already
+    written. Rule 94's lesson (match the test to the decision, not to the parameter) applied to identity
+    rather than to transport, and the corollary for reporting: a measure can be genuinely novel and
+    completely unremarkable at the same time.
+
+100. **AN EXPERIMENT FILE THAT WRITES ITS ARTIFACT UNCONDITIONALLY WILL BE CLOBBERED BY A DIAGNOSTIC
+    INVOCATION — GUARD ON THE REGISTERED PARAMETERS, NOT ONLY ON `--smoke`.** E342's registered
+    5,000-replicate JSON was overwritten by a `--reps 20` run made purely to inspect a gate's search
+    trace. Only `--smoke` suppressed the write, and a reduced replicate count is exactly as much "not the
+    registered run" as a permuted one. It was recoverable here because the file is deterministic under its
+    registered seed and re-executing reproduced every number — but nothing in the artifact recorded which
+    invocation had produced it, so a reader inheriting that JSON would have had no way to know. Same
+    family as rule 56: the invocation that looks like a harmless re-run is writing to the object you rely
+    on. **Every registered parameter that can be overridden from the command line must be compared against
+    its registered value before the artifact is written**, and the artifact should carry those values so
+    the check survives the session that wrote it.
