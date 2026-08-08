@@ -217,6 +217,50 @@ from the original and is not the same object. If the cross-field search is worth
 re-deriving from the programme's own recorded blockers, and it should be written as a new strategy rather
 than presented as a recovered one.
 
+### 2026-08-07 (later) — THE PIVOT: arousal vs cognitive processing, and TWO STUDIES
+
+The leakage line stopped (below). What followed is a different question and a different asset.
+
+**E321 is the one result to quote.** Krause, 18 patients, within-patient, behavioural OAA/S ladder.
+Complexity places REM with wake and drug-unresponsiveness with N3 (`NmlzCmplx` +2.0101 / −0.2164;
+`EffDim` +1.7916 / −0.1398). **Every delta measure fails the drug check** — it separates REM from N3 and
+the drug from N3 by almost exactly as much (−1.77 vs −1.70). Delta would pass as a consciousness measure
+if the drug arm were absent. That is the contribution.
+
+**Three designs after it each failed on their own controls, and the cause is the cohort, not the
+analyses.** E320's ratio null was built from rearrangements of its own terms (95th at +0.99–1.04, could
+not reject for any ordered data). E322 replicated the REM half on 141 scalp subjects and **13 of 16
+measures passed**, which shows the REM contrast alone discriminates almost nothing. E323 passed its
+threshold and its own smoke defeated it (real 5 stages/0.33 modal vs permuted 4/0.42). **Do not add
+another statistic to Krause.**
+
+**E322 also found the EEG-derived muscle proxies point OPPOSITE to real submental EMG in REM**
+(`emg_index` +1.27 against real EMG −0.33). So E321's `AvgGamma` — the survivor of its delta adjustment —
+is the most exposed to that artefact and is the WEAKEST of its three dissociators, not the headline.
+
+**THE OTHER ASSET, and it is not cohort-limited: the register itself.** E330/E331 on 225 registrations —
+**24.0 % died on machinery** before testing their hypothesis; true positive rate **31.6 %** against the
+100 % a positives-only literature implies (**3.17× overstatement**); **29.6 % of machinery failures were
+the analyst's own gate, not the data**; 64.0 % named no incumbent. A portable toolkit now exists at
+`bsde/src/bsde/preregistry/` (spec, stdlib-only implementation, adapter, metrics, 6 tests), and its
+metrics module **independently reproduces E330 exactly** — rule 23 satisfied by two implementations.
+
+**TWO STUDIES are written up** in `bsde/docs/PROPOSAL_THE_STUDY_I_WOULD_RUN.md`, with
+`PILOT_PROTOCOL_MULTISITE_REGISTER.md` and `DATA_REQUESTS_STUDY_A.md`.
+
+> **⚠ AND THE CORRECTION A NEW SESSION MUST CARRY.** I claimed Study A's design was novel — *"nobody has
+> run both, in the same subjects, with two drugs"* — **without searching. It is false.**
+> **Casey CP et al., *Br J Anaesth* 2022, PMID 35148892 / PMC9428919 / NCT03284307** did exactly it:
+> dexmedetomidine, propofol *and* natural sleep, high-density EEG, serial awakenings classifying
+> disconnected consciousness vs unconsciousness. Trial COMPLETED 2020-03-12, **n = 35**, IPD sharing
+> statement **empty**.
+> **So Study A is a DATA REQUEST, not a study to run** — request #0 in `DATA_REQUESTS_STUDY_A.md`, ahead
+> of ds005620 and Turku. What remains open is narrow and is taken from their own numbers: their
+> source-localised signatures fall 0.999 → 0.743 and 0.972 → 0.622 from derivation to validation, and
+> their pre-registered primary (occipital delta) **fails at 0.512** on sleep/propofol.
+
+**Study B — the multi-site register — is the tractable one and needs no new data.**
+
 ### 2026-08-07 — THE STATE-DEPENDENT-LEAKAGE LINE: what it established, and why it stops here
 
 `bsde/docs/MANUSCRIPT_STATE_DEPENDENT_LEAKAGE.md` is a complete draft; `bsde/docs/PROVENANCE_MAP.md`
