@@ -429,7 +429,10 @@ def main(argv=None) -> int:
                 found = n
                 break
         print(f"  [T9] delta {delta:.2f}: {found if found else '> 1200'} registrations per lab "
-              f"for 80 % power (non-overlapping Wilson intervals, two labs)")
+              f"for 80 % power (REGISTERED rule: non-overlapping Wilson intervals, two labs)")
+        print(f"       NOTE, unregistered and labelled as such: non-overlapping 95 % intervals is a")
+        print(f"       markedly STRICTER decision rule than a standard two-proportion test (roughly")
+        print(f"       p < 0.005), so the registered figure is an UPPER bound on what a study needs.")
         t9[f"delta={delta}|required"] = found
     R["T9"] = t9
 
@@ -438,13 +441,20 @@ def main(argv=None) -> int:
     print("T10 -- can the burst-suppression register be audited the same way? FEASIBILITY, not attempt")
     try:
         txt = open(BS_LEDGER).read()
-        n_res = len(re.findall(r"^## R\d+", txt, re.M))
+        # The ledger uses THREE entry formats (## R, ### R, | R). Counting only one undercounts by
+        # a factor of three -- caught by --smoke before the real run, which returned 36 against a
+        # programme that claims 419 results. All three counts are reported.
+        ids = set(int(x) for x in re.findall(r"^#{2,3} R(\d+)", txt, re.M))
+        ids |= set(int(x) for x in re.findall(r"^\| R(\d+)", txt, re.M))
+        n_res = len(ids)
+        n_claimed = max(ids) if ids else 0
     except OSError:
-        n_res = 0
+        n_res = n_claimed = 0
     import glob
     scripts = glob.glob(os.path.join(REPO, "analysis", "*.py"))
     with_json = [f for f in scripts if "json.dump" in open(f, errors="replace").read()]
-    print(f"    burst-suppression results logged in the ledger : {n_res}")
+    print(f"    highest result id referenced (claimed total)  : {n_claimed}")
+    print(f"    results with a structured ledger entry         : {n_res}")
     print(f"    analysis scripts in that programme             : {len(scripts)}")
     print(f"    scripts that write a machine-readable artifact : {len(with_json)}")
     cov = len(with_json) / n_res if n_res else float("nan")
@@ -454,7 +464,7 @@ def main(argv=None) -> int:
     print( "        machine-auditable. **This repo contains ONE auditable register, not two.**")
     print( "        Reported as a measured structural limit rather than attempted, because repeating a")
     print( "        method already shown to fail is the failure rule 101 exists to prevent.")
-    R["T10"] = {"n_results": n_res, "n_scripts": len(scripts), "n_with_artifact": len(with_json),
+    R["T10"] = {"n_results": n_res, "n_claimed": n_claimed, "n_scripts": len(scripts), "n_with_artifact": len(with_json),
                 "coverage": cov, "auditable": False}
 
     print("\n" + "=" * 96)

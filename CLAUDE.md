@@ -350,6 +350,34 @@ metrics module **independently reproduces E330 exactly** — rule 23 satisfied b
 > not.* Also: terminated trials post results MORE often than completed ones, within **every** sponsor
 > class (OTHER 0.3525 vs 0.1767), so the registry captures the stops and it is the completions that go
 > unreported. Note: `results/e347_result_note.md`.
+>
+> **⚠ E348 (2026-08-09) — THE ARGUMENT FOR THE FORMAT, AND A CORRECTION TO ITS MOST QUOTED NUMBER.**
+> **T1, the counterfactual: 6 of 7 prospective gate failures had ALREADY printed a primary that would
+> have read as a finding** (0.857 [0.487, 0.974]) — E341's dissociation surviving at p ≤ 0.0028, E346/T5's
+> "terminations are getting worse", E344/T2's "the labelling is unreliable", and three more, each named in
+> `results/e348_result_note.md` with the note to check it against. A gate failure is a *prevented report*,
+> not a null, and that is now measured rather than asserted. n = 7, hand-tabulated.
+>
+> **T6 CORRECTS E330's "3.17× overstatement" — the figure is DENOMINATOR-DEPENDENT and was never stated.**
+> E330 contrasted the register's positive rate against *"the 100 % a positives-only literature implies"*.
+> Measured on 297 unselected PubMed abstracts (G6 passes: positive-language corpus 0.759 vs null-language
+> 0.025): **0.347 use supportive language, 0.030 state an explicit null, and the classifier ABSTAINS on
+> 0.623.** So against all abstracts the ratio is **1.08×**; against those it can call either way
+> (103/112 = 0.920) it is **2.87×**. **Never quote 3.17× without saying the denominator is
+> positives-versus-explicit-nulls, not positives-versus-all-published-work.** Related: the true-positive
+> rate itself carries ±0.013 of bookkeeping uncertainty from how 11 free-text outcomes are mapped, so
+> quote **0.29–0.32**, not 0.320 (T3, which FAILED its registered 0.02 bar).
+>
+> **T4, an internal reproducibility number with an exact denominator: of 188 parent/successor pairs, 138
+> (0.734) differ in class and 43 (0.229) REVERSE** positive↔negative. **T9** parameterises the pilot:
+> **600 registrations per lab** for 80 % power at a 0.10 difference, an upper bound because the registered
+> rule (non-overlapping 95 % intervals) is stricter than a two-proportion test. **T2, T5 and T7 close
+> cleanly rather than being forced**: gate type does not matter (spread 0.072, overlapping), deposit does
+> not matter (p = 0.8980), and the placebo contrast is REFUSED on its own rule-32 variance check (214 of
+> 225 rows name one). **T10: this repo contains ONE auditable register, not two** — the burst-suppression
+> programme's 419 results have 4 verdict-bearing artifacts across 156 scripts (coverage 0.032) and a prose
+> ledger, so E347/T1's method cannot be applied there and attempting it would repeat a thrice-failed
+> method.
 
 ### 2026-08-07 — THE STATE-DEPENDENT-LEAKAGE LINE: what it established, and why it stops here
 

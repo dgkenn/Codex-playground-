@@ -1,0 +1,304 @@
+{
+ "T1": {
+  "n": 7,
+  "would_have_reported": 6,
+  "rate": 0.8571428571428571,
+  "ci": [
+   0.48686549668097007,
+   0.9743210440510253
+  ],
+  "rows": [
+   {
+    "test": "E340/P2",
+    "would_report": true,
+    "why": "muscle proxies vs real EMG all |rho| <= 0.18 -- would have read as 'the measures are not muscle-driven', a reportable negative",
+    "note": "e340_result_note.md"
+   },
+   {
+    "test": "E341",
+    "would_report": true,
+    "why": "P3 printed the dissociation SURVIVING removal of allEnvCorr at p <= 0.0028 on all four tests -- would have read as the licensing result for E321",
+    "note": "e341_result_note.md"
+   },
+   {
+    "test": "E343",
+    "would_report": true,
+    "why": "P1 printed 3 rules with 5 post-statement recurrences and P3 printed 3 cited-then-violated -- would have read as a quantified finding about error catalogues",
+    "note": "e343_result_note.md"
+   },
+   {
+    "test": "E344/T2",
+    "would_report": true,
+    "why": "agreement 0.353 -- would have read as 'E330's labelling is unreliable', a strong claim",
+    "note": "e344_result_note.md"
+   },
+   {
+    "test": "E344/T7",
+    "would_report": false,
+    "why": "no held-out rows existed, so no primary was computed at all -- nothing to report",
+    "note": "e344_result_note.md"
+   },
+   {
+    "test": "E346/T5",
+    "would_report": true,
+    "why": "slope +0.00142/yr -- would have read as 'trial terminations are getting worse over 16 years', a publishable external trend",
+    "note": "e346_result_note.md"
+   },
+   {
+    "test": "E346/T7",
+    "would_report": true,
+    "why": "precision 0.071 on 6.2 % coverage -- the low number itself would have read as a finding about auditability rather than as insufficient coverage",
+    "note": "e346_result_note.md"
+   }
+  ]
+ },
+ "T2": {
+  "by_type": {
+   "OTHER": {
+    "carried": 186,
+    "gate_failed": 45,
+    "rate": 0.24193548387096775,
+    "ci": [
+     0.1860137466172952,
+     0.30830151410532836
+    ]
+   },
+   "SUPPORT": {
+    "carried": 157,
+    "gate_failed": 42,
+    "rate": 0.267515923566879,
+    "ci": [
+     0.2044319165806463,
+     0.34170540112820524
+    ]
+   },
+   "ALIVENESS": {
+    "carried": 86,
+    "gate_failed": 23,
+    "rate": 0.26744186046511625,
+    "ci": [
+     0.1853195577468752,
+     0.3694523964480633
+    ]
+   },
+   "CAPABILITY": {
+    "carried": 70,
+    "gate_failed": 22,
+    "rate": 0.3142857142857143,
+    "ci": [
+     0.21762136964668138,
+     0.4302735838754525
+    ]
+   },
+   "PLACEBO": {
+    "carried": 47,
+    "gate_failed": 13,
+    "rate": 0.2765957446808511,
+    "ci": [
+     0.16936405991152936,
+     0.41758835700689967
+    ]
+   },
+   "QUALITY": {
+    "carried": 15,
+    "gate_failed": 4,
+    "rate": 0.26666666666666666,
+    "ci": [
+     0.1089727610318281,
+     0.5195088965768675
+    ]
+   }
+  },
+  "spread": 0.07235023041474653
+ },
+ "T3": {
+  "schemes": {
+   "registered (hand mapping)": {
+    "n": 225,
+    "machinery": 0.24,
+    "positive": 0.32
+   },
+   "free text -> mixed": {
+    "n": 225,
+    "machinery": 0.24,
+    "positive": 0.29333333333333333
+   },
+   "free text -> dropped": {
+    "n": 214,
+    "machinery": 0.2523364485981308,
+    "positive": 0.308411214953271
+   },
+   "free text -> first word": {
+    "n": 225,
+    "machinery": 0.24,
+    "positive": 0.31555555555555553
+   }
+  },
+  "range_machinery": 0.012336448598130823,
+  "range_positive": 0.026666666666666672
+ },
+ "T4": {
+  "n_pairs": 188,
+  "differs": 138,
+  "reverses": 43,
+  "differs_ci": [
+   0.6666558167729258,
+   0.7920559537711064
+  ],
+  "reverses_ci": [
+   0.17447256343841408,
+   0.2938387934310032
+  ]
+ },
+ "T5": {
+  "by_deposit": {
+   "vitaldb": {
+    "n": 72,
+    "gate_failed": 22,
+    "rate": 0.3055555555555556,
+    "ci": [
+     0.21126482045921047,
+     0.4195446561341104
+    ]
+   },
+   "other/none": {
+    "n": 30,
+    "gate_failed": 7,
+    "rate": 0.23333333333333334,
+    "ci": [
+     0.11792239210501232,
+     0.40928672330324267
+    ]
+   },
+   "dose": {
+    "n": 28,
+    "gate_failed": 5,
+    "rate": 0.17857142857142858,
+    "ci": [
+     0.0787838582943011,
+     0.355917915485911
+    ]
+   },
+   "sleep-edf": {
+    "n": 23,
+    "gate_failed": 4,
+    "rate": 0.17391304347826086,
+    "ci": [
+     0.06978540350612772,
+     0.37138054785295666
+    ]
+   },
+   "stieger": {
+    "n": 21,
+    "gate_failed": 4,
+    "rate": 0.19047619047619047,
+    "ci": [
+     0.07667440615177301,
+     0.40000986539273287
+    ]
+   },
+   "ds00": {
+    "n": 19,
+    "gate_failed": 3,
+    "rate": 0.15789473684210525,
+    "ci": [
+     0.055203710399278266,
+     0.3756592764317668
+    ]
+   },
+   "eegmmidb": {
+    "n": 13,
+    "gate_failed": 4,
+    "rate": 0.3076923076923077,
+    "ci": [
+     0.12680497161618087,
+     0.5763111218666236
+    ]
+   }
+  },
+  "spread": 0.14979757085020245,
+  "p": 0.898
+ },
+ "T6": {
+  "rate": 0.3468013468013468,
+  "ci": [
+   0.2949384172178324,
+   0.4025768200365898
+  ],
+  "pos": 103,
+  "null": 9,
+  "n": 297,
+  "control_pos": 0.759493670886076,
+  "control_null": 0.02531645569620253,
+  "gate": true
+ },
+ "T7": {
+  "n_has": 214,
+  "n_not": 11,
+  "run": false
+ },
+ "T8": {
+  "estimates": [
+   {
+    "name": "E344/T1 row level",
+    "p": 0.24,
+    "lo": 0.187,
+    "hi": 0.298,
+    "note": "225 registrations"
+   },
+   {
+    "name": "E346/T8 lineage level",
+    "p": 0.081,
+    "lo": 0.028,
+    "hi": 0.213,
+    "note": "37 lineages, majority vote"
+   },
+   {
+    "name": "E347/T7 prospective",
+    "p": 0.269,
+    "lo": 0.137,
+    "hi": 0.461,
+    "note": "26 pre-committed tests"
+   },
+   {
+    "name": "E347/T5 external matched",
+    "p": 0.2737,
+    "lo": 0.2692,
+    "hi": 0.2782,
+    "note": "CTG academic, n<=20"
+   }
+  ],
+  "all_overlap": false,
+  "same_estimand_overlap": true
+ },
+ "T9": {
+  "delta=0.1|n=25": 0.022333333333333334,
+  "delta=0.1|n=50": 0.045,
+  "delta=0.1|n=100": 0.11033333333333334,
+  "delta=0.1|n=150": 0.19866666666666666,
+  "delta=0.1|n=200": 0.284,
+  "delta=0.1|n=300": 0.4756666666666667,
+  "delta=0.1|n=400": 0.6406666666666667,
+  "delta=0.1|n=600": 0.8456666666666667,
+  "delta=0.1|required": 600,
+  "delta=0.05|n=25": 0.010333333333333333,
+  "delta=0.05|n=50": 0.014333333333333333,
+  "delta=0.05|n=100": 0.026,
+  "delta=0.05|n=150": 0.03133333333333333,
+  "delta=0.05|n=200": 0.052,
+  "delta=0.05|n=300": 0.084,
+  "delta=0.05|n=400": 0.11633333333333333,
+  "delta=0.05|n=600": 0.21433333333333332,
+  "delta=0.05|n=800": 0.30566666666666664,
+  "delta=0.05|n=1200": 0.506,
+  "delta=0.05|required": null
+ },
+ "T10": {
+  "n_results": 125,
+  "n_claimed": 419,
+  "n_scripts": 156,
+  "n_with_artifact": 4,
+  "coverage": 0.032,
+  "auditable": false
+ }
+}
