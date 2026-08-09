@@ -137,8 +137,13 @@ def esearch(term, n):
                       _get(f"{EUT}esearch.fcgi?db=pubmed&retmax={n}&term={urllib.parse.quote(term)}"))
 
 
-CONCL = re.compile(r'<AbstractText[^>]*NlmCategory="CONCLUSIONS"[^>]*>(.*?)</AbstractText>',
-                   re.S | re.I)
+# Match a conclusions section by EITHER NlmCategory or a Label attribute. The smoke found that
+# NlmCategory alone yielded 9 usable records from 120 -- many structured abstracts carry
+# Label="CONCLUSION"/"CONCLUSIONS" with no NlmCategory at all, and older records almost never have
+# one. Broadened before any real statistic existed (rule 26: this is what the smoke is for).
+CONCL = re.compile(
+    r'<AbstractText[^>]*(?:NlmCategory="CONCLUSIONS?"|Label="[^"]*CONCLUSION[^"]*")[^>]*>(.*?)'
+    r'</AbstractText>', re.S | re.I)
 PMID = re.compile(r"<PMID[^>]*>(\d+)</PMID>")
 NCT = re.compile(r"\bNCT\d{8}\b")
 
