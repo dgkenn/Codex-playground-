@@ -329,6 +329,27 @@ metrics module **independently reproduces E330 exactly** — rule 23 satisfied b
 > rising 6.9 % → 34.6 %, correlates with the stopped share at **ρ = +0.643**, and the slope flips sign
 > with the window (+0.0118 on 2005-08, −0.0001 on 2005-15). Notes: `results/e344_result_note.md`,
 > `results/e346_result_note.md`.
+>
+> **⚠ E347 (2026-08-09) CLOSES REFUSAL (1) AND BOUNDS (2).** **The labelling IS auditable — just not from
+> prose.** Every register row carries a `file`, every experiment writes a result JSON, and most carry the
+> verdict string the CODE emitted. Auditing the one unambiguous implication (artifact says NOT
+> INTERPRETABLE while the row claims anything but `gate_failed`) resolves **215/225 rows** and finds
+> **3 contradictions (1.4 %)**, against **15** under permuted labels — a detector with demonstrated
+> capability. E346's "needs a human reader" is **withdrawn**. On (2): the assumption-free lower bound
+> (stopped / all registered) is flat near **0.12** across 2005-2020, so **there has been no large
+> improvement** — but the bound is itself depressed by censoring, so the direction of any small change is
+> still undetermined and needs follow-up times, not status counts.
+>
+> **THE NUMBER TO QUOTE, now matched three ways.** A register of small-n analyses fails on machinery at
+> **0.240 [0.187, 0.298]** (retrospective, 225 rows) and **0.269 [0.137, 0.461]** (PROSPECTIVE — the 26
+> pre-committed tests of E340-E346, E344/T7's missing sample). The matched external stratum — academic or
+> hospital sponsor, enrolment ≤ 20, **N = 37,843** — is **0.2737**. The size gradient survives phase
+> (4/4) and sponsor (3/3), and **E347/T9 supplies the mechanism**: among stopped trials the MACHINERY
+> share is **0.582** at n ≤ 20 against **0.235** at n > 500, while the RESULT share runs the other way
+> (0.071 vs 0.259) — *a large trial that stops has usually learned something; a small one usually has
+> not.* Also: terminated trials post results MORE often than completed ones, within **every** sponsor
+> class (OTHER 0.3525 vs 0.1767), so the registry captures the stops and it is the completions that go
+> unreported. Note: `results/e347_result_note.md`.
 
 ### 2026-08-07 — THE STATE-DEPENDENT-LEAKAGE LINE: what it established, and why it stops here
 

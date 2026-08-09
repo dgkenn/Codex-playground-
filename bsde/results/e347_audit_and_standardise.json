@@ -1,0 +1,553 @@
+{
+ "T1": {
+  "resolved": 215,
+  "coverage": 0.9555555555555556,
+  "contradictions": 3,
+  "converse": 36,
+  "gates": {
+   "G1": true,
+   "G1b": true
+  },
+  "detail": [
+   {
+    "id": "e110",
+    "outcome": "negative",
+    "artifact": "e110_which_reading_degrades.json",
+    "verdict": "NO ATTRIBUTION, AND THE REASON IS A GATE, NOT A NULL. The tiva arm's interval DOES exclude zero, but its gates failed, s"
+   },
+   {
+    "id": "e115",
+    "outcome": "withdrawn",
+    "artifact": "e115_how_many_axes.json",
+    "verdict": "**NOT INTERPRETABLE -- THE PROCEDURE CANNOT COUNT AXES.** A synthetic inventory built from ONE latent state variable, vi"
+   },
+   {
+    "id": "E243",
+    "outcome": "negative",
+    "artifact": "e243_calibration_cost.json",
+    "verdict": "NOT INTERPRETABLE -- G2 failed; the uncalibrated transfer already works and there is nothing to calibrate"
+   }
+  ]
+ },
+ "T2": {
+  "COMPLETED": {
+   "n": 255348,
+   "with_results": 62020,
+   "rate": 0.24288422074972194
+  },
+  "TERMINATED": {
+   "n": 29598,
+   "with_results": 11548,
+   "rate": 0.3901614973984729
+  },
+  "COMPLETED|INDUSTRY": {
+   "n": 75148,
+   "with_results": 28949,
+   "rate": 0.3852264864001703
+  },
+  "COMPLETED|NIH": {
+   "n": 5665,
+   "with_results": 1686,
+   "rate": 0.2976169461606355
+  },
+  "COMPLETED|OTHER": {
+   "n": 164066,
+   "with_results": 28990,
+   "rate": 0.17669718284105176
+  },
+  "TERMINATED|INDUSTRY": {
+   "n": 10507,
+   "with_results": 4758,
+   "rate": 0.4528409631674122
+  },
+  "TERMINATED|NIH": {
+   "n": 747,
+   "with_results": 428,
+   "rate": 0.5729585006693441
+  },
+  "TERMINATED|OTHER": {
+   "n": 17446,
+   "with_results": 6149,
+   "rate": 0.3524590163934426
+  }
+ },
+ "T3": {
+  "by_year": {
+   "2005": {
+    "stopped": 912,
+    "terminal": 7197,
+    "ongoing": 532,
+    "rate": 0.1267194664443518,
+    "followup": 0.9311683270798292,
+    "lower_bound": 0.11799715357743563
+   },
+   "2006": {
+    "stopped": 1292,
+    "terminal": 8590,
+    "ongoing": 712,
+    "rate": 0.15040745052386495,
+    "followup": 0.9234573210062352,
+    "lower_bound": 0.1388948613201462
+   },
+   "2007": {
+    "stopped": 1547,
+    "terminal": 9525,
+    "ongoing": 897,
+    "rate": 0.16241469816272966,
+    "followup": 0.9139320667818077,
+    "lower_bound": 0.148436000767607
+   },
+   "2008": {
+    "stopped": 1751,
+    "terminal": 10817,
+    "ongoing": 1081,
+    "rate": 0.16187482666173617,
+    "followup": 0.9091443940158009,
+    "lower_bound": 0.14716759119179695
+   },
+   "2009": {
+    "stopped": 1786,
+    "terminal": 11549,
+    "ongoing": 1301,
+    "rate": 0.15464542384622046,
+    "followup": 0.8987548638132296,
+    "lower_bound": 0.13898832684824902
+   },
+   "2010": {
+    "stopped": 1807,
+    "terminal": 11923,
+    "ongoing": 1496,
+    "rate": 0.15155581648913863,
+    "followup": 0.8885162828824801,
+    "lower_bound": 0.13465981071614874
+   },
+   "2011": {
+    "stopped": 1798,
+    "terminal": 12462,
+    "ongoing": 1756,
+    "rate": 0.14427860696517414,
+    "followup": 0.8764945843297229,
+    "lower_bound": 0.12645941763961177
+   },
+   "2012": {
+    "stopped": 1928,
+    "terminal": 13041,
+    "ongoing": 1986,
+    "rate": 0.14784142320374205,
+    "followup": 0.8678378917947694,
+    "lower_bound": 0.1283023890330738
+   },
+   "2013": {
+    "stopped": 1973,
+    "terminal": 13567,
+    "ongoing": 2331,
+    "rate": 0.1454264022996978,
+    "followup": 0.8533777833689772,
+    "lower_bound": 0.12410366083784123
+   },
+   "2014": {
+    "stopped": 2119,
+    "terminal": 14703,
+    "ongoing": 2894,
+    "rate": 0.14412024756852343,
+    "followup": 0.8355401488890152,
+    "lower_bound": 0.1204182531113258
+   },
+   "2015": {
+    "stopped": 2274,
+    "terminal": 15465,
+    "ongoing": 3473,
+    "rate": 0.14704170708050437,
+    "followup": 0.8166121026507551,
+    "lower_bound": 0.12007603759636709
+   },
+   "2016": {
+    "stopped": 2386,
+    "terminal": 15989,
+    "ongoing": 4372,
+    "rate": 0.14922759397085497,
+    "followup": 0.7852757723098079,
+    "lower_bound": 0.11718481410539758
+   },
+   "2017": {
+    "stopped": 2498,
+    "terminal": 16461,
+    "ongoing": 4797,
+    "rate": 0.15175262742239232,
+    "followup": 0.7743437764606266,
+    "lower_bound": 0.11750870260607771
+   },
+   "2018": {
+    "stopped": 2716,
+    "terminal": 16963,
+    "ongoing": 5891,
+    "rate": 0.16011318752579143,
+    "followup": 0.7422333070797235,
+    "lower_bound": 0.1188413406843441
+   },
+   "2019": {
+    "stopped": 2924,
+    "terminal": 16653,
+    "ongoing": 7174,
+    "rate": 0.17558397886266738,
+    "followup": 0.6989129978595711,
+    "lower_bound": 0.12271792504301843
+   },
+   "2020": {
+    "stopped": 2791,
+    "terminal": 15417,
+    "ongoing": 8144,
+    "rate": 0.18103392359084128,
+    "followup": 0.6543440431221086,
+    "lower_bound": 0.11845846950468995
+   }
+  },
+  "eligible": [
+   2005,
+   2006,
+   2007,
+   2008
+  ],
+  "slope_eligible": 0.011747332829101778,
+  "slope_lower_bound": -0.0015348784815590734,
+  "floor": 0.9
+ },
+ "T4": {
+  "grid": {
+   "PHASE1|1-20": {
+    "stopped": 3605,
+    "n": 15324,
+    "rate": 0.23525189245627773
+   },
+   "PHASE1|21-100": {
+    "stopped": 2233,
+    "n": 25965,
+    "rate": 0.08600038513383401
+   },
+   "PHASE1|101-500": {
+    "stopped": 287,
+    "n": 3708,
+    "rate": 0.07740021574973031
+   },
+   "PHASE1|501+": {
+    "stopped": 7,
+    "n": 285,
+    "rate": 0.02456140350877193
+   },
+   "PHASE2|1-20": {
+    "stopped": 5377,
+    "n": 12410,
+    "rate": 0.4332796132151491
+   },
+   "PHASE2|21-100": {
+    "stopped": 3490,
+    "n": 26911,
+    "rate": 0.12968674519713128
+   },
+   "PHASE2|101-500": {
+    "stopped": 1174,
+    "n": 13227,
+    "rate": 0.08875784380433961
+   },
+   "PHASE2|501+": {
+    "stopped": 123,
+    "n": 1665,
+    "rate": 0.07387387387387387
+   },
+   "PHASE3|1-20": {
+    "stopped": 1043,
+    "n": 2317,
+    "rate": 0.4501510574018127
+   },
+   "PHASE3|21-100": {
+    "stopped": 1308,
+    "n": 8530,
+    "rate": 0.1533411488862837
+   },
+   "PHASE3|101-500": {
+    "stopped": 1319,
+    "n": 14588,
+    "rate": 0.09041678091582123
+   },
+   "PHASE3|501+": {
+    "stopped": 591,
+    "n": 8004,
+    "rate": 0.07383808095952024
+   },
+   "PHASE4|1-20": {
+    "stopped": 1302,
+    "n": 3527,
+    "rate": 0.36915225404026086
+   },
+   "PHASE4|21-100": {
+    "stopped": 973,
+    "n": 10769,
+    "rate": 0.09035193611291671
+   },
+   "PHASE4|101-500": {
+    "stopped": 414,
+    "n": 7292,
+    "rate": 0.056774547449259465
+   },
+   "PHASE4|501+": {
+    "stopped": 72,
+    "n": 1979,
+    "rate": 0.03638201111672562
+   }
+  },
+  "phases_holding": 4
+ },
+ "T5": {
+  "grid": {
+   "INDUSTRY|1-20": {
+    "stopped": 4018,
+    "n": 14628,
+    "rate": 0.2746786983866557
+   },
+   "INDUSTRY|21-100": {
+    "stopped": 4026,
+    "n": 37132,
+    "rate": 0.10842400086179037
+   },
+   "INDUSTRY|101-500": {
+    "stopped": 2190,
+    "n": 24977,
+    "rate": 0.08768066621291588
+   },
+   "INDUSTRY|501+": {
+    "stopped": 598,
+    "n": 8263,
+    "rate": 0.0723708096333051
+   },
+   "NIH|1-20": {
+    "stopped": 381,
+    "n": 1286,
+    "rate": 0.2962674961119751
+   },
+   "NIH|21-100": {
+    "stopped": 313,
+    "n": 3101,
+    "rate": 0.10093518219929055
+   },
+   "NIH|101-500": {
+    "stopped": 64,
+    "n": 1121,
+    "rate": 0.057091882247992866
+   },
+   "NIH|501+": {
+    "stopped": 15,
+    "n": 381,
+    "rate": 0.03937007874015748
+   },
+   "OTHER|1-20": {
+    "stopped": 10359,
+    "n": 37843,
+    "rate": 0.27373622598631187
+   },
+   "OTHER|21-100": {
+    "stopped": 5919,
+    "n": 93064,
+    "rate": 0.06360139259004556
+   },
+   "OTHER|101-500": {
+    "stopped": 1775,
+    "n": 39482,
+    "rate": 0.04495719568410921
+   },
+   "OTHER|501+": {
+    "stopped": 365,
+    "n": 10589,
+    "rate": 0.03446973274152422
+   }
+  },
+  "comparator": {
+   "stopped": 10359,
+   "n": 37843,
+   "rate": 0.27373622598631187
+  }
+ },
+ "T6": {
+  "stopped": 457,
+  "n": 4780,
+  "rate": 0.09560669456066946,
+  "gate": true,
+  "machinery_share": 0.492,
+  "n_texts": 250
+ },
+ "T7": {
+  "n": 26,
+  "counts": {
+   "positive": 15,
+   "gate_failed": 7,
+   "negative": 1,
+   "absent": 2,
+   "blocked": 1
+  },
+  "gate_failed_rate": 0.2692307692307692,
+  "ci": [
+   0.13704275525067386,
+   0.46083403419761304
+  ],
+  "rows": [
+   [
+    "E340/P1",
+    "positive",
+    "graded ladder; prediction met"
+   ],
+   [
+    "E340/P2",
+    "gate_failed",
+    "G3 muscle positive control failed"
+   ],
+   [
+    "E341",
+    "gate_failed",
+    "G1 plant reached 0.7542 against its own 0.90 bar"
+   ],
+   [
+    "E342",
+    "negative",
+    "REDUCIBLE; registered prediction refuted"
+   ],
+   [
+    "E343",
+    "gate_failed",
+    "G1 and G2 extraction gates refused"
+   ],
+   [
+    "E344/T1",
+    "positive",
+    "intervals; prediction met"
+   ],
+   [
+    "E344/T2",
+    "gate_failed",
+    "capability gate too easy; not interpretable on inspection"
+   ],
+   [
+    "E344/T3",
+    "positive",
+    "37 lineages measured"
+   ],
+   [
+    "E344/T4",
+    "positive",
+    "slope +0.0364/gate, p~0.042 across 5 seeds"
+   ],
+   [
+    "E344/T5",
+    "absent",
+    "prediction not met; null"
+   ],
+   [
+    "E344/T6",
+    "positive",
+    "0/119 against control 0.200"
+   ],
+   [
+    "E344/T7",
+    "gate_failed",
+    "no held-out rows"
+   ],
+   [
+    "E344/T8",
+    "positive",
+    "criterion is noise-biased"
+   ],
+   [
+    "E344/T9",
+    "positive",
+    "set unstable under bootstrap"
+   ],
+   [
+    "E344/T10",
+    "absent",
+    "flat, p=0.3134"
+   ],
+   [
+    "E345",
+    "blocked",
+    "deposit restricted, credentials unset"
+   ],
+   [
+    "E346/T1",
+    "positive",
+    "exact denominator"
+   ],
+   [
+    "E346/T2",
+    "positive",
+    "G2 thin pass; range not point"
+   ],
+   [
+    "E346/T3",
+    "positive",
+    "pipeline check passed"
+   ],
+   [
+    "E346/T4",
+    "positive",
+    "5.5-fold size gradient; prediction met"
+   ],
+   [
+    "E346/T5",
+    "gate_failed",
+    "censoring confound; slope flips sign"
+   ],
+   [
+    "E346/T6",
+    "positive",
+    "descriptive"
+   ],
+   [
+    "E346/T7",
+    "gate_failed",
+    "coverage 6.2% against a 40% floor"
+   ],
+   [
+    "E346/T8",
+    "positive",
+    "lineage-level rates"
+   ],
+   [
+    "E346/T9",
+    "positive",
+    "side by side as registered"
+   ],
+   [
+    "E346/T10",
+    "positive",
+    "1 in 891"
+   ]
+  ]
+ },
+ "T8": {
+  "n_absent": 18,
+  "with_number": 16,
+  "ci": [
+   0.6719975513339578,
+   0.9689811315464172
+  ]
+ },
+ "T9": {
+  "1-20": {
+   "n": 1200,
+   "machinery": 0.5816666666666667,
+   "result": 0.07083333333333333,
+   "other": 0.3475
+  },
+  "501+": {
+   "n": 941,
+   "machinery": 0.23485653560042508,
+   "result": 0.2592986184909671,
+   "other": 0.5058448459086079
+  }
+ },
+ "T10": {
+  "ctg_other_small": 0.27373622598631187,
+  "ctg_all": 0.14909527141857443,
+  "register_row": 0.24,
+  "register_lineage": 0.081,
+  "register_prospective": 0.2692307692307692
+ }
+}
