@@ -302,6 +302,34 @@ metrics module **independently reproduces E330 exactly** — rule 23 satisfied b
 
 **Study B — the multi-site register — is the tractable one and needs no new data.**
 
+> **⚠ E344/E346 (2026-08-09) — the register line is now EXTERNALISED, and two of its claims are refused.**
+> **E346 benchmarked it against ClinicalTrials.gov**, a preregistration system with an exact denominator:
+> 300,090 interventional studies with a terminal status, of which **44,742 (14.9 %)** stopped. Splitting
+> `whyStopped` into machinery vs result (construct-validity gate PASSED, thinly — RESULT share 0.138 in
+> phase 1 vs 0.172 in phase 3, intervals overlapping) puts the **external machinery-failure rate between
+> 0.070 and 0.149**, a range not a point, because 46.8 % of stop texts are unclassifiable.
+> **The finding that makes the whole comparison work is the SIZE GRADIENT**: stopped share is **0.2732**
+> at enrolment ≤ 20 and **0.0501** above 500 — 5.5-fold. This register is small-n throughout, so its rate
+> is **ordinary for work of this size**, which is a far better sentence than "this lab fails a lot".
+> Published abstracts state that a study could not evaluate its question at **1 in 891** (3 fields,
+> pooled; the anaesthesia/EEG arm is refused on its own control, rule 71).
+>
+> **Quote the rates with their UNIT.** E344/T1 gives row-level machinery-failure **0.240 [0.187, 0.298]**;
+> E346/T8 gives lineage-level **0.081 [0.028, 0.213]** over **37 lineages** — the 225 rows are only 37
+> independent questions. These are DIFFERENT ESTIMANDS (designs-that-died vs questions-that-mostly-died),
+> both belong in the paper with definitions attached, and neither corrects the other. Analyst-defect moves
+> the other way, 0.296 → 0.444.
+>
+> **Two refusals that must travel with any write-up.** (1) **The outcome labelling CANNOT be audited from
+> text** — E344/T2's classifier shared my own vocabulary and mis-assigned ≥ 46 rows; E346/T7's genuinely
+> external vocabulary, derived from CTG's corpus, fires on only 6.2 % of rows at precision 0.071, because
+> trial-stopping language (accrual, funding, sites) and analysis-stopping language (gates, nulls, power)
+> barely share terms. It needs a second human reader or a structured field written at the time.
+> (2) **Whether the external rate is improving is NOT INTERPRETABLE** — censoring is present in every year,
+> rising 6.9 % → 34.6 %, correlates with the stopped share at **ρ = +0.643**, and the slope flips sign
+> with the window (+0.0118 on 2005-08, −0.0001 on 2005-15). Notes: `results/e344_result_note.md`,
+> `results/e346_result_note.md`.
+
 ### 2026-08-07 — THE STATE-DEPENDENT-LEAKAGE LINE: what it established, and why it stops here
 
 `bsde/docs/MANUSCRIPT_STATE_DEPENDENT_LEAKAGE.md` is a complete draft; `bsde/docs/PROVENANCE_MAP.md`
