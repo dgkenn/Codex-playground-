@@ -378,6 +378,29 @@ metrics module **independently reproduces E330 exactly** — rule 23 satisfied b
 > programme's 419 results have 4 verdict-bearing artifacts across 156 scripts (coverage 0.032) and a prose
 > ledger, so E347/T1's method cannot be applied there and attempting it would repeat a thrice-failed
 > method.
+>
+> **⚠ E349 + E350 (2026-08-09), twenty tests.** **The size gradient is not an artefact of anything**: it
+> holds in OBSERVATIONAL studies (0.2154 at n ≤ 20 → 0.0302 above 500), on both sides of the US boundary,
+> and under randomisation; size spreads the stopped share by 0.2231 against ≤ 0.08 for phase, purpose,
+> study type and sponsor. **The external machinery-failure bound TIGHTENS from [0.070, 0.149] to
+> [0.094, 0.129]** (E349/T8, second pattern set gated at 0.740 agreement on the already-matched corpus).
+> **Machinery failures are doubly invisible**: terminated-for-machinery studies post results at 0.4389
+> against 0.5638 for terminated-for-result, on top of the 1-in-891 literature rate.
+>
+> **THE NUMBER TO QUOTE FROM THE LITERATURE SIDE IS E350/T5: an explicit null appears in 1 published
+> conclusion in 107** (0.0093 [0.0040, 0.0217]), and 0.974 of the conclusions a classifier can call either
+> way are positive. **Do NOT quote a single overstatement factor** — E350/T6 shows it spans **1.07× to
+> 3.42×** on the same data purely by how abstentions are assigned, so E330's 3.17× is *under-specified*
+> rather than wrong, and the fix is to publish the table.
+>
+> **Three registered predictions failed and are reported as failing.** E350/T1: restricting to CONCLUSIONS
+> text did NOT reduce abstention (0.647 vs the whole-abstract 0.623) — the ambiguity is in how authors
+> write, so the factor cannot be narrowed by this route. E350/T2: RCTs report positives MORE than
+> observational studies (0.473 vs 0.433). **E349/T1: the registered FDAAA statistic printed RISE
+> (+0.0387), but the series peaks in 2007 — BEFORE the mandate — and declines monotonically for thirteen
+> years after, so a two-block contrast was the wrong instrument for a discontinuity (rule 33).** Also
+> closed: "do registered studies conclude differently" is unanswerable from abstract text, since only
+> 2 of 535 abstracts carry an NCT number. Note: `results/e349_e350_result_note.md`.
 
 ### 2026-08-07 — THE STATE-DEPENDENT-LEAKAGE LINE: what it established, and why it stops here
 
