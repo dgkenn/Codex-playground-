@@ -68,6 +68,21 @@ retrospectively the register measures nothing. The reference implementation refu
 * **qualification rate** — positives whose own detail text contains a hedge
 * **failures per gate carried** — controls for how heavily designs are gated
 
+## Running the tests
+
+The package is stdlib-only and so are its tests, but they are written in two styles and the commands
+differ. **`python -m unittest` collects ZERO tests from `test_register.py`** — it is pytest-style
+`test_*` functions with bare asserts, and unittest reports "Ran 0 tests ... OK", which reads as a pass.
+Use one of:
+
+```bash
+PYTHONPATH=bsde/src python -m pytest bsde/src/bsde/preregistry/tests/ -q          # all 22
+PYTHONPATH=bsde/src python bsde/src/bsde/preregistry/tests/test_register.py       # 6, no pytest needed
+PYTHONPATH=bsde/src python -m unittest bsde.preregistry.tests.test_recurrence     # 16
+```
+
+22 tests total: 6 on the register (v1), 16 on the recurrence record (v1.1).
+
 ## Adoption cost
 
 One file, appended to. No server, no account, no schema migration. The reference implementation is

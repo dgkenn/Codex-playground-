@@ -141,6 +141,8 @@ shared, Study A becomes an analysis rather than a multi-year acquisition program
 
 **A multi-site register of pre-registered biomarker experiments.**
 
+> **⚠ CORRECTED — see `STATE_METASCIENCE_LINE.md`.** The rates below need a UNIT (0.240 per *design*, 0.081 per *question*), the true-positive rate is a range **0.29–0.32**, and the "100 % a positives-only literature implies" premise is **measured and false** — the overstatement factor spans 1.07×–3.42× (E350/T6). The paragraph is left as written for the record.
+
 E330/E331 measured, on 225 registrations: **24.0 %** died on machinery before testing their hypothesis;
 the true positive rate was **31.6 %** against the 100 % a positives-only literature implies; and **29.6 %
 of machinery failures were the analyst's own apparatus** rather than the data.

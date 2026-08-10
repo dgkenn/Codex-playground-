@@ -1,5 +1,22 @@
 # Multi-site pre-registration register: pilot protocol
 
+> ## ⚠ SUPERSEDED IN PART — read `STATE_METASCIENCE_LINE.md` first
+>
+> This document is **E330/E331 as written on 2026-08-07** and is kept as the record of what that analysis
+> said. Fifty further tests (E344–E350) have since added intervals, an external benchmark of 300,090
+> ClinicalTrials.gov studies, a prospective sample, and a mechanical audit of the outcome labelling.
+> **Three numbers below are corrected there:**
+>
+> * the rates need a **unit** — 0.240 [0.187, 0.298] per *design*, 0.081 [0.028, 0.213] per *question*
+>   (the 225 rows are only 37 independent lineages);
+> * the true-positive rate is a **range, 0.29–0.32**, not 0.316 — it moves with how 11 free-text outcomes
+>   are mapped;
+> * **"3.17×" is under-specified**, spanning 1.07×–3.42× by how classifier abstentions are assigned. The
+>   quotable literature figure is the explicit-null rate, **1 conclusion in 107**.
+>
+> Nothing below is retracted; it is the earlier and less-qualified version of the same measurements.
+
+
 *Study B of `PROPOSAL_THE_STUDY_I_WOULD_RUN.md`. Everything needed to run it exists:
 `bsde/src/bsde/preregistry/` holds the spec, a stdlib-only reference implementation, an adapter for an
 existing register, and a metrics tool validated against an independently written analysis of the same
@@ -13,10 +30,10 @@ On one programme's register of 225 pre-registered biomarker analyses:
 
 | quantity | value |
 |---|---|
-| died on machinery before testing the hypothesis | **24.0 %** |
-| true positive rate (of runs) | **31.6 %** |
+| died on machinery before testing the hypothesis | **24.0 %** per design *(0.081 per question)* |
+| true positive rate (of runs) | **29–32 %** *(bookkeeping range, E348/T3)* |
 | positive rate among those reaching a conclusion | 47.3 % |
-| **overstatement factor** of a positives-only view | **3.17×** |
+| **overstatement factor** of a positives-only view | **1.07×–3.42×** *(denominator-dependent, E350/T6)* |
 | positives that hedge in their own outcome text | 50.7 % |
 | designs naming no incumbent | 64.0 % |
 | of machinery failures, the analyst's own gate rather than the data | **29.6 %** |
@@ -44,6 +61,24 @@ qualification rate.
 **The analyst-defect fraction requires classification and is therefore NOT automated.** Our 29.6 % came
 from reading all 54 outcome texts by hand. The pilot should have two readers classify independently and
 report agreement; a helper that guesses from keywords would be an oracle pretending to be a measurement.
+
+## Sample size — measured, not guessed (E348/T9, added 2026-08-09)
+
+The protocol previously stated no sample size. Simulated under the registered decision rule
+(non-overlapping 95 % Wilson intervals between two labs, base machinery-failure rate 0.24):
+
+| difference to detect | registrations per lab for 80 % power |
+|---|---|
+| 0.10 | **600** |
+| 0.05 | **> 1,200** |
+
+**Both are UPPER bounds.** Non-overlapping 95 % intervals is a markedly stricter rule than a standard
+two-proportion test — roughly p < 0.005 — so a pilot willing to use the conventional test needs
+materially fewer. The figures are quoted here under the rule the pilot actually registers.
+
+**The practical reading**: two labs cannot settle a 0.05 difference at any plausible pilot scale. A pilot
+should be powered for the coarse question (does a lab's rate look like 0.24 or like 0.05?) and should
+report the rate with its interval rather than testing a difference.
 
 ## What would make the pilot informative either way
 

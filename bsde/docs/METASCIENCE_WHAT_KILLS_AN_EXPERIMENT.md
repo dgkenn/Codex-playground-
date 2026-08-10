@@ -1,5 +1,22 @@
 # What kills a pre-registered biomarker experiment? Evidence from 225 of them
 
+> ## ⚠ SUPERSEDED IN PART — read `STATE_METASCIENCE_LINE.md` first
+>
+> This document is **E330/E331 as written on 2026-08-07** and is kept as the record of what that analysis
+> said. Fifty further tests (E344–E350) have since added intervals, an external benchmark of 300,090
+> ClinicalTrials.gov studies, a prospective sample, and a mechanical audit of the outcome labelling.
+> **Three numbers below are corrected there:**
+>
+> * the rates need a **unit** — 0.240 [0.187, 0.298] per *design*, 0.081 [0.028, 0.213] per *question*
+>   (the 225 rows are only 37 independent lineages);
+> * the true-positive rate is a **range, 0.29–0.32**, not 0.316 — it moves with how 11 free-text outcomes
+>   are mapped;
+> * **"3.17×" is under-specified**, spanning 1.07×–3.42× by how classifier abstentions are assigned. The
+>   quotable literature figure is the explicit-null rate, **1 conclusion in 107**.
+>
+> Nothing below is retracted; it is the earlier and less-qualified version of the same measurements.
+
+
 **E330, 2026-08-07.** Meta-research on this project's own append-only registration ledger. Predictions
 committed before any statistic was computed; `results/e330_ledger_metascience.json` carries the output.
 
@@ -20,9 +37,9 @@ afterwards an outcome — in an append-only file whose rows cannot be edited exc
 
 | outcome | n | share |
 |---|---|---|
-| positive | 71 | 31.6 % |
+| positive | 71 | 31.6 % *(→ 0.29–0.32 corrected, E348/T3)* |
 | negative | 56 | 24.9 % |
-| **gate_failed** | **54** | **24.0 %** |
+| **gate_failed** | **54** | **24.0 %** *(per DESIGN; 0.081 per QUESTION, E346/T8)* |
 | absent | 18 | 8.0 % |
 | withdrawn | 8 | 3.6 % |
 | blocked | 6 | 2.7 % |
@@ -42,7 +59,7 @@ anywhere in a conventional literature.
     true positive rate, all registrations   31.6 %
     positive rate among those that concluded 47.3 %
     implied rate if only positives are seen  100 %
-    OVERSTATEMENT FACTOR                     3.17x
+    OVERSTATEMENT FACTOR                     3.17x   <-- UNDER-SPECIFIED: 1.07x-3.42x (E350/T6)
 
 And the positives are softer than their label: **35 of 71 (49 %) carry an explicit qualification in their
 own outcome text** — "but", "however", "not licensed", "caveat". The register contains 159 separate
@@ -119,7 +136,7 @@ on people than physical studies on non-biological material, with biological stud
 **That paper reports odds ratios, not absolute positive-result rates, so no percentage is quoted from it
 here** (rule 42: a quotation supports only what it literally says). It establishes that published
 positive-result rates are high and vary systematically by field; it does not supply the number against
-which our 31.6 % could be directly benchmarked. **That benchmark does not exist in a form I could
+which our 31.6 % could be directly benchmarked. **That benchmark NOW EXISTS -- see E346/T10, E349, E350 in `STATE_METASCIENCE_LINE.md`.** As of 2026-08-07 it did not exist in a form I could
 verify, and inventing one would be the exact error this document is about.**
 
 ## 5. More gates means more machinery failure, and that is the mechanism working

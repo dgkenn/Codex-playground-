@@ -73,3 +73,29 @@ def test_verify_flags_missing_incumbent_and_gates_without_erroring():
         p = run("verify", "--file", f)
         assert "no incumbent named" in p.stdout
         assert "no gates" in p.stdout
+
+
+# ---------------------------------------------------------------------------------------------------
+# STDLIB RUNNER. These are pytest-style `test_*` functions with bare asserts, which `python -m unittest`
+# silently collects ZERO of -- it reports "Ran 0 tests ... OK", which reads as a pass. That is a trap for
+# a package whose whole selling point is that it is stdlib-only and cheap to adopt, so the file runs
+# itself without pytest:
+#
+#     python bsde/src/bsde/preregistry/tests/test_register.py
+#
+# pytest still collects it normally.
+if __name__ == "__main__":
+    import traceback as _tb
+    _fns = [(n, f) for n, f in sorted(globals().items())
+            if n.startswith("test_") and callable(f)]
+    _fail = 0
+    for _n, _f in _fns:
+        try:
+            _f()
+            print(f"  ok    {_n}")
+        except Exception:                                          # noqa: BLE001
+            _fail += 1
+            print(f"  FAIL  {_n}")
+            _tb.print_exc()
+    print(f"\n{len(_fns) - _fail}/{len(_fns)} passed")
+    raise SystemExit(1 if _fail else 0)

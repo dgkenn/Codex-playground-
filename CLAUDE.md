@@ -63,6 +63,27 @@ composite's +0.690 — additive to within 1 %), so do not describe it as an alph
 
 ## THE ACTIVE PROJECT AS OF 2026-07-29: bsde/ — Brain-State Discovery Engine
 
+> ### ▶ WHERE THINGS STAND, 2026-08-09 — read this before picking anything up
+>
+> **The live thread is the PRE-REGISTRATION REGISTER line (metascience), not EEG.** Fifty tests
+> (E344–E350) have taken E330's single-lab observation to a matched external comparison against 300,090
+> ClinicalTrials.gov studies, with a prospective sample, a mechanical audit of the outcome labelling, and
+> the counterfactual that supplies the argument for the format. **Its single current-state document is
+> `bsde/docs/STATE_METASCIENCE_LINE.md`.** Everything a referee would demand has been measured; the next
+> step is **writing the paper, not more tests.**
+>
+> **The EEG thread is parked, in two pieces.** (a) The arousal/processing dissociation is *corrected and
+> bounded*: the behaviour is real, the attribution to complexity is not (E342), the dissociating set is
+> unstable at n = 18 (E344/T9), and the criterion itself is noise-biased (E344/T8). Do not run another
+> dissociation hunt on Krause. (b) **E345 is registered and BLOCKED on credentials** — it needs
+> `PHYSIONET_USER` / `PHYSIONET_PASSWORD` for PhysioNet `eeg-power-anesthesia` 1.0.0 ("Multitaper spectra
+> recorded during GABAergic anesthetic unconsciousness", DOI 10.13026/m792-h077). `bsde/scripts/
+> physionet_fetch.sh` is written and refuses cleanly until they are set. Its G0 probe runs first and can
+> stop the design.
+>
+> **The state-dependent-leakage line is CLOSED** — complete manuscript, provenance map, and a settled
+> answer on why it is specialist rather than high-impact. Do not re-litigate it.
+
 **As of 2026-07-29 the investigator's stated priority is a third project, `bsde/`, not the burst-suppression
 programme above.** BSDE (Brain-State Discovery Engine) is an autonomous discovery-and-validation system aimed
 at separating arousal, cognitive-processing capacity, command-following and behavioral output in EEG — not
@@ -302,105 +323,40 @@ metrics module **independently reproduces E330 exactly** — rule 23 satisfied b
 
 **Study B — the multi-site register — is the tractable one and needs no new data.**
 
-> **⚠ E344/E346 (2026-08-09) — the register line is now EXTERNALISED, and two of its claims are refused.**
-> **E346 benchmarked it against ClinicalTrials.gov**, a preregistration system with an exact denominator:
-> 300,090 interventional studies with a terminal status, of which **44,742 (14.9 %)** stopped. Splitting
-> `whyStopped` into machinery vs result (construct-validity gate PASSED, thinly — RESULT share 0.138 in
-> phase 1 vs 0.172 in phase 3, intervals overlapping) puts the **external machinery-failure rate between
-> 0.070 and 0.149**, a range not a point, because 46.8 % of stop texts are unclassifiable.
-> **The finding that makes the whole comparison work is the SIZE GRADIENT**: stopped share is **0.2732**
-> at enrolment ≤ 20 and **0.0501** above 500 — 5.5-fold. This register is small-n throughout, so its rate
-> is **ordinary for work of this size**, which is a far better sentence than "this lab fails a lot".
-> Published abstracts state that a study could not evaluate its question at **1 in 891** (3 fields,
-> pooled; the anaesthesia/EEG arm is refused on its own control, rule 71).
+> **⚠ THE REGISTER LINE HAS MOVED ON A LONG WAY SINCE E330. READ
+> `bsde/docs/STATE_METASCIENCE_LINE.md` BEFORE QUOTING ANY OF ITS NUMBERS.** That file is the single
+> current state of E330→E350 (fifty tests) and supersedes `METASCIENCE_WHAT_KILLS_AN_EXPERIMENT.md`,
+> `PILOT_PROTOCOL_MULTISITE_REGISTER.md` and `PROPOSAL_THE_STUDY_I_WOULD_RUN.md` wherever they disagree.
+> The five things a new session must not get wrong:
 >
-> **Quote the rates with their UNIT.** E344/T1 gives row-level machinery-failure **0.240 [0.187, 0.298]**;
-> E346/T8 gives lineage-level **0.081 [0.028, 0.213]** over **37 lineages** — the 225 rows are only 37
-> independent questions. These are DIFFERENT ESTIMANDS (designs-that-died vs questions-that-mostly-died),
-> both belong in the paper with definitions attached, and neither corrects the other. Analyst-defect moves
-> the other way, 0.296 → 0.444.
+> 1. **Quote every rate with its UNIT.** Machinery-failure is **0.240 [0.187, 0.298] per DESIGN**
+>    (225 registrations), **0.269 [0.137, 0.461] per design PROSPECTIVELY** (26 pre-committed tests), and
+>    **0.081 [0.028, 0.213] per QUESTION** (37 lineages). These are different estimands, not competing
+>    estimates. The 225 rows are only **37 independent lineages**.
+> 2. **The claim is now a MATCHED comparison, not a curiosity.** ClinicalTrials.gov, N = 300,090: the
+>    external machinery-failure rate is **0.094–0.129**, and the matched stratum — academic/hospital
+>    sponsor, enrolment ≤ 20, N = 37,843 — is **0.2737**. This register's rate is **ordinary for work of
+>    this size**. The size gradient (5.5-fold) survives phase, sponsor, country, randomisation and study
+>    type, and **E347/T9 gives the mechanism**: a large trial that stops has usually learned something, a
+>    small one usually has not.
+> 3. **"3.17× overstatement" is UNDER-SPECIFIED, not wrong** — it spans **1.07× to 3.42×** purely by how
+>    classifier abstentions are assigned (E350/T6). Publish the table. **The quotable literature number is
+>    the explicit-null rate: 1 published conclusion in 107** (0.0093 [0.0040, 0.0217]).
+> 4. **The argument FOR the format is E348/T1**: **6 of 7** prospective gate failures had already printed
+>    a primary that would have read as a finding (0.857 [0.487, 0.974]). A gate failure is a *prevented
+>    report*, not a null.
+> 5. **The labelling is auditable from the CODE, never from prose.** E347/T1 resolves 215/225 rows to an
+>    artifact and finds **3 contradictions (1.4 %)** against 15 under permuted labels. Two attempts to
+>    audit it from text failed (E344/T2, E346/T7); rule 101 records why.
 >
-> **Two refusals that must travel with any write-up.** (1) **The outcome labelling CANNOT be audited from
-> text** — E344/T2's classifier shared my own vocabulary and mis-assigned ≥ 46 rows; E346/T7's genuinely
-> external vocabulary, derived from CTG's corpus, fires on only 6.2 % of rows at precision 0.071, because
-> trial-stopping language (accrual, funding, sites) and analysis-stopping language (gates, nulls, power)
-> barely share terms. It needs a second human reader or a structured field written at the time.
-> (2) **Whether the external rate is improving is NOT INTERPRETABLE** — censoring is present in every year,
-> rising 6.9 % → 34.6 %, correlates with the stopped share at **ρ = +0.643**, and the slope flips sign
-> with the window (+0.0118 on 2005-08, −0.0001 on 2005-15). Notes: `results/e344_result_note.md`,
-> `results/e346_result_note.md`.
->
-> **⚠ E347 (2026-08-09) CLOSES REFUSAL (1) AND BOUNDS (2).** **The labelling IS auditable — just not from
-> prose.** Every register row carries a `file`, every experiment writes a result JSON, and most carry the
-> verdict string the CODE emitted. Auditing the one unambiguous implication (artifact says NOT
-> INTERPRETABLE while the row claims anything but `gate_failed`) resolves **215/225 rows** and finds
-> **3 contradictions (1.4 %)**, against **15** under permuted labels — a detector with demonstrated
-> capability. E346's "needs a human reader" is **withdrawn**. On (2): the assumption-free lower bound
-> (stopped / all registered) is flat near **0.12** across 2005-2020, so **there has been no large
-> improvement** — but the bound is itself depressed by censoring, so the direction of any small change is
-> still undetermined and needs follow-up times, not status counts.
->
-> **THE NUMBER TO QUOTE, now matched three ways.** A register of small-n analyses fails on machinery at
-> **0.240 [0.187, 0.298]** (retrospective, 225 rows) and **0.269 [0.137, 0.461]** (PROSPECTIVE — the 26
-> pre-committed tests of E340-E346, E344/T7's missing sample). The matched external stratum — academic or
-> hospital sponsor, enrolment ≤ 20, **N = 37,843** — is **0.2737**. The size gradient survives phase
-> (4/4) and sponsor (3/3), and **E347/T9 supplies the mechanism**: among stopped trials the MACHINERY
-> share is **0.582** at n ≤ 20 against **0.235** at n > 500, while the RESULT share runs the other way
-> (0.071 vs 0.259) — *a large trial that stops has usually learned something; a small one usually has
-> not.* Also: terminated trials post results MORE often than completed ones, within **every** sponsor
-> class (OTHER 0.3525 vs 0.1767), so the registry captures the stops and it is the completions that go
-> unreported. Note: `results/e347_result_note.md`.
->
-> **⚠ E348 (2026-08-09) — THE ARGUMENT FOR THE FORMAT, AND A CORRECTION TO ITS MOST QUOTED NUMBER.**
-> **T1, the counterfactual: 6 of 7 prospective gate failures had ALREADY printed a primary that would
-> have read as a finding** (0.857 [0.487, 0.974]) — E341's dissociation surviving at p ≤ 0.0028, E346/T5's
-> "terminations are getting worse", E344/T2's "the labelling is unreliable", and three more, each named in
-> `results/e348_result_note.md` with the note to check it against. A gate failure is a *prevented report*,
-> not a null, and that is now measured rather than asserted. n = 7, hand-tabulated.
->
-> **T6 CORRECTS E330's "3.17× overstatement" — the figure is DENOMINATOR-DEPENDENT and was never stated.**
-> E330 contrasted the register's positive rate against *"the 100 % a positives-only literature implies"*.
-> Measured on 297 unselected PubMed abstracts (G6 passes: positive-language corpus 0.759 vs null-language
-> 0.025): **0.347 use supportive language, 0.030 state an explicit null, and the classifier ABSTAINS on
-> 0.623.** So against all abstracts the ratio is **1.08×**; against those it can call either way
-> (103/112 = 0.920) it is **2.87×**. **Never quote 3.17× without saying the denominator is
-> positives-versus-explicit-nulls, not positives-versus-all-published-work.** Related: the true-positive
-> rate itself carries ±0.013 of bookkeeping uncertainty from how 11 free-text outcomes are mapped, so
-> quote **0.29–0.32**, not 0.320 (T3, which FAILED its registered 0.02 bar).
->
-> **T4, an internal reproducibility number with an exact denominator: of 188 parent/successor pairs, 138
-> (0.734) differ in class and 43 (0.229) REVERSE** positive↔negative. **T9** parameterises the pilot:
-> **600 registrations per lab** for 80 % power at a 0.10 difference, an upper bound because the registered
-> rule (non-overlapping 95 % intervals) is stricter than a two-proportion test. **T2, T5 and T7 close
-> cleanly rather than being forced**: gate type does not matter (spread 0.072, overlapping), deposit does
-> not matter (p = 0.8980), and the placebo contrast is REFUSED on its own rule-32 variance check (214 of
-> 225 rows name one). **T10: this repo contains ONE auditable register, not two** — the burst-suppression
-> programme's 419 results have 4 verdict-bearing artifacts across 156 scripts (coverage 0.032) and a prose
-> ledger, so E347/T1's method cannot be applied there and attempting it would repeat a thrice-failed
-> method.
->
-> **⚠ E349 + E350 (2026-08-09), twenty tests.** **The size gradient is not an artefact of anything**: it
-> holds in OBSERVATIONAL studies (0.2154 at n ≤ 20 → 0.0302 above 500), on both sides of the US boundary,
-> and under randomisation; size spreads the stopped share by 0.2231 against ≤ 0.08 for phase, purpose,
-> study type and sponsor. **The external machinery-failure bound TIGHTENS from [0.070, 0.149] to
-> [0.094, 0.129]** (E349/T8, second pattern set gated at 0.740 agreement on the already-matched corpus).
-> **Machinery failures are doubly invisible**: terminated-for-machinery studies post results at 0.4389
-> against 0.5638 for terminated-for-result, on top of the 1-in-891 literature rate.
->
-> **THE NUMBER TO QUOTE FROM THE LITERATURE SIDE IS E350/T5: an explicit null appears in 1 published
-> conclusion in 107** (0.0093 [0.0040, 0.0217]), and 0.974 of the conclusions a classifier can call either
-> way are positive. **Do NOT quote a single overstatement factor** — E350/T6 shows it spans **1.07× to
-> 3.42×** on the same data purely by how abstentions are assigned, so E330's 3.17× is *under-specified*
-> rather than wrong, and the fix is to publish the table.
->
-> **Three registered predictions failed and are reported as failing.** E350/T1: restricting to CONCLUSIONS
-> text did NOT reduce abstention (0.647 vs the whole-abstract 0.623) — the ambiguity is in how authors
-> write, so the factor cannot be narrowed by this route. E350/T2: RCTs report positives MORE than
-> observational studies (0.473 vs 0.433). **E349/T1: the registered FDAAA statistic printed RISE
-> (+0.0387), but the series peaks in 2007 — BEFORE the mandate — and declines monotonically for thirteen
-> years after, so a two-block contrast was the wrong instrument for a discontinuity (rule 33).** Also
-> closed: "do registered studies conclude differently" is unanswerable from abstract text, since only
-> 2 of 535 abstracts carry an NCT number. Note: `results/e349_e350_result_note.md`.
+> Also settled there, so they are not re-run: gate type and deposit do not predict failure; the placebo
+> contrast is refused on a rule-32 variance check; "do registered studies conclude differently" is
+> unanswerable from abstract text (2 of 535 carry an NCT number); OSF is unreachable, so there is no
+> external register of *analyses*; and whether the external rate is improving is **not determined** —
+> the assumption-free lower bound is flat near 0.12, so no large improvement, but it is censoring-depressed.
+> **E349/T1 is a self-correction worth carrying**: the registered FDAAA statistic printed RISE, but the
+> series peaks in 2007, *before* the mandate, so a two-block contrast was the wrong instrument for a
+> discontinuity (rule 33).
 
 ### 2026-08-07 — THE STATE-DEPENDENT-LEAKAGE LINE: what it established, and why it stops here
 
@@ -1076,7 +1032,7 @@ one real effect, all for the same reason (rule 28).
 
 | document | status |
 |---|---|
-| `docs/research/41_RESULTS_LEDGER.md` | **live** — 392 results, the constraint table, the primary record |
+| `docs/research/41_RESULTS_LEDGER.md` | **live** — 419 results, the constraint table, the primary record. Prose, therefore **not machine-auditable** (rule 101, E348/T10) |
 | `docs/LESSONS.md` | **live** — accumulated memory; append after every experiment, negatives included |
 | `docs/EXPERIMENT_QUEUE.md` | **live** — prioritised backlog, re-ranked 2026-07-27 |
 | `docs/research/48_RESEARCH_LANDSCAPE.md` | **live** — what this data can and cannot settle, with feasibility counts |
@@ -1094,6 +1050,15 @@ one real effect, all for the same reason (rule 28).
 | `bsde/docs/ANALYSIS_PLAN.md` | live — BSDE's analysis backlog |
 | `bsde/docs/LITERATURE_MAP.md` | live — BSDE's prior-art / literature tracking |
 | `bsde/docs/RESEARCH_PROGRAM_BRIEF.md`, `BRIEF_02_DATASET_STRATEGY.md`, `BRIEF_03_AI_DISCOVERY_LAB.md` | **live, immutable** — investigator-supplied verbatim, never edit |
+| **`bsde/docs/STATE_METASCIENCE_LINE.md`** | **LIVE AND PRIMARY for the register line — E330→E350, fifty tests.** Read this before quoting any register number; it supersedes the three docs below wherever they disagree |
+| `bsde/docs/METASCIENCE_WHAT_KILLS_AN_EXPERIMENT.md` | **superseded in part** — the E330/E331 write-up as of 2026-08-07, kept as the record. Carries a correction banner |
+| `bsde/docs/PILOT_PROTOCOL_MULTISITE_REGISTER.md` | live, **corrected** — now carries the measured sample size (600 registrations per lab, an upper bound) |
+| `bsde/docs/PROPOSAL_THE_STUDY_I_WOULD_RUN.md` | live, **corrected** — Study A is a DATA REQUEST (Casey 2022 ran it); Study B is the tractable one |
+| `bsde/docs/DATA_REQUESTS_STUDY_A.md`, `SOP_DATA_ACQUISITION.md`, `DEPOSIT_ACCESS_STATUS.md` | live — how to get data, what each deposit can and cannot host. **Read `DEPOSIT_ACCESS_STATUS.md` before designing on any deposit (rule 96)** |
+| `bsde/docs/MANUSCRIPT_STATE_DEPENDENT_LEAKAGE.md`, `PROVENANCE_MAP.md` | live — the completed leakage manuscript and its number-to-script map. That line is **closed**; do not re-litigate its impact |
+| `bsde/results/e3*_result_note.md` | **live — the per-experiment record.** Every registered verdict, including the refusals, with the numbers a reader must check |
+| `bsde/src/bsde/preregistry/` | live — the portable register format: `SPEC.md` v1.1, `register.py`, `metrics.py`, `recurrence.py`, 22 passing tests |
+| the `bsde/docs/*_2026_08_02_*.md` family (AUDIT/PROBE/LIT/DESIGN/CONSOLIDATION) | **historical** — the 2026-08-02 working documents. Correct as of their date; check against `STATE_METASCIENCE_LINE.md` and the ledger before quoting |
 
 ---
 
