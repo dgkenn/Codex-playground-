@@ -6,8 +6,15 @@
 name: kwx-forecast
 
 on:
-  schedule:
-    - cron: '3 13,15,17 * * *'   # ~US morning: catches eastern (UTC-5) and western (UTC-8) cities in local 5-11h
+  # DISABLED 2026-08-10. The forecast sleeve is dead four independent ways: corrected EV
+  # -0.039/contract at day-clustered t=-4.88 over 1,000 settled rows scored on Kalshi's OFFICIAL
+  # settlement at executable prices; the corrected bracket_prob was forward-tested (rows from
+  # 2026-08-07) and came in at -0.0416/ct, confirming the sign did not move; and post-fix model
+  # Brier 0.2864 is WORSE than a constant base-rate predictor (0.1928) against the market's 0.1452.
+  # See venue_expansion/FORWARD_DATA_2026-08-16.md. Cron removed so it stops appending rows to a
+  # closed sleeve; workflow_dispatch retained so it can still be run by hand if ever re-registered.
+  # schedule:
+  #   - cron: '3 13,15,17 * * *'
   workflow_dispatch: {}
 
 permissions:
