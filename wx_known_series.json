@@ -56,6 +56,11 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXHIGHTCYYZ": {
+   "title": "Daily high temp Toronto",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
   "KXHIGHTDAL": {
    "title": "Dallas Maximum Temperature",
    "status": "active",
@@ -66,10 +71,55 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXHIGHTEBBR": {
+   "title": "Daily high temp Brussels",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTEDDB": {
+   "title": "Daily high temp Berlin",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTEDDF": {
+   "title": "Daily high temp Frankfurt",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTEGLL": {
+   "title": "Daily high temp London ",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTEHAM": {
+   "title": "Amsterdam Daily High Temperature",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
   "KXHIGHTHOU": {
    "title": "Daily High Temperature Houston",
    "status": "active",
    "first_seen": "2026-07-19"
+  },
+  "KXHIGHTKSAN": {
+   "title": "Daily High Temperature San Diego",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTLFPG": {
+   "title": "Daily high temp Paris",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTLSGG": {
+   "title": "Daily high temp Geneva",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTLTFM": {
+   "title": "Daily high temp Istanbul",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
   },
   "KXHIGHTLV": {
    "title": "Las Vegas Max Daily Temperature",
@@ -81,6 +131,11 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXHIGHTMMMX": {
+   "title": "Daily high temp Mexico City",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
   "KXHIGHTNOLA": {
    "title": "New Orleans Max temp Daily",
    "status": "active",
@@ -91,15 +146,35 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXHIGHTOMDB": {
+   "title": "Daily high temp Dubai",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
   "KXHIGHTPHX": {
    "title": "Phoenix High Temperature Daily",
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXHIGHTRJTT": {
+   "title": "Daily high temp Tokyo",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTRKSI": {
+   "title": "Daily high temp Seoul",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
   "KXHIGHTSATX": {
    "title": "San Antonio Daily Maximum Temperature",
    "status": "active",
    "first_seen": "2026-07-19"
+  },
+  "KXHIGHTSBGR": {
+   "title": "Daly high temp Sao Paulo",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
   },
   "KXHIGHTSEA": {
    "title": "Seattle Maximum Temperature Daily",
@@ -110,6 +185,36 @@
    "title": "San Francisco High Temperature Daily",
    "status": "active",
    "first_seen": "2026-07-19"
+  },
+  "KXHIGHTVABB": {
+   "title": "Daily high temp Mumbai",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTVHHH": {
+   "title": "Daily high temp Hong Kong",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTWSSS": {
+   "title": "Daily high temp Singapore",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTYSSY": {
+   "title": "Daily high temp Sydney",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTZBAA": {
+   "title": "Beijing Daily High Temperature",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXHIGHTZSPD": {
+   "title": "Daily high temp Shanghai",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
   },
   "KXHIGHUS": {
    "title": "High temp in United States",
@@ -176,6 +281,11 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXLOWTCYYZ": {
+   "title": "Daily low temp Toronto",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
   "KXLOWTDAL": {
    "title": "Lowest temperature Dallas",
    "status": "active",
@@ -191,15 +301,65 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXLOWTEBBR": {
+   "title": "Daily low temp Brussels",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTEDDB": {
+   "title": "Daily Low Temp Berlin ",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTEDDF": {
+   "title": "Daily low temp Frankfurt",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTEGLL": {
+   "title": "Daily low temp London",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTEHAM": {
+   "title": "Amsterdam Daily Low Temperature",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
   "KXLOWTHOU": {
    "title": "Low Temperature Houston",
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXLOWTKSAN": {
+   "title": "Low Temperature San Diego",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
   "KXLOWTLAX": {
    "title": "Lowest Temperature in LA",
    "status": "active",
    "first_seen": "2026-07-19"
+  },
+  "KXLOWTLFPG": {
+   "title": "Daily low temp Paris ",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTLSGG": {
+   "title": "Daily low temperature Geneva",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTLSSG": {
+   "title": "Daily low temp Geneva",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTLTFM": {
+   "title": "Daily low temp Istanbul",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
   },
   "KXLOWTLV": {
    "title": "Las Vegas Daily Low Temperature",
@@ -216,6 +376,11 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXLOWTMMMX": {
+   "title": "Daily low temp Mexico City",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
   "KXLOWTNOLA": {
    "title": "NOLA Low Temperature",
    "status": "active",
@@ -231,6 +396,11 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXLOWTOMDB": {
+   "title": "Daily low temp Dubai",
+   "status": "deprecated",
+   "first_seen": "2026-08-17"
+  },
   "KXLOWTPHIL": {
    "title": "Lowest temperature in Philadelphia",
    "status": "active",
@@ -241,10 +411,25 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXLOWTRJTT": {
+   "title": "Daily low temp Tokyo",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTRKSI": {
+   "title": "Daily low temp Seoul",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
   "KXLOWTSATX": {
    "title": "Lowest Temperature SATX",
    "status": "active",
    "first_seen": "2026-07-19"
+  },
+  "KXLOWTSBGR": {
+   "title": "Daily low temp Sao Paulo ",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
   },
   "KXLOWTSEA": {
    "title": "Low Temperature Seattle",
@@ -255,6 +440,36 @@
    "title": "Lowest Temperature San Francisco",
    "status": "active",
    "first_seen": "2026-07-19"
+  },
+  "KXLOWTVABB": {
+   "title": "Daily low temp Mumbai",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTVHHH": {
+   "title": "Daily low temp Hong Kong",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTWSSS": {
+   "title": "Daily low temp Singapore",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTYSSY": {
+   "title": "Daily low temp Sydney",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTZBAA": {
+   "title": "Beijing Daily Low Temperature",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
+  },
+  "KXLOWTZSPD": {
+   "title": "Daily low temp Shanghai",
+   "status": "unknown",
+   "first_seen": "2026-08-17"
   }
  }
 }
