@@ -74,9 +74,17 @@ for (const [key, value] of Object.entries(parts)) {
   html = html.replace(marker, value);
 }
 
+// Both docs folders, because they serve different routes and had already drifted apart:
+// `marathon/docs` is what the githack URL points at, and the repo-root `docs` is the only folder
+// GitHub Pages can serve from ("deploy from a branch" offers root or /docs, nothing else). A stale
+// copy in either is a page that silently serves an old build, which is the exact failure the build
+// stamp exists to catch — better not to create it in the first place.
+const repoRoot = join(root, '..');
 const targets = [
   join(root, 'docs', 'index.html'),
   join(root, 'docs', 'pace-coach.html'),
+  join(repoRoot, 'docs', 'index.html'),
+  join(repoRoot, 'docs', 'pace-coach.html'),
   join(here, 'pace-coach-hosted.html'),
 ];
 for (const t of targets) writeFileSync(t, html);

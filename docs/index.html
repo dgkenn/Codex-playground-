@@ -171,6 +171,25 @@
 
   .hide { display: none !important; }
 
+  /* Heart-rate zones as a bar rather than a number: which zone you are in is the decision, and a
+     bar answers it without reading. */
+  .zonebar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; height: 26px; }
+  .zonebar div { border-radius: 4px; background: var(--raised); position: relative;
+                 display: flex; align-items: center; justify-content: center;
+                 font-size: .625rem; color: var(--faint); letter-spacing: .04em; }
+  .zonebar div.active { color: var(--ink); font-weight: 600; }
+  .zonebar div.z1.active { background: #7f8c99; }
+  .zonebar div.z2.active { background: var(--on); }
+  .zonebar div.z3.active { background: #b8c96a; }
+  .zonebar div.z4.active { background: var(--fast); }
+  .zonebar div.z5.active { background: var(--stop); }
+  .zonebar div.target { outline: 1px solid var(--faint); }
+
+  .maplegend { display: flex; gap: .8rem; align-items: center; margin-top: .5rem;
+               font-size: .6875rem; color: var(--dim); }
+  .maplegend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px;
+                 margin-right: .3rem; vertical-align: middle; }
+
   button.tiny { padding: .45rem .7rem; min-height: 0; font-size: .8125rem; }
   .planhead { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
   .phase { font-family: "Barlow Semi Condensed", sans-serif; font-weight: 600; font-size: 1.15rem;
@@ -208,8 +227,20 @@
     </div>
     <div class="row" style="margin-top:.65rem">
       <button id="preflight">Run all checks</button>
-      <button id="hear">Hear the five tones</button>
     </div>
+    <div class="row" style="margin-top:.5rem">
+      <button class="tiny" data-tone="in_band">Sample tone</button>
+      <button class="tiny" data-tone="ease">Ease off</button>
+      <button class="tiny" data-tone="lift">Lift</button>
+      <button class="tiny" data-tone="attend">Voice chime</button>
+      <button class="tiny" data-tone="degraded">Signal lost</button>
+      <button class="tiny" id="testvoice">Voice</button>
+    </div>
+    <p class="note" style="margin-top:.6rem">
+      Each button plays exactly that one sound, so you can learn them one at a time.
+      <strong>Sample tone</strong> is the single note you hear on coming back on pace — press that
+      first to set the volume against your music.
+    </p>
     <p class="note" style="margin-top:.75rem">
       <strong>Start Apple Music first, then run the checks.</strong> Safari can't ask iOS to mix with
       other audio the way a real app can, so your music may duck or pause when a tone plays. Thirty
@@ -238,6 +269,21 @@
       </div>
     </div>
     <p class="note" id="gatenote" style="margin-top:.7rem"></p>
+  </section>
+
+  <section>
+    <h2>Armband</h2>
+    <div class="instrument" style="gap:.7rem">
+      <div class="planhead">
+        <div>
+          <div class="phase" id="hrbig">—</div>
+          <div class="weeklabel" id="hrstate">not connected</div>
+        </div>
+        <button id="connect" class="tiny">Connect</button>
+      </div>
+      <div class="zonebar" id="zonebar"></div>
+    </div>
+    <p class="note" id="btnote" style="margin-top:.7rem"></p>
   </section>
 
   <section>
@@ -302,7 +348,20 @@
     <div class="tiles" style="margin-top:.5rem">
       <div class="tile"><div class="k">Elapsed</div><div class="v" id="elapsed">0:00</div></div>
       <div class="tile"><div class="k">Distance</div><div class="v" id="dist">0.00</div></div>
+      <div class="tile"><div class="k">Heart rate</div><div class="v" id="hrtile">—</div></div>
       <div class="tile"><div class="k">GPS ±</div><div class="v" id="acc">—</div></div>
+      <div class="tile"><div class="k">Grade</div><div class="v" id="gradetile">0%</div></div>
+      <div class="tile"><div class="k">Climb</div><div class="v" id="climbtile">0</div></div>
+    </div>
+
+    <div class="instrument" style="margin-top:.5rem;padding:.7rem">
+      <canvas id="map" style="width:100%;height:190px;display:block"></canvas>
+      <div class="maplegend">
+        <span><i style="background:var(--on)"></i> on pace</span>
+        <span><i style="background:var(--fast)"></i> fast</span>
+        <span><i style="background:var(--slow)"></i> slow</span>
+        <span id="maphint" style="margin-left:auto;color:var(--faint)">route appears once moving</span>
+      </div>
     </div>
   </section>
 
@@ -323,6 +382,7 @@
     <div id="log"></div>
     <div class="row" style="margin-top:.65rem">
       <button id="copy" disabled>Copy session data</button>
+      <button id="diag" class="tiny">Copy diagnostics</button>
     </div>
     <div class="row" style="margin-top:.65rem">
       <label style="flex:1">tone volume
@@ -334,9 +394,18 @@
       back into the chat and it imports with <code>cli import</code>.
     </p>
   </section>
+  <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);
+                 font-size:.75rem;color:var(--faint);display:flex;gap:.6rem;flex-wrap:wrap">
+    <span>Band</span>
+    <span id="buildid">—</span>
+    <span id="capsline" style="margin-left:auto"></span>
+  </footer>
 </main>
 
-<script type="module">
+<script>
+(function () {
+'use strict';
+
 // =================================================================================================
 // Pace band monitor — third port of marathon_engine/audio.py, after the Swift one.
 //
@@ -346,30 +415,78 @@
 // tone. Every constant below is a defect fix with its reasoning in audio.py; none is arbitrary.
 // =================================================================================================
 
-const Earcon = { EASE:'ease', LIFT:'lift', IN_BAND:'in_band', ATTEND:'attend', DEGRADED:'degraded' };
+// Third port of marathon_engine/audio.py, after the Swift one.
+//
+// It exists because the iPhone app needs a Mac to build and there isn't one, so the coaching would
+// otherwise be unreachable on the only device that goes running with you. Safari has no Bluetooth,
+// but it has GPS, Web Audio and speech — which is enough for the pace half of the job.
+//
+// This file is deliberately separate from the page that uses it, and deliberately free of any DOM
+// reference, for one reason: it is checked against the same golden vectors as the Python original
+// and the Swift port. Three implementations, one set of traces, verified by execution. A port that
+// merely looks right is how the two channels drift apart, and the runner would never know which one
+// was lying.
+//
+// Every constant and every branch below has its justification in the Python module's docstring and
+// is not repeated. Where behaviour looks arbitrary it is usually a defect fix; see audio.py.
 
-const Tuning = {
-  toneMinGapS: 15, overlapFloorS: 2,
-  marginalMultiple: 1.2, marginalGapS: 60,
-  mildGapS: 30, largeGapS: 15, mildMultiple: 1.5,
-  returnFraction: 0.6, acquireGraceS: 180,
-  maxUnacquiredNudges: 2, reminderBackoffMax: 8,
-  smoothingS: 20, minSamples: 8,
+const Earcon = {
+  EASE: 'ease',
+  LIFT: 'lift',
+  IN_BAND: 'in_band',
+  ATTEND: 'attend',
+  DEGRADED: 'degraded',
 };
 
-const minettiCost = i => 155.4*i**5 - 30.4*i**4 - 43.3*i**3 + 46.3*i*i + 19.5*i + 3.6;
-const gradeFactor = g => minettiCost(g) / minettiCost(0);
+const Tuning = {
+  toneMinGapS: 15,
+  overlapFloorS: 2,
+  marginalMultiple: 1.2,
+  marginalGapS: 60,
+  mildGapS: 30,
+  largeGapS: 15,
+  mildMultiple: 1.5,
+  returnFraction: 0.6,
+  acquireGraceS: 180,
+  maxUnacquiredNudges: 2,
+  // Each unheeded reminder doubles the wait, to this multiple of the base. See audio.py.
+  reminderBackoffMax: 8,
+  smoothingS: 20,
+  minSamples: 8,
+};
+
+// Minetti's metabolic cost polynomial, via the same grade-adjustment the rest of the engine uses.
+// Present here so a hill moves the band rather than earning a stream of "lift" tones.
+function minettiCost(i) {
+  return 155.4 * i ** 5 - 30.4 * i ** 4 - 43.3 * i ** 3 + 46.3 * i * i + 19.5 * i + 3.6;
+}
+function gradeAdjustedPaceFactor(grade) {
+  return minettiCost(grade) / minettiCost(0);
+}
 
 class PaceBandMonitor {
-  constructor({ targetPaceSecKm, tolerance = 0.06, ceilingOnly = false }) {
-    Object.assign(this, { targetPaceSecKm, tolerance, ceilingOnly });
-    this.state = 'unknown'; this.acquired = false;
-    this.window = []; this.lastToneT = null; this.pendingAck = false;
-    this.slowSince = null; this.unacquiredNudges = 0; this.consecutiveReminders = 0;
+  constructor({ targetPaceSecKm, tolerance = 0.06, ceilingOnly = false, enabled = true }) {
+    this.targetPaceSecKm = targetPaceSecKm;
+    this.tolerance = tolerance;
+    this.ceilingOnly = ceilingOnly;
+    this.enabled = enabled;
+
+    this.state = 'unknown';       // unknown | in | fast | slow
+    this.acquired = false;
+    this.window = [];
+    this.lastToneT = null;
+    this.pendingAck = false;
+    this.slowSince = null;
+    this.unacquiredNudges = 0;
+    this.consecutiveReminders = 0;
   }
 
+  /** Feed one second. Returns an event `{earcon, tS, error, reason}` or null. */
   update(tS, paceSecKm, { grade = 0, paceTrusted = true, running = true } = {}) {
-    if (this.targetPaceSecKm == null || !running) { this.window = []; return null; }
+    if (!this.enabled || this.targetPaceSecKm == null || !running) {
+      this.window = [];
+      return null;
+    }
     if (!paceTrusted || paceSecKm == null || paceSecKm <= 0) {
       this.window = [];
       if (this.state !== 'unknown') {
@@ -378,21 +495,28 @@ class PaceBandMonitor {
       }
       return null;
     }
+
     this.window.push([tS, paceSecKm]);
     this.window = this.window.filter(([t]) => t >= tS - Tuning.smoothingS);
     if (this.window.length < Tuning.minSamples) return null;
+
     const mean = this.window.reduce((a, [, p]) => a + p, 0) / this.window.length;
-    const adjusted = this.targetPaceSecKm * gradeFactor(grade);
+    const adjusted = this.targetPaceSecKm * gradeAdjustedPaceFactor(grade);
     return this._decide(tS, (mean - adjusted) / adjusted);
   }
 
   _decide(tS, error) {
-    const mag = Math.abs(error);
+    const magnitude = Math.abs(error);
     const out = this.state === 'fast' || this.state === 'slow';
-    if (mag <= (out ? this.tolerance * Tuning.returnFraction : this.tolerance)) {
-      this.state = 'in'; this.acquired = true; this.slowSince = null;
+    const threshold = out ? this.tolerance * Tuning.returnFraction : this.tolerance;
+
+    if (magnitude <= threshold) {
+      const wasOut = out;
+      this.state = 'in';
+      this.acquired = true;
+      this.slowSince = null;
       this.consecutiveReminders = 0;
-      if (out && this.pendingAck) {
+      if (wasOut && this.pendingAck) {
         this.pendingAck = false;
         return this._emit(Earcon.IN_BAND, tS, error, 'back in the band');
       }
@@ -401,9 +525,13 @@ class PaceBandMonitor {
     }
 
     const side = error > 0 ? 'slow' : 'fast';
+
     if (side === 'slow' && this.ceilingOnly) {
-      this.state = 'in'; this.slowSince = null; return null;
+      this.state = 'in';
+      this.slowSince = null;
+      return null;
     }
+
     const changedSide = side !== this.state;
     this.state = side;
 
@@ -413,7 +541,9 @@ class PaceBandMonitor {
         if (tS - this.slowSince < Tuning.acquireGraceS) return null;
         if (this.unacquiredNudges >= Tuning.maxUnacquiredNudges) return null;
       }
-    } else this.slowSince = null;
+    } else {
+      this.slowSince = null;
+    }
 
     if (changedSide) {
       this.consecutiveReminders = 0;
@@ -423,14 +553,14 @@ class PaceBandMonitor {
       return this._emit(this._tone(side), tS, error, 'left the band');
     }
 
-    let gap = mag > this.tolerance * Tuning.mildMultiple ? Tuning.largeGapS
-            : mag > this.tolerance * Tuning.marginalMultiple ? Tuning.mildGapS
-            : Tuning.marginalGapS;
-    // Each unheeded reminder doubles the wait. Simulation of a runner a third too fast and holding
-    // it produced thirty tones in seven minutes at a fixed interval — the same nagging failure the
-    // three-tier ladder prevents, reached from the other direction.
-    gap *= Math.min(Tuning.reminderBackoffMax, 2 ** Math.max(0, this.consecutiveReminders - 1));
-    if (tS - this.lastToneT >= gap) {
+    let gap;
+    if (magnitude > this.tolerance * Tuning.mildMultiple) gap = Tuning.largeGapS;
+    else if (magnitude > this.tolerance * Tuning.marginalMultiple) gap = Tuning.mildGapS;
+    else gap = Tuning.marginalGapS;
+
+    const backoff = Math.min(Tuning.reminderBackoffMax,
+                             2 ** Math.max(0, this.consecutiveReminders - 1));
+    if (tS - this.lastToneT >= gap * backoff) {
       return this._emit(this._tone(side), tS, error, 'still out of the band');
     }
     return null;
@@ -448,28 +578,898 @@ class PaceBandMonitor {
       this.consecutiveReminders += 1;
       if (earcon === Earcon.LIFT && !this.acquired) this.unacquiredNudges += 1;
     }
-    return { earcon, tS, error, reason };
+    return { earcon, tS, error: Math.round(error * 1e6) / 1e6, reason };
+  }
+
+  band(grade = 0) {
+    if (this.targetPaceSecKm == null) return null;
+    const t = this.targetPaceSecKm * gradeAdjustedPaceFactor(grade);
+    return [t * (1 - this.tolerance), t * (1 + this.tolerance)];
   }
 }
 
+/**
+ * The short spoken line that makes silence readable as "on pace" rather than "app has died".
+ *
+ * The formatter and the split name are injected rather than built in, because whether a split is
+ * "3K" or "3 miles" is the athlete's business and not this module's — and because the alternative
+ * was a second, unit-aware copy of this class living in the page, which is exactly the kind of
+ * duplicate that drifts.
+ */
 class SplitAnnouncer {
-  constructor(everyM) { this.everyM = everyM; this.lastM = 0; this.n = 0; }
-  update(distanceM, paceSecKm, state) {
-    if (distanceM - this.lastM < this.everyM) return null;
-    this.lastM += this.everyM;
-    this.n += 1;
-    const parts = [U.splitName(this.n)];
-    if (paceSecKm) parts.push(U.pace(paceSecKm));
-    parts.push({ in:'on pace', fast:'easing', slow:'lift', unknown:'no pace signal' }[state] || '');
+  constructor({ everyM = 1000, everyS = null,
+                formatPace = formatMMSS,
+                nameSplit = n => `${n}K` } = {}) {
+    this.everyM = everyM;
+    this.everyS = everyS;
+    this.formatPace = formatPace;
+    this.nameSplit = nameSplit;
+    this.lastSplitM = 0;
+    this.lastSplitT = 0;
+    this.n = 0;
+  }
+
+  update(tS, distanceM, paceSecKm, state) {
+    let due = false;
+    if (this.everyM && distanceM - this.lastSplitM >= this.everyM) {
+      this.lastSplitM += this.everyM;
+      this.n += 1;
+      due = true;
+    }
+    if (this.everyS && tS - this.lastSplitT >= this.everyS) {
+      this.lastSplitT = tS;
+      due = true;
+    }
+    if (!due) return null;
+
+    const parts = [];
+    if (this.everyM) parts.push(this.nameSplit(this.n));
+    if (paceSecKm) parts.push(this.formatPace(paceSecKm));
+    parts.push({ in: 'on pace', fast: 'easing', slow: 'lift',
+                 unknown: 'no pace signal' }[state] || '');
     return parts.filter(Boolean).join('. ') + '.';
   }
 }
 
-function mmss(sec) {
+/** Seconds to `m:ss`. Unit-agnostic: the caller decides what the seconds are per. */
+function formatMMSS(sec) {
   if (!sec || !isFinite(sec)) return '—:——';
-  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
   return s === 60 ? `${m + 1}:00` : `${m}:${String(s).padStart(2, '0')}`;
 }
+
+// Turning a stream of GPS fixes into pace, distance, grade and a route.
+//
+// Split out of the coach page and kept DOM-free so it can be tested, because every defect this
+// replaces was invisible in the app and obvious in a test:
+//
+//   1. **Distance came from speed x time.** Integrating a noisy speed drifts, and a Doppler reading
+//      that sits a little above zero while you stand at a crossing accumulates distance you did not
+//      run. Distance now comes from the positions themselves, with a stationary threshold.
+//   2. **Grade was never computed at all.** The pace band is supposed to move with the hill — the
+//      engine has done that since the beginning — but the web coach passed grade: 0 forever, so a
+//      6% climb earned "ease off" for running the pace the hill costs.
+//   3. **A rejected fix still became the baseline** for the next distance calculation, so one loose
+//      fix poisoned the following segment as well as its own.
+//   4. **No teleport rejection on position.** A fix can pass the accuracy check and still jump.
+//   5. **Displayed pace was raw**, so it flickered between numbers a runner cannot act on.
+//
+// The design rule throughout: prefer measurement over inference, and prefer a gap over a guess. A
+// second with no trustworthy fix contributes nothing rather than an estimate.
+
+const R_EARTH = 6371008.8;
+
+function haversine(a, b) {
+  const rad = d => d * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  const s = Math.sin(dLat / 2) ** 2
+          + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+const GeoDefaults = {
+  /// A fix looser than this is not a position, it is a rumour. 25 m keeps working under trees while
+  /// still refusing a fix that could invent a sprint.
+  maxAccuracyM: 25,
+  /// Nobody runs faster than this. Anything above it is a bad fix, not an athlete.
+  maxSpeedMS: 8.0,
+  /// Below this, treat movement as GPS wander rather than travel. A stationary phone reports drift
+  /// of a metre or two per second; counting it adds a few hundred metres to a standing rest.
+  stationaryMS: 0.6,
+  /// Baseline over which movement is *confirmed*, when the platform gives no Doppler speed.
+  ///
+  /// Consecutive fixes cannot settle this question: wander between two fixes a second apart looks
+  /// exactly like 2 m/s of running. Over five seconds it cannot — random drift stays within a couple
+  /// of metres while real running covers fourteen. The distance itself is still the sum of the
+  /// per-fix segments, which is what keeps corners accurate; this only gates whether to count them.
+  movementBaselineS: 5,
+  /// Window for the displayed pace.
+  ///
+  /// Fifteen seconds rather than ten because ten left the number swinging by nearly 50 s/km under
+  /// pessimistic Doppler jitter — the gap between 5:57 and 6:46, which is not a number anyone can
+  /// act on. Still shorter than the band monitor's own twenty-second window, so the display never
+  /// lags the coaching.
+  smoothS: 15,
+  /// Horizontal distance the grade is measured over. Barometric and GPS altitude are both noisy
+  /// enough that a grade from consecutive fixes routinely reads +/-40%.
+  gradeRunM: 40,
+  /// Roads do not exceed this. Anything beyond is altitude noise.
+  maxGrade: 0.30,
+  /// A runner cannot change speed faster than this, so a sample that claims otherwise is a bad fix.
+  ///
+  /// The same idea as the heart-rate slew gate in the engine, and it belongs here for the same
+  /// reason: a physical impossibility is a cleaner filter than any statistical one. Trimming the
+  /// window was tried first and made things worse — under symmetric jitter it throws away
+  /// information, and it only ever helped against the spikes this catches directly.
+  maxAccelMS2: 1.5,
+};
+
+class GpsTrack {
+  constructor(opts = {}) {
+    this.cfg = { ...GeoDefaults, ...opts };
+    this.distanceM = 0;
+    this.path = [];                 // accepted [lat, lon, t, alt] — the route
+    this.lastAccepted = null;
+    this.lastAccuracy = null;
+    this.speedWindow = [];          // [t, m/s]
+    this.recent = [];               // accepted fixes inside the movement baseline
+    this.altWindow = [];            // [cumulativeDistance, alt]
+    this.rejected = 0;
+    this.accepted = 0;
+  }
+
+  /**
+   * Feed one fix. Returns `{accepted, reason}` — `reason` names the rejection so a run that
+   * collected nothing can say why rather than just showing zeroes.
+   */
+  add({ lat, lon, alt = null, accuracy = null, speed = null, t }) {
+    this.lastAccuracy = accuracy;
+
+    if (accuracy == null || accuracy > this.cfg.maxAccuracyM) {
+      this.rejected++;
+      // Deliberately NOT updating lastAccepted. A rejected fix must not become the baseline for the
+      // next segment, or one loose reading corrupts two.
+      return { accepted: false, reason: 'accuracy' };
+    }
+
+    const prev = this.lastAccepted;
+    let segment = 0, dt = 0, derived = null;
+
+    if (prev) {
+      dt = t - prev.t;
+      if (dt <= 0) { this.rejected++; return { accepted: false, reason: 'time went backwards' }; }
+      segment = haversine(prev, { lat, lon });
+      derived = segment / dt;
+      if (derived > this.cfg.maxSpeedMS) {
+        this.rejected++;
+        return { accepted: false, reason: 'implausible jump' };
+      }
+    }
+
+    // Doppler speed when the platform supplies a valid one — it is measured rather than inferred and
+    // is markedly better than differencing two positions. iOS uses -1 for "unknown".
+    let v = (speed != null && speed >= 0 && speed <= this.cfg.maxSpeedMS) ? speed : derived;
+
+    // Confirm movement before counting any of it.
+    this.recent.push({ lat, lon, t });
+    this.recent = this.recent.filter(f => f.t >= t - this.cfg.movementBaselineS);
+    const anchor = this.recent[0];
+    const anchorDt = t - anchor.t;
+    const netMS = anchorDt >= this.cfg.movementBaselineS * 0.6
+      ? haversine(anchor, { lat, lon }) / anchorDt
+      : null;
+
+    // Doppler settles it when the platform supplies one; otherwise net displacement over the
+    // baseline does. Falling back to the per-fix speed would reinstate the bug this replaces.
+    const movingBy = (speed != null && speed >= 0) ? speed : netMS;
+    const moving = movingBy == null ? true : movingBy >= this.cfg.stationaryMS;
+
+    if (prev && moving) this.distanceM += segment;
+    if (!moving) v = 0;
+
+    // Reject a speed no runner could have reached from the last one. See maxAccelMS2.
+    if (v != null && this.speedWindow.length) {
+      const [lastT, lastV] = this.speedWindow[this.speedWindow.length - 1];
+      const room = this.cfg.maxAccelMS2 * Math.max(0.5, t - lastT);
+      if (Math.abs(v - lastV) > room) v = lastV + Math.sign(v - lastV) * room;
+    }
+    if (v != null) {
+      this.speedWindow.push([t, v]);
+      this.speedWindow = this.speedWindow.filter(([tt]) => tt >= t - this.cfg.smoothS);
+    }
+
+    if (alt != null) {
+      this.altWindow.push([this.distanceM, alt]);
+      this.altWindow = this.altWindow.filter(([d]) => d >= this.distanceM - this.cfg.gradeRunM * 2);
+    }
+
+    this.lastAccepted = { lat, lon, t, alt };
+    this.path.push([lat, lon, t, alt]);
+    this.accepted++;
+    return { accepted: true, reason: '' };
+  }
+
+  /**
+   * Smoothed speed in m/s, or null when there is nothing recent enough to trust.
+   *
+   * A plain mean, because spikes are rejected on the way in rather than averaged out afterwards.
+   *
+   * No amount of smoothing removes the underlying uncertainty: with pessimistic jitter the display
+   * still moves by around twenty seconds per kilometre, and smoothing harder to hide that would only
+   * make the number lag the running. The coaching does not depend on this value — the band monitor
+   * runs its own twenty-second window with hysteresis on top.
+   */
+  get speedMS() {
+    const n = this.speedWindow.length;
+    if (!n) return null;
+    return this.speedWindow.reduce((a, [, v]) => a + v, 0) / n;
+  }
+
+  /** Smoothed pace in seconds per kilometre, or null when standing still. */
+  get paceSecKm() {
+    const v = this.speedMS;
+    return v != null && v > this.cfg.stationaryMS ? 1000 / v : null;
+  }
+
+  /**
+   * Grade over the last `gradeRunM` of travel, clamped to what a road actually does.
+   *
+   * Returns 0 rather than null when it cannot be measured: the pace band multiplies by the grade
+   * factor, and 0 is the identity. A null here would have to be defended at every call site.
+   */
+  get grade() {
+    if (this.altWindow.length < 2) return 0;
+    const [d1, a1] = this.altWindow[this.altWindow.length - 1];
+    let base = null;
+    for (let i = this.altWindow.length - 2; i >= 0; i--) {
+      if (d1 - this.altWindow[i][0] >= this.cfg.gradeRunM) { base = this.altWindow[i]; break; }
+    }
+    if (!base) return 0;
+    const run = d1 - base[0];
+    if (run < 5) return 0;
+    const g = (a1 - base[1]) / run;
+    return Math.max(-this.cfg.maxGrade, Math.min(this.cfg.maxGrade, g));
+  }
+
+  /** True when there is a recent, trustworthy fix to coach from. */
+  trustedAt(t) {
+    if (this.lastAccuracy == null || this.lastAccuracy > this.cfg.maxAccuracyM) return false;
+    if (!this.lastAccepted) return false;
+    // A fix older than five seconds is a memory, not a position — the same rule the armband logger
+    // applies to a stale heart rate, and for the same reason.
+    return (t - this.lastAccepted.t) <= 5;
+  }
+
+  /** Total climb in metres, over the whole accepted path. */
+  get ascentM() {
+    let up = 0, last = null;
+    for (const [, , , alt] of this.path) {
+      if (alt == null) continue;
+      if (last != null && alt > last) up += alt - last;
+      last = alt;
+    }
+    return up;
+  }
+
+  /**
+   * The route, projected to x/y metres relative to its own bounding box, ready to draw.
+   *
+   * An equirectangular projection is right here and would be wrong on a continental scale: over a
+   * few kilometres the error is millimetres, and it avoids shipping a projection library into a page
+   * that has to stay one file.
+   */
+  projected() {
+    if (this.path.length < 2) return { points: [], w: 0, h: 0 };
+    const lats = this.path.map(p => p[0]), lons = this.path.map(p => p[1]);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+    const midLat = (minLat + maxLat) / 2;
+    const mPerDegLat = 111132.92 - 559.82 * Math.cos(2 * midLat * Math.PI / 180);
+    const mPerDegLon = 111412.84 * Math.cos(midLat * Math.PI / 180);
+    const points = this.path.map(([la, lo, t]) => [
+      (lo - minLon) * mPerDegLon,
+      (maxLat - la) * mPerDegLat,      // y grows downward, as a canvas expects
+      t,
+    ]);
+    return {
+      points,
+      w: Math.max(1, (maxLon - minLon) * mPerDegLon),
+      h: Math.max(1, (maxLat - minLat) * mPerDegLat),
+    };
+  }
+}
+
+// Reading the Polar Verity Sense from a browser.
+//
+// Safari has no Web Bluetooth and is not getting it, so on an iPhone this only runs inside a browser
+// that adds it — Bluefy is the usual one. Everywhere else (Chrome, Edge, Android) it just works. The
+// coach detects which it has and degrades to GPS-only rather than failing, because a coach that
+// needs a permission it might not get is not a coach.
+//
+// Protocol details are ported from PolarPMD.swift, itself ported from hardware-tested Python. Three
+// of them are wrong in most third-party implementations and are called out where they occur.
+//
+// The heart-rate staleness rule is the important one and it is not a protocol detail at all: a
+// heart rate that stopped arriving must never be reported as current. The armband logger learned
+// this the hard way — without the check it wrote its last reading every second for the rest of the
+// session, producing a flat, plausible, entirely fabricated trace.
+
+// Full 128-bit UUIDs, not the short aliases.
+//
+// It was `'heart_rate'` and `'battery_service'`, which the spec allows and Chrome accepts. Third-
+// party WebBLE browsers frequently do not, and the failure is quiet in the worst way: the device
+// picker appears and works, the GATT connection succeeds, and then the service lookup throws — so
+// from the outside it looks as though selecting the armband simply did nothing.
+//
+// Bluefy is the only route to the armband from an iPhone, so the canonical form is the correct one
+// to ship. It costs nothing on browsers that accepted the alias.
+const HR_SERVICE = '0000180d-0000-1000-8000-00805f9b34fb';
+const HR_CHAR = '00002a37-0000-1000-8000-00805f9b34fb';
+const BATTERY_SERVICE = '0000180f-0000-1000-8000-00805f9b34fb';
+const BATTERY_CHAR = '00002a19-0000-1000-8000-00805f9b34fb';
+const PMD_SERVICE = 'fb005c80-02e7-f387-1cad-8acd2d8df0c8';
+const PMD_CONTROL = 'fb005c81-02e7-f387-1cad-8acd2d8df0c8';
+const PMD_DATA = 'fb005c82-02e7-f387-1cad-8acd2d8df0c8';
+
+const MEAS_ACC = 0x02, OP_START = 0x02;
+const SETTING = { sampleRate: 0x00, resolution: 0x01, range: 0x02, channels: 0x04 };
+/// CHANNELS is a ONE-byte setting. Encoding it as uint16 writes an extra byte into every START
+/// command and misaligns the parse of every field after it.
+const SETTING_WIDTH = { 0x00: 2, 0x01: 2, 0x02: 2, 0x04: 1, 0x05: 4 };
+/// 52 Hz, 16-bit, +/-8 G, ordered RANGE -> SAMPLE_RATE -> RESOLUTION to reproduce Polar's own
+/// verified byte sequence exactly.
+const ACC_SETTINGS = [[SETTING.range, 8], [SETTING.sampleRate, 52], [SETTING.resolution, 16]];
+/// Compression is signalled SOLELY by bit 7 of the frame-type byte. The low seven bits are an
+/// independent raw-layout id, so treating a literal frame type of 0x02 as "delta compressed"
+/// collides with the 24-bit uncompressed layout.
+const COMPRESSED_BIT = 0x80;
+
+/// A heart rate older than this is a memory, not a measurement. The band sends at about 1 Hz, so
+/// five seconds is four missed notifications — comfortably past noise.
+const STALE_HR_MS = 5000;
+
+function startCommand(measurement, settings) {
+  const bytes = [OP_START, measurement];
+  for (const [id, value] of settings) {
+    bytes.push(id, 0x01);
+    for (let i = 0; i < SETTING_WIDTH[id]; i++) bytes.push((value >> (8 * i)) & 0xff);
+  }
+  return new Uint8Array(bytes);
+}
+
+function parseHeartRate(view) {
+  const flags = view.getUint8(0);
+  const wide = (flags & 0x01) !== 0;
+  let off = 1;
+  const hr = wide ? view.getUint16(off, true) : view.getUint8(off);
+  off += wide ? 2 : 1;
+  if (flags & 0x08) off += 2;                      // energy expended, skipped
+  const rr = [];
+  if (flags & 0x10) {
+    while (off + 1 < view.byteLength) {
+      // RR is in 1/1024 s units, not milliseconds. Getting this wrong scales every interval by 2.3%
+      // and quietly corrupts every HRV number downstream.
+      rr.push(view.getUint16(off, true) * 1000 / 1024);
+      off += 2;
+    }
+  }
+  return { hr, rr };
+}
+
+function readSigned(view, offset, bytes) {
+  let v = 0;
+  for (let i = 0; i < bytes; i++) v |= view.getUint8(offset + i) << (8 * i);
+  const sign = 1 << (8 * bytes - 1);
+  return (v & sign) ? v - (1 << (8 * bytes)) : v;
+}
+
+function readSignedBits(view, byteOffset, bitPos, bits) {
+  let v = 0;
+  for (let i = 0; i < bits; i++) {
+    const p = bitPos + i;
+    v |= ((view.getUint8(byteOffset + (p >> 3)) >> (p & 7)) & 1) << i;
+  }
+  const sign = 1 << (bits - 1);
+  return (v & sign) ? v - (1 << bits) : v;
+}
+
+function parseAccFrame(view) {
+  if (view.getUint8(0) !== MEAS_ACC) return null;
+  const frameType = view.getUint8(9);
+  const compressed = (frameType & COMPRESSED_BIT) !== 0;
+  const layout = frameType & 0x7f;
+  const samples = [];
+  let off = 10;
+
+  if (!compressed) {
+    const bytesPer = layout === 0 ? 1 : layout === 1 ? 2 : 3;
+    while (off + bytesPer * 3 <= view.byteLength) {
+      const xyz = [];
+      for (let c = 0; c < 3; c++) { xyz.push(readSigned(view, off, bytesPer)); off += bytesPer; }
+      samples.push(xyz);
+    }
+    return samples;
+  }
+
+  if (layout !== 0x01) return samples;             // only the 16-bit reference layout is emitted
+  const current = [];
+  for (let c = 0; c < 3; c++) { current.push(readSigned(view, off, 2)); off += 2; }
+  samples.push(current.slice());
+
+  while (off + 2 <= view.byteLength) {
+    const bits = view.getUint8(off), count = view.getUint8(off + 1);
+    off += 2;
+    if (!bits || !count) break;
+    const need = Math.ceil(bits * 3 * count / 8);
+    if (off + need > view.byteLength) break;
+    let bitPos = 0;
+    for (let s = 0; s < count; s++) {
+      for (let c = 0; c < 3; c++) { current[c] += readSignedBits(view, off, bitPos, bits); bitPos += bits; }
+      samples.push(current.slice());
+    }
+    off += need;
+  }
+  return samples;
+}
+
+/** Raw counts at +/-8 G, 16-bit, to g. */
+const accMagnitude = ([x, y, z]) =>
+  Math.hypot(x * 8 / 32768, y * 8 / 32768, z * 8 / 32768);
+
+/** Whether this browser can talk to the armband at all. */
+const bluetoothAvailable = () =>
+  typeof navigator !== 'undefined' && !!navigator.bluetooth;
+
+/**
+ * A connected Verity Sense.
+ *
+ * `hrAt` is the load-bearing field: callers must consult `hrFresh()` rather than reading `hr`
+ * directly, or a band that has gone out of range keeps reporting its last value forever.
+ */
+class VeritySensor {
+  constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {} } = {}) {
+    this.onLog = onLog;
+    this.onChange = onChange;
+    // Named so a failure can say which step it stopped at. "Nothing happened" is not a diagnosis,
+    // and on a phone there is no console to go and look in.
+    this.onStep = onStep;
+    this.step = 'idle';
+    this.device = null;
+    this.hr = null;
+    this.hrAt = 0;
+    this.rr = [];
+    this.battery = null;
+    this.accWindow = [];
+    this.accSd = null;
+    this.connected = false;
+    this.reconnecting = false;
+    this.hasAcc = false;
+  }
+
+  hrFresh(now = Date.now()) {
+    return this.hr != null && (now - this.hrAt) < STALE_HR_MS;
+  }
+
+  /** SD of accelerometer magnitude over the last second, or null. Cleared each call. */
+  takeAccSd() {
+    if (this.accWindow.length < 5) { this.accWindow = []; return null; }
+    const mean = this.accWindow.reduce((a, b) => a + b, 0) / this.accWindow.length;
+    const sd = Math.sqrt(
+      this.accWindow.reduce((a, b) => a + (b - mean) ** 2, 0) / this.accWindow.length);
+    this.accWindow = [];
+    this.accSd = sd;
+    return sd;
+  }
+
+  _at(step) { this.step = step; this.onStep(step); }
+
+  async connect() {
+    this._at('asking for the device');
+    this.device = await navigator.bluetooth.requestDevice({
+      // `acceptAllDevices` is deliberately not used: a name filter keeps the picker to the armband,
+      // and `optionalServices` must still list everything that will be read afterwards or the
+      // lookups are blocked even on a device the user chose.
+      filters: [{ namePrefix: 'Polar' }],
+      optionalServices: [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE],
+    });
+    this._at(`selected ${this.device.name || 'device'}`);
+    this.device.addEventListener('gattserverdisconnected', () => {
+      this.connected = false;
+      this.onChange();
+      this.onLog('armband disconnected — retrying', 'bad');
+      this._reconnect();
+    });
+    this._at('connecting');
+    const server = await this.device.gatt.connect();
+    this._at('connected, looking for heart rate');
+    await this._attach(server);
+    this.connected = true;
+    this._at('streaming');
+    this.onChange();
+  }
+
+  async _reconnect() {
+    if (this.reconnecting || !this.device) return;
+    this.reconnecting = true;
+    let delay = 1000;
+    while (this.device && !this.device.gatt.connected) {
+      await new Promise(r => setTimeout(r, delay));
+      try {
+        await this._attach(await this.device.gatt.connect());
+        this.connected = true;
+        this.onChange();
+        this.onLog('armband reconnected', 'on');
+        break;
+      } catch {
+        // Backs off to 8 s and stays there. Retrying every second for an hour drains the battery
+        // for nothing — the band is either back in range or it is not.
+        delay = Math.min(delay * 2, 8000);
+      }
+    }
+    this.reconnecting = false;
+  }
+
+  async _attach(server) {
+    let hrService;
+    try {
+      hrService = await server.getPrimaryService(HR_SERVICE);
+    } catch (e) {
+      // Name the step. Without this the whole connect reads as "nothing happened".
+      throw new Error(`heart-rate service not found (${e.message}). `
+                    + 'If this browser wants short names rather than UUIDs, that is the cause.');
+    }
+    const hrChar = await hrService.getCharacteristic(HR_CHAR);
+    this._at('subscribing to heart rate');
+    await hrChar.startNotifications();
+    hrChar.addEventListener('characteristicvaluechanged', e => {
+      const { hr, rr } = parseHeartRate(e.target.value);
+      this.hr = hr;
+      this.hrAt = Date.now();
+      if (rr.length) this.rr.push(...rr);
+      this.onChange();
+    });
+
+    try {
+      const bs = await server.getPrimaryService(BATTERY_SERVICE);
+      const v = await (await bs.getCharacteristic(BATTERY_CHAR)).readValue();
+      this.battery = v.getUint8(0);
+    } catch { /* optional; its absence is not a failure */ }
+
+    // Accelerometer is best-effort. Without it the heart rate still works; what is lost is the
+    // movement evidence the not-worn and frozen detectors need, and the app says so rather than
+    // pretending the check ran.
+    try {
+      const pmd = await server.getPrimaryService(PMD_SERVICE);
+      const control = await pmd.getCharacteristic(PMD_CONTROL);
+      const data = await pmd.getCharacteristic(PMD_DATA);
+      await control.startNotifications();
+      await data.startNotifications();
+      data.addEventListener('characteristicvaluechanged', e => {
+        const samples = parseAccFrame(e.target.value);
+        if (samples) for (const s of samples) this.accWindow.push(accMagnitude(s));
+      });
+      await control.writeValueWithResponse(startCommand(MEAS_ACC, ACC_SETTINGS));
+      this.hasAcc = true;
+    } catch {
+      this.hasAcc = false;
+    }
+  }
+
+  disconnect() {
+    try { this.device?.gatt?.disconnect(); } catch { /* already gone */ }
+    this.device = null;
+    this.connected = false;
+    this.onChange();
+  }
+}
+
+// Coaching on heart rate rather than on pace.
+//
+// Why this exists
+// ---------------
+// GPS is a good instrument for distance and for a smoothed pace, and a poor one for effort. Its
+// error is a few percent on a good fix and much worse under trees, it says nothing about how hard
+// the work actually is, and on a short interval it has not settled before the interval is over.
+// Heart rate is the signal the whole engine is built around — the zones, the HR/speed slope, the
+// in-run controller — and it is the one the athlete is now wearing.
+//
+// So: when the armband is connected, heart rate governs and pace is information. When it is not,
+// pace governs. Never both at once — two channels talking about the same run is how you end up
+// being told to ease off and lift within ten seconds of each other.
+//
+// The lag problem, and why a raw threshold is wrong
+// ------------------------------------------------
+// Heart rate responds to a change of effort as a first-order system with a time constant near 45
+// seconds. The heart rate you can see belongs to the pace you were running half a minute ago, so
+// controlling directly on it oscillates: ease off, heart rate keeps rising, ease off again, end up
+// walking, heart rate falls, speed up, repeat.
+//
+// This controls on where heart rate is *heading* — `HR_ss ≈ HR + τ·dHR/dt` — which is the same lead
+// compensation `marathon_engine.realtime` uses, with the same τ, deadband and confirmation window.
+// It is deliberately a faithful subset rather than a fresh design: the constants were argued out
+// once, against the literature, and re-deriving them here would only produce a second set to keep
+// in step.
+//
+// What is deliberately NOT ported: interval rep management, the abort ladder, decoupling. Those
+// belong to the full controller in the app. This is the ceiling, which is what an easy run needs.
+
+const HrTuning = {
+  /// Heart rate's first-order time constant. Same value as the engine.
+  tauS: 45,
+  /// Ignore an excursion smaller than this. Beat-to-beat noise alone is worth a couple of bpm.
+  deadbandBpm: 4,
+  /// The error must persist this long before anything is said. Heart rate wanders; a threshold
+  /// crossed for three seconds is not information.
+  confirmS: 20,
+  /// Window the slope is fitted over. Long enough to be a trend, short enough to be current.
+  slopeWindowS: 30,
+  /// Anti-nag floor between reminders.
+  ///
+  /// Longer than the pace channel's, and deliberately longer than `tauS`. Heart rate takes about
+  /// forty-five seconds to reflect a change of effort, so a reminder any sooner arrives before your
+  /// correction could possibly have shown up — telling you again about something you have already
+  /// fixed and cannot yet prove you fixed. Twenty seconds was the first guess and produced ten tones
+  /// across twenty minutes of a sustained excursion; sixty produces four, none of them premature.
+  minGapS: 60,
+  backoffMax: 8,
+  /// A reading older than this is a memory. Same rule as the sensor driver.
+  staleS: 5,
+};
+
+/**
+ * Watches heart rate against a zone band and emits the same earcons as the pace channel.
+ *
+ * `ceilingOnly` is the normal case: an easy run has an upper bound and no lower one, and being
+ * below it is the session working rather than a fault.
+ */
+class HrCeilingMonitor {
+  constructor({ lowBpm, highBpm, ceilingOnly = true }) {
+    this.low = lowBpm;
+    this.high = highBpm;
+    this.ceilingOnly = ceilingOnly;
+
+    this.history = [];            // [t, hr]
+    this.state = 'unknown';       // unknown | in | fast | slow
+    this.errorSince = null;
+    this.errorSign = 0;
+    this.lastToneT = null;
+    this.pendingAck = false;
+    this.consecutive = 0;
+    this.lastSS = null;
+  }
+
+  /** Slope of heart rate in bpm per second, by least squares over the window. */
+  slope() {
+    const w = this.history;
+    if (w.length < 5) return 0;
+    const n = w.length;
+    const mt = w.reduce((a, [t]) => a + t, 0) / n;
+    const mh = w.reduce((a, [, h]) => a + h, 0) / n;
+    let num = 0, den = 0;
+    for (const [t, h] of w) { num += (t - mt) * (h - mh); den += (t - mt) ** 2; }
+    return den > 0 ? num / den : 0;
+  }
+
+  /**
+   * Feed one second.
+   *
+   * `hr` is null whenever the reading is absent or stale — the caller decides that, using the same
+   * freshness rule the sensor driver applies, because a heart rate that stopped arriving must never
+   * be coached from.
+   */
+  update(tS, hr) {
+    if (hr == null) {
+      this.history = [];
+      if (this.state !== 'unknown') {
+        this.state = 'unknown';
+        this.errorSince = null;
+        return this._emit('degraded', tS, 'heart rate lost');
+      }
+      return null;
+    }
+
+    this.history.push([tS, hr]);
+    this.history = this.history.filter(([t]) => t >= tS - HrTuning.slopeWindowS);
+    if (this.history.length < 5) return null;
+
+    // Where heart rate is heading, not where it is.
+    const ss = hr + HrTuning.tauS * this.slope();
+    this.lastSS = ss;
+
+    const tooHigh = ss > this.high + HrTuning.deadbandBpm;
+    const tooLow = !this.ceilingOnly && ss < this.low - HrTuning.deadbandBpm;
+    const sign = tooHigh ? 1 : (tooLow ? -1 : 0);
+
+    if (sign === 0) {
+      const wasOut = this.state === 'fast' || this.state === 'slow';
+      this.state = 'in';
+      this.errorSince = null;
+      this.errorSign = 0;
+      this.consecutive = 0;
+      if (wasOut && this.pendingAck) {
+        this.pendingAck = false;
+        return this._emit('in_band', tS, 'back inside the zone');
+      }
+      this.pendingAck = false;
+      return null;
+    }
+
+    if (this.errorSign !== sign) { this.errorSince = tS; this.errorSign = sign; this.consecutive = 0; }
+    // Nothing is said until the excursion has persisted. Heart rate wanders.
+    if (tS - this.errorSince < HrTuning.confirmS) return null;
+
+    this.state = sign > 0 ? 'fast' : 'slow';
+    const gap = HrTuning.minGapS * Math.min(HrTuning.backoffMax, 2 ** Math.max(0, this.consecutive - 1));
+    if (this.lastToneT != null && tS - this.lastToneT < gap) return null;
+    return this._emit(sign > 0 ? 'ease' : 'lift', tS,
+                      `heading for ${Math.round(ss)}, ceiling ${Math.round(this.high)}`);
+  }
+
+  _emit(earcon, tS, reason) {
+    const floor = (earcon === 'in_band' || earcon === 'degraded') ? 2 : HrTuning.minGapS;
+    if (this.lastToneT != null && tS - this.lastToneT < floor) return null;
+    this.lastToneT = tS;
+    if (earcon === 'ease' || earcon === 'lift') { this.pendingAck = true; this.consecutive += 1; }
+    return { earcon, tS, reason, hrSteadyState: this.lastSS };
+  }
+}
+
+// The earcons, rendered to WAV and played as media rather than through Web Audio.
+//
+// Why not Web Audio
+// -----------------
+// It was Web Audio, and on an iPhone the tones were silent while the spoken splits worked. That
+// split is the whole diagnosis: iOS treats an `AudioContext` as *ambient* audio, which the hardware
+// silent switch mutes, while `speechSynthesis` and `<audio>` playback go through the media path,
+// which it does not. So the failure was not the gesture handling, the oscillators, or the envelope —
+// it was the category the platform had put the sound in, and nothing inside the Web Audio API can
+// change that.
+//
+// Playing an `HTMLAudioElement` moves the sound onto the media path. The tones then behave like the
+// voice: audible with the ring switch either way, and mixed against music by the same rules.
+//
+// The samples are synthesised at load time into WAV blobs rather than shipped as files, for the same
+// reason they were synthesised before: every constant here — pitch, duration, the gap inside a pair,
+// the envelope — will want adjusting once heard through AirPods at 160 steps per minute with music
+// underneath, and a number in a source file can be adjusted where a rendered asset cannot.
+
+const RATE = 44100;
+
+/// Pitches sit above most music's vocal range so they are audible without being loud, and far enough
+/// apart that the rise/fall contour survives compression and wind noise.
+const PITCH = { low: 587.33, mid: 740.0, high: 880.0 };
+const PIP = 0.09, GAP = 0.055, FADE = 0.008;
+
+/// Contour carries the meaning: falling means back off, rising means more. The same mapping as
+/// almost every other interface a person has used, which is the point — nothing to learn.
+const RECIPES = {
+  ease:     [[PITCH.high, PIP], [0, GAP], [PITCH.low, PIP]],
+  lift:     [[PITCH.low, PIP], [0, GAP], [PITCH.high, PIP]],
+  in_band:  [[PITCH.mid, PIP * 1.3]],
+  attend:   [[PITCH.low, PIP * 0.6], [0, GAP * 0.7], [PITCH.mid, PIP * 0.6],
+             [0, GAP * 0.7], [PITCH.high, PIP * 0.6]],
+  // Deliberately unlike the others — low, dull, doubled — so a degradation notice is never mistaken
+  // for a pace instruction.
+  degraded: [[220.0, PIP * 1.2], [0, GAP], [220.0, PIP * 1.2]],
+};
+
+/** Render `[frequency, seconds]` segments to mono float samples. Frequency 0 is silence. */
+function renderSamples(segments, rate = RATE) {
+  const total = segments.reduce((a, [, d]) => a + d, 0);
+  const out = new Float32Array(Math.max(1, Math.round(total * rate)));
+  let index = 0;
+  for (const [freq, dur] of segments) {
+    const n = Math.round(dur * rate);
+    const fade = Math.max(1, Math.round(FADE * rate));
+    for (let i = 0; i < n && index + i < out.length; i++) {
+      if (freq <= 0) continue;
+      // Raised-cosine envelope at both ends. Without it the discontinuity where the burst starts and
+      // stops is audible as a click, and the click is louder and more startling than the tone.
+      let env = 1;
+      if (i < fade) env = 0.5 * (1 - Math.cos(Math.PI * i / fade));
+      else if (i > n - fade) env = 0.5 * (1 - Math.cos(Math.PI * (n - i) / fade));
+      out[index + i] = Math.sin(2 * Math.PI * freq * i / rate) * env;
+    }
+    index += n;
+  }
+  return out;
+}
+
+/** Wrap float samples in a 16-bit PCM WAV container. */
+function wavBytes(samples, rate = RATE) {
+  const n = samples.length;
+  const buf = new ArrayBuffer(44 + n * 2);
+  const v = new DataView(buf);
+  const ascii = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+
+  ascii(0, 'RIFF');
+  v.setUint32(4, 36 + n * 2, true);
+  ascii(8, 'WAVE');
+  ascii(12, 'fmt ');
+  v.setUint32(16, 16, true);          // PCM chunk size
+  v.setUint16(20, 1, true);           // format: PCM
+  v.setUint16(22, 1, true);           // channels: mono
+  v.setUint32(24, rate, true);
+  v.setUint32(28, rate * 2, true);    // byte rate
+  v.setUint16(32, 2, true);           // block align
+  v.setUint16(34, 16, true);          // bits per sample
+  ascii(36, 'data');
+  v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Uint8Array(buf);
+}
+
+function wavDataUri(segments, rate = RATE) {
+  const bytes = wavBytes(renderSamples(segments, rate), rate);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return 'data:audio/wav;base64,' + btoa(bin);
+}
+
+/**
+ * Plays the vocabulary through the media path.
+ *
+ * Two elements per sound, alternated, so a tone arriving while the previous one is still finishing
+ * does not cut it off mid-envelope — which sounds like a fault rather than a cue.
+ */
+class Tones {
+  constructor({ volume = 0.65 } = {}) {
+    this.volume = volume;
+    this.pool = {};
+    this.unlocked = false;
+    this.lastError = null;
+    for (const [name, recipe] of Object.entries(RECIPES)) {
+      const uri = wavDataUri(recipe);
+      this.pool[name] = [new Audio(uri), new Audio(uri)];
+      for (const a of this.pool[name]) { a.preload = 'auto'; a.volume = volume; }
+    }
+    this.turn = {};
+  }
+
+  setVolume(v) {
+    this.volume = v;
+    for (const list of Object.values(this.pool)) for (const a of list) a.volume = v;
+  }
+
+  /**
+   * Must be called from inside a user gesture, once.
+   *
+   * iOS refuses to play media that no tap asked for, and the refusal is permanent for that element
+   * until a gesture arrives. Playing every element muted and immediately pausing marks them all as
+   * user-initiated, so a tone forty minutes later — which no tap asked for — is allowed.
+   */
+  unlock() {
+    if (this.unlocked) return Promise.resolve(true);
+    const all = Object.values(this.pool).flat();
+    return Promise.all(all.map(a => {
+      a.muted = true;
+      const p = a.play();
+      return (p && p.then ? p : Promise.resolve())
+        .then(() => { a.pause(); a.currentTime = 0; a.muted = false; })
+        .catch(e => { this.lastError = e; a.muted = false; });
+    })).then(() => { this.unlocked = true; return true; });
+  }
+
+  play(name) {
+    const list = this.pool[name];
+    if (!list) return Promise.resolve(false);
+    const i = (this.turn[name] = ((this.turn[name] || 0) + 1) % list.length);
+    const a = list[i];
+    try { a.currentTime = 0; } catch { /* not yet loaded; play from wherever it is */ }
+    const p = a.play();
+    return (p && p.then ? p : Promise.resolve())
+      .then(() => true)
+      .catch(e => { this.lastError = e; return false; });
+  }
+}
+
+// One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
+// drifts silently while both test suites keep passing.
+const mmss = formatMMSS;
 
 // Everything inside this file is seconds per kilometre and metres. Units are a display concern and
 // a parsing concern, nothing more — a conversion that leaks into the logic is how a band ends up
@@ -499,45 +1499,31 @@ const fmtPace = secKm => U.pace(secKm);
 // transfers unchanged if the app is ever built.
 // =================================================================================================
 
-const P = { low: 587.33, mid: 740.0, high: 880.0 };
-const PIP = 0.09, GAP = 0.055, FADE = 0.008;
-const RECIPES = {
-  ease:     [[P.high, PIP], [0, GAP], [P.low, PIP]],
-  lift:     [[P.low, PIP], [0, GAP], [P.high, PIP]],
-  in_band:  [[P.mid, PIP * 1.3]],
-  attend:   [[P.low, PIP*.6], [0, GAP*.7], [P.mid, PIP*.6], [0, GAP*.7], [P.high, PIP*.6]],
-  degraded: [[220, PIP*1.2], [0, GAP], [220, PIP*1.2]],
-};
+// Sound goes through the media path, not Web Audio.
+//
+// It was Web Audio, and on an iPhone the tones were silent while the spoken splits worked. That
+// split IS the diagnosis: iOS treats an AudioContext as ambient audio, which the hardware silent
+// switch mutes, while speech and <audio> playback go through the media path, which it does not. No
+// amount of fixing gestures or envelopes could have helped — the sound was in the wrong category,
+// and nothing inside the Web Audio API can change that.
+const tones = new Tones({ volume: Number(localStorage.getItem('band.gain') || 0.65) });
+let audioReady = false;
 
-let ctx = null;
+/** Must run inside a tap. Safe to call repeatedly; it only does work once. */
 function audio() {
-  // Created lazily inside a user gesture. iOS refuses to start an AudioContext otherwise, and one
-  // created at load time is born suspended and never recovers on its own.
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === 'suspended') ctx.resume();
-  return ctx;
+  if (!audioReady) {
+    audioReady = true;
+    tones.unlock().then(ok => {
+      if (!ok && tones.lastError) log(`sound blocked: ${tones.lastError.message}`, 'stop');
+    });
+  }
+  return tones;
 }
 
-let toneGain = Number(localStorage.getItem('band.gain') || 0.65);
-
-function play(earcon, gain = toneGain) {
-  const c = audio();
-  let t = c.currentTime + 0.02;
-  for (const [freq, dur] of RECIPES[earcon] || []) {
-    if (freq > 0) {
-      const osc = c.createOscillator(), g = c.createGain();
-      osc.type = 'sine'; osc.frequency.value = freq;
-      // Without an envelope a raw burst clicks at both ends, and the click is louder and more
-      // startling than the tone it wraps.
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(gain, t + FADE);
-      g.gain.setValueAtTime(gain, t + dur - FADE);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      osc.connect(g).connect(c.destination);
-      osc.start(t); osc.stop(t + dur + 0.01);
-    }
-    t += dur;
-  }
+function play(earcon, _gain) {
+  tones.play(earcon).then(ok => {
+    if (!ok && tones.lastError) log(`could not play ${earcon}: ${tones.lastError.message}`, 'stop');
+  });
 }
 
 function say(text) {
@@ -552,15 +1538,20 @@ function say(text) {
 // =================================================================================================
 
 const $ = id => document.getElementById(id);
+/** Seconds on the same clock the GPS fixes are timestamped with. */
+const nowSeconds = () => Date.now() / 1000;
 const MAX_ACCURACY_M = 25, MAX_SPEED_MS = 8;
 
 const S = {
-  mode: 'coach', running: false, startedAt: 0, distanceM: 0,
-  lastFix: null, speed: null, accuracy: null,
-  monitor: null, splits: null, samples: [], tones: 0,
+  mode: 'coach', running: false, startedAt: 0,
+  track: new GpsTrack(),
+  sensor: null,
+  monitor: null, hrMonitor: null, splits: null, samples: [], tones: 0, trackState: [],
+  governedBy: 'pace',
   watchId: null, tickId: null, wakeLock: null,
   ivPhase: null, ivRep: 0, ivUntil: 0,
-  simT: 0,
+  simT: 0, simDist: 0, plannedSession: null,
+  hrZones: null,
 };
 
 function log(msg, cls) {
@@ -588,6 +1579,7 @@ function log(msg, cls) {
 // =================================================================================================
 
 const PLAN = {"app_plan_version":1,"generated_for":{"age":30,"hr_rest":55,"hr_max":187.0,"hr_max_source":"age_formula","prescription_basis":"hr_from_ramp"},"run_days":[2,5,6],"strength_days":[0,3],"phases":[{"phase":"assess","label":"Assess","weeks":[{"week":1,"focus":"Find out where you actually are. No hard running.","cutback":false,"volume_km":null,"volume_min":null,"notes":["No hard running this week, on purpose. A maximal test on untrained tissue measures discomfort tolerance and buys an injury.","Wear the armband overnight every night from now on -- the readiness engine needs at least 14 nights before its band means anything."],"sessions":[{"day":0,"type":"rest","title":"Screening + baseline day -- no running","coachable":false,"ceiling_only":false},{"day":1,"type":"strength","title":"Structural screen","coachable":false,"minutes":30,"ceiling_only":false,"structure":"Single-leg calf raises to failure per side; 30 s sit-to-stand; single-leg balance; step-down quality; plank hold."},{"day":2,"type":"ramp_test","title":"Graded ramp test","coachable":false,"minutes":35,"ceiling_only":false,"structure":"5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. Record heart rate over the final 60 s of each stage, plus Borg 6-20 and the talk test. Stop at 85% of heart-rate reserve, RPE 15/20, or when speech becomes impossible."},{"day":3,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":4,"type":"run_walk","title":"Easy shakeout walk-jog","coachable":true,"minutes":25,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"ceiling_only":true},{"day":5,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":6,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false}]},{"week":2,"focus":"Find out where you actually are. No hard running.","cutback":false,"volume_km":null,"volume_min":null,"notes":["No hard running this week, on purpose. A maximal test on untrained tissue measures discomfort tolerance and buys an injury.","Wear the armband overnight every night from now on -- the readiness engine needs at least 14 nights before its band means anything."],"sessions":[{"day":0,"type":"rest","title":"Screening + baseline day -- no running","coachable":false,"ceiling_only":false},{"day":1,"type":"strength","title":"Structural screen","coachable":false,"minutes":30,"ceiling_only":false,"structure":"Single-leg calf raises to failure per side; 30 s sit-to-stand; single-leg balance; step-down quality; plank hold."},{"day":2,"type":"ramp_test","title":"Graded ramp test","coachable":false,"minutes":35,"ceiling_only":false,"structure":"5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. Record heart rate over the final 60 s of each stage, plus Borg 6-20 and the talk test. Stop at 85% of heart-rate reserve, RPE 15/20, or when speech becomes impossible."},{"day":3,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":4,"type":"run_walk","title":"Easy shakeout walk-jog","coachable":true,"minutes":25,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"ceiling_only":true},{"day":5,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":6,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false}]},{"week":3,"focus":"Find out where you actually are. No hard running.","cutback":false,"volume_km":null,"volume_min":null,"notes":["No hard running this week, on purpose. A maximal test on untrained tissue measures discomfort tolerance and buys an injury.","Wear the armband overnight every night from now on -- the readiness engine needs at least 14 nights before its band means anything."],"sessions":[{"day":0,"type":"rest","title":"Screening + baseline day -- no running","coachable":false,"ceiling_only":false},{"day":1,"type":"strength","title":"Structural screen","coachable":false,"minutes":30,"ceiling_only":false,"structure":"Single-leg calf raises to failure per side; 30 s sit-to-stand; single-leg balance; step-down quality; plank hold."},{"day":2,"type":"ramp_test","title":"Graded ramp test","coachable":false,"minutes":35,"ceiling_only":false,"structure":"5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. Record heart rate over the final 60 s of each stage, plus Borg 6-20 and the talk test. Stop at 85% of heart-rate reserve, RPE 15/20, or when speech becomes impossible."},{"day":3,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":4,"type":"run_walk","title":"Easy shakeout walk-jog","coachable":true,"minutes":25,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"ceiling_only":true},{"day":5,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":6,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false}]},{"week":4,"focus":"Find out where you actually are. No hard running.","cutback":false,"volume_km":null,"volume_min":null,"notes":["No hard running this week, on purpose. A maximal test on untrained tissue measures discomfort tolerance and buys an injury.","Wear the armband overnight every night from now on -- the readiness engine needs at least 14 nights before its band means anything."],"sessions":[{"day":0,"type":"rest","title":"Screening + baseline day -- no running","coachable":false,"ceiling_only":false},{"day":1,"type":"strength","title":"Structural screen","coachable":false,"minutes":30,"ceiling_only":false,"structure":"Single-leg calf raises to failure per side; 30 s sit-to-stand; single-leg balance; step-down quality; plank hold."},{"day":2,"type":"ramp_test","title":"Graded ramp test","coachable":false,"minutes":35,"ceiling_only":false,"structure":"5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. Record heart rate over the final 60 s of each stage, plus Borg 6-20 and the talk test. Stop at 85% of heart-rate reserve, RPE 15/20, or when speech becomes impossible."},{"day":3,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":4,"type":"run_walk","title":"Easy shakeout walk-jog","coachable":true,"minutes":25,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"ceiling_only":true},{"day":5,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":6,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false}]},{"week":5,"focus":"Find out where you actually are. No hard running.","cutback":false,"volume_km":null,"volume_min":null,"notes":["No hard running this week, on purpose. A maximal test on untrained tissue measures discomfort tolerance and buys an injury.","Wear the armband overnight every night from now on -- the readiness engine needs at least 14 nights before its band means anything."],"sessions":[{"day":0,"type":"rest","title":"Screening + baseline day -- no running","coachable":false,"ceiling_only":false},{"day":1,"type":"strength","title":"Structural screen","coachable":false,"minutes":30,"ceiling_only":false,"structure":"Single-leg calf raises to failure per side; 30 s sit-to-stand; single-leg balance; step-down quality; plank hold."},{"day":2,"type":"ramp_test","title":"Graded ramp test","coachable":false,"minutes":35,"ceiling_only":false,"structure":"5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. Record heart rate over the final 60 s of each stage, plus Borg 6-20 and the talk test. Stop at 85% of heart-rate reserve, RPE 15/20, or when speech becomes impossible."},{"day":3,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":4,"type":"run_walk","title":"Easy shakeout walk-jog","coachable":true,"minutes":25,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"ceiling_only":true},{"day":5,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":6,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false}]},{"week":6,"focus":"Find out where you actually are. No hard running.","cutback":false,"volume_km":null,"volume_min":null,"notes":["No hard running this week, on purpose. A maximal test on untrained tissue measures discomfort tolerance and buys an injury.","Wear the armband overnight every night from now on -- the readiness engine needs at least 14 nights before its band means anything."],"sessions":[{"day":0,"type":"rest","title":"Screening + baseline day -- no running","coachable":false,"ceiling_only":false},{"day":1,"type":"strength","title":"Structural screen","coachable":false,"minutes":30,"ceiling_only":false,"structure":"Single-leg calf raises to failure per side; 30 s sit-to-stand; single-leg balance; step-down quality; plank hold."},{"day":2,"type":"ramp_test","title":"Graded ramp test","coachable":false,"minutes":35,"ceiling_only":false,"structure":"5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. Record heart rate over the final 60 s of each stage, plus Borg 6-20 and the talk test. Stop at 85% of heart-rate reserve, RPE 15/20, or when speech becomes impossible."},{"day":3,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":4,"type":"run_walk","title":"Easy shakeout walk-jog","coachable":true,"minutes":25,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"ceiling_only":true},{"day":5,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":6,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false}]}],"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have."},{"phase":"foundation","label":"Foundation","weeks":[{"week":1,"focus":"Run 30 minutes continuously, comfortably, in Z2.","cutback":false,"volume_km":null,"volume_min":24,"notes":["Run-walk ladder rung 1 of 8: 1 min running / 2 min walking x 8 (8 min of running per session, 24 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"run_walk","title":"Run-walk 1/2 x 8","coachable":true,"minutes":34,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 8 x (1 min easy running + 2 min walking), 5 min walk cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"run_walk","title":"Run-walk 1/2 x 8","coachable":true,"minutes":34,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 8 x (1 min easy running + 2 min walking), 5 min walk cool-down."},{"day":6,"type":"run_walk","title":"Run-walk 1/2 x 8","coachable":true,"minutes":34,"zones":[1,2],"run_walk":{"run_min":1.0,"walk_min":2.0,"reps":8},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 8 x (1 min easy running + 2 min walking), 5 min walk cool-down."}]},{"week":2,"focus":"Run 30 minutes continuously, comfortably, in Z2.","cutback":false,"volume_km":null,"volume_min":42,"notes":["Run-walk ladder rung 2 of 8: 2 min running / 2 min walking x 7 (14 min of running per session, 42 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"run_walk","title":"Run-walk 2/2 x 7","coachable":true,"minutes":38,"zones":[1,2],"run_walk":{"run_min":2.0,"walk_min":2.0,"reps":7},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"run_walk","title":"Run-walk 2/2 x 7","coachable":true,"minutes":38,"zones":[1,2],"run_walk":{"run_min":2.0,"walk_min":2.0,"reps":7},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down."},{"day":6,"type":"run_walk","title":"Run-walk 2/2 x 7","coachable":true,"minutes":38,"zones":[1,2],"run_walk":{"run_min":2.0,"walk_min":2.0,"reps":7},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down."}]},{"week":3,"focus":"Run 30 minutes continuously, comfortably, in Z2.","cutback":false,"volume_km":null,"volume_min":54,"notes":["Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"run_walk","title":"Run-walk 3/2 x 6","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":3.0,"walk_min":2.0,"reps":6},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"run_walk","title":"Run-walk 3/2 x 6","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":3.0,"walk_min":2.0,"reps":6},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down."},{"day":6,"type":"run_walk","title":"Run-walk 3/2 x 6","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":3.0,"walk_min":2.0,"reps":6},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down."}]},{"week":4,"focus":"Run 30 minutes continuously, comfortably, in Z2.","cutback":true,"volume_km":null,"volume_min":54,"notes":["Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.","The ladder holds at the previous rung this week rather than advancing.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"run_walk","title":"Run-walk 3/2 x 6","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":3.0,"walk_min":2.0,"reps":6},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"run_walk","title":"Run-walk 3/2 x 6","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":3.0,"walk_min":2.0,"reps":6},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down."},{"day":6,"type":"run_walk","title":"Run-walk 3/2 x 6","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":3.0,"walk_min":2.0,"reps":6},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down."}]},{"week":5,"focus":"Run 30 minutes continuously, comfortably, in Z2.","cutback":false,"volume_km":null,"volume_min":72,"notes":["Run-walk ladder rung 5 of 8: 8 min running / 2 min walking x 3 (24 min of running per session, 72 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"run_walk","title":"Run-walk 8/2 x 3","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":8.0,"walk_min":2.0,"reps":3},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 3 x (8 min easy running + 2 min walking), 5 min walk cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"run_walk","title":"Run-walk 8/2 x 3","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":8.0,"walk_min":2.0,"reps":3},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 3 x (8 min easy running + 2 min walking), 5 min walk cool-down."},{"day":6,"type":"run_walk","title":"Run-walk 8/2 x 3","coachable":true,"minutes":40,"zones":[1,2],"run_walk":{"run_min":8.0,"walk_min":2.0,"reps":3},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 3 x (8 min easy running + 2 min walking), 5 min walk cool-down."}]},{"week":6,"focus":"Run 30 minutes continuously, comfortably, in Z2.","cutback":false,"volume_km":null,"volume_min":72,"notes":["Run-walk ladder rung 6 of 8: 12 min running / 2 min walking x 2 (24 min of running per session, 72 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"run_walk","title":"Run-walk 12/2 x 2","coachable":true,"minutes":38,"zones":[1,2],"run_walk":{"run_min":12.0,"walk_min":2.0,"reps":2},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"run_walk","title":"Run-walk 12/2 x 2","coachable":true,"minutes":38,"zones":[1,2],"run_walk":{"run_min":12.0,"walk_min":2.0,"reps":2},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down."},{"day":6,"type":"run_walk","title":"Run-walk 12/2 x 2","coachable":true,"minutes":38,"zones":[1,2],"run_walk":{"run_min":12.0,"walk_min":2.0,"reps":2},"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down."}]}],"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have."},{"phase":"base_1","label":"Base 1","weeks":[{"week":1,"focus":"Make running a habit and finish a 5K. Volume, not speed.","cutback":false,"volume_km":14.1,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 35%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"easy","title":"Easy run","coachable":true,"minutes":40,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"strides","title":"Easy run + strides","coachable":false,"minutes":40,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":false,"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance."},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":43,"km":4.9,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":2,"focus":"Make running a habit and finish a 5K. Volume, not speed.","cutback":false,"volume_km":15.6,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"easy","title":"Easy run","coachable":true,"minutes":43,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"strides","title":"Easy run + strides","coachable":false,"minutes":43,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":false,"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance."},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":50,"km":5.7,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":3,"focus":"Make running a habit and finish a 5K. Volume, not speed.","cutback":false,"volume_km":17.3,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 39%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"easy","title":"Easy run","coachable":true,"minutes":46,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"strides","title":"Easy run + strides","coachable":false,"minutes":46,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":false,"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance."},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":58,"km":6.7,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":4,"focus":"Make running a habit and finish a 5K. Volume, not speed.","cutback":true,"volume_km":13.4,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 41%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","Cutback week: long run trimmed 20% as well as weekly volume.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"easy","title":"Easy run","coachable":true,"minutes":39,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"strides","title":"Easy run + strides","coachable":false,"minutes":39,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":false,"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance."},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":38,"km":4.4,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":5,"focus":"Make running a habit and finish a 5K. Volume, not speed.","cutback":false,"volume_km":12.5,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 43%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation.","Time-trial week. Everything downstream -- your zones, every prescribed pace, the controller's targets -- is currently derived from a deliberately conservative submaximal estimate. This is the run that replaces it with a real measurement, so expect your paces to get quicker afterwards."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"time_trial","title":"2000 m time trial","coachable":false,"minutes":45,"km":2.0,"zones":[4,5],"ceiling_only":false,"structure":"10 min easy warm-up plus 4 x 30 s strides. Then 2000 m (5 laps of a track, or a measured flat 2 km) as fast as you can hold evenly. 10 min walk/jog cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"strides","title":"Easy run + strides","coachable":false,"minutes":37,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":false,"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance."},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":55,"km":6.3,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":6,"focus":"Make running a habit and finish a 5K. Volume, not speed.","cutback":false,"volume_km":14.1,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 45%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"easy","title":"Easy run","coachable":true,"minutes":34,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"strides","title":"Easy run + strides","coachable":false,"minutes":34,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":false,"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance."},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":55,"km":6.3,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]}],"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have."},{"phase":"base_2","label":"Base 2","weeks":[{"week":1,"focus":"Add your first real threshold work and race a 10K.","cutback":false,"volume_km":33.2,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 35%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"threshold","title":"Threshold 2 x 6 min","coachable":true,"minutes":46,"zones":[4],"pace":{"target_sec_km":384.2,"tolerance":0.06,"fast":"6:01","slow":"6:47"},"ceiling_only":false,"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"easy","title":"Easy run","coachable":true,"minutes":147,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":79,"km":9.1,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":2,"focus":"Add your first real threshold work and race a 10K.","cutback":false,"volume_km":34.8,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"threshold","title":"Threshold 2 x 6 min","coachable":true,"minutes":46,"zones":[4],"pace":{"target_sec_km":384.2,"tolerance":0.06,"fast":"6:01","slow":"6:47"},"ceiling_only":false,"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"easy","title":"Easy run","coachable":true,"minutes":152,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":89,"km":10.2,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":3,"focus":"Add your first real threshold work and race a 10K.","cutback":false,"volume_km":36.6,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 39%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"threshold","title":"Threshold 2 x 6 min","coachable":true,"minutes":46,"zones":[4],"pace":{"target_sec_km":384.2,"tolerance":0.06,"fast":"6:01","slow":"6:47"},"ceiling_only":false,"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"easy","title":"Easy run","coachable":true,"minutes":156,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":100,"km":11.5,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":4,"focus":"Add your first real threshold work and race a 10K.","cutback":true,"volume_km":29.0,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 41%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","Cutback week: long run trimmed 20% as well as weekly volume.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"threshold","title":"Threshold 2 x 6 min","coachable":true,"minutes":46,"zones":[4],"pace":{"target_sec_km":384.2,"tolerance":0.06,"fast":"6:01","slow":"6:47"},"ceiling_only":false,"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"easy","title":"Easy run","coachable":true,"minutes":127,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":62,"km":7.2,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":5,"focus":"Add your first real threshold work and race a 10K.","cutback":false,"volume_km":41.2,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 43%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"threshold","title":"Threshold 3 x 8 min","coachable":true,"minutes":60,"zones":[4],"pace":{"target_sec_km":384.2,"tolerance":0.06,"fast":"6:01","slow":"6:47"},"ceiling_only":false,"structure":"20 min easy warm-up, then 3 x 8 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"easy","title":"Easy run","coachable":true,"minutes":158,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":120,"km":13.7,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]},{"week":6,"focus":"Add your first real threshold work and race a 10K.","cutback":false,"volume_km":43.9,"volume_min":null,"notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 45%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"day":0,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":1,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":2,"type":"threshold","title":"Threshold 3 x 8 min","coachable":true,"minutes":60,"zones":[4],"pace":{"target_sec_km":384.2,"tolerance":0.06,"fast":"6:01","slow":"6:47"},"ceiling_only":false,"structure":"20 min easy warm-up, then 3 x 8 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down."},{"day":3,"type":"strength","title":"Strength (running-specific)","coachable":false,"minutes":45,"ceiling_only":false,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run."},{"day":4,"type":"rest","title":"Rest","coachable":false,"ceiling_only":false},{"day":5,"type":"easy","title":"Easy run","coachable":true,"minutes":165,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true},{"day":6,"type":"long","title":"Long run","coachable":true,"minutes":136,"km":15.6,"zones":[1,2],"pace":{"target_sec_km":518.2,"tolerance":0.0345,"fast":"8:20","slow":"8:56"},"ceiling_only":true,"structure":"Steady and easy throughout."}]}],"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have."}]};
+const BUILD = {"id":"732c72f","at":"2026-08-19 15:58Z"};
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
@@ -719,6 +1711,8 @@ const CHECKS = [
     hint: 'A tone must actually reach your AirPods.' },
   { id: 'voice', name: 'Voice',
     hint: 'The kilometre splits are spoken.' },
+  { id: 'bt', name: 'Armband (Bluetooth)',
+    hint: 'Safari cannot; Bluefy can.' },
   { id: 'gps', name: 'Location',
     hint: 'Pace comes from GPS. Blocked here means run/walk mode instead.' },
   { id: 'wake', name: 'Screen stays on',
@@ -745,11 +1739,15 @@ function mark(id, status, detail) {
 }
 
 $('preflight').onclick = async () => {
-  const c = audio();
-  mark('audio', c.state === 'running' ? 'pass' : 'warn',
-       c.state === 'running' ? 'Audio running. Listen for the tone now.'
-                             : `Audio context is "${c.state}" — tap again.`);
+  audio();
   play('in_band');
+  mark('audio', 'warn', 'Playing a tone now — did you hear it?');
+  setTimeout(() => {
+    mark('audio', tones.lastError ? 'fail' : 'pass',
+         tones.lastError
+           ? `Blocked: ${tones.lastError.message}`
+           : 'Sound is playing through the media channel, so the silent switch does not mute it.');
+  }, 900);
 
   if ('speechSynthesis' in window) {
     let spoke = false;
@@ -758,31 +1756,34 @@ $('preflight').onclick = async () => {
     u.onstart = () => { spoke = true; mark('voice', 'pass', 'Speaking now.'); };
     u.onerror = e => mark('voice', 'fail', `Speech failed: ${e.error}`);
     setTimeout(() => { if (!spoke) mark('voice', 'warn', 'No start event — turn the volume up.'); },
-               2500);
-    setTimeout(() => speechSynthesis.speak(u), 1400);
+               2600);
+    setTimeout(() => speechSynthesis.speak(u), 1500);
   } else {
     mark('voice', 'fail', 'This browser has no speech synthesis.');
   }
 
+  mark('bt', bluetoothAvailable() ? 'pass' : 'fail',
+       bluetoothAvailable()
+         ? 'This browser can reach the armband.'
+         : 'No Web Bluetooth here. On iPhone use Bluefy; Safari cannot do it.');
+
   mark('gps', 'warn', 'Asking for permission…');
   if (!navigator.geolocation) {
-    mark('gps', 'fail', 'No geolocation in this browser. Use run/walk mode.');
+    mark('gps', 'fail', 'No geolocation. Use run/walk mode, which needs none.');
   } else {
     navigator.geolocation.getCurrentPosition(
-      p => mark('gps', p.coords.accuracy <= MAX_ACCURACY_M ? 'pass' : 'warn',
+      p => mark('gps', p.coords.accuracy <= 25 ? 'pass' : 'warn',
                 `Fix to ±${p.coords.accuracy.toFixed(0)} m`
-                + (p.coords.accuracy > MAX_ACCURACY_M
-                   ? ' — too loose to coach from yet. Step outside and retry.'
-                   : '. Good enough to coach from.')),
-      e => mark('gps', 'fail',
-                `${e.message}. If this frame blocks location, use run/walk mode — it needs none.`),
+                + (p.coords.accuracy > 25 ? ' — too loose to coach from. Step outside and retry.'
+                                          : '. Good enough to coach from.')),
+      e => mark('gps', 'fail', `${e.message}. Run/walk mode needs no location.`),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
 
   if ('wakeLock' in navigator) {
     try {
       const wl = await navigator.wakeLock.request('screen');
-      mark('wake', 'pass', 'Granted. The screen will stay on while a session runs.');
+      mark('wake', 'pass', 'Granted. The screen stays on while a session runs.');
       await wl.release();
     } catch (e) {
       mark('wake', 'warn', `Denied (${e.name}). Set Auto-Lock to Never in Settings → Display.`);
@@ -792,25 +1793,19 @@ $('preflight').onclick = async () => {
   }
 };
 
-$('hear').onclick = () => {
-  // The first tone MUST be played synchronously, inside the tap.
-  //
-  // This button did nothing on iOS for exactly one reason: every play() sat inside a setTimeout,
-  // including the first, and setTimeout(fn, 0) is still asynchronous. iOS only lets an AudioContext
-  // start from within a user gesture, and ctx.resume() returns a promise — so by the time the first
-  // timeout fired the gesture had ended, the context was still suspended, and oscillators scheduled
-  // on it produced silence. "Run all checks" worked because it called play() directly.
-  //
-  // The log line was inside the timeout too, which is why the button looked completely dead rather
-  // than merely silent. Both now happen in the gesture.
-  audio();
-  const order = [['ease','ease off'], ['lift','lift'], ['in_band','back on pace'],
-                 ['attend','voice incoming'], ['degraded','signal lost']];
-  play(order[0][0]);
-  log(order[0][1], 'dim');
-  order.slice(1).forEach(([e, name], i) =>
-    setTimeout(() => { play(e); log(name, 'dim'); }, (i + 1) * 1100));
-};
+// One button, one sound.
+//
+// The old button played all five in sequence, which made it impossible to tell which sound was
+// which — and when it silently failed there was no way to distinguish "played nothing" from "played
+// something you did not recognise". That ambiguity is what made a real bug look like a mystery.
+document.querySelectorAll('button[data-tone]').forEach(b => {
+  b.onclick = () => {
+    audio();                     // inside the tap: iOS will not start a context any other way
+    play(b.dataset.tone);
+    log(`${b.textContent.toLowerCase()} — ${b.dataset.tone}`, 'dim');
+  };
+});
+$('testvoice').onclick = () => { audio(); say('1 mile. 14 29. On pace.'); log('voice', 'dim'); };
 
 // =================================================================================================
 // Mode
@@ -891,36 +1886,145 @@ function showVerdict(state, trusted) {
 // GPS
 // =================================================================================================
 
-function haversine(a, b) {
-  const R = 6371000, rad = d => d * Math.PI / 180;
-  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
-  const s = Math.sin(dLat/2)**2
-          + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon/2)**2;
-  return 2 * R * Math.asin(Math.sqrt(s));
+// =================================================================================================
+// The armband
+//
+// Safari has no Web Bluetooth, so on an iPhone this only works inside a browser that adds it —
+// Bluefy is the usual one. The app detects rather than assumes, and says which it got, because a
+// coach that silently loses heart rate is worse than one that never had it.
+// =================================================================================================
+
+// Five-zone HR-reserve model, the same boundaries the engine uses. Recomputed here rather than
+// shipped in the plan because they depend on resting heart rate, which the athlete can change.
+function zoneModel(hrMax, hrRest) {
+  const frac = [[0.45,0.60],[0.60,0.73],[0.73,0.81],[0.81,0.90],[0.90,1.05]];
+  return frac.map(([lo, hi], i) => ({
+    index: i + 1,
+    low: Math.round(hrRest + lo * (hrMax - hrRest)),
+    high: Math.round(hrRest + hi * (hrMax - hrRest)),
+  }));
 }
 
-function onFix(pos) {
-  const { latitude: lat, longitude: lon, accuracy, speed } = pos.coords;
-  S.accuracy = accuracy;
-  $('acc').textContent = accuracy == null ? '—' : `${accuracy.toFixed(0)}`;
-  const fix = { lat, lon, t: pos.timestamp / 1000 };
-  if (accuracy != null && accuracy > MAX_ACCURACY_M) { S.lastFix = fix; return; }
+function renderZones(hr) {
+  const zones = S.hrZones || (S.hrZones = zoneModel(PLAN.generated_for.hr_max,
+                                                    PLAN.generated_for.hr_rest));
+  const sess = S.plannedSession ? sessionFor(S.plannedSession.day) : null;
+  const target = sess && sess.zones ? sess.zones : [];
+  $('zonebar').replaceChildren(...zones.map(z => {
+    const d = document.createElement('div');
+    d.className = `z${z.index}`
+      + (hr != null && hr >= z.low && hr < z.high ? ' active' : '')
+      + (target.includes(z.index) ? ' target' : '');
+    d.textContent = `Z${z.index}`;
+    d.title = `${z.low}–${z.high} bpm`;
+    return d;
+  }));
+}
 
-  // iOS supplies a Doppler speed, which beats differencing positions. Fall back to positions only
-  // when it is absent, and reject anything a person cannot produce either way.
-  let v = (speed != null && speed >= 0) ? speed : null;
-  if (v == null && S.lastFix) {
-    const dt = fix.t - S.lastFix.t;
-    if (dt > 0.5) v = haversine(S.lastFix, fix) / dt;
+function updateSensorUi() {
+  const sn = S.sensor;
+  const fresh = sn && sn.hrFresh();
+  $('hrbig').textContent = fresh ? `${sn.hr}` : '—';
+  $('hrtile').textContent = fresh ? `${sn.hr}` : '—';
+  if (!sn || !sn.connected) {
+    $('hrstate').textContent = bluetoothAvailable() ? 'not connected' : 'no Bluetooth in this browser';
+  } else if (!fresh) {
+    $('hrstate').textContent = 'connected, waiting for a reading';
+  } else {
+    const z = (S.hrZones || []).find(x => sn.hr >= x.low && sn.hr < x.high);
+    $('hrstate').textContent = `${z ? 'Zone ' + z.index : 'out of range'}`
+      + (sn.battery != null ? ` · battery ${sn.battery}%` : '')
+      + (sn.hasAcc ? '' : ' · no accelerometer');
   }
-  if (v != null && v <= MAX_SPEED_MS) {
-    S.speed = v;
-    if (S.running && S.lastFix) {
-      const dt = fix.t - S.lastFix.t;
-      if (dt > 0 && dt < 10) S.distanceM += v * dt;
+  renderZones(fresh ? sn.hr : null);
+}
+
+$('connect').onclick = async () => {
+  if (!bluetoothAvailable()) {
+    $('hrstate').textContent = 'This browser has no Bluetooth — use Bluefy on iPhone';
+    log('no Web Bluetooth in this browser', 'stop');
+    return;
+  }
+  if (S.sensor && S.sensor.connected) {
+    S.sensor.disconnect();
+    $('connect').textContent = 'Connect';
+    log('armband disconnected');
+    updateSensorUi();
+    return;
+  }
+  // Every step is shown where you are already looking. "Nothing happened" is not a diagnosis, and
+  // on a phone there is no console to open — so the panel has to be the console.
+  const step = m => { $('hrstate').textContent = m; log(m, 'dim'); };
+  try {
+    S.sensor = new VeritySensor({
+      onLog: (m, c) => log(m, c),
+      onChange: updateSensorUi,
+      onStep: step,
+    });
+    await S.sensor.connect();
+    $('connect').textContent = 'Disconnect';
+    log(`connected${S.sensor.hasAcc ? ' with accelerometer' : ' — heart rate only'}`, 'on');
+  } catch (e) {
+    const where = S.sensor ? S.sensor.step : 'starting';
+    $('hrstate').textContent = `failed at: ${where}`;
+    log(`failed at "${where}": ${e.name || 'Error'} — ${e.message}`, 'stop');
+    if (/User cancelled|cancelled/i.test(e.message)) {
+      log('picker dismissed without choosing', 'dim');
+    } else if (/GATT|connect/i.test(e.message)) {
+      log('the band may still be held by Polar Flow — force-quit Flow and retry', 'stop');
     }
   }
-  S.lastFix = fix;
+  updateSensorUi();
+};
+
+// =================================================================================================
+// The route
+//
+// Drawn from the track's own coordinates rather than fetched tiles: the frame blocks external hosts,
+// and a map of where you were is the part that is actually yours. Coloured by what the coach thought
+// at the time, so the shape of the run and the shape of the coaching are the same picture.
+// =================================================================================================
+
+function drawMap() {
+  const cv = $('map');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const cssW = cv.clientWidth || 320, cssH = cv.clientHeight || 190;
+  if (cv.width !== Math.round(cssW * dpr)) {
+    cv.width = Math.round(cssW * dpr);
+    cv.height = Math.round(cssH * dpr);
+  }
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, cssW, cssH);
+
+  const { points, w, h } = S.track.projected();
+  if (points.length < 2) return;
+  $('maphint').textContent = `${S.track.accepted} fixes · ${S.track.rejected} rejected`;
+
+  const pad = 12;
+  const scale = Math.min((cssW - pad * 2) / w, (cssH - pad * 2) / h);
+  const ox = (cssW - w * scale) / 2, oy = (cssH - h * scale) / 2;
+  const X = p => ox + p[0] * scale, Y = p => oy + p[1] * scale;
+
+  g.lineWidth = 3;
+  g.lineJoin = g.lineCap = 'round';
+  for (let i = 1; i < points.length; i++) {
+    const st = S.trackState[i] || 'unknown';
+    g.strokeStyle = st === 'in' ? getComputedStyle(document.body).getPropertyValue('--on')
+      : st === 'fast' ? getComputedStyle(document.body).getPropertyValue('--fast')
+      : st === 'slow' ? getComputedStyle(document.body).getPropertyValue('--slow')
+      : getComputedStyle(document.body).getPropertyValue('--faint');
+    g.beginPath();
+    g.moveTo(X(points[i - 1]), Y(points[i - 1]));
+    g.lineTo(X(points[i]), Y(points[i]));
+    g.stroke();
+  }
+  // Start and current position, so the direction of travel is readable at a glance.
+  g.fillStyle = getComputedStyle(document.body).getPropertyValue('--text');
+  g.beginPath(); g.arc(X(points[0]), Y(points[0]), 4, 0, 7); g.fill();
+  g.fillStyle = getComputedStyle(document.body).getPropertyValue('--on');
+  const last = points[points.length - 1];
+  g.beginPath(); g.arc(X(last), Y(last), 5, 0, 7); g.fill();
 }
 
 // =================================================================================================
@@ -928,11 +2032,44 @@ function onFix(pos) {
 // =================================================================================================
 
 function tickCoach(t, pace, trusted) {
-  S.samples.push({ t_s: t, speed_m_s: S.speed, accuracy_m: S.accuracy });
-  const ev = S.monitor.update(t, pace, { paceTrusted: trusted });
-  if (ev) { play(ev.earcon); S.tones++; log(ev.earcon.replace('_',' '),
-      ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast'); }
-  const line = S.splits.update(S.distanceM, pace, S.monitor.state);
+  const sn = S.sensor;
+  const fresh = sn && sn.hrFresh();
+  S.samples.push({
+    t_s: t,
+    speed_m_s: S.track.speedMS,
+    // Absent rather than stale. A heart rate that stopped arriving must never be written as
+    // current — the armband logger learned that the hard way, and the result was a flat, plausible,
+    // entirely fabricated trace that imported as clean data.
+    hr_bpm: fresh ? sn.hr : null,
+    accel_sd_g: sn ? sn.takeAccSd() : null,
+    grade: Math.round(S.track.grade * 1e4) / 1e4,
+    accuracy_m: S.track.lastAccuracy,
+  });
+
+  // Which signal governs.
+  //
+  // Heart rate when it is there, pace when it is not — and never both, because two channels talking
+  // about the same run is how you get told to ease off and to lift within ten seconds. GPS is a good
+  // instrument for distance and a smoothed pace and a poor one for effort: its error is a few
+  // percent on a good fix and much worse under trees, and it says nothing about how hard the work
+  // actually is. Heart rate is what the engine's zones, its HR/speed slope and its whole controller
+  // are built on.
+  //
+  // Both monitors are still fed. Only the governing one is allowed to make a sound, so switching
+  // mid-run — the armband drops, or reconnects — does not restart the silent one from cold.
+  const hrOk = fresh && S.hrMonitor;
+  S.governedBy = hrOk ? 'hr' : 'pace';
+
+  const paceEv = S.monitor.update(t, pace, { grade: S.track.grade, paceTrusted: trusted });
+  const hrEv = S.hrMonitor ? S.hrMonitor.update(t, fresh ? sn.hr : null) : null;
+  const ev = hrOk ? hrEv : paceEv;
+  if (ev) {
+    play(ev.earcon);
+    S.tones++;
+    log(`${ev.earcon.replace('_', ' ')}${ev.reason ? ' — ' + ev.reason : ''}`,
+        ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast');
+  }
+  const line = S.splits.update(t, S.track.distanceM, pace, S.monitor.state);
   if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
 }
 
@@ -977,19 +2114,21 @@ function tickRehearse() {
     S.simT += 1;
     if (S.simT > 1800) { finish('Rehearsal complete.'); return; }
     const pace = scriptedPace(S.simT);
-    S.distanceM += 1000 / pace;
+    S.simDist += 1000 / pace;
     const ev = S.monitor.update(S.simT, pace);
     if (ev) { play(ev.earcon); S.tones++;
       log(`${Math.floor(S.simT/60)}:${String(S.simT%60).padStart(2,'0')} — ${ev.earcon.replace('_',' ')}`,
           ev.earcon === 'in_band' ? 'on' : 'fast'); }
-    const line = S.splits.update(S.distanceM, pace, S.monitor.state);
+    // Simulated clock and distance — the rehearsal has no track, and reading the live one here
+    // would make a replay indoors depend on whether GPS happened to be running.
+    const line = S.splits.update(S.simT, S.simDist, pace, S.monitor.state);
     if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
     $('pace').textContent = fmtPace(pace);
     setMarker(pace);
     showVerdict(S.monitor.state, true);
   }
   $('elapsed').textContent = `${Math.floor(S.simT/60)}:${String(S.simT%60).padStart(2,'0')}`;
-  $('dist').textContent = U.dist(S.distanceM).toFixed(2);
+  $('dist').textContent = U.dist(S.simDist).toFixed(2);
 }
 
 function tick() {
@@ -998,16 +2137,26 @@ function tick() {
 
   const t = Math.round((Date.now() - S.startedAt) / 1000);
   $('elapsed').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
-  $('dist').textContent = U.dist(S.distanceM).toFixed(2);
+  $('dist').textContent = U.dist(S.track.distanceM).toFixed(2);
+  updateSensorUi();
 
   if (S.mode === 'intervals') return tickIntervals(t);
 
-  const trusted = S.accuracy != null && S.accuracy <= MAX_ACCURACY_M;
-  const pace = (S.speed && S.speed > 0.4) ? 1000 / S.speed : null;
+  const trusted = S.track.trustedAt(nowSeconds());
+  const pace = S.track.paceSecKm;
   $('pace').textContent = fmtPace(pace);
+  $('gradetile').textContent = `${(S.track.grade * 100).toFixed(0)}%`;
+  $('climbtile').textContent = unit === 'mi'
+    ? `${Math.round(S.track.ascentM * 3.28084)}` : `${Math.round(S.track.ascentM)}`;
   setMarker(pace);
   tickCoach(t, pace, trusted);
-  showVerdict(S.monitor.state, trusted);
+  const gov = S.governedBy === 'hr' ? S.hrMonitor : S.monitor;
+  showVerdict(gov ? gov.state : 'unknown',
+              S.governedBy === 'hr' ? true : trusted);
+  $('perlabel').textContent = S.governedBy === 'hr' ? `${U.paceLabel} · HR leads` : U.paceLabel;
+  // One state per accepted fix, so the route can be coloured by what the coach thought at the time.
+  while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
+  drawMap();
 }
 
 // =================================================================================================
@@ -1044,15 +2193,31 @@ function setUnit(u) {
 $('u-mi').onclick = () => setUnit('mi');
 $('u-km').onclick = () => setUnit('km');
 
-$('gain').value = String(toneGain);
+$('gain').value = String(tones.volume);
 $('gain').oninput = e => {
-  toneGain = Number(e.target.value);
-  localStorage.setItem('band.gain', String(toneGain));
+  tones.setVolume(Number(e.target.value));
+  localStorage.setItem('band.gain', String(tones.volume));
 };
 $('gain').onchange = () => { audio(); play('in_band'); };
 
 setUnit(unit);
 renderPlan();
+updateSensorUi();
+
+// Build id and capabilities, visible without tapping anything. After a fix is pushed, this is how
+// "reload and try again" gets confirmed instead of assumed.
+$('buildid').textContent = `build ${BUILD.id} · ${BUILD.at}`;
+$('capsline').textContent =
+  [bluetoothAvailable() ? 'BT' : 'no BT',
+   navigator.geolocation ? 'GPS' : 'no GPS',
+   'speechSynthesis' in window ? 'voice' : 'no voice'].join(' · ');
+$('btnote').textContent = bluetoothAvailable()
+  ? 'This browser can read the armband. Connect before you start and heart rate is recorded with '
+    + 'the run.'
+  : 'Safari has no Web Bluetooth, so the armband cannot be read here. Pace coaching works without '
+    + 'it. For heart rate on an iPhone, open this page in Bluefy (free, App Store); on a laptop or '
+    + 'Android, Chrome and Edge both work.';
+addEventListener('resize', () => { if (S.track.path.length > 1) drawMap(); });
 
 $('go').onclick = () => {
   if (S.running) return finish('Stopped.');
@@ -1068,15 +2233,41 @@ $('go').onclick = () => {
     tolerance: Number($('tol').value) / 100,
     ceilingOnly: $('ceiling').checked,
   });
-  S.splits = new SplitAnnouncer(U.splitEvery());
-  Object.assign(S, { running: true, startedAt: Date.now(), distanceM: 0, samples: [],
-                     tones: 0, lastFix: null, speed: null, accuracy: null,
-                     ivPhase: null, ivRep: 0, ivUntil: 0, simT: 0 });
+  // The split's wording is the athlete's business, not the monitor's, so the formatter and the
+  // naming go in rather than a second unit-aware copy of the class living here.
+  // The heart-rate ceiling comes from the session's own prescribed zones when a session was loaded,
+  // and from Z2 otherwise — the band an easy run lives in.
+  S.hrZones = zoneModel(PLAN.generated_for.hr_max, PLAN.generated_for.hr_rest);
+  const sess = S.plannedSession ? sessionFor(S.plannedSession.day) : null;
+  const wanted = sess && sess.zones && sess.zones.length ? sess.zones : [2];
+  const zs = S.hrZones.filter(z => wanted.includes(z.index));
+  S.hrMonitor = new HrCeilingMonitor({
+    lowBpm: Math.min(...zs.map(z => z.low)),
+    highBpm: Math.max(...zs.map(z => z.high)),
+    ceilingOnly: sess ? !!sess.ceiling_only : true,
+  });
+
+  S.splits = new SplitAnnouncer({
+    everyM: U.splitEvery(),
+    formatPace: secKm => U.pace(secKm),
+    nameSplit: n => U.splitName(n),
+  });
+  Object.assign(S, { running: true, startedAt: Date.now(), samples: [], tones: 0,
+                     governedBy: 'pace',
+                     track: new GpsTrack(), trackState: [],
+                     ivPhase: null, ivRep: 0, ivUntil: 0, simT: 0, simDist: 0 });
   $('log').replaceChildren();
 
   if (S.mode === 'coach' && navigator.geolocation) {
-    S.watchId = navigator.geolocation.watchPosition(onFix,
-      e => log(`GPS: ${e.message}`, 'stop'),
+    S.watchId = navigator.geolocation.watchPosition(pos => {
+      const c = pos.coords;
+      const r = S.track.add({
+        lat: c.latitude, lon: c.longitude, alt: c.altitude,
+        accuracy: c.accuracy, speed: c.speed, t: pos.timestamp / 1000,
+      });
+      $('acc').textContent = c.accuracy == null ? '—' : `${c.accuracy.toFixed(0)}`;
+      if (!r.accepted && r.reason === 'implausible jump') log('rejected a GPS jump', 'stop');
+    }, e => log(`GPS: ${e.message}`, 'stop'),
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
   }
   S.tickId = setInterval(tick, 1000);
@@ -1085,7 +2276,11 @@ $('go').onclick = () => {
   $('go').textContent = 'Stop';
   $('go').classList.add('stop');
   $('copy').disabled = true;
-  log(S.mode === 'rehearse' ? 'Rehearsal started — 30 minutes in 90 seconds.' : 'Started.', 'on');
+  const governing = (S.sensor && S.sensor.connected)
+    ? `heart rate leads (ceiling ${Math.round(S.hrMonitor.high)} bpm), pace is information`
+    : 'pace leads — no armband connected';
+  log(S.mode === 'rehearse' ? 'Rehearsal started — 30 minutes in 90 seconds.'
+                            : `Started. ${governing}.`, 'on');
   play('in_band');
 };
 
@@ -1098,11 +2293,50 @@ function finish(msg) {
   $('go').classList.remove('stop');
   $('copy').disabled = S.samples.length === 0;
   const mins = Math.max(1, S.samples.length) / 60;
-  log(`${msg} ${U.dist(S.distanceM).toFixed(2)} ${U.name}, ${S.tones} tones `
-      + `(${(S.tones/mins).toFixed(2)}/min).`, 'on');
+  const hrSamples = S.samples.filter(x => x.hr_bpm != null).length;
+  log(`${msg} ${U.dist(S.track.distanceM).toFixed(2)} ${U.name}, ${S.tones} tones `
+      + `(${(S.tones/mins).toFixed(2)}/min)`
+      + (hrSamples ? `, heart rate for ${Math.round(hrSamples / S.samples.length * 100)}%` : '')
+      + '.', 'on');
+  drawMap();
   $('verdict').textContent = 'stopped';
   $('verdict').style.color = 'var(--faint)';
 }
+
+// Everything worth asking about, in one paste. The alternative is a conversation of twenty
+// questions conducted while standing outside in the cold.
+$('diag').onclick = async () => {
+  const lines = [...$('log').children].slice(0, 40).map(d => d.textContent).reverse();
+  const report = {
+    when: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    bluetooth: bluetoothAvailable(),
+    geolocation: !!navigator.geolocation,
+    wakeLock: 'wakeLock' in navigator,
+    speech: 'speechSynthesis' in window,
+    audioUnlocked: audioReady,
+    audioError: tones.lastError ? String(tones.lastError) : null,
+    toneVolume: tones.volume,
+    unit,
+    sensor: S.sensor ? {
+      step: S.sensor.step, connected: S.sensor.connected, hasAcc: S.sensor.hasAcc,
+      battery: S.sensor.battery, hr: S.sensor.hr,
+      hrAgeMs: S.sensor.hrAt ? Date.now() - S.sensor.hrAt : null,
+    } : null,
+    gps: {
+      accepted: S.track.accepted, rejected: S.track.rejected,
+      lastAccuracy: S.track.lastAccuracy, distanceM: Math.round(S.track.distanceM),
+    },
+    plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
+    log: lines,
+  };
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+    log('diagnostics copied — paste them into the chat', 'on');
+  } catch {
+    log('clipboard blocked; screenshot the log instead', 'stop');
+  }
+};
 
 $('copy').onclick = async () => {
   // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own
@@ -1111,13 +2345,22 @@ $('copy').onclick = async () => {
     schema_version: 1,
     started_at: new Date(S.startedAt).toISOString(),
     age: 30, hr_rest: 55,
-    samples: S.samples.map(s => ({
-      t_s: s.t_s, hr_bpm: null,
-      speed_m_s: s.speed_m_s == null ? null : Math.round(s.speed_m_s * 1e4) / 1e4,
-      label: '',
+    samples: S.samples.map(x => ({
+      t_s: x.t_s, hr_bpm: x.hr_bpm,
+      speed_m_s: x.speed_m_s == null ? null : Math.round(x.speed_m_s * 1e4) / 1e4,
+      accel_sd_g: x.accel_sd_g, grade: x.grade, label: '',
     })),
+    route: S.track.path.map(([la, lo, t, al]) => [
+      Math.round(la * 1e6) / 1e6, Math.round(lo * 1e6) / 1e6, Math.round(t),
+      al == null ? null : Math.round(al * 10) / 10,
+    ]),
     resting_ppi_ms: [], surface: 'road', strap_position: 'upper_arm',
-    notes: 'Recorded by the Band pace coach in Safari. GPS only, no heart rate.',
+    notes: 'Recorded by the Band coach. '
+         + (S.samples.some(x => x.hr_bpm != null)
+            ? (S.sensor && S.sensor.hasAcc
+               ? 'Heart rate and accelerometer from the Verity Sense.'
+               : 'Heart rate from the Verity Sense; no accelerometer, so sensor health is partial.')
+            : 'GPS only — no armband connected, so no heart rate.'),
   };
   const text = JSON.stringify(payload);
   try {
@@ -1127,4 +2370,5 @@ $('copy').onclick = async () => {
     log('Clipboard blocked. Screenshot the summary instead.', 'stop');
   }
 };
+})();
 </script>
