@@ -6,7 +6,7 @@
 // only way to know is to feed it noise and count.
 
 import assert from 'node:assert/strict';
-import { PaceBandMonitor, SplitAnnouncer, fmtPace } from '../pace-monitor.js';
+import { PaceBandMonitor, SplitAnnouncer, formatMMSS } from '../pace-monitor.js';
 
 const TARGET = 540;                       // 9:00 /km
 const TOL = 0.08;
@@ -18,7 +18,7 @@ function simulate({ name, minutes, paceAt, sigma = 0.04, ceilingOnly = true, see
   const gauss = () => (rnd() + rnd() + rnd() + rnd() - 2) * 1.2;
 
   const mon = new PaceBandMonitor({ targetPaceSecKm: TARGET, tolerance: TOL, ceilingOnly });
-  const split = new SplitAnnouncer({ everyM: 1000 });
+  const split = new SplitAnnouncer({ everyM: 1000, formatPace: formatMMSS });
   const out = [];
   let dist = 0;
 

@@ -171,19 +171,32 @@ export class PaceBandMonitor {
   }
 }
 
-/** The short spoken line that makes silence readable as "on pace" rather than "app has died". */
+/**
+ * The short spoken line that makes silence readable as "on pace" rather than "app has died".
+ *
+ * The formatter and the split name are injected rather than built in, because whether a split is
+ * "3K" or "3 miles" is the athlete's business and not this module's — and because the alternative
+ * was a second, unit-aware copy of this class living in the page, which is exactly the kind of
+ * duplicate that drifts.
+ */
 export class SplitAnnouncer {
-  constructor({ everyM = 1000, everyS = null } = {}) {
+  constructor({ everyM = 1000, everyS = null,
+                formatPace = formatMMSS,
+                nameSplit = n => `${n}K` } = {}) {
     this.everyM = everyM;
     this.everyS = everyS;
+    this.formatPace = formatPace;
+    this.nameSplit = nameSplit;
     this.lastSplitM = 0;
     this.lastSplitT = 0;
+    this.n = 0;
   }
 
   update(tS, distanceM, paceSecKm, state) {
     let due = false;
     if (this.everyM && distanceM - this.lastSplitM >= this.everyM) {
       this.lastSplitM += this.everyM;
+      this.n += 1;
       due = true;
     }
     if (this.everyS && tS - this.lastSplitT >= this.everyS) {
@@ -193,19 +206,18 @@ export class SplitAnnouncer {
     if (!due) return null;
 
     const parts = [];
-    if (this.everyM) {
-      const km = this.lastSplitM / 1000;
-      parts.push(km === Math.round(km) ? `${km}K` : `${km.toFixed(1)}K`);
-    }
-    if (paceSecKm) parts.push(fmtPace(paceSecKm));
+    if (this.everyM) parts.push(this.nameSplit(this.n));
+    if (paceSecKm) parts.push(this.formatPace(paceSecKm));
     parts.push({ in: 'on pace', fast: 'easing', slow: 'lift',
                  unknown: 'no pace signal' }[state] || '');
     return parts.filter(Boolean).join('. ') + '.';
   }
 }
 
-export function fmtPace(secPerKm) {
-  const m = Math.floor(secPerKm / 60);
-  const s = Math.round(secPerKm % 60);
+/** Seconds to `m:ss`. Unit-agnostic: the caller decides what the seconds are per. */
+export function formatMMSS(sec) {
+  if (!sec || !isFinite(sec)) return '—:——';
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
   return s === 60 ? `${m + 1}:00` : `${m}:${String(s).padStart(2, '0')}`;
 }
