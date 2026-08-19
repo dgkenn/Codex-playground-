@@ -279,8 +279,12 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   assert.ok(running.some(l => /Walk warm-up/.test(l)),
     `the first step must be announced: ${JSON.stringify(running.slice(0, 3))}`);
   const spokenNow = await page.evaluate(() => window.__spoken);
-  assert.ok(spokenNow.some(l => /kilometres an hour/i.test(l)),
+  // In whichever unit the athlete's dial is marked in — miles per hour here, because the distance
+  // unit is miles. The point is that it is a dial setting and not a pace.
+  assert.ok(spokenNow.some(l => /miles an hour|kilometres an hour/i.test(l)),
     `on a treadmill the first step is a dial setting: ${JSON.stringify(spokenNow)}`);
+  assert.ok(spokenNow.some(l => /\d\.\d miles an hour/i.test(l)),
+    `and in mph while the athlete is working in miles: ${JSON.stringify(spokenNow)}`);
   assert.match(await page.textContent('#verdict'), /Walk warm-up/);
 
   await page.click('#go');                               // stop
@@ -398,6 +402,51 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   await page.click('#go');
   await page.waitForTimeout(200);
   console.log(`  ok  the pace coach starts, ticks and stops (${elapsed} elapsed)`);
+}
+
+// --- pace or speed, on the same run --------------------------------------------------------------
+
+{
+  // A treadmill is dialled in miles per hour and a runner thinks in minutes per mile. The ramp test
+  // needs both in one session, so this is a display choice — and only a display choice: the bands,
+  // the tones and the recorded samples all stay in seconds per kilometre.
+  await page.click('#m-coach');
+  await page.click('#r-pace');
+  await page.fill('#target', '12:00');
+  await page.waitForTimeout(120);
+  const asPace = await page.textContent('#bandtext');
+  assert.match(asPace, /Band \d+:\d\d to \d+:\d\d per mi/i, `pace band reads "${asPace}"`);
+
+  await page.click('#r-speed');
+  await page.waitForTimeout(120);
+  const asSpeed = await page.textContent('#bandtext');
+  assert.match(asSpeed, /Band [\d.]+ to [\d.]+ mph/i, `speed band reads "${asSpeed}"`);
+  assert.equal(await page.textContent('#perlabel'), 'MPH');
+
+  // 12:00 per mile is 5.0 mph, and the band's endpoints must swap when the units invert.
+  const [lo, hi] = asSpeed.match(/([\d.]+) to ([\d.]+)/).slice(1).map(Number);
+  assert.ok(lo < hi, `speed band must run slow-to-fast: ${lo} to ${hi}`);
+  assert.ok(lo < 5.0 && hi > 5.0, `5.0 mph must sit inside the band: ${lo}-${hi}`);
+
+  // The choice must survive a reload; it is a preference, not a mode.
+  await page.reload();
+  await page.waitForSelector('#r-speed');
+  assert.equal(await page.getAttribute('#r-speed', 'aria-pressed'), 'true');
+  await page.click('#r-pace');
+  console.log(`  ok  the readout switches between pace and speed and persists (${asSpeed.trim()})`);
+}
+
+{
+  // The treadmill ramp must announce the dial, not a conversion of it.
+  await page.click('#m-ramp');
+  await page.uncheck('#rampoutdoor');
+  await page.waitForTimeout(120);
+  const note = (await page.textContent('#rampnote')).replace(/\s+/g, ' ');
+  assert.match(note, /mph/i, `the treadmill note must be in mph: "${note}"`);
+  assert.match(note, /3\.1, 3\.7, 4\.3, 5\.0, 5\.6, 6\.2/,
+    `the ladder must read as dial settings: "${note}"`);
+  assert.doesNotMatch(note, /km\/h/i, 'and must not also give km/h, which is the number to ignore');
+  console.log('  ok  the treadmill ramp is prescribed in the numbers on the dial');
 }
 
 // --- a session survives the page going away ------------------------------------------------------

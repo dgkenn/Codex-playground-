@@ -76,6 +76,16 @@ session rather than failing the write that is trying to preserve the run in prog
 today and starts it in the right mode: run/walk sets the intervals from the plan and calls them out;
 a paced session loads its own band; the ramp test runs the whole protocol. Nothing to copy across.
 
+**Pace or speed, your choice.** The band's big number reads either as minutes per mile or as miles
+per hour, switched under Units and remembered. Both describe the same thing and neither is right in
+general — runners think in minutes per mile, treadmills and most people who have not run before
+think in miles per hour, and the ramp test needs both in one session. Only the display changes:
+every band, every tone and every recorded sample stays in seconds per kilometre.
+
+The treadmill ramp is prescribed in the numbers on the dial — 3.1, 3.7, 4.3, 5.0, 5.6, 6.2 mph — not
+in kilometres per hour, which is a conversion to do while running and therefore a conversion to get
+wrong.
+
 **The ramp test can be run on the street.** Tick "On the street, not a treadmill" and each stage
 becomes a paced block: the instruction is spoken as a pace rather than a dial setting, the pace band
 is re-armed at that stage's speed, and the ordinary tones hold you in it. The ladder in miles is

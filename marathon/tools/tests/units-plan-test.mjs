@@ -158,4 +158,32 @@ assert.ok(!/advancePhase|prog\.phase\s*=/.test(js.replace(/PLAN\.phases\[0\]\.ph
   'the app must not advance a phase by itself');
 console.log('  ok  the app advances weeks, never phases');
 
+// --- speed, as distinct from pace ----------------------------------------------------------------
+
+{
+  // A treadmill in the United States is dialled in miles per hour. Announcing kilometres per hour to
+  // someone standing in front of a dial marked 3 to 12 is a conversion to do while running, which is
+  // a conversion to get wrong. These are the ramp ladder's own speeds.
+  const MI = 1609.344;
+  const mph = kmh => kmh / (MI / 1000);
+  const expected = { 4.5: '2.8', 5: '3.1', 6: '3.7', 7: '4.3', 8: '5.0', 9: '5.6', 10: '6.2' };
+  for (const [kmh, want] of Object.entries(expected)) {
+    assert.equal(mph(Number(kmh)).toFixed(1), want, `${kmh} km/h should read ${want} mph`);
+  }
+  console.log('  ok  the ramp ladder converts to the numbers on a treadmill dial');
+}
+
+{
+  // Pace and speed run in opposite directions, so a band expressed as one cannot be the same two
+  // numbers as the other. 13:20 to 15:40 per mile is 4.5 down to 3.8 mph — the endpoints swap.
+  const MI = 1609.344;
+  const secKmToMph = secKm => (3600 / secKm) / (MI / 1000);
+  const target = 870;                       // 14:30 per mile
+  const tol = 0.08;
+  const slow = target * (1 + tol), fast = target * (1 - tol);
+  assert.ok(slow > fast, 'a slower pace is a bigger number');
+  assert.ok(secKmToMph(slow) < secKmToMph(fast), 'and a slower speed is a smaller one');
+  console.log('  ok  pace and speed order the band\u2019s endpoints oppositely, as they must');
+}
+
 console.log('\nAll unit and plan tests passed.');

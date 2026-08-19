@@ -374,6 +374,10 @@
       <button id="u-mi" aria-pressed="true">miles</button>
       <button id="u-km" aria-pressed="false">kilometres</button>
     </div>
+    <div class="seg" role="group" style="margin-top:.5rem">
+      <button id="r-pace" aria-pressed="true">show pace</button>
+      <button id="r-speed" aria-pressed="false">show speed</button>
+    </div>
     <div class="row">
       <label>pace <input id="target" type="text" inputmode="numeric" value="14:30"></label>
       <label>± <input id="tol" type="number" min="2" max="20" step="1" value="8"
@@ -539,6 +543,15 @@ const mmss = formatMMSS;
 // 60% wrong in one branch and right in another.
 const MI = 1609.344;
 let unit = localStorage.getItem('band.unit') || 'mi';
+/**
+ * Whether the big live number is a pace or a speed.
+ *
+ * Both describe the same thing and neither is correct in general. Runners think in minutes per mile;
+ * treadmills, bikes and most people who have not run before think in miles per hour. The ramp test
+ * needs both in the same session — a dial setting to match, and a pace to hold outdoors — so this is
+ * a display choice rather than a setting anything depends on.
+ */
+let readout = localStorage.getItem('band.readout') || 'pace';
 const U = {
   get name() { return unit; },
   get distLabel() { return unit === 'mi' ? 'MI' : 'KM'; },
@@ -550,12 +563,50 @@ const U = {
   /** sec per km -> sec per chosen unit */
   fromSecKm(secKm) { return secKm * (unit === 'mi' ? MI / 1000 : 1); },
   dist(metres) { return metres / (unit === 'mi' ? MI : 1000); },
+
+  // Speed, as distinct from pace.
+  //
+  // The ramp test is prescribed as speeds because a treadmill is dialled in speeds — and a treadmill
+  // in the United States is dialled in MILES per hour. Announcing "seven kilometres an hour" to
+  // someone standing in front of a dial marked 3 to 12 is a number they have to convert while
+  // running, which is a number they will get wrong.
+  get speedLabel() { return unit === 'mi' ? 'MPH' : 'KM/H'; },
+  /** km/h -> the number to show, in the chosen unit */
+  speed(kmh) { return kmh == null ? null : kmh / (unit === 'mi' ? MI / 1000 : 1); },
+  /** km/h -> a rounded display string. One decimal: treadmill dials step by 0.1. */
+  speedText(kmh) { const v = this.speed(kmh); return v == null ? '—' : v.toFixed(1); },
+  /** sec per km -> speed in the chosen unit, for showing pace as a speed instead. */
+  speedFromSecKm(secKm) { return !secKm ? null : this.speed(3600 / secKm); },
   splitEvery() { return unit === 'mi' ? MI : 1000; },
   splitName(n) { return unit === 'mi' ? `${n} mile${n === 1 ? '' : 's'}` : `${n}K`; },
 };
 
 // Kept as `fmtPace` for the band gauge and logs, which always speak in the chosen unit.
 const fmtPace = secKm => U.pace(secKm);
+
+/**
+ * The big number, in whichever form is being shown.
+ *
+ * Only the display changes. Every band, every tone and every recorded sample stays in seconds per
+ * kilometre — a second representation of the same quantity flowing into the coaching logic is how
+ * two channels end up disagreeing about the same run.
+ */
+const readoutText = secKm => {
+  if (readout !== 'speed') return U.pace(secKm);
+  const v = U.speedFromSecKm(secKm);
+  return v == null || !isFinite(v) ? '—' : v.toFixed(1);
+};
+const readoutLabel = () => (readout === 'speed' ? U.speedLabel : U.paceLabel);
+
+function setReadout(mode) {
+  readout = mode;
+  localStorage.setItem('band.readout', mode);
+  $('r-pace').setAttribute('aria-pressed', String(mode === 'pace'));
+  $('r-speed').setAttribute('aria-pressed', String(mode === 'speed'));
+  // Not while a ramp is on a treadmill: there the number is the dial setting, not a measurement.
+  if (!(S.mode === 'ramp' && !S.rampOutdoor)) $('perlabel').textContent = readoutLabel();
+  refreshBand();
+}
 
 // =================================================================================================
 // Audio — same pitches, durations and envelope as the iOS EarconPlayer, so what you learn here
@@ -1003,7 +1054,7 @@ function setMode(m) {
   $('cfg-ramp').classList.toggle('hide', m !== 'ramp');
   if (m === 'ramp') renderRampNote();
   $('modenote').textContent = MODE_NOTES[m];
-  $('perlabel').textContent = timed ? '' : U.paceLabel;
+  $('perlabel').textContent = timed ? '' : readoutLabel();
   refreshGauge();
 }
 /**
@@ -1031,6 +1082,7 @@ function renderRampNote() {
   const stages = sess.ramp.steps.filter(x => x.kind === 'stage');
   const ladder = stages.map(x => U.pace(3600 / x.speed_kmh)).join(', ');
   const per = U.paceLabel.replace(' ', '');
+  const dial = stages.map(x => U.speedText(x.speed_kmh)).join(', ');
 
   // Two things that are worth knowing before you leave rather than after you get back.
   const warnings = [];
@@ -1049,14 +1101,15 @@ function renderRampNote() {
   }
 
   $('rampnote').textContent = (warnings.length ? warnings.join(' ') + ' — ' : '') + (S.rampOutdoor
-    ? `Each stage becomes a paced block and the usual tones hold you in it: ${ladder} ${per}, `
+    ? `Each stage becomes a paced block and the usual tones hold you in it: ${ladder} ${per} `
+      + `(${dial} ${U.speedLabel.toLowerCase()}), `
       + `four minutes each. Find the flattest route you have — grade is deliberately not `
       + `compensated for here, because the whole output is a line relating heart rate to speed and `
       + `adjusting for hills would erase it. Stop at ${rampStopHr()} bpm, at 15/20 effort, or when `
       + `you cannot speak a full sentence.`
-    : `Treadmill: ${stages.map(x => x.speed_kmh).join(', ')} km/h, four minutes each. Every change `
-      + `is called out; set the dial when you hear it. Stop at ${rampStopHr()} bpm, at 15/20 `
-      + `effort, or when you cannot speak a full sentence.`);
+    : `Treadmill: ${dial} ${U.speedLabel.toLowerCase()} — the numbers on the dial — four minutes `
+      + `each. Every change is called out; set it when you hear it. Stop at ${rampStopHr()} bpm, at `
+      + `15/20 effort, or when you cannot speak a full sentence.`);
   $('rampnote').style.color = warnings.length ? 'var(--fast)' : 'var(--dim)';
 }
 
@@ -1143,9 +1196,14 @@ function refreshBand() {
   const target = targetSecKm;
   const tol = Number($('tol').value) / 100;
   if (!target) { $('bandtext').textContent = 'Enter a pace like 9:00.'; return; }
-  $('bandtext').textContent =
-    `Band ${fmtPace(target * (1 - tol))} to ${fmtPace(target * (1 + tol))} per kilometre`
-    + ($('ceiling').checked ? '. Only the fast edge is enforced.' : '.');
+  // Stated in whichever form is on screen, and named — "13:20 to 15:40" and "4.5 to 3.8" are not
+  // interchangeable, and the second one runs the other way round.
+  const lo = readoutText(target * (1 + tol)), hi = readoutText(target * (1 - tol));
+  $('bandtext').textContent = readout === 'speed'
+    ? `Band ${lo} to ${hi} ${U.speedLabel.toLowerCase()}`
+      + ($('ceiling').checked ? '. Only the fast edge is enforced.' : '.')
+    : `Band ${hi} to ${lo} ${U.paceLabel.replace('/ ', 'per ').toLowerCase()}`
+      + ($('ceiling').checked ? '. Only the fast edge is enforced.' : '.');
   $('endfast').textContent = fmtPace(target * (1 - tol * 2.2));
   $('endslow').textContent = fmtPace(target * (1 + tol * 2.2));
   const zone = $('zone');
@@ -1610,8 +1668,8 @@ function armRampStage(step) {
 function tickRampPace(t) {
   const trusted = S.track.trustedAt(nowSeconds());
   const pace = S.track.paceSecKm;
-  $('pace').textContent = fmtPace(pace);
-  $('perlabel').textContent = U.paceLabel;
+  $('pace').textContent = readoutText(pace);
+  $('perlabel').textContent = readoutLabel();
   setMarker(pace);
   $('gradetile').textContent = `${(S.track.grade * 100).toFixed(0)}%`;
   $('climbtile').textContent = unit === 'mi'
@@ -1680,25 +1738,38 @@ function tickRamp(t) {
 
   // Outdoors the instruction has to be a pace, because a pace is the only thing you can act on. "7
   // kilometres an hour" is a dial setting on a machine you are not standing on.
-  let spoken = step.say;
-  if (S.rampOutdoor && step.speed_kmh) {
-    const secKm = 3600 / step.speed_kmh;
-    const perUnit = unit === 'mi' ? 'per mile' : 'per kilometre';
-    spoken = `${step.label}. ${U.pace(secKm)} ${perUnit}.`;
+  // The instruction, in whatever the athlete is actually looking at. Outdoors that is a pace,
+  // because a pace is the only thing you can act on with your legs. On a treadmill it is the dial,
+  // and a dial in the United States is marked in miles per hour — `step.say` carries km/h, which is
+  // a conversion to do while running, which is a conversion to get wrong.
+  let spoken;
+  if (step.speed_kmh) {
+    if (S.rampOutdoor) {
+      const perUnit = unit === 'mi' ? 'per mile' : 'per kilometre';
+      spoken = `${step.label}. ${U.pace(3600 / step.speed_kmh)} ${perUnit}.`;
+    } else {
+      const per = unit === 'mi' ? 'miles an hour' : 'kilometres an hour';
+      spoken = `${step.label}. ${U.speedText(step.speed_kmh)} ${per}.`;
+    }
+  } else {
+    spoken = step.say;
   }
   const extra = step.kind === 'stage' && S.rampNotes ? ` ${S.rampNotes}` : '';
   setTimeout(() => say(spoken + extra), 420);
 
   if (S.rampOutdoor) armRampStage(step);
 
+  // Both numbers in the log, always. Whichever one you are working from, the other is the one you
+  // will want when comparing against a watch, a treadmill or a previous session.
   log(`${step.label}${step.speed_kmh
-        ? ` — ${step.speed_kmh} km/h` + (S.rampOutdoor ? ` (${U.pace(3600 / step.speed_kmh)}${U.paceLabel.replace(' ', '')})` : '')
+        ? ` — ${U.speedText(step.speed_kmh)} ${U.speedLabel.toLowerCase()}`
+          + ` (${U.pace(3600 / step.speed_kmh)}${U.paceLabel.replace(' ', '')})`
         : ''} for ${step.minutes} min`,
       step.kind === 'stage' ? 'fast' : 'on');
 
   if (!S.rampOutdoor) {
-    $('pace').textContent = step.speed_kmh ? `${step.speed_kmh}` : step.label.toUpperCase();
-    $('perlabel').textContent = step.speed_kmh ? 'KM/H' : '';
+    $('pace').textContent = step.speed_kmh ? U.speedText(step.speed_kmh) : step.label.toUpperCase();
+    $('perlabel').textContent = step.speed_kmh ? U.speedLabel : '';
   }
   $('verdict').textContent = step.label;
   $('verdict').style.color = `var(--${step.kind === 'stage' ? 'fast' : 'on'})`;
@@ -1754,7 +1825,7 @@ function tickRehearse() {
     // would make a replay indoors depend on whether GPS happened to be running.
     const line = S.splits.update(S.simT, S.simDist, pace, S.monitor.state);
     if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
-    $('pace').textContent = fmtPace(pace);
+    $('pace').textContent = readoutText(pace);
     setMarker(pace);
     showVerdict(S.monitor.state, true);
   }
@@ -1794,7 +1865,7 @@ function tick() {
 
   const trusted = S.track.trustedAt(nowSeconds());
   const pace = S.track.paceSecKm;
-  $('pace').textContent = fmtPace(pace);
+  $('pace').textContent = readoutText(pace);
   $('gradetile').textContent = `${(S.track.grade * 100).toFixed(0)}%`;
   $('climbtile').textContent = unit === 'mi'
     ? `${Math.round(S.track.ascentM * 3.28084)}` : `${Math.round(S.track.ascentM)}`;
@@ -1803,7 +1874,7 @@ function tick() {
   const gov = S.governedBy === 'hr' ? S.hrMonitor : S.monitor;
   showVerdict(gov ? gov.state : 'unknown',
               S.governedBy === 'hr' ? true : trusted);
-  $('perlabel').textContent = S.governedBy === 'hr' ? `${U.paceLabel} · HR leads` : U.paceLabel;
+  $('perlabel').textContent = S.governedBy === 'hr' ? `${readoutLabel()} · HR leads` : readoutLabel();
   // One state per accepted fix, so the route can be coloured by what the coach thought at the time.
   while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
   drawMap();
@@ -1848,7 +1919,7 @@ function setUnit(u) {
   localStorage.setItem('band.unit', u);
   $('u-mi').setAttribute('aria-pressed', String(u === 'mi'));
   $('u-km').setAttribute('aria-pressed', String(u === 'km'));
-  $('perlabel').textContent = S.mode === 'intervals' ? '' : U.paceLabel;
+  $('perlabel').textContent = S.mode === 'intervals' ? '' : readoutLabel();
   document.querySelectorAll('.tile .k').forEach(el => {
     if (el.textContent === 'Distance') el.nextElementSibling.textContent = '0.00';
   });
@@ -1856,6 +1927,9 @@ function setUnit(u) {
   refreshBand();
   renderPlan();
 }
+$('r-pace').onclick = () => setReadout('pace');
+$('r-speed').onclick = () => setReadout('speed');
+setReadout(readout);
 $('u-mi').onclick = () => setUnit('mi');
 $('u-km').onclick = () => setUnit('km');
 
