@@ -16,7 +16,7 @@
 // an intention.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -37,12 +37,12 @@ function inline(path) {
 // The loop is: something breaks on the phone, it gets fixed here, the fix is pushed, the page is
 // reloaded. Without a visible build id the first question after every fix is "are you sure you have
 // the new one", which is a question neither side can answer.
-let stamp;
-try {
-  stamp = execSync('git rev-parse --short HEAD', { cwd: root }).toString().trim();
-} catch {
-  stamp = 'local';
-}
+//
+// The id is a hash of the page's own content, not the commit it was built from. A commit hash
+// cannot work: the build has to happen before the commit that contains it, so the stamp always
+// names the *previous* commit, and amending to fix that changes the hash again. A content hash is
+// self-consistent — the same sources always produce the same id, and it can be checked here with
+// `grep -o 'BUILD = [^;]*' docs/pace-coach.html` and compared against what the phone shows.
 const built = new Date().toISOString().replace('T', ' ').slice(0, 16) + 'Z';
 
 const parts = {
@@ -52,7 +52,6 @@ const parts = {
   HRMONITOR: inline('hr-monitor.js'),
   TONES: inline('tones.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
-  BUILD: JSON.stringify({ id: stamp, at: built }),
 };
 
 let html = readFileSync(join(here, 'coach-template.html'), 'utf8');
@@ -73,6 +72,11 @@ for (const [key, value] of Object.entries(parts)) {
   if (!html.includes(marker)) throw new Error(`template is missing the ${key} marker`);
   html = html.replace(marker, value);
 }
+
+// Hashed with the stamp still a placeholder, so the id depends on everything except itself.
+const stamp = createHash('sha256').update(html).digest('hex').slice(0, 8);
+if (!html.includes('/*{{BUILD}}*/')) throw new Error('template is missing the BUILD marker');
+html = html.replace('/*{{BUILD}}*/', JSON.stringify({ id: stamp, at: built }));
 
 // Both docs folders, because they serve different routes and had already drifted apart:
 // `marathon/docs` is what the githack URL points at, and the repo-root `docs` is the only folder
@@ -95,5 +99,6 @@ const targets = [
 ];
 for (const [path, body] of targets) writeFileSync(path, body);
 
-console.log(`app ${(html.length / 1024).toFixed(0)} kB, loader ${(loader.length / 1024).toFixed(1)} kB ->`);
+console.log(`app ${(html.length / 1024).toFixed(0)} kB (build ${stamp}), `
+          + `loader ${(loader.length / 1024).toFixed(1)} kB ->`);
 for (const [path] of targets) console.log(`  ${path.replace(root + '/', '')}`);

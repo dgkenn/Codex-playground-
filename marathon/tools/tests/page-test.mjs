@@ -196,6 +196,34 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   console.log(`  ok  a planned session loads its own band (${title})`);
 }
 
+// --- the athlete's own numbers -------------------------------------------------------------------
+
+{
+  // Every zone boundary is rest + fraction x (max - rest), so the resting rate is load-bearing and
+  // the plan ships a placeholder. The app must say so, and changing it must actually move the zones
+  // rather than relabel them.
+  const note = await page.textContent('#profilenote');
+  assert.match(note, /placeholder/i, `an unconfirmed profile must say so: "${note}"`);
+
+  const before = await page.$$eval('#zonebar div', ds => ds.map(d => d.title));
+  await page.fill('#hrrest', '48');
+  await page.waitForTimeout(120);
+  const after = await page.$$eval('#zonebar div', ds => ds.map(d => d.title));
+  assert.notDeepEqual(before, after, 'changing the resting rate must move every zone boundary');
+  // Zone 1 opens at rest + 0.45 x reserve, on the same HR-reserve model the engine uses.
+  const expected = Math.round(48 + 0.45 * (Math.round(208 - 0.7 * 30) - 48));
+  assert.match(after[0], new RegExp(`^${expected}–`),
+    `zone 1 must be recomputed from the new resting rate: "${after[0]}"`);
+  assert.doesNotMatch(await page.textContent('#profilenote'), /placeholder/i,
+    'and it must stop calling them placeholders once they are the athlete\'s own');
+
+  // It has to survive a reload, or it is a setting the athlete re-enters at every trailhead.
+  await page.reload();
+  await page.waitForSelector('#hrrest');
+  assert.equal(await page.inputValue('#hrrest'), '48', 'the profile must persist');
+  console.log('  ok  the profile is editable, moves the zones, and persists');
+}
+
 // --- the whole coach, indoors --------------------------------------------------------------------
 
 {

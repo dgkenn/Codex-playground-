@@ -309,7 +309,14 @@
         <button id="connect" class="tiny">Connect</button>
       </div>
       <div class="zonebar" id="zonebar"></div>
+      <div class="row">
+        <label>age <input id="age" type="number" min="14" max="90" step="1"
+                          inputmode="numeric" style="width:4.2rem"></label>
+        <label>resting HR <input id="hrrest" type="number" min="30" max="90" step="1"
+                                 inputmode="numeric" style="width:4.2rem"></label>
+      </div>
     </div>
+    <p class="note" id="profilenote" style="margin-top:.7rem"></p>
     <p class="note" id="btnote" style="margin-top:.7rem"></p>
   </section>
 
@@ -905,6 +912,43 @@ function showVerdict(state, trusted) {
 // coach that silently loses heart rate is worse than one that never had it.
 // =================================================================================================
 
+// The two numbers every zone boundary is built from.
+//
+// The plan ships with a placeholder profile — age 30, resting 55 — because it had to be generated
+// before either was known. That is a defensible default and an indefensible thing to leave silent:
+// the zone model is `rest + fraction × (max − rest)`, so a resting rate wrong by ten beats moves
+// every boundary by four or five, and the ceiling monitor coaches against those boundaries for the
+// whole run. Two fields and a line saying which numbers are guesses costs nothing; discovering at
+// week six that the zones were never yours costs six weeks.
+//
+// Measured beats assumed: resting heart rate is taken lying down, on waking, before standing up.
+// Maximum here is the age formula the engine used (Tanaka), and it is only a stand-in until a ramp
+// test replaces it — the formula's standard deviation is about seven beats either way.
+const profile = Object.assign(
+  { age: PLAN.generated_for.age, hrRest: PLAN.generated_for.hr_rest, confirmed: false },
+  JSON.parse(localStorage.getItem('band.profile') || '{}'));
+
+const hrMaxFor = age => Math.round(208 - 0.7 * age);
+
+function saveProfile() {
+  localStorage.setItem('band.profile', JSON.stringify(profile));
+  S.hrZones = null;                       // recomputed on the next render, from the new numbers
+  renderZones(S.sensor && S.sensor.hrFresh() ? S.sensor.hr : null);
+  renderProfileNote();
+}
+
+function renderProfileNote() {
+  const max = hrMaxFor(profile.age);
+  $('profilenote').textContent = profile.confirmed
+    ? `Zones from your resting ${profile.hrRest} and an estimated maximum of ${max}. `
+      + 'The maximum is the age formula until a ramp test replaces it — it is routinely seven beats '
+      + 'out either way.'
+    : `Zones are still on the plan's placeholder profile: age ${profile.age}, resting `
+      + `${profile.hrRest}, maximum ${max}. Every boundary below depends on them. Take your resting `
+      + 'rate lying down before you get up, and put both in here.';
+  $('profilenote').style.color = profile.confirmed ? 'var(--dim)' : 'var(--fast)';
+}
+
 // Five-zone HR-reserve model, the same boundaries the engine uses. Recomputed here rather than
 // shipped in the plan because they depend on resting heart rate, which the athlete can change.
 function zoneModel(hrMax, hrRest) {
@@ -917,8 +961,8 @@ function zoneModel(hrMax, hrRest) {
 }
 
 function renderZones(hr) {
-  const zones = S.hrZones || (S.hrZones = zoneModel(PLAN.generated_for.hr_max,
-                                                    PLAN.generated_for.hr_rest));
+  const zones = S.hrZones
+    || (S.hrZones = zoneModel(hrMaxFor(profile.age), profile.hrRest));
   const sess = S.plannedSession ? sessionFor(S.plannedSession.day) : null;
   const target = sess && sess.zones ? sess.zones : [];
   $('zonebar').replaceChildren(...zones.map(z => {
@@ -1215,9 +1259,24 @@ $('gain').onchange = e => {
   play('in_band');
 };
 
+$('age').value = String(profile.age);
+$('hrrest').value = String(profile.hrRest);
+for (const [id, key, lo, hi] of [['age', 'age', 14, 90], ['hrrest', 'hrRest', 30, 90]]) {
+  $(id).addEventListener('input', e => {
+    const v = Number(e.target.value);
+    // Only a value inside the plausible range counts as confirmation. A half-typed "4" on the way
+    // to "42" must not silently become the profile every zone is built from.
+    if (!Number.isFinite(v) || v < lo || v > hi) return;
+    profile[key] = v;
+    profile.confirmed = true;
+    saveProfile();
+  });
+}
+
 setUnit(unit);
 renderPlan();
 updateSensorUi();
+renderProfileNote();
 
 // Build id and capabilities, visible without tapping anything. After a fix is pushed, this is how
 // "reload and try again" gets confirmed instead of assumed.
@@ -1396,7 +1455,11 @@ $('copy').onclick = async () => {
   const payload = {
     schema_version: 1,
     started_at: new Date(S.startedAt).toISOString(),
-    age: 30, hr_rest: 55,
+    // The athlete's own numbers when they have been entered, and nothing when they have not.
+    // Shipping the placeholder 30 and 55 would put two invented values into the engine wearing the
+    // same shape as measured ones, and every zone and prescription downstream would inherit them
+    // with no way to tell. `cli import` asks for what is missing; that is the correct outcome.
+    ...(profile.confirmed ? { age: profile.age, hr_rest: profile.hrRest } : {}),
     samples: S.samples.map(x => ({
       t_s: x.t_s, hr_bpm: x.hr_bpm,
       speed_m_s: x.speed_m_s == null ? null : Math.round(x.speed_m_s * 1e4) / 1e4,
@@ -1418,6 +1481,10 @@ $('copy').onclick = async () => {
   try {
     await navigator.clipboard.writeText(text);
     log(`Copied ${S.samples.length} samples. Paste it into the chat.`, 'on');
+    if (!profile.confirmed) {
+      log('Age and resting heart rate are not set, so they are not in the file — the import will '
+          + 'ask rather than assume.', 'fast');
+    }
   } catch (e) {
     // Same fallback as the diagnostics. A run that cannot be got off the phone did not happen as far
     // as the engine is concerned, and no screenshot will reconstruct a thousand samples.
