@@ -65,6 +65,13 @@ rehearsal run end to end — because every device fault so far has lived in the 
 module is correct" and "the page works", and all of them looked identical from the phone: nothing
 happens.
 
+**Sessions are saved on the phone.** The recording is written down every two seconds while it runs,
+not at the end — a page that reloads mid-run, which iOS does by itself to a backgrounded tab with no
+warning, used to take the whole session with it. On the next load an unfinished session is offered
+back rather than overwritten, and the last eight finished sessions sit in **Saved sessions** with a
+Copy button each. Storage is capped by count and by size; a full disk evicts the oldest finished
+session rather than failing the write that is trying to preserve the run in progress.
+
 **Today, in one tap.** The card at the top of the page names whatever the plan has scheduled for
 today and starts it in the right mode: run/walk sets the intervals from the plan and calls them out;
 a paced session loads its own band; the ramp test runs the whole protocol. Nothing to copy across.

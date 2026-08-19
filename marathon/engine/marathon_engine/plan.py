@@ -684,12 +684,34 @@ def phase_overview(config: Optional[PlanConfig] = None) -> List[Dict[str, object
 # Week generation
 # ----------------------------------------------------------------------------------------
 
-#: Run-walk progression for FOUNDATION, one row per week: ``(run_min, walk_min, repeats)``.
 #: Modelled on the couch-to-5K family and on Galloway's run-walk-run method, with the ratio
 #: shifting toward running rather than the session simply getting longer -- the walk break is what
 #: keeps the *running* portions genuinely aerobic in someone with no base, and Galloway's argument
 #: (that planned walk breaks reduce injury and improve finishing times for beginners) is exactly
 #: the case here. The last row is continuous running.
+def run_walk_entry_rung(continuous_min: Optional[float]) -> int:
+    """Where on the ladder a demonstrated continuous-run capacity should start.
+
+    The ladder assumes someone who cannot run for a minute. That is the right default and the wrong
+    one for an athlete who has just been observed holding four and a half minutes: starting them at
+    one-minute repeats is not conservative, it is a month of sessions that do not touch the tissue
+    they are supposed to load, and it teaches that the plan does not know what they can do.
+
+    Entry is deliberately one rung BELOW demonstrated capacity. What was demonstrated was a single
+    effort, at a pace that drove heart rate to 180; the ladder asks for the same block repeated
+    several times, aerobically. Those are different demands, and the gap between them is exactly
+    where a beginner gets hurt.
+
+    ``None`` means nothing has been demonstrated, which returns the bottom rung.
+    """
+    if not continuous_min or continuous_min <= 0:
+        return 0
+    # The last rung whose run block is at or below what was actually held, then step back one.
+    reachable = [i for i, (run_min, _, _) in enumerate(_RUN_WALK_LADDER) if run_min <= continuous_min]
+    return max(0, (reachable[-1] if reachable else 0) - 1)
+
+
+#: Run-walk progression for FOUNDATION, one row per week: ``(run_min, walk_min, repeats)``.
 _RUN_WALK_LADDER: Tuple[Tuple[float, float, int], ...] = (
     (1.0, 2.0, 8),      # wk 1: 8 min running inside a 24 min session
     (2.0, 2.0, 7),      # wk 2: 14 min running
@@ -933,7 +955,10 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                            "cadence at each speed, and the seed VDOT. Everything else follows."),
             _rest(3, "Recover from the ramp."),
             Session(day_offset=4, type=SessionType.RUN_WALK, title="Easy shakeout walk-jog",
-                    duration_min=25, run_walk=(1.0, 2.0, 8), zones=(1, 2),
+                    duration_min=25,
+                    run_walk=_RUN_WALK_LADDER[
+                        run_walk_entry_rung(getattr(profile, "demonstrated_run_min", None))],
+                    zones=(1, 2),
                     intent="Confirm the sensor setup and the audio cues work before anything "
                            "depends on them."),
             _rest(5), _rest(6),
@@ -949,7 +974,9 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         # A cutback week REPEATS the previous rung rather than advancing. Advancing the ladder while
         # cutting the stated volume was incoherent: the sessions got harder in the week that is
         # supposed to be easier.
-        rung_index = min(week_in_phase - 1, len(_RUN_WALK_LADDER) - 1)
+        # Start from what the athlete has been observed to hold, not from zero.
+        entry = run_walk_entry_rung(getattr(profile, "demonstrated_run_min", None))
+        rung_index = min(entry + week_in_phase - 1, len(_RUN_WALK_LADDER) - 1)
         if is_cutback and rung_index > 0:
             rung_index -= 1
         rung = _RUN_WALK_LADDER[rung_index]

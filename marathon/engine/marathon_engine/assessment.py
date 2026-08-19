@@ -359,6 +359,13 @@ class FitnessProfile:
     prescription_basis: str = "vdot"
     #: Zone-name -> (fast_sec_km, slow_sec_km), from the measured HR-speed fit.
     hr_paces: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+    #: Longest continuous run actually observed, in minutes. ``None`` when nothing is known.
+    #:
+    #: The run-walk ladder assumes someone who cannot run for a minute, which is the right default
+    #: and the wrong one for an athlete already holding several. Entering the ladder at the bottom
+    #: for such a person is not caution -- it is weeks of sessions that never load the tissue they
+    #: exist to load. This is deliberately the *observed* figure, never a self-report.
+    demonstrated_run_min: Optional[float] = None
 
     @property
     def easy_pace_range(self) -> Tuple[float, float]:

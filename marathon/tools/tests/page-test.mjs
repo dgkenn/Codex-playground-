@@ -400,6 +400,52 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   console.log(`  ok  the pace coach starts, ticks and stops (${elapsed} elapsed)`);
 }
 
+// --- a session survives the page going away ------------------------------------------------------
+
+{
+  // The reported loss: the page reloaded partway through a run and the whole recording went with it,
+  // because the samples lived in a variable and nowhere else. This reproduces it — start a session,
+  // reload without stopping — and asserts the recording comes back.
+  await page.evaluate(() => {
+    localStorage.removeItem('band.session.active');
+    localStorage.removeItem('band.session.index');
+  });
+  await page.click('#m-coach');
+  await page.fill('#target', '9:00');
+  await page.click('#go');
+  await page.waitForTimeout(4000);
+  const running = Number((await page.textContent('#elapsed')).split(':')[1]);
+  assert.ok(running >= 2, 'the session must actually have been running');
+
+  // No stop, no save button, nothing — exactly what iOS reclaiming a backgrounded tab looks like.
+  await page.reload();
+  await page.waitForSelector('#recover:not(.hide)', { timeout: 8000 });
+  const detail = await page.textContent('#recoverdetail');
+  assert.match(detail, /samples/, `the recovery must say what it found: "${detail}"`);
+  assert.match(detail, /reloaded before it was saved/);
+
+  await page.click('#recoverbtn');
+  await page.waitForTimeout(300);
+  const rows = await page.$$eval('#savedlist .instrument', ds => ds.map(d => d.textContent));
+  assert.equal(rows.length, 1, `the recovered run must be filed: ${JSON.stringify(rows)}`);
+  assert.match(rows[0], /\d+ samples/);
+
+  // And it must be readable, in the shape the importer expects.
+  await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
+  await page.click('#savedlist button');
+  await page.waitForSelector('#diagtext', { timeout: 5000 });
+  const saved = JSON.parse(await page.inputValue('#diagtext'));
+  assert.equal(saved.schema_version, 1);
+  assert.ok(saved.samples.length >= 2, `only ${saved.samples.length} samples survived`);
+  assert.ok(saved.started_at);
+
+  // Recovering must not leave the offer standing, or the next load recovers the same run again.
+  await page.reload();
+  await page.waitForSelector('#savedlist');
+  assert.ok(await page.isHidden('#recover'), 'a recovered session must not be offered twice');
+  console.log(`  ok  a run interrupted by a reload is recovered intact (${saved.samples.length} samples)`);
+}
+
 // --- the whole coach, indoors --------------------------------------------------------------------
 
 {

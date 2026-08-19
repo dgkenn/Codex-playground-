@@ -458,6 +458,24 @@
     </div>
   </section>
 
+  <section id="saved-section">
+    <h2>Saved sessions</h2>
+    <div id="recover" class="instrument hide" style="gap:.6rem;border-color:var(--fast)">
+      <div class="phase" id="recovertitle">—</div>
+      <div class="weeklabel" id="recoverdetail"></div>
+      <div class="row">
+        <button id="recoverbtn">Recover it</button>
+        <button id="discardbtn" class="tiny">Discard</button>
+      </div>
+    </div>
+    <div id="savedlist"></div>
+    <p class="note" style="margin-top:.7rem">
+      Every session is written to this phone while it runs, not just at the end. A page that reloads
+      mid-run — which iOS does by itself to a backgrounded tab, with no warning — used to take the
+      whole recording with it.
+    </p>
+  </section>
+
   <section>
     <h2>Session log</h2>
     <div id="log"></div>
@@ -509,6 +527,8 @@
 /*{{RAMP}}*/
 
 /*{{BTPROBE}}*/
+
+/*{{SESSIONSTORE}}*/
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -592,7 +612,7 @@ const S = {
   sensor: null,
   monitor: null, hrMonitor: null, splits: null, samples: [], tones: 0, trackState: [],
   governedBy: 'pace',
-  watchId: null, tickId: null, wakeLock: null,
+  watchId: null, tickId: null, autosaveId: null, wakeLock: null,
   ivPhase: null, ivRep: 0, ivUntil: 0,
   geoError: null,
   ramp: null, rampNotes: '', rampOutdoor: false, rampTargetSecKm: null, rampStopped: false,
@@ -1799,6 +1819,22 @@ async function keepAwake(on) {
     else if (S.wakeLock) { await S.wakeLock.release(); S.wakeLock = null; }
   } catch { /* the session still runs; the screen may just sleep */ }
 }
+// iOS gives no warning before reclaiming a backgrounded tab. `hidden` is the last event that is
+// guaranteed to fire, so the run is written down unconditionally here — this is the single most
+// important line for not losing a session.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.running && S.samples.length) {
+    sessions.saveActive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode },
+                        { force: true });
+  }
+});
+addEventListener('pagehide', () => {
+  if (S.running && S.samples.length) {
+    sessions.saveActive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode },
+                        { force: true });
+  }
+});
+
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && S.running && S.mode !== 'rehearse') {
     log('backgrounded — iOS pauses this', 'stop');
@@ -1945,6 +1981,13 @@ $('go').onclick = () => {
     },
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
   }
+  S.autosaveId = setInterval(() => {
+    if (!S.running || !S.samples.length) return;
+    if (!sessions.saveActive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode })) {
+      // Worth saying once. A silent failure here is the original bug wearing a different hat.
+      log('could not save the session to this phone — copy it before reloading', 'stop');
+    }
+  }, 2000);
   S.tickId = setInterval(tick, 1000);
   if (S.mode !== 'rehearse') keepAwake(true);
 
@@ -1959,9 +2002,23 @@ $('go').onclick = () => {
   play('in_band');
 };
 
+/** What a session is called in the saved list. The planned session's name, or the mode. */
+function sessionTitle() {
+  if (S.plannedSession && S.plannedSession.title) return S.plannedSession.title;
+  return { coach: 'Pace run', intervals: 'Run / walk', ramp: 'Ramp test',
+           rehearse: 'Rehearsal' }[S.mode] || 'Session';
+}
+
 function finish(msg) {
   S.running = false;
   clearInterval(S.tickId);
+  clearInterval(S.autosaveId);
+  // File it before anything else. Everything below is presentation; this is the run.
+  if (S.samples.length && S.mode !== 'rehearse') {
+    const entry = sessions.archive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode });
+    if (entry) renderSaved();
+    else log('could not save this session to the phone — copy it now', 'stop');
+  }
   if (S.watchId != null) { navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
   keepAwake(false);
   $('go').textContent = 'Start';
@@ -2089,10 +2146,112 @@ function showDiagText(text, why) {
   log(`clipboard unavailable (${why}) — the text is below, select all and copy`, 'stop');
 }
 
-$('copy').onclick = async () => {
-  // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own
-  // schema. Heart rate is absent and left absent rather than faked — Safari has no Bluetooth.
-  const payload = {
+/**
+ * The session in the engine's own schema.
+ *
+ * One definition, because it is now built in three places — the copy button, the autosave that
+ * happens every few seconds while running, and the archive written when a session ends. Three
+ * hand-maintained copies of a payload shape is how a recovered session turns out to be missing the
+ * one field the importer needs.
+ */
+// =================================================================================================
+// Sessions that survive the page going away
+//
+// A run was lost to a mid-session reload — which iOS does by itself to a backgrounded tab, with no
+// warning and no user action. The samples lived in a variable and nowhere else, so an hour of
+// running went with it. Everything below exists to make that impossible: the recording is written
+// down while it happens, and what is found on the next load is offered back rather than overwritten.
+// =================================================================================================
+
+const sessions = new SessionStore(localStorage);
+
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString(undefined,
+    { weekday: 'short', hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' });
+}
+
+function renderSaved() {
+  const idx = sessions.index();
+  const list = $('savedlist');
+  if (!idx.length) {
+    list.replaceChildren(Object.assign(document.createElement('p'),
+      { className: 'note', textContent: 'Nothing saved yet. Sessions appear here as you run them.' }));
+    return;
+  }
+  list.replaceChildren(...idx.map(e => {
+    const row = document.createElement('div');
+    row.className = 'instrument';
+    row.style.cssText = 'gap:.5rem;margin-bottom:.6rem;padding:.7rem';
+
+    const head = document.createElement('div');
+    head.className = 'phase';
+    head.style.fontSize = '1rem';
+    head.textContent = e.title || 'Session';
+
+    const sub = document.createElement('div');
+    sub.className = 'weeklabel';
+    sub.textContent = `${fmtWhen(e.at)} · ${e.minutes} min · ${e.samples} samples`
+                    + (e.hasHr ? ' · heart rate' : ' · no heart rate');
+
+    const actions = document.createElement('div');
+    actions.className = 'row';
+    const copy = document.createElement('button');
+    copy.className = 'tiny';
+    copy.textContent = 'Copy';
+    copy.onclick = async () => {
+      const full = sessions.get(e.id);
+      if (!full) { log('that session is no longer on this phone', 'stop'); renderSaved(); return; }
+      const text = JSON.stringify(full);
+      try {
+        await navigator.clipboard.writeText(text);
+        log(`Copied ${e.samples} samples from ${fmtWhen(e.at)}.`, 'on');
+      } catch (err) { showDiagText(text, describeError(err)); }
+    };
+    const del = document.createElement('button');
+    del.className = 'tiny';
+    del.textContent = 'Delete';
+    del.onclick = () => { sessions.remove(e.id); renderSaved(); log('session deleted', 'dim'); };
+
+    actions.append(copy, del);
+    row.append(head, sub, actions);
+    return row;
+  }));
+}
+
+/** Offer back an unfinished session, if the last page load left one behind. */
+function offerRecovery() {
+  const found = sessions.recoverable();
+  if (!found) { $('recover').classList.add('hide'); return; }
+  const mins = Math.round((found.samples || []).length / 60);
+  const hr = (found.samples || []).some(x => x.hr_bpm != null);
+  $('recovertitle').textContent = 'An unfinished session was found';
+  $('recoverdetail').textContent =
+    `${fmtWhen(found.started_at)} · ${mins} min · ${found.samples.length} samples`
+    + (hr ? ' · heart rate' : ' · no heart rate')
+    + '. The page reloaded before it was saved.';
+  $('recover').classList.remove('hide');
+}
+
+$('recoverbtn').onclick = () => {
+  const found = sessions.recoverable();
+  if (!found) { $('recover').classList.add('hide'); return; }
+  const entry = sessions.archive({ ...found, finished: true, title: found.title || 'Recovered session' });
+  $('recover').classList.add('hide');
+  renderSaved();
+  log(entry ? `Recovered ${found.samples.length} samples — it is in Saved sessions now.`
+            : 'Could not file the recovered session; copy it before reloading.', entry ? 'on' : 'stop');
+  if (!entry) showDiagText(JSON.stringify(found), 'could not write it to storage');
+};
+
+$('discardbtn').onclick = () => {
+  sessions.clearActive();
+  $('recover').classList.add('hide');
+  log('unfinished session discarded', 'dim');
+};
+
+function sessionPayload() {
+  return {
     schema_version: 1,
     started_at: new Date(S.startedAt).toISOString(),
     // The athlete's own numbers when they have been entered, and nothing when they have not.
@@ -2117,7 +2276,18 @@ $('copy').onclick = async () => {
                : 'Heart rate from the Verity Sense; no accelerometer, so sensor health is partial.')
             : 'GPS only — no armband connected, so no heart rate.'),
   };
-  const text = JSON.stringify(payload);
+}
+
+// Last, because everything they touch is declared above them: a `const` is unreachable until its
+// own declaration has run, so calling these from the setup block higher up threw before the footer
+// was ever written — which showed as a page with no build stamp and no capabilities line.
+renderSaved();
+offerRecovery();
+
+$('copy').onclick = async () => {
+  // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own
+  // schema.
+  const text = JSON.stringify(sessionPayload());
   try {
     await navigator.clipboard.writeText(text);
     log(`Copied ${S.samples.length} samples. Paste it into the chat.`, 'on');

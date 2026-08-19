@@ -27,17 +27,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from marathon_engine.app_plan import build_app_plan          # noqa: E402
 from marathon_engine.cli import _estimated_profile           # noqa: E402
 
-#: The placeholder profile the shipped plan is built from. Change these and regenerate; the app
-#: shows both as unconfirmed until the athlete enters their own, because every zone boundary and
-#: every ramp stage depends on them.
+#: The athlete's profile, as far as it is actually known.
+#:
+#: Age is given. Resting heart rate is NOT — the app still shows it as a placeholder, and the zone
+#: model is anchored on it. Across a plausible 45-60 range the easy-zone edges move by about six
+#: beats, which matters less than the HRmax estimate's own +/-7 but is not nothing.
 DEFAULT_AGE = 30.0
 DEFAULT_HR_REST = 55.0
+
+#: The longest continuous run observed, in minutes, from the baseline session of 2026-08-05:
+#: 24:12 total, 1.81 mi, four run blocks of 2.9 / 4.7 / 3.6 / 1.5 minutes at 9:55-10:30 per mile,
+#: with heart rate reaching 155 within three minutes and peaking at 180.
+#:
+#: Recorded here rather than inferred, because it changes the plan: the run-walk ladder starts one
+#: rung below demonstrated capacity instead of at the bottom. What it deliberately does NOT change
+#: is the prescribed intensity — the same session showed heart rate reaching Z5 inside four minutes
+#: of running, which is the definition of an athlete who can run and cannot yet run easy.
+DEMONSTRATED_RUN_MIN = 4.7
 
 OUT = Path(__file__).resolve().parent / "app_plan.generated.json"
 
 
-def build(age: float = DEFAULT_AGE, hr_rest: float = DEFAULT_HR_REST) -> str:
-    plan = build_app_plan(_estimated_profile(age=age, hr_rest=hr_rest))
+def build(age: float = DEFAULT_AGE, hr_rest: float = DEFAULT_HR_REST,
+          demonstrated_run_min: float = DEMONSTRATED_RUN_MIN) -> str:
+    profile = _estimated_profile(age=age, hr_rest=hr_rest)
+    profile.demonstrated_run_min = demonstrated_run_min
+    plan = build_app_plan(profile)
     # Sorted and compact: the file is inlined into a 170 kB page, and a stable key order means a
     # regeneration that changed nothing produces a byte-identical file rather than a phantom diff.
     return json.dumps(plan, sort_keys=True, separators=(",", ":"))
@@ -49,9 +64,11 @@ def main() -> int:
                     help="do not write; exit 1 if the committed file is out of date")
     ap.add_argument("--age", type=float, default=DEFAULT_AGE)
     ap.add_argument("--hr-rest", type=float, default=DEFAULT_HR_REST)
+    ap.add_argument("--demonstrated-run-min", type=float, default=DEMONSTRATED_RUN_MIN,
+                    help="longest continuous run actually observed, in minutes")
     args = ap.parse_args()
 
-    fresh = build(args.age, args.hr_rest)
+    fresh = build(args.age, args.hr_rest, args.demonstrated_run_min)
     if args.check:
         current = OUT.read_text().strip() if OUT.exists() else ""
         if current != fresh:

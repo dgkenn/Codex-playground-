@@ -541,3 +541,54 @@ def test_race_checkpoints_ascend_by_distance_across_phases():
     # And no phase asks for a distance before the one below it.
     assert "five_k_completed" not in keys(Phase.BASE_1)
     assert "ten_k_completed" not in keys(Phase.BASE_2)
+
+
+def test_run_walk_ladder_starts_from_demonstrated_capacity():
+    """An athlete already holding several minutes must not be given one-minute repeats.
+
+    The ladder's bottom rung is right for someone who cannot run for a minute and wrong for someone
+    observed holding nearly five. Starting them there is not caution: it is weeks of sessions that
+    never load the tissue they exist to load.
+    """
+    from marathon_engine.plan import run_walk_entry_rung, _RUN_WALK_LADDER
+
+    assert run_walk_entry_rung(None) == 0, "nothing known means the bottom rung"
+    assert run_walk_entry_rung(0) == 0
+    assert run_walk_entry_rung(1.0) == 0, "one minute held is still the bottom rung"
+
+    # Entry is one rung BELOW demonstrated capacity: a single effort at a pace that drove heart rate
+    # to 180 is a different demand from the same block repeated aerobically several times.
+    for held in (4.7, 8.0, 15.0):
+        i = run_walk_entry_rung(held)
+        assert _RUN_WALK_LADDER[i][0] < held, (
+            f"entering at {_RUN_WALK_LADDER[i][0]} min for someone who held {held} is not below it")
+        assert i < len(_RUN_WALK_LADDER) - 1, "never enter at the final continuous rung"
+
+    # Monotonic: more demonstrated capacity never yields a lower entry.
+    rungs = [run_walk_entry_rung(x) for x in (0, 1, 2, 3, 5, 8, 12, 20, 40)]
+    assert rungs == sorted(rungs), rungs
+
+
+def test_demonstrated_capacity_changes_the_prescription_but_not_the_intensity():
+    """It moves where the ladder starts. It must not move the zones the running is done in."""
+    from datetime import date
+    from marathon_engine.cli import _estimated_profile
+    from marathon_engine.plan import generate_week, Phase
+
+    base = _estimated_profile(age=30, hr_rest=55)
+    trained = _estimated_profile(age=30, hr_rest=55)
+    trained.demonstrated_run_min = 4.7
+
+    def run_walk_of(profile):
+        wk = generate_week(profile, Phase.FOUNDATION, 1)
+        rw = [s for s in wk.sessions if s.run_walk]
+        assert rw, "FOUNDATION week 1 must prescribe run-walk"
+        return rw[0]
+
+    a, b = run_walk_of(base), run_walk_of(trained)
+    assert b.run_walk[0] > a.run_walk[0], (
+        f"demonstrated capacity must lengthen the run block: {a.run_walk} -> {b.run_walk}")
+    # The same session that demonstrated the capacity also showed heart rate in Z5 within four
+    # minutes. Longer blocks at the same easy intensity is the point; harder blocks is the failure.
+    assert b.zones == a.zones, "capacity changes duration, never intensity"
+    assert b.pace_range_sec_km == a.pace_range_sec_km

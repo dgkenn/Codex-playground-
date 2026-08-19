@@ -53,6 +53,7 @@ const parts = {
   TONES: inline('tones.js'),
   RAMP: inline('ramp.js'),
   BTPROBE: inline('bt-probe.js'),
+  SESSIONSTORE: inline('session-store.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 
