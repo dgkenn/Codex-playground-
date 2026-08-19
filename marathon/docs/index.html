@@ -227,8 +227,20 @@
     </div>
     <div class="row" style="margin-top:.65rem">
       <button id="preflight">Run all checks</button>
-      <button id="hear">Hear the five tones</button>
     </div>
+    <div class="row" style="margin-top:.5rem">
+      <button class="tiny" data-tone="in_band">Sample tone</button>
+      <button class="tiny" data-tone="ease">Ease off</button>
+      <button class="tiny" data-tone="lift">Lift</button>
+      <button class="tiny" data-tone="attend">Voice chime</button>
+      <button class="tiny" data-tone="degraded">Signal lost</button>
+      <button class="tiny" id="testvoice">Voice</button>
+    </div>
+    <p class="note" style="margin-top:.6rem">
+      Each button plays exactly that one sound, so you can learn them one at a time.
+      <strong>Sample tone</strong> is the single note you hear on coming back on pace — press that
+      first to set the volume against your music.
+    </p>
     <p class="note" style="margin-top:.75rem">
       <strong>Start Apple Music first, then run the checks.</strong> Safari can't ask iOS to mix with
       other audio the way a real app can, so your music may duck or pause when a tone plays. Thirty
@@ -1110,6 +1122,157 @@ class VeritySensor {
   }
 }
 
+// Coaching on heart rate rather than on pace.
+//
+// Why this exists
+// ---------------
+// GPS is a good instrument for distance and for a smoothed pace, and a poor one for effort. Its
+// error is a few percent on a good fix and much worse under trees, it says nothing about how hard
+// the work actually is, and on a short interval it has not settled before the interval is over.
+// Heart rate is the signal the whole engine is built around — the zones, the HR/speed slope, the
+// in-run controller — and it is the one the athlete is now wearing.
+//
+// So: when the armband is connected, heart rate governs and pace is information. When it is not,
+// pace governs. Never both at once — two channels talking about the same run is how you end up
+// being told to ease off and lift within ten seconds of each other.
+//
+// The lag problem, and why a raw threshold is wrong
+// ------------------------------------------------
+// Heart rate responds to a change of effort as a first-order system with a time constant near 45
+// seconds. The heart rate you can see belongs to the pace you were running half a minute ago, so
+// controlling directly on it oscillates: ease off, heart rate keeps rising, ease off again, end up
+// walking, heart rate falls, speed up, repeat.
+//
+// This controls on where heart rate is *heading* — `HR_ss ≈ HR + τ·dHR/dt` — which is the same lead
+// compensation `marathon_engine.realtime` uses, with the same τ, deadband and confirmation window.
+// It is deliberately a faithful subset rather than a fresh design: the constants were argued out
+// once, against the literature, and re-deriving them here would only produce a second set to keep
+// in step.
+//
+// What is deliberately NOT ported: interval rep management, the abort ladder, decoupling. Those
+// belong to the full controller in the app. This is the ceiling, which is what an easy run needs.
+
+const HrTuning = {
+  /// Heart rate's first-order time constant. Same value as the engine.
+  tauS: 45,
+  /// Ignore an excursion smaller than this. Beat-to-beat noise alone is worth a couple of bpm.
+  deadbandBpm: 4,
+  /// The error must persist this long before anything is said. Heart rate wanders; a threshold
+  /// crossed for three seconds is not information.
+  confirmS: 20,
+  /// Window the slope is fitted over. Long enough to be a trend, short enough to be current.
+  slopeWindowS: 30,
+  /// Anti-nag floor between reminders.
+  ///
+  /// Longer than the pace channel's, and deliberately longer than `tauS`. Heart rate takes about
+  /// forty-five seconds to reflect a change of effort, so a reminder any sooner arrives before your
+  /// correction could possibly have shown up — telling you again about something you have already
+  /// fixed and cannot yet prove you fixed. Twenty seconds was the first guess and produced ten tones
+  /// across twenty minutes of a sustained excursion; sixty produces four, none of them premature.
+  minGapS: 60,
+  backoffMax: 8,
+  /// A reading older than this is a memory. Same rule as the sensor driver.
+  staleS: 5,
+};
+
+/**
+ * Watches heart rate against a zone band and emits the same earcons as the pace channel.
+ *
+ * `ceilingOnly` is the normal case: an easy run has an upper bound and no lower one, and being
+ * below it is the session working rather than a fault.
+ */
+class HrCeilingMonitor {
+  constructor({ lowBpm, highBpm, ceilingOnly = true }) {
+    this.low = lowBpm;
+    this.high = highBpm;
+    this.ceilingOnly = ceilingOnly;
+
+    this.history = [];            // [t, hr]
+    this.state = 'unknown';       // unknown | in | fast | slow
+    this.errorSince = null;
+    this.errorSign = 0;
+    this.lastToneT = null;
+    this.pendingAck = false;
+    this.consecutive = 0;
+    this.lastSS = null;
+  }
+
+  /** Slope of heart rate in bpm per second, by least squares over the window. */
+  slope() {
+    const w = this.history;
+    if (w.length < 5) return 0;
+    const n = w.length;
+    const mt = w.reduce((a, [t]) => a + t, 0) / n;
+    const mh = w.reduce((a, [, h]) => a + h, 0) / n;
+    let num = 0, den = 0;
+    for (const [t, h] of w) { num += (t - mt) * (h - mh); den += (t - mt) ** 2; }
+    return den > 0 ? num / den : 0;
+  }
+
+  /**
+   * Feed one second.
+   *
+   * `hr` is null whenever the reading is absent or stale — the caller decides that, using the same
+   * freshness rule the sensor driver applies, because a heart rate that stopped arriving must never
+   * be coached from.
+   */
+  update(tS, hr) {
+    if (hr == null) {
+      this.history = [];
+      if (this.state !== 'unknown') {
+        this.state = 'unknown';
+        this.errorSince = null;
+        return this._emit('degraded', tS, 'heart rate lost');
+      }
+      return null;
+    }
+
+    this.history.push([tS, hr]);
+    this.history = this.history.filter(([t]) => t >= tS - HrTuning.slopeWindowS);
+    if (this.history.length < 5) return null;
+
+    // Where heart rate is heading, not where it is.
+    const ss = hr + HrTuning.tauS * this.slope();
+    this.lastSS = ss;
+
+    const tooHigh = ss > this.high + HrTuning.deadbandBpm;
+    const tooLow = !this.ceilingOnly && ss < this.low - HrTuning.deadbandBpm;
+    const sign = tooHigh ? 1 : (tooLow ? -1 : 0);
+
+    if (sign === 0) {
+      const wasOut = this.state === 'fast' || this.state === 'slow';
+      this.state = 'in';
+      this.errorSince = null;
+      this.errorSign = 0;
+      this.consecutive = 0;
+      if (wasOut && this.pendingAck) {
+        this.pendingAck = false;
+        return this._emit('in_band', tS, 'back inside the zone');
+      }
+      this.pendingAck = false;
+      return null;
+    }
+
+    if (this.errorSign !== sign) { this.errorSince = tS; this.errorSign = sign; this.consecutive = 0; }
+    // Nothing is said until the excursion has persisted. Heart rate wanders.
+    if (tS - this.errorSince < HrTuning.confirmS) return null;
+
+    this.state = sign > 0 ? 'fast' : 'slow';
+    const gap = HrTuning.minGapS * Math.min(HrTuning.backoffMax, 2 ** Math.max(0, this.consecutive - 1));
+    if (this.lastToneT != null && tS - this.lastToneT < gap) return null;
+    return this._emit(sign > 0 ? 'ease' : 'lift', tS,
+                      `heading for ${Math.round(ss)}, ceiling ${Math.round(this.high)}`);
+  }
+
+  _emit(earcon, tS, reason) {
+    const floor = (earcon === 'in_band' || earcon === 'degraded') ? 2 : HrTuning.minGapS;
+    if (this.lastToneT != null && tS - this.lastToneT < floor) return null;
+    this.lastToneT = tS;
+    if (earcon === 'ease' || earcon === 'lift') { this.pendingAck = true; this.consecutive += 1; }
+    return { earcon, tS, reason, hrSteadyState: this.lastSS };
+  }
+}
+
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
 const mmss = formatMMSS;
@@ -1203,7 +1366,8 @@ const S = {
   mode: 'coach', running: false, startedAt: 0,
   track: new GpsTrack(),
   sensor: null,
-  monitor: null, splits: null, samples: [], tones: 0, trackState: [],
+  monitor: null, hrMonitor: null, splits: null, samples: [], tones: 0, trackState: [],
+  governedBy: 'pace',
   watchId: null, tickId: null, wakeLock: null,
   ivPhase: null, ivRep: 0, ivUntil: 0,
   simT: 0, simDist: 0, plannedSession: null,
@@ -1439,25 +1603,19 @@ $('preflight').onclick = async () => {
   }
 };
 
-$('hear').onclick = () => {
-  // The first tone MUST be played synchronously, inside the tap.
-  //
-  // This button did nothing on iOS for exactly one reason: every play() sat inside a setTimeout,
-  // including the first, and setTimeout(fn, 0) is still asynchronous. iOS only lets an AudioContext
-  // start from within a user gesture, and ctx.resume() returns a promise — so by the time the first
-  // timeout fired the gesture had ended, the context was still suspended, and oscillators scheduled
-  // on it produced silence. "Run all checks" worked because it called play() directly.
-  //
-  // The log line was inside the timeout too, which is why the button looked completely dead rather
-  // than merely silent. Both now happen in the gesture.
-  audio();
-  const order = [['ease','ease off'], ['lift','lift'], ['in_band','back on pace'],
-                 ['attend','voice incoming'], ['degraded','signal lost']];
-  play(order[0][0]);
-  log(order[0][1], 'dim');
-  order.slice(1).forEach(([e, name], i) =>
-    setTimeout(() => { play(e); log(name, 'dim'); }, (i + 1) * 1100));
-};
+// One button, one sound.
+//
+// The old button played all five in sequence, which made it impossible to tell which sound was
+// which — and when it silently failed there was no way to distinguish "played nothing" from "played
+// something you did not recognise". That ambiguity is what made a real bug look like a mystery.
+document.querySelectorAll('button[data-tone]').forEach(b => {
+  b.onclick = () => {
+    audio();                     // inside the tap: iOS will not start a context any other way
+    play(b.dataset.tone);
+    log(`${b.textContent.toLowerCase()} — ${b.dataset.tone}`, 'dim');
+  };
+});
+$('testvoice').onclick = () => { audio(); say('1 mile. 14 29. On pace.'); log('voice', 'dim'); };
 
 // =================================================================================================
 // Mode
@@ -1678,12 +1836,29 @@ function tickCoach(t, pace, trusted) {
     accuracy_m: S.track.lastAccuracy,
   });
 
-  // Grade is passed now. It never was before, so a 6% climb earned "ease off" for running the pace
-  // the hill costs — the engine has moved the band with the hill since the beginning and the web
-  // coach was throwing that away.
-  const ev = S.monitor.update(t, pace, { grade: S.track.grade, paceTrusted: trusted });
-  if (ev) { play(ev.earcon); S.tones++; log(ev.earcon.replace('_',' '),
-      ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast'); }
+  // Which signal governs.
+  //
+  // Heart rate when it is there, pace when it is not — and never both, because two channels talking
+  // about the same run is how you get told to ease off and to lift within ten seconds. GPS is a good
+  // instrument for distance and a smoothed pace and a poor one for effort: its error is a few
+  // percent on a good fix and much worse under trees, and it says nothing about how hard the work
+  // actually is. Heart rate is what the engine's zones, its HR/speed slope and its whole controller
+  // are built on.
+  //
+  // Both monitors are still fed. Only the governing one is allowed to make a sound, so switching
+  // mid-run — the armband drops, or reconnects — does not restart the silent one from cold.
+  const hrOk = fresh && S.hrMonitor;
+  S.governedBy = hrOk ? 'hr' : 'pace';
+
+  const paceEv = S.monitor.update(t, pace, { grade: S.track.grade, paceTrusted: trusted });
+  const hrEv = S.hrMonitor ? S.hrMonitor.update(t, fresh ? sn.hr : null) : null;
+  const ev = hrOk ? hrEv : paceEv;
+  if (ev) {
+    play(ev.earcon);
+    S.tones++;
+    log(`${ev.earcon.replace('_', ' ')}${ev.reason ? ' — ' + ev.reason : ''}`,
+        ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast');
+  }
   const line = S.splits.update(t, S.track.distanceM, pace, S.monitor.state);
   if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
 }
@@ -1765,7 +1940,10 @@ function tick() {
     ? `${Math.round(S.track.ascentM * 3.28084)}` : `${Math.round(S.track.ascentM)}`;
   setMarker(pace);
   tickCoach(t, pace, trusted);
-  showVerdict(S.monitor.state, trusted);
+  const gov = S.governedBy === 'hr' ? S.hrMonitor : S.monitor;
+  showVerdict(gov ? gov.state : 'unknown',
+              S.governedBy === 'hr' ? true : trusted);
+  $('perlabel').textContent = S.governedBy === 'hr' ? `${U.paceLabel} · HR leads` : U.paceLabel;
   // One state per accepted fix, so the route can be coloured by what the coach thought at the time.
   while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
   drawMap();
@@ -1839,12 +2017,25 @@ $('go').onclick = () => {
   });
   // The split's wording is the athlete's business, not the monitor's, so the formatter and the
   // naming go in rather than a second unit-aware copy of the class living here.
+  // The heart-rate ceiling comes from the session's own prescribed zones when a session was loaded,
+  // and from Z2 otherwise — the band an easy run lives in.
+  S.hrZones = zoneModel(PLAN.generated_for.hr_max, PLAN.generated_for.hr_rest);
+  const sess = S.plannedSession ? sessionFor(S.plannedSession.day) : null;
+  const wanted = sess && sess.zones && sess.zones.length ? sess.zones : [2];
+  const zs = S.hrZones.filter(z => wanted.includes(z.index));
+  S.hrMonitor = new HrCeilingMonitor({
+    lowBpm: Math.min(...zs.map(z => z.low)),
+    highBpm: Math.max(...zs.map(z => z.high)),
+    ceilingOnly: sess ? !!sess.ceiling_only : true,
+  });
+
   S.splits = new SplitAnnouncer({
     everyM: U.splitEvery(),
     formatPace: secKm => U.pace(secKm),
     nameSplit: n => U.splitName(n),
   });
   Object.assign(S, { running: true, startedAt: Date.now(), samples: [], tones: 0,
+                     governedBy: 'pace',
                      track: new GpsTrack(), trackState: [],
                      ivPhase: null, ivRep: 0, ivUntil: 0, simT: 0, simDist: 0 });
   $('log').replaceChildren();
@@ -1867,7 +2058,11 @@ $('go').onclick = () => {
   $('go').textContent = 'Stop';
   $('go').classList.add('stop');
   $('copy').disabled = true;
-  log(S.mode === 'rehearse' ? 'Rehearsal started — 30 minutes in 90 seconds.' : 'Started.', 'on');
+  const governing = (S.sensor && S.sensor.connected)
+    ? `heart rate leads (ceiling ${Math.round(S.hrMonitor.high)} bpm), pace is information`
+    : 'pace leads — no armband connected';
+  log(S.mode === 'rehearse' ? 'Rehearsal started — 30 minutes in 90 seconds.'
+                            : `Started. ${governing}.`, 'on');
   play('in_band');
 };
 

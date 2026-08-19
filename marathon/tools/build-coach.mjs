@@ -35,6 +35,7 @@ const parts = {
   MONITOR: inline('pace-monitor.js'),
   GEO: inline('geo.js'),
   SENSOR: inline('sensor.js'),
+  HRMONITOR: inline('hr-monitor.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 
