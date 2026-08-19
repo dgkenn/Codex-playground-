@@ -295,6 +295,35 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
             + `${payload.samples.length} samples labelled warmup)`);
 }
 
+{
+  // Outdoors nothing holds the speed for you, so each stage has to become a paced block: the
+  // instruction spoken as a pace rather than a treadmill dial setting, and the ordinary pace band
+  // armed at that stage's speed so the tones can hold you in it.
+  await page.click('#m-ramp');
+  await page.check('#rampoutdoor');
+  await page.waitForTimeout(120);
+  const note = (await page.textContent('#rampnote')).replace(/\s+/g, ' ');
+  assert.match(note, /\d+:\d\d.*\d+:\d\d/, `the ladder must be shown as paces: "${note}"`);
+  assert.match(note, /flattest/, 'and it must say why the route has to be flat');
+  assert.match(note, /\d+ bpm/, 'and state the stop rule in beats');
+  assert.ok(await page.isVisible('#gauge'), 'the band gauge is meaningful on an outdoor ramp');
+
+  await page.click('.strip button:nth-child(3)');
+  await page.waitForTimeout(120);
+  await page.click('#loadsess');
+  await page.click('#go');
+  await page.waitForTimeout(2500);
+  const spoken = await page.evaluate(() => window.__spoken);
+  assert.ok(spoken.some(l => /per mile|per kilometre/.test(l)),
+    `the first step must be spoken as a pace outdoors: ${JSON.stringify(spoken)}`);
+  assert.doesNotMatch(await page.textContent('#perlabel'), /KM\/H/,
+    'the big number outdoors is your live pace, not a treadmill setting');
+  await page.click('#go');
+  await page.waitForTimeout(200);
+  await page.uncheck('#rampoutdoor');
+  console.log(`  ok  an outdoor ramp speaks paces and arms the band (${spoken.find(l => /per /.test(l))})`);
+}
+
 // --- the pace coach, actually running ------------------------------------------------------------
 
 {

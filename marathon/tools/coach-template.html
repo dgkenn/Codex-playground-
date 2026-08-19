@@ -382,6 +382,15 @@
     <p class="note" id="bandtext" style="margin-top:.7rem"></p>
   </section>
 
+  <section id="cfg-ramp" class="hide">
+    <h2>Ramp test</h2>
+    <label class="check">
+      <input type="checkbox" id="rampoutdoor">
+      <span>On the street, not a treadmill</span>
+    </label>
+    <p class="note" id="rampnote" style="margin-top:.7rem"></p>
+  </section>
+
   <section id="cfg-intervals" class="hide">
     <h2>Intervals</h2>
     <div class="row">
@@ -582,7 +591,7 @@ const S = {
   watchId: null, tickId: null, wakeLock: null,
   ivPhase: null, ivRep: 0, ivUntil: 0,
   geoError: null,
-  ramp: null, rampNotes: '',
+  ramp: null, rampNotes: '', rampOutdoor: false, rampTargetSecKm: null, rampStopped: false,
   simT: 0, simDist: 0, plannedSession: null,
   hrZones: null,
 };
@@ -940,10 +949,75 @@ function setMode(m) {
   const timed = m === 'intervals' || m === 'ramp';
   $('cfg-coach').classList.toggle('hide', timed);
   $('cfg-intervals').classList.toggle('hide', m !== 'intervals');
+  $('cfg-ramp').classList.toggle('hide', m !== 'ramp');
+  if (m === 'ramp') renderRampNote();
   $('modenote').textContent = MODE_NOTES[m];
   $('perlabel').textContent = timed ? '' : U.paceLabel;
-  $('gauge').classList.toggle('hide', timed);
+  refreshGauge();
 }
+/**
+ * What the ramp will do, in the athlete's own units, before it starts.
+ *
+ * Outdoors the ladder has to be read as paces or it cannot be acted on, and a ladder whose top rung
+ * is faster than you can run is worth seeing in advance rather than discovering at minute thirty.
+ */
+/**
+ * Whether the band gauge is showing.
+ *
+ * Its own function because the answer depends on two things that change independently: the mode, and
+ * whether the ramp is being run outdoors. Deciding it inside `setMode` alone meant ticking the
+ * outdoor box while already in ramp mode left the gauge hidden — the one control that shows whether
+ * you are holding the stage, absent for the whole session.
+ */
+function refreshGauge() {
+  const hidden = S.mode === 'intervals' || (S.mode === 'ramp' && !S.rampOutdoor);
+  $('gauge').classList.toggle('hide', hidden);
+}
+
+function renderRampNote() {
+  const sess = (curWeek().sessions || []).find(x => x.ramp);
+  if (!sess) { $('rampnote').textContent = 'No ramp test in this week.'; return; }
+  const stages = sess.ramp.steps.filter(x => x.kind === 'stage');
+  const ladder = stages.map(x => U.pace(3600 / x.speed_kmh)).join(', ');
+  const per = U.paceLabel.replace(' ', '');
+
+  // Two things that are worth knowing before you leave rather than after you get back.
+  const warnings = [];
+  if (!profile.confirmed) {
+    // The stop rule is computed from these. Until now they were a zone-boundary question; the
+    // moment the app enforces a heart-rate ceiling they become a safety one.
+    warnings.push(`The stop point below (${rampStopHr()} bpm) is computed from the placeholder `
+                + `age ${profile.age} and resting ${profile.hrRest}. Set your own in the Armband `
+                + `panel first — this is the one number here that matters for your safety.`);
+  }
+  if (!(S.sensor && S.sensor.connected)) {
+    warnings.push('No armband connected. The stages will still be called and the run recorded, but '
+                + 'this session exists to produce a heart-rate/speed line, and without heart rate '
+                + 'there is nothing to fit. Note your effort out of 20 at each stage by hand if you '
+                + 'run it anyway.');
+  }
+
+  $('rampnote').textContent = (warnings.length ? warnings.join(' ') + ' — ' : '') + (S.rampOutdoor
+    ? `Each stage becomes a paced block and the usual tones hold you in it: ${ladder} ${per}, `
+      + `four minutes each. Find the flattest route you have — grade is deliberately not `
+      + `compensated for here, because the whole output is a line relating heart rate to speed and `
+      + `adjusting for hills would erase it. Stop at ${rampStopHr()} bpm, at 15/20 effort, or when `
+      + `you cannot speak a full sentence.`
+    : `Treadmill: ${stages.map(x => x.speed_kmh).join(', ')} km/h, four minutes each. Every change `
+      + `is called out; set the dial when you hear it. Stop at ${rampStopHr()} bpm, at 15/20 `
+      + `effort, or when you cannot speak a full sentence.`);
+  $('rampnote').style.color = warnings.length ? 'var(--fast)' : 'var(--dim)';
+}
+
+$('rampoutdoor').checked = localStorage.getItem('band.rampOutdoor') === '1';
+S.rampOutdoor = $('rampoutdoor').checked;
+$('rampoutdoor').onchange = e => {
+  S.rampOutdoor = e.target.checked;
+  localStorage.setItem('band.rampOutdoor', S.rampOutdoor ? '1' : '0');
+  renderRampNote();
+  refreshGauge();
+};
+
 ['coach','intervals','ramp','rehearse'].forEach(k => { $(`m-${k}`).onclick = () => setMode(k); });
 setMode('coach');
 
@@ -1438,15 +1512,90 @@ function tickCoach(t, pace, trusted) {
  */
 function rampLabel() { return S.ramp ? S.ramp.label : ''; }
 
+/// How tight the band is around a ramp stage, outdoors.
+///
+/// Wider than an easy run's: you are being asked to hold a speed you have never held deliberately,
+/// GPS pace wanders, and the stage only needs to be right over its final minute. A tight band here
+/// would produce a stream of corrections and a worse-held stage than a loose one.
+const RAMP_TOLERANCE = 0.08;
+
+/** The stop rule the protocol states, in beats, from the athlete's own numbers. */
+function rampStopHr() {
+  const max = hrMaxFor(profile.age);
+  return Math.round(profile.hrRest + 0.85 * (max - profile.hrRest));
+}
+
+/**
+ * Set the pace band for a ramp step, outdoors.
+ *
+ * On a treadmill the machine holds the speed and the app only has to say which one. On a street
+ * nothing holds it but you, so each stage becomes a paced block: the band is re-armed at that
+ * stage's speed and the ordinary pace tones guide you into it. A fresh monitor per stage on purpose
+ * — carrying the previous stage's acquisition state across would suppress the corrections at
+ * exactly the moment the speed has just changed and you most need them.
+ */
+function armRampStage(step) {
+  const secKm = step && step.speed_kmh ? 3600 / step.speed_kmh : null;
+  S.rampTargetSecKm = secKm;
+  if (secKm == null) { S.monitor = new PaceBandMonitor({ targetPaceSecKm: null }); return; }
+  setTarget(secKm);
+  S.monitor = new PaceBandMonitor({
+    targetPaceSecKm: secKm, tolerance: RAMP_TOLERANCE, ceilingOnly: false,
+  });
+  refreshBand();
+}
+
+/** Pace coaching during an outdoor ramp. Deliberately never heart-rate coaching — see below. */
+function tickRampPace(t) {
+  const trusted = S.track.trustedAt(nowSeconds());
+  const pace = S.track.paceSecKm;
+  $('pace').textContent = fmtPace(pace);
+  $('perlabel').textContent = U.paceLabel;
+  setMarker(pace);
+  $('gradetile').textContent = `${(S.track.grade * 100).toFixed(0)}%`;
+  $('climbtile').textContent = unit === 'mi'
+    ? `${Math.round(S.track.ascentM * 3.28084)}` : `${Math.round(S.track.ascentM)}`;
+  while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
+
+  if (!S.monitor || S.rampTargetSecKm == null) return;
+  // Grade is deliberately NOT compensated for here, unlike every other mode. The whole output of
+  // this session is a line relating heart rate to speed, and grade-adjusting the target would have
+  // you run slower up a hill at the same prescribed "speed" — which is the right thing for a
+  // training run and destroys the measurement. Run somewhere flat; the recorded grade says whether
+  // you managed to.
+  const ev = S.monitor.update(t, pace, { grade: 0, paceTrusted: trusted });
+  if (ev) {
+    play(ev.earcon);
+    S.tones++;
+    log(`${ev.earcon.replace('_', ' ')}${ev.reason ? ' — ' + ev.reason : ''}`,
+        ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast');
+  }
+}
+
 function tickRamp(t) {
   if (!S.ramp) return finish('No ramp protocol loaded.');
+
+  // The protocol's own stop rule, honoured rather than merely printed. An app that reads the
+  // stages out loud and then lets you run past 85% of heart-rate reserve is enforcing the
+  // convenient half of the protocol and leaving the safety half on the card.
+  const sn = S.sensor;
+  if (sn && sn.hrFresh() && sn.hr >= rampStopHr() && !S.rampStopped) {
+    S.rampStopped = true;
+    play('ease');
+    setTimeout(() => say('That is your stop point. Ease down to a walk.'), 420);
+    log(`heart rate ${sn.hr} reached the stop point (${rampStopHr()}) — ending the test`, 'stop');
+    return finish('Stopped at the heart-rate ceiling.');
+  }
+
   const ev = S.ramp.update(t);
 
   if (!ev) {
     const step = S.ramp.step, left = S.ramp.remaining(t);
     if (step) {
-      $('verdict').textContent =
-        `${step.label} · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} left`;
+      const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} left`;
+      $('verdict').textContent = S.rampOutdoor && S.rampTargetSecKm
+        ? `${step.label} · ${U.pace(S.rampTargetSecKm)}${U.paceLabel.replace(' ', '')} · ${clock}`
+        : `${step.label} · ${clock}`;
     }
     return;
   }
@@ -1467,12 +1616,29 @@ function tickRamp(t) {
 
   const step = ev.step;
   play('attend');
+
+  // Outdoors the instruction has to be a pace, because a pace is the only thing you can act on. "7
+  // kilometres an hour" is a dial setting on a machine you are not standing on.
+  let spoken = step.say;
+  if (S.rampOutdoor && step.speed_kmh) {
+    const secKm = 3600 / step.speed_kmh;
+    const perUnit = unit === 'mi' ? 'per mile' : 'per kilometre';
+    spoken = `${step.label}. ${U.pace(secKm)} ${perUnit}.`;
+  }
   const extra = step.kind === 'stage' && S.rampNotes ? ` ${S.rampNotes}` : '';
-  setTimeout(() => say(step.say + extra), 420);
-  log(`${step.label}${step.speed_kmh ? ` — ${step.speed_kmh} km/h` : ''} for ${step.minutes} min`,
+  setTimeout(() => say(spoken + extra), 420);
+
+  if (S.rampOutdoor) armRampStage(step);
+
+  log(`${step.label}${step.speed_kmh
+        ? ` — ${step.speed_kmh} km/h` + (S.rampOutdoor ? ` (${U.pace(3600 / step.speed_kmh)}${U.paceLabel.replace(' ', '')})` : '')
+        : ''} for ${step.minutes} min`,
       step.kind === 'stage' ? 'fast' : 'on');
-  $('pace').textContent = step.speed_kmh ? `${step.speed_kmh}` : step.label.toUpperCase();
-  $('perlabel').textContent = step.speed_kmh ? 'KM/H' : '';
+
+  if (!S.rampOutdoor) {
+    $('pace').textContent = step.speed_kmh ? `${step.speed_kmh}` : step.label.toUpperCase();
+    $('perlabel').textContent = step.speed_kmh ? 'KM/H' : '';
+  }
   $('verdict').textContent = step.label;
   $('verdict').style.color = `var(--${step.kind === 'stage' ? 'fast' : 'on'})`;
 }
@@ -1557,7 +1723,10 @@ function tick() {
   }
   if (S.mode === 'ramp') {
     tickRamp(t);
-    if (S.running) recordSample(t, rampLabel());
+    if (!S.running) return;
+    if (S.rampOutdoor) tickRampPace(t);
+    recordSample(t, rampLabel());
+    if (S.rampOutdoor) drawMap();
     return;
   }
   recordSample(t);
@@ -1673,6 +1842,9 @@ $('go').onclick = () => {
     if (!S.ramp) { log('Load the ramp test from the plan first.', 'stop'); return; }
     // A fresh runner per start: a second attempt must not inherit the first one's position.
     S.ramp = new RampRunner(S.ramp.steps);
+    S.rampOutdoor = $('rampoutdoor').checked;
+    S.rampStopped = false;
+    S.rampTargetSecKm = null;
   }
   if (S.mode === 'coach' && !target) {
     log('Enter a target pace like 9:00 first.', 'stop'); return;

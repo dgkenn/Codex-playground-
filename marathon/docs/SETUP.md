@@ -69,6 +69,18 @@ happens.
 today and starts it in the right mode: run/walk sets the intervals from the plan and calls them out;
 a paced session loads its own band; the ramp test runs the whole protocol. Nothing to copy across.
 
+**The ramp test can be run on the street.** Tick "On the street, not a treadmill" and each stage
+becomes a paced block: the instruction is spoken as a pace rather than a dial setting, the pace band
+is re-armed at that stage's speed, and the ordinary tones hold you in it. The ladder in miles is
+roughly 19:19, 16:06, 13:48, 12:04, 10:44, 9:39 — four minutes each, after a walk warm-up.
+
+Two things differ from a treadmill and both are deliberate. Grade is **not** compensated for, unlike
+every other mode: the whole output of this session is a line relating heart rate to speed, and
+adjusting the target for hills would erase the thing being measured. Run somewhere flat; the
+recorded grade says whether you managed it. And the app enforces the protocol's own stop rule — at
+85% of heart-rate reserve it says so and ends the test, rather than printing the rule on a card and
+leaving you to watch for it.
+
 **The ramp test runs itself.** It used to be a paragraph to read on a treadmill — time four-minute
 stages by hand and remember which of six speeds comes next, during the one hour the entire plan is
 derived from. Now every stage is announced, every speed change is called out, and the final minute
