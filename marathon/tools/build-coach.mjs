@@ -54,6 +54,7 @@ const parts = {
   RAMP: inline('ramp.js'),
   BTPROBE: inline('bt-probe.js'),
   SESSIONSTORE: inline('session-store.js'),
+  RUNSTATS: inline('run-stats.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 
@@ -80,6 +81,24 @@ for (const [key, value] of Object.entries(parts)) {
 const stamp = createHash('sha256').update(html).digest('hex').slice(0, 8);
 if (!html.includes('/*{{BUILD}}*/')) throw new Error('template is missing the BUILD marker');
 html = html.replace('/*{{BUILD}}*/', JSON.stringify({ id: stamp, at: built }));
+
+// Does the thing that is about to ship actually parse?
+//
+// It did not. Inlining a module that declared its own `MI` alongside the page's `MI` produced two
+// `const` of the same name in one scope, which is a SyntaxError — so the entire script failed at
+// parse time and the page rendered as an empty shell. Nothing in the build noticed: the markers were
+// all present, the file was written, the byte count looked right.
+//
+// Every module here is inlined into ONE scope, so every top-level name in every module shares a
+// namespace with every other. That makes collisions a structural hazard of the design rather than a
+// slip, and a build that cannot detect its own broken output is not a build.
+try {
+  const body = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
+  new Function(body);
+} catch (e) {
+  throw new Error(`the assembled page does not parse: ${e.message}\n`
+                + '  Most likely two inlined modules declare the same top-level name.');
+}
 
 // Both docs folders, because they serve different routes and had already drifted apart:
 // `marathon/docs` is what the githack URL points at, and the repo-root `docs` is the only folder

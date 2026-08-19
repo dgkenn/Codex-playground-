@@ -161,4 +161,19 @@ const session = (n, { startedAt = '2026-08-19T18:00:00.000Z', hr = true, mode = 
   console.log('  ok  a session can be removed, and removing it reclaims its space');
 }
 
+{
+  // The statistics ride in the index, so a trend survives the eviction of the samples it came from
+  // and can be drawn without parsing every archived run.
+  const st = new SessionStore(new FakeStorage());
+  const e = st.archive({ ...session(600), stats: { efficiencyFactor: 19.4, beatsPerUnit: 22.1 } },
+                       { now: 0 });
+  assert.equal(e.stats.efficiencyFactor, 19.4);
+  assert.equal(st.index()[0].stats.beatsPerUnit, 22.1);
+  // And a session with no statistics must carry null rather than being absent from the index.
+  const e2 = st.archive(session(60, { startedAt: '2026-08-20T10:00:00.000Z' }), { now: 1000 });
+  assert.equal(e2.stats, null);
+  assert.equal(st.index().length, 2);
+  console.log('  ok  statistics ride in the index and survive their samples');
+}
+
 console.log('\nAll session-store tests passed.');

@@ -70,6 +70,28 @@ happens.
 its own tile that is filled in every mode. Without it there was no measured speed anywhere on screen
 during a ramp or a run/walk, which is indistinguishable from an app that is not measuring at all.
 
+**Every run reports what it says, and keeps it.** A finished session shows a **How it went** panel
+and files those numbers alongside the recording, so a trend survives even after the samples are
+evicted. The statistics were chosen for one question — is the aerobic engine improving, and was the
+easy running easy — because distance and average pace answer neither: they move with terrain,
+weather and how hard you were willing to go that day.
+
+| number | what it means | which way is better |
+|---|---|---|
+| Beats per mile | how many heartbeats the mile cost | **down** |
+| Efficiency | speed per heartbeat (the same thing, inverted) | up |
+| Drift | heart rate rising relative to pace across the run | down, under 5% |
+| Easy % | time at or below the Z2 ceiling | up, on easy days |
+| Longest run | longest unbroken block of running | up — and it sets the ladder |
+| Recovery | how far heart rate fell in the minute after stopping | up |
+| Load | Banister TRIMP, intensity weighted exponentially | context, not a target |
+
+Beats per mile and efficiency are the two that track fitness, and both need the armband. They are
+only comparable between similar sessions in similar conditions, which is why they are reported per
+session and never averaged across a week. `efficiency_factor` and `decoupling` are ported from
+`marathon_engine.physiology` and checked against it by execution, so the app and the engine cannot
+quietly disagree about a number they both call by the same name.
+
 **Sessions are saved on the phone.** The recording is written down every two seconds while it runs,
 not at the end — a page that reloads mid-run, which iOS does by itself to a backgrounded tab with no
 warning, used to take the whole session with it. On the next load an unfinished session is offered

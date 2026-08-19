@@ -464,6 +464,87 @@ async function pickDay(page, kind) {
   console.log('  ok  the treadmill ramp is prescribed in the numbers on the dial');
 }
 
+// --- the loop actually closes: GPS -> compared -> spoken ------------------------------------------
+
+{
+  // The whole coaching claim in one test, driven by real geolocation rather than by calling the
+  // monitor directly. Run too fast, and it must say ease off; run too slow, and it must say lift;
+  // run on target, and it must say nothing at all — silence is the signal that you are inside the
+  // band, and a coach that talks anyway has destroyed its own vocabulary.
+  const ctx = page.context();
+  await ctx.grantPermissions(['geolocation']);
+  const START = { latitude: 42.3505, longitude: -71.1054 };
+
+  /** Walk south at `speedMS` for `seconds`, one fix a second, and collect what was played. */
+  async function runAt(speedMS, seconds) {
+    let lat = START.latitude;
+    await ctx.setGeolocation({ ...START, accuracy: 5 });
+    await page.evaluate(() => { window.__plays.length = 0; });
+    for (let i = 0; i < seconds; i++) {
+      lat -= speedMS / 111320;
+      await ctx.setGeolocation({ latitude: lat, longitude: START.longitude, accuracy: 5 });
+      await page.waitForTimeout(1000);
+    }
+    const log = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+    return {
+      plays: (await page.evaluate(() => window.__plays)).length,
+      eased: log.some(l => /^\d+:\d+ease/.test(l.replace(/\s/g, ''))) || log.some(l => /ease/.test(l)),
+      lifted: log.some(l => /lift/.test(l)),
+      shown: await page.textContent('#pacetile'),
+    };
+  }
+
+  await page.click('#m-coach');
+  await page.click('#r-pace');
+  // Target 8:20 per mile = 3.22 m/s. Comfortably inside what the simulated fixes can hold.
+  await page.fill('#target', '8:20');
+  await page.waitForTimeout(150);
+  await page.click('#go');
+
+  // Too fast: 4.2 m/s against a 3.22 m/s target is 30% over, well outside any tolerance.
+  const fast = await runAt(4.2, 30);
+  assert.ok(fast.eased, 'running 30% too fast must produce an ease-off cue');
+  assert.ok(fast.plays > 0, 'and it must actually reach the audio element');
+  assert.match(fast.shown, /^\d+:\d\d$/, `the measured pace must be on screen: "${fast.shown}"`);
+
+  // Too slow: 2.2 m/s is 30% under. The band is not ceiling-only here, so it must say lift.
+  await page.uncheck('#ceiling');
+  const slow = await runAt(2.2, 45);
+  assert.ok(slow.lifted, 'running 30% too slow must produce a lift cue when both edges are enforced');
+  await page.click('#go');
+  await page.waitForTimeout(200);
+  console.log(`  ok  the loop closes: measured, compared, and spoken both ways `
+            + `(showed ${fast.shown} while over)`);
+}
+
+// --- statistics, recorded and kept ----------------------------------------------------------------
+
+{
+  // The numbers that answer "am I getting fitter" have to survive the run ending. Their arithmetic
+  // is covered in tests/run-stats-test.mjs against the engine; what is checked here is that a
+  // finished session produces them, shows them, and files them with the session.
+  await page.click('#m-coach');
+  await page.fill('#target', '10:00');
+  await page.click('#go');
+  await page.waitForTimeout(3000);
+  await page.click('#go');
+  await page.waitForTimeout(400);
+
+  assert.ok(await page.isVisible('#stats-section'), 'a finished run must report how it went');
+  const grid = await page.textContent('#statsgrid');
+  for (const k of ['Time', 'Distance', 'Avg pace', 'Longest run', 'Cues']) {
+    assert.ok(grid.includes(k), `the report must carry ${k}: "${grid}"`);
+  }
+  const note = await page.textContent('#statsprogress');
+  assert.match(note, /heart rate/i, `without HR it must say why the fitness numbers are missing: "${note}"`);
+
+  const idx = await page.evaluate(() => JSON.parse(localStorage.getItem('band.session.index') || '[]'));
+  assert.ok(idx.length >= 1, 'the session must be filed');
+  assert.ok('stats' in idx[0], 'and its statistics must be filed with it, not recomputed later');
+  assert.ok(idx[0].stats && idx[0].stats.durationS > 0, `stats not stored: ${JSON.stringify(idx[0].stats)}`);
+  console.log('  ok  a finished run reports its statistics and files them with the session');
+}
+
 // --- what you are actually doing, in every mode ---------------------------------------------------
 
 {

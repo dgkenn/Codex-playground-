@@ -153,6 +153,11 @@ export class SessionStore {
       samples: (session.samples || []).length,
       minutes: Math.round(((session.samples || []).length) / 60),
       hasHr: (session.samples || []).some(x => x.hr_bpm != null),
+      // The statistics live in the index as well as in the session, so a trend can be drawn without
+      // parsing every archived run — and so they survive the eviction of the samples they came from.
+      // They are computed once, at the end of the run, against the profile in force at that moment;
+      // recomputing later would silently restate history every time a setting moved.
+      stats: session.stats || null,
     };
     if (!this._write(ITEM_PREFIX + id, session)) return null;
 

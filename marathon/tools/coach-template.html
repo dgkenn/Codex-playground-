@@ -463,6 +463,20 @@
     </div>
   </section>
 
+  <section id="stats-section" class="hide">
+    <h2>How it went</h2>
+    <div class="instrument" style="gap:.6rem">
+      <div id="statsgrid" class="tiles"></div>
+      <div id="statssplits" class="note" style="margin-top:.2rem"></div>
+      <div id="statsprogress" class="note"></div>
+    </div>
+    <p class="note" style="margin-top:.7rem">
+      Beats per mile and efficiency factor are the two that track fitness: the same pace at a lower
+      heart rate is progress and nothing else. Both need the armband, and both are only comparable
+      between similar sessions.
+    </p>
+  </section>
+
   <section id="saved-section">
     <h2>Saved sessions</h2>
     <div id="recover" class="instrument hide" style="gap:.6rem;border-color:var(--fast)">
@@ -534,6 +548,8 @@
 /*{{BTPROBE}}*/
 
 /*{{SESSIONSTORE}}*/
+
+/*{{RUNSTATS}}*/
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -2086,6 +2102,81 @@ $('go').onclick = () => {
   play('in_band');
 };
 
+/**
+ * Show what the run said, after it ends.
+ *
+ * Distance and average pace are the numbers people look at and the ones that say least: they move
+ * with terrain, weather, traffic lights and how hard you were willing to go that day. The two that
+ * hold still are beats per mile and efficiency factor — the same pace at a lower heart rate is
+ * fitness and nothing else — so those lead, and the rest supports them.
+ */
+function showStats(stats, prevStats) {
+  if (!stats) { $('stats-section').classList.add('hide'); return; }
+  const mmss = secs => `${Math.floor(secs / 60)}:${String(Math.round(secs % 60)).padStart(2, '0')}`;
+  const tiles = [];
+  const tile = (k, v) => tiles.push([k, v]);
+
+  tile('Time', mmss(stats.durationS));
+  tile('Distance', `${stats.distance.toFixed(2)} ${U.name}`);
+  tile('Avg pace', stats.avgPaceSecKm ? readoutText(stats.avgPaceSecKm) : '—');
+  tile('Moving', mmss(stats.movingS));
+  tile('Longest run', stats.longestRunBlockS ? mmss(stats.longestRunBlockS) : '—');
+  if (stats.ascentM) tile('Climb', unit === 'mi'
+    ? `${Math.round(stats.ascentM * 3.28084)} ft` : `${stats.ascentM} m`);
+
+  if (stats.avgHr != null) {
+    tile('Avg HR', `${stats.avgHr}`);
+    tile('Max HR', `${stats.maxHr}`);
+    // The headline progress number, and the one that is legible without explanation.
+    if (stats.beatsPerUnit != null) {
+      tile(`Beats / ${U.name}`, stats.beatsPerUnit.toFixed(1));
+    }
+    if (stats.efficiencyFactor != null) tile('Efficiency', stats.efficiencyFactor.toFixed(2));
+    if (stats.decouplingPct != null) tile('Drift', `${stats.decouplingPct.toFixed(1)}%`);
+    if (stats.pctAtOrBelowEasy != null) tile('Easy', `${Math.round(stats.pctAtOrBelowEasy)}%`);
+    if (stats.hrr60 != null) tile('Recovery', `-${stats.hrr60}`);
+    if (stats.trimp != null) tile('Load', Math.round(stats.trimp));
+  }
+  tile('Cues', `${stats.tones} (${stats.tonesPerMin.toFixed(2)}/min)`);
+
+  $('statsgrid').replaceChildren(...tiles.map(([k, v]) => {
+    const d = document.createElement('div');
+    d.className = 'tile';
+    const kk = document.createElement('div'); kk.className = 'k'; kk.textContent = k;
+    const vv = document.createElement('div'); vv.className = 'v'; vv.textContent = v;
+    d.append(kk, vv);
+    return d;
+  }));
+
+  $('statssplits').textContent = stats.splits.length
+    ? `Splits: ${stats.splits.map(x => readoutText(x.paceSecKm)).join(' · ')}`
+    : '';
+
+  // Two sessions is not a trend, and the module refuses to pretend otherwise — but the direction
+  // between the last two is the thing anyone actually wants to know.
+  const p = progress([stats, prevStats].filter(Boolean));
+  if (!p) {
+    $('statsprogress').textContent = stats.avgHr == null
+      ? 'No heart rate this session, so no fitness comparison. The armband is what makes these numbers mean anything.'
+      : 'The first session with heart rate. From the next one on, this line says which way it moved.';
+    $('statsprogress').style.color = 'var(--faint)';
+  } else {
+    const bp = p.beatsPerUnit.delta, ef = p.efficiencyFactor.delta;
+    const better = bp < 0;
+    $('statsprogress').textContent =
+      `Against the previous session: ${Math.abs(bp).toFixed(1)} beats per ${U.name} `
+      + `${better ? 'fewer' : 'more'} at this pace, efficiency ${ef >= 0 ? '+' : ''}${ef.toFixed(2)}. `
+      + (better ? 'That is the direction fitness moves.'
+                : 'One session either way is noise — heat, sleep and fuelling all move this.');
+    $('statsprogress').style.color = better ? 'var(--on)' : 'var(--dim)';
+  }
+  $('stats-section').classList.remove('hide');
+  $('stats-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/** The zones the stats are scored against — the athlete's own, not the plan's placeholders. */
+const statsZones = () => S.hrZones || zoneModel(hrMaxFor(profile.age), profile.hrRest);
+
 /** What a session is called in the saved list. The planned session's name, or the mode. */
 function sessionTitle() {
   if (S.plannedSession && S.plannedSession.title) return S.plannedSession.title;
@@ -2098,10 +2189,20 @@ function finish(msg) {
   clearInterval(S.tickId);
   clearInterval(S.autosaveId);
   // File it before anything else. Everything below is presentation; this is the run.
+  let stats = null;
   if (S.samples.length && S.mode !== 'rehearse') {
-    const entry = sessions.archive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode });
+    stats = runStats(S.samples, {
+      zones: statsZones(), hrRest: profile.hrRest, hrMax: hrMaxFor(profile.age),
+      unit, tones: S.tones,
+    });
+    // Stored WITH the session, not recomputed on demand: the zones and the profile can change
+    // afterwards, and a statistic that silently restates itself when the settings move is not a
+    // record of anything.
+    const prev = (sessions.index().find(e => e.stats && e.stats.efficiencyFactor != null) || {}).stats;
+    const entry = sessions.archive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode, stats });
     if (entry) renderSaved();
     else log('could not save this session to the phone — copy it now', 'stop');
+    showStats(stats, prev);
   }
   if (S.watchId != null) { navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
   keepAwake(false);
