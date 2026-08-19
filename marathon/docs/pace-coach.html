@@ -395,7 +395,10 @@
   </section>
 </main>
 
-<script type="module">
+<script>
+(function () {
+'use strict';
+
 // =================================================================================================
 // Pace band monitor — third port of marathon_engine/audio.py, after the Swift one.
 //
@@ -2117,4 +2120,5 @@ $('copy').onclick = async () => {
     log('Clipboard blocked. Screenshot the summary instead.', 'stop');
   }
 };
+})();
 </script>

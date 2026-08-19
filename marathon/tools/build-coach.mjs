@@ -40,6 +40,18 @@ const parts = {
 };
 
 let html = readFileSync(join(here, 'coach-template.html'), 'utf8');
+
+// Ship a classic script, not a module.
+//
+// Nothing forces `type="module"` any more — the build inlines every dependency, so there are no
+// imports and no top-level await left. And the module type costs compatibility: module scripts are
+// fetched with CORS semantics, run deferred, and are unreliable in third-party WebViews and in
+// anything that injects a page with document.write. Bluefy, which is the only way to reach the
+// armband from an iPhone, is exactly such a browser. Strict mode and an IIFE preserve the module's
+// scoping and semantics without its delivery constraints.
+html = html
+  .replace('<script type="module">', "<script>\n(function () {\n'use strict';\n")
+  .replace(/<\/script>\s*$/, '})();\n</script>\n');
 for (const [key, value] of Object.entries(parts)) {
   const marker = `/*{{${key}}}*/`;
   if (!html.includes(marker)) throw new Error(`template is missing the ${key} marker`);

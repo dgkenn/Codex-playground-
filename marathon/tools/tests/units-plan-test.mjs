@@ -8,7 +8,8 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 const html = readFileSync(new URL('../pace-coach-hosted.html', import.meta.url), 'utf8');
-const js = html.match(/<script type="module">([\s\S]*)<\/script>/)[1];
+// The built page ships a classic script now, for WebView compatibility — see build-coach.mjs.
+const js = html.match(/<script>([\s\S]*)<\/script>/)[1];
 
 // Pull out the pure pieces: the unit layer, the split announcer, and the plan payload.
 const MI = 1609.344;
