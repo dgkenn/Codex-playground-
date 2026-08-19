@@ -1,0 +1,878 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<title>Band</title>
+
+<style>
+  /* Committed single dark theme. This is read outdoors, at night, with the screen forced on for
+     forty minutes — a light ground would glare and cost battery on OLED. Every colour is painted
+     explicitly so the page holds on either host ground. */
+  :root {
+    --ink:      #0B0C0E;
+    --surface:  #14161A;
+    --raised:   #1B1E24;
+    --line:     #262A31;
+    --text:     #E8EAED;
+    --dim:      #8A9099;
+    --faint:    #5B6169;
+
+    --on:       #5FD08A;   /* in the band */
+    --fast:     #F0A65C;   /* running faster than the band */
+    --slow:     #6FA8DC;   /* slower — a blue, not a red: slow is not an error */
+    --stop:     #E86E6E;   /* something is actually wrong */
+
+    --r: 12px;
+    --pad: 1rem;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--ink);
+    color: var(--text);
+    margin: 0;
+    font: 400 16px/1.5 "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom));
+  }
+
+  main {
+    max-width: 30rem;
+    margin: 0 auto;
+    padding: 1.25rem var(--pad) 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  header { display: flex; flex-direction: column; gap: .15rem; }
+  h1 {
+    font-family: "Barlow Semi Condensed", "IBM Plex Sans", sans-serif;
+    font-weight: 700; font-size: 1.5rem; letter-spacing: .01em;
+    margin: 0; text-wrap: balance;
+  }
+  .tagline { color: var(--dim); font-size: .875rem; }
+
+  h2 {
+    font-size: .6875rem; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--faint); margin: 0 0 .6rem; font-weight: 600;
+  }
+  section { display: flex; flex-direction: column; }
+
+  /* ---- controls ---- */
+  button {
+    font: 500 .9375rem/1 "IBM Plex Sans", sans-serif;
+    padding: .8rem 1rem; min-height: 2.9rem;
+    border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); cursor: pointer;
+    transition: border-color .12s ease, background .12s ease;
+  }
+  button:hover:not(:disabled) { border-color: var(--faint); }
+  button:focus-visible { outline: 2px solid var(--on); outline-offset: 2px; }
+  button:disabled { opacity: .35; cursor: default; }
+  button.go {
+    width: 100%; font-size: 1.0625rem; font-weight: 600; padding: 1.05rem;
+    background: var(--on); border-color: var(--on); color: #08120C;
+  }
+  button.go.stop { background: var(--surface); border-color: var(--stop); color: var(--stop); }
+
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 10px;
+         overflow: hidden; width: 100%; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: transparent;
+                color: var(--dim); font-size: .875rem; }
+  .seg button[aria-pressed="true"] { background: var(--raised); color: var(--text); }
+  .seg button + button { border-left: 1px solid var(--line); }
+
+  label { font-size: .8125rem; color: var(--dim); display: inline-flex; align-items: center;
+          gap: .4rem; }
+  input[type="text"], input[type="number"] {
+    font: 500 1rem/1 "Barlow Semi Condensed", monospace;
+    font-variant-numeric: tabular-nums;
+    padding: .55rem .6rem; width: 4.5rem;
+    border-radius: 8px; border: 1px solid var(--line);
+    background: var(--ink); color: var(--text);
+  }
+  input:focus-visible { outline: 2px solid var(--on); outline-offset: 1px; }
+  input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--on); }
+
+  /* ---- the readout ---- */
+  .instrument {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    padding: 1.15rem 1rem 1rem; display: flex; flex-direction: column; gap: .9rem;
+  }
+  .readout { display: flex; align-items: baseline; justify-content: center; gap: .5rem; }
+  .pace {
+    font-family: "Barlow Semi Condensed", sans-serif; font-weight: 700;
+    font-size: 4.25rem; line-height: .9; letter-spacing: -.015em;
+    font-variant-numeric: tabular-nums;
+  }
+  .per { color: var(--faint); font-size: .875rem; letter-spacing: .04em; }
+  .verdict {
+    text-align: center; font-size: .9375rem; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--faint);
+  }
+
+  /* The band gauge. The whole design is about a band you are inside or outside, so that is made
+     spatial rather than numeric — a marker you can read in peripheral vision without focusing. */
+  .gauge { position: relative; height: 46px; }
+  .track {
+    position: absolute; inset: 18px 0 auto; height: 10px;
+    background: var(--raised); border-radius: 5px; overflow: hidden;
+  }
+  .zone { position: absolute; top: 0; bottom: 0; background: color-mix(in oklab, var(--on) 34%, transparent); }
+  .marker {
+    position: absolute; top: 8px; width: 3px; height: 30px; border-radius: 2px;
+    background: var(--text); transition: left .35s cubic-bezier(.3,.7,.3,1), background .2s;
+    transform: translateX(-1.5px);
+  }
+  .gauge .ends {
+    position: absolute; top: 32px; left: 0; right: 0;
+    display: flex; justify-content: space-between;
+    font-size: .6875rem; color: var(--faint); letter-spacing: .05em;
+  }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+          padding: .55rem .5rem; text-align: center; }
+  .tile .k { font-size: .625rem; text-transform: uppercase; letter-spacing: .07em;
+             color: var(--faint); }
+  .tile .v { font-family: "Barlow Semi Condensed", sans-serif; font-weight: 600;
+             font-size: 1.35rem; font-variant-numeric: tabular-nums; margin-top: .1rem; }
+
+  /* ---- preflight ---- */
+  .check { display: flex; align-items: flex-start; gap: .65rem; padding: .55rem 0;
+           border-bottom: 1px solid var(--line); }
+  .check:last-child { border-bottom: 0; }
+  .pip { width: 9px; height: 9px; border-radius: 50%; background: var(--faint);
+         margin-top: .45rem; flex: none; }
+  .pip.pass { background: var(--on); }
+  .pip.fail { background: var(--stop); }
+  .pip.warn { background: var(--fast); }
+  .check .body { flex: 1; min-width: 0; }
+  .check .name { font-size: .875rem; font-weight: 500; }
+  .check .detail { font-size: .8125rem; color: var(--dim); margin-top: .1rem; }
+
+  .note { border-left: 2px solid var(--line); padding-left: .85rem;
+          color: var(--dim); font-size: .8125rem; }
+  .note strong { color: var(--text); font-weight: 600; }
+
+  #log { font-size: .8125rem; max-height: 11rem; overflow-y: auto;
+         border: 1px solid var(--line); border-radius: 10px; }
+  #log div { padding: .4rem .65rem; border-bottom: 1px solid var(--line);
+             display: flex; gap: .6rem; }
+  #log div:last-child { border-bottom: 0; }
+  #log .t { color: var(--faint); font-variant-numeric: tabular-nums; flex: none;
+            font-family: "Barlow Semi Condensed", monospace; }
+
+  .legend { display: grid; grid-template-columns: auto 1fr; gap: .4rem .75rem;
+            font-size: .8125rem; color: var(--dim); align-items: center; }
+  .legend b { color: var(--text); font-weight: 500; white-space: nowrap; }
+
+  .hide { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marker { transition: none; }
+  }
+</style>
+
+<main>
+  <header>
+    <h1>Band</h1>
+    <div class="tagline">Pace in your ears. Silence means you're inside it.</div>
+  </header>
+
+  <section>
+    <h2>Before you go</h2>
+    <div class="instrument" style="padding:.35rem 1rem">
+      <div id="checks"></div>
+    </div>
+    <div class="row" style="margin-top:.65rem">
+      <button id="preflight">Run all checks</button>
+      <button id="hear">Hear the five tones</button>
+    </div>
+    <p class="note" style="margin-top:.75rem">
+      <strong>Start Apple Music first, then run the checks.</strong> Safari can't ask iOS to mix with
+      other audio the way a real app can, so your music may duck or pause when a tone plays. Thirty
+      seconds standing still tells you which — better than finding out at minute twelve.
+    </p>
+  </section>
+
+  <section>
+    <h2>Mode</h2>
+    <div class="seg" role="group">
+      <button id="m-coach" aria-pressed="true">Pace coach</button>
+      <button id="m-intervals" aria-pressed="false">Run / walk</button>
+      <button id="m-rehearse" aria-pressed="false">Rehearse</button>
+    </div>
+    <p class="note" id="modenote" style="margin-top:.7rem"></p>
+  </section>
+
+  <section id="cfg-coach">
+    <h2>Target</h2>
+    <div class="row">
+      <label>pace <input id="target" type="text" inputmode="numeric" value="9:00"></label>
+      <label>± <input id="tol" type="number" min="2" max="20" step="1" value="8"
+                      style="width:3.6rem"> %</label>
+    </div>
+    <label style="margin-top:.7rem">
+      <input type="checkbox" id="ceiling" checked>
+      Easy run — never tell me to speed up
+    </label>
+    <p class="note" id="bandtext" style="margin-top:.7rem"></p>
+  </section>
+
+  <section id="cfg-intervals" class="hide">
+    <h2>Intervals</h2>
+    <div class="row">
+      <label>run <input id="runmin" type="number" min="0.5" max="20" step="0.5" value="1"
+                       style="width:3.6rem"> min</label>
+      <label>walk <input id="walkmin" type="number" min="0.5" max="20" step="0.5" value="2"
+                        style="width:3.6rem"> min</label>
+      <label>× <input id="reps" type="number" min="1" max="40" step="1" value="8"
+                      style="width:3.6rem"></label>
+    </div>
+    <p class="note" style="margin-top:.7rem">
+      No GPS needed, so this works even if location is blocked. It's also the session week 1 of your
+      plan actually prescribes.
+    </p>
+  </section>
+
+  <button id="go" class="go">Start</button>
+
+  <section>
+    <div class="instrument">
+      <div class="readout">
+        <span class="pace" id="pace">—:——</span>
+        <span class="per" id="perlabel">/ KM</span>
+      </div>
+      <div class="verdict" id="verdict">not started</div>
+      <div class="gauge" id="gauge">
+        <div class="track"><div class="zone" id="zone"></div></div>
+        <div class="marker" id="marker" style="left:50%"></div>
+        <div class="ends"><span id="endfast">faster</span><span id="endslow">slower</span></div>
+      </div>
+    </div>
+    <div class="tiles" style="margin-top:.5rem">
+      <div class="tile"><div class="k">Elapsed</div><div class="v" id="elapsed">0:00</div></div>
+      <div class="tile"><div class="k">Distance</div><div class="v" id="dist">0.00</div></div>
+      <div class="tile"><div class="k">GPS ±</div><div class="v" id="acc">—</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What you'll hear</h2>
+    <div class="legend">
+      <b>Two notes falling</b><span>Ease off — faster than the band</span>
+      <b>Two notes rising</b><span>Lift — slower than the band</span>
+      <b>One note</b><span>Back on pace</span>
+      <b>Three rising</b><span>The voice is about to speak</span>
+      <b>Two low thuds</b><span>Signal lost, guidance degraded</span>
+      <b>Silence</b><span>You're inside the band</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Session log</h2>
+    <div id="log"></div>
+    <div class="row" style="margin-top:.65rem">
+      <button id="copy" disabled>Copy session data</button>
+    </div>
+    <p class="note" style="margin-top:.7rem">
+      Downloads are blocked in this frame, so the session copies to your clipboard instead. Paste it
+      back into the chat and it imports with <code>cli import</code>.
+    </p>
+  </section>
+</main>
+
+<script type="module">
+// =================================================================================================
+// Pace band monitor — third port of marathon_engine/audio.py, after the Swift one.
+//
+// Inlined here rather than imported because an artifact is a single file. It is byte-for-byte the
+// logic in tools/pace-monitor.js, which is checked against the same golden vectors as the Python
+// original and the Swift port: three implementations, eight full-session traces, agreeing tone for
+// tone. Every constant below is a defect fix with its reasoning in audio.py; none is arbitrary.
+// =================================================================================================
+
+const Earcon = { EASE:'ease', LIFT:'lift', IN_BAND:'in_band', ATTEND:'attend', DEGRADED:'degraded' };
+
+const Tuning = {
+  toneMinGapS: 15, overlapFloorS: 2,
+  marginalMultiple: 1.2, marginalGapS: 60,
+  mildGapS: 30, largeGapS: 15, mildMultiple: 1.5,
+  returnFraction: 0.6, acquireGraceS: 180,
+  maxUnacquiredNudges: 2, reminderBackoffMax: 8,
+  smoothingS: 20, minSamples: 8,
+};
+
+const minettiCost = i => 155.4*i**5 - 30.4*i**4 - 43.3*i**3 + 46.3*i*i + 19.5*i + 3.6;
+const gradeFactor = g => minettiCost(g) / minettiCost(0);
+
+class PaceBandMonitor {
+  constructor({ targetPaceSecKm, tolerance = 0.06, ceilingOnly = false }) {
+    Object.assign(this, { targetPaceSecKm, tolerance, ceilingOnly });
+    this.state = 'unknown'; this.acquired = false;
+    this.window = []; this.lastToneT = null; this.pendingAck = false;
+    this.slowSince = null; this.unacquiredNudges = 0; this.consecutiveReminders = 0;
+  }
+
+  update(tS, paceSecKm, { grade = 0, paceTrusted = true, running = true } = {}) {
+    if (this.targetPaceSecKm == null || !running) { this.window = []; return null; }
+    if (!paceTrusted || paceSecKm == null || paceSecKm <= 0) {
+      this.window = [];
+      if (this.state !== 'unknown') {
+        this.state = 'unknown';
+        return this._emit(Earcon.DEGRADED, tS, 0, 'pace untrusted');
+      }
+      return null;
+    }
+    this.window.push([tS, paceSecKm]);
+    this.window = this.window.filter(([t]) => t >= tS - Tuning.smoothingS);
+    if (this.window.length < Tuning.minSamples) return null;
+    const mean = this.window.reduce((a, [, p]) => a + p, 0) / this.window.length;
+    const adjusted = this.targetPaceSecKm * gradeFactor(grade);
+    return this._decide(tS, (mean - adjusted) / adjusted);
+  }
+
+  _decide(tS, error) {
+    const mag = Math.abs(error);
+    const out = this.state === 'fast' || this.state === 'slow';
+    if (mag <= (out ? this.tolerance * Tuning.returnFraction : this.tolerance)) {
+      this.state = 'in'; this.acquired = true; this.slowSince = null;
+      this.consecutiveReminders = 0;
+      if (out && this.pendingAck) {
+        this.pendingAck = false;
+        return this._emit(Earcon.IN_BAND, tS, error, 'back in the band');
+      }
+      this.pendingAck = false;
+      return null;
+    }
+
+    const side = error > 0 ? 'slow' : 'fast';
+    if (side === 'slow' && this.ceilingOnly) {
+      this.state = 'in'; this.slowSince = null; return null;
+    }
+    const changedSide = side !== this.state;
+    this.state = side;
+
+    if (side === 'slow') {
+      if (this.slowSince == null) this.slowSince = tS;
+      if (!this.acquired) {
+        if (tS - this.slowSince < Tuning.acquireGraceS) return null;
+        if (this.unacquiredNudges >= Tuning.maxUnacquiredNudges) return null;
+      }
+    } else this.slowSince = null;
+
+    if (changedSide) {
+      this.consecutiveReminders = 0;
+      return this._emit(this._tone(side), tS, error, 'crossed to the other side');
+    }
+    if (this.lastToneT == null) {
+      return this._emit(this._tone(side), tS, error, 'left the band');
+    }
+
+    let gap = mag > this.tolerance * Tuning.mildMultiple ? Tuning.largeGapS
+            : mag > this.tolerance * Tuning.marginalMultiple ? Tuning.mildGapS
+            : Tuning.marginalGapS;
+    // Each unheeded reminder doubles the wait. Simulation of a runner a third too fast and holding
+    // it produced thirty tones in seven minutes at a fixed interval — the same nagging failure the
+    // three-tier ladder prevents, reached from the other direction.
+    gap *= Math.min(Tuning.reminderBackoffMax, 2 ** Math.max(0, this.consecutiveReminders - 1));
+    if (tS - this.lastToneT >= gap) {
+      return this._emit(this._tone(side), tS, error, 'still out of the band');
+    }
+    return null;
+  }
+
+  _tone(side) { return side === 'fast' ? Earcon.EASE : Earcon.LIFT; }
+
+  _emit(earcon, tS, error, reason) {
+    const floor = (earcon === Earcon.IN_BAND || earcon === Earcon.DEGRADED)
+      ? Tuning.overlapFloorS : Tuning.toneMinGapS;
+    if (this.lastToneT != null && tS - this.lastToneT < floor) return null;
+    this.lastToneT = tS;
+    if (earcon === Earcon.EASE || earcon === Earcon.LIFT) {
+      this.pendingAck = true;
+      this.consecutiveReminders += 1;
+      if (earcon === Earcon.LIFT && !this.acquired) this.unacquiredNudges += 1;
+    }
+    return { earcon, tS, error, reason };
+  }
+}
+
+class SplitAnnouncer {
+  constructor(everyM = 1000) { this.everyM = everyM; this.lastM = 0; }
+  update(distanceM, paceSecKm, state) {
+    if (distanceM - this.lastM < this.everyM) return null;
+    this.lastM += this.everyM;
+    const km = this.lastM / 1000;
+    const parts = [km === Math.round(km) ? `${km}K` : `${km.toFixed(1)}K`];
+    if (paceSecKm) parts.push(fmtPace(paceSecKm));
+    parts.push({ in:'on pace', fast:'easing', slow:'lift', unknown:'no pace signal' }[state] || '');
+    return parts.filter(Boolean).join('. ') + '.';
+  }
+}
+
+function fmtPace(sec) {
+  if (!sec || !isFinite(sec)) return '—:——';
+  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+  return s === 60 ? `${m + 1}:00` : `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// =================================================================================================
+// Audio — same pitches, durations and envelope as the iOS EarconPlayer, so what you learn here
+// transfers unchanged if the app is ever built.
+// =================================================================================================
+
+const P = { low: 587.33, mid: 740.0, high: 880.0 };
+const PIP = 0.09, GAP = 0.055, FADE = 0.008;
+const RECIPES = {
+  ease:     [[P.high, PIP], [0, GAP], [P.low, PIP]],
+  lift:     [[P.low, PIP], [0, GAP], [P.high, PIP]],
+  in_band:  [[P.mid, PIP * 1.3]],
+  attend:   [[P.low, PIP*.6], [0, GAP*.7], [P.mid, PIP*.6], [0, GAP*.7], [P.high, PIP*.6]],
+  degraded: [[220, PIP*1.2], [0, GAP], [220, PIP*1.2]],
+};
+
+let ctx = null;
+function audio() {
+  // Created lazily inside a user gesture. iOS refuses to start an AudioContext otherwise, and one
+  // created at load time is born suspended and never recovers on its own.
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+
+function play(earcon, gain = 0.5) {
+  const c = audio();
+  let t = c.currentTime + 0.02;
+  for (const [freq, dur] of RECIPES[earcon] || []) {
+    if (freq > 0) {
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      // Without an envelope a raw burst clicks at both ends, and the click is louder and more
+      // startling than the tone it wraps.
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + FADE);
+      g.gain.setValueAtTime(gain, t + dur - FADE);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g).connect(c.destination);
+      osc.start(t); osc.stop(t + dur + 0.01);
+    }
+    t += dur;
+  }
+}
+
+function say(text) {
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.08;
+  speechSynthesis.speak(u);
+}
+
+// =================================================================================================
+// State
+// =================================================================================================
+
+const $ = id => document.getElementById(id);
+const MAX_ACCURACY_M = 25, MAX_SPEED_MS = 8;
+
+const S = {
+  mode: 'coach', running: false, startedAt: 0, distanceM: 0,
+  lastFix: null, speed: null, accuracy: null,
+  monitor: null, splits: null, samples: [], tones: 0,
+  watchId: null, tickId: null, wakeLock: null,
+  ivPhase: null, ivRep: 0, ivUntil: 0,
+  simT: 0,
+};
+
+function log(msg, cls) {
+  const d = document.createElement('div');
+  const t = S.startedAt ? Math.round((Date.now() - S.startedAt) / 1000) : 0;
+  const span = document.createElement('span');
+  span.className = 't';
+  span.textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
+  const body = document.createElement('span');
+  body.textContent = msg;
+  if (cls) body.style.color = `var(--${cls})`;
+  d.append(span, body);
+  $('log').prepend(d);
+}
+
+// =================================================================================================
+// Preflight — actually exercises each capability rather than sniffing for it
+// =================================================================================================
+
+const CHECKS = [
+  { id: 'audio', name: 'Sound',
+    hint: 'A tone must actually reach your AirPods.' },
+  { id: 'voice', name: 'Voice',
+    hint: 'The kilometre splits are spoken.' },
+  { id: 'gps', name: 'Location',
+    hint: 'Pace comes from GPS. Blocked here means run/walk mode instead.' },
+  { id: 'wake', name: 'Screen stays on',
+    hint: 'iOS suspends background tabs; coaching stops if the screen locks.' },
+];
+
+function renderChecks() {
+  $('checks').replaceChildren(...CHECKS.map(c => {
+    const row = document.createElement('div'); row.className = 'check';
+    const pip = document.createElement('div'); pip.className = 'pip'; pip.id = `pip-${c.id}`;
+    const body = document.createElement('div'); body.className = 'body';
+    const name = document.createElement('div'); name.className = 'name'; name.textContent = c.name;
+    const detail = document.createElement('div');
+    detail.className = 'detail'; detail.id = `det-${c.id}`; detail.textContent = c.hint;
+    body.append(name, detail); row.append(pip, body);
+    return row;
+  }));
+}
+renderChecks();
+
+function mark(id, status, detail) {
+  $(`pip-${id}`).className = `pip ${status}`;
+  $(`det-${id}`).textContent = detail;
+}
+
+$('preflight').onclick = async () => {
+  const c = audio();
+  mark('audio', c.state === 'running' ? 'pass' : 'warn',
+       c.state === 'running' ? 'Audio running. Listen for the tone now.'
+                             : `Audio context is "${c.state}" — tap again.`);
+  play('in_band');
+
+  if ('speechSynthesis' in window) {
+    let spoke = false;
+    const u = new SpeechSynthesisUtterance('Voice check. On pace.');
+    u.rate = 1.08;
+    u.onstart = () => { spoke = true; mark('voice', 'pass', 'Speaking now.'); };
+    u.onerror = e => mark('voice', 'fail', `Speech failed: ${e.error}`);
+    setTimeout(() => { if (!spoke) mark('voice', 'warn', 'No start event — turn the volume up.'); },
+               2500);
+    setTimeout(() => speechSynthesis.speak(u), 1400);
+  } else {
+    mark('voice', 'fail', 'This browser has no speech synthesis.');
+  }
+
+  mark('gps', 'warn', 'Asking for permission…');
+  if (!navigator.geolocation) {
+    mark('gps', 'fail', 'No geolocation in this browser. Use run/walk mode.');
+  } else {
+    navigator.geolocation.getCurrentPosition(
+      p => mark('gps', p.coords.accuracy <= MAX_ACCURACY_M ? 'pass' : 'warn',
+                `Fix to ±${p.coords.accuracy.toFixed(0)} m`
+                + (p.coords.accuracy > MAX_ACCURACY_M
+                   ? ' — too loose to coach from yet. Step outside and retry.'
+                   : '. Good enough to coach from.')),
+      e => mark('gps', 'fail',
+                `${e.message}. If this frame blocks location, use run/walk mode — it needs none.`),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+  }
+
+  if ('wakeLock' in navigator) {
+    try {
+      const wl = await navigator.wakeLock.request('screen');
+      mark('wake', 'pass', 'Granted. The screen will stay on while a session runs.');
+      await wl.release();
+    } catch (e) {
+      mark('wake', 'warn', `Denied (${e.name}). Set Auto-Lock to Never in Settings → Display.`);
+    }
+  } else {
+    mark('wake', 'warn', 'Not supported. Set Auto-Lock to Never in Settings → Display.');
+  }
+};
+
+$('hear').onclick = () => {
+  audio();
+  const order = [['ease','ease off'], ['lift','lift'], ['in_band','back on pace'],
+                 ['attend','voice incoming'], ['degraded','signal lost']];
+  order.forEach(([e, name], i) => setTimeout(() => { play(e); log(name, 'dim'); }, i * 1100));
+};
+
+// =================================================================================================
+// Mode
+// =================================================================================================
+
+const MODE_NOTES = {
+  coach: 'GPS pace, tones and spoken splits. Needs location and a clear view of the sky.',
+  intervals: 'Spoken run and walk commands on a timer. No GPS, no permissions — it always works.',
+  rehearse: 'A scripted 30-minute run replayed in 90 seconds, through the real tones and the real '
+          + 'voice. The full test, indoors, standing still.',
+};
+
+function setMode(m) {
+  if (S.running) return;
+  S.mode = m;
+  for (const k of ['coach', 'intervals', 'rehearse']) {
+    $(`m-${k}`).setAttribute('aria-pressed', String(k === m));
+  }
+  $('cfg-coach').classList.toggle('hide', m === 'intervals');
+  $('cfg-intervals').classList.toggle('hide', m !== 'intervals');
+  $('modenote').textContent = MODE_NOTES[m];
+  $('perlabel').textContent = m === 'intervals' ? '' : '/ KM';
+  $('gauge').classList.toggle('hide', m === 'intervals');
+}
+['coach','intervals','rehearse'].forEach(k => { $(`m-${k}`).onclick = () => setMode(k); });
+setMode('coach');
+
+// =================================================================================================
+// Config
+// =================================================================================================
+
+function parsePace(text) {
+  const m = String(text).trim().match(/^(\d+):(\d{1,2})$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  const n = Number(text);
+  return Number.isFinite(n) && n > 60 ? n : null;
+}
+
+function refreshBand() {
+  const target = parsePace($('target').value);
+  const tol = Number($('tol').value) / 100;
+  if (!target) { $('bandtext').textContent = 'Enter a pace like 9:00.'; return; }
+  $('bandtext').textContent =
+    `Band ${fmtPace(target * (1 - tol))} to ${fmtPace(target * (1 + tol))} per kilometre`
+    + ($('ceiling').checked ? '. Only the fast edge is enforced.' : '.');
+  $('endfast').textContent = fmtPace(target * (1 - tol * 2.2));
+  $('endslow').textContent = fmtPace(target * (1 + tol * 2.2));
+  const zone = $('zone');
+  zone.style.left = `${(1 - 1/2.2) / 2 * 100}%`;
+  zone.style.width = `${(1/2.2) * 100}%`;
+}
+['target','tol','ceiling'].forEach(id => $(id).addEventListener('input', refreshBand));
+refreshBand();
+
+function setMarker(pace) {
+  const target = parsePace($('target').value);
+  const tol = Number($('tol').value) / 100;
+  if (!target || !pace) { $('marker').style.left = '50%'; return; }
+  const span = target * tol * 2.2;
+  const frac = Math.max(0, Math.min(1, (pace - (target - span)) / (2 * span)));
+  $('marker').style.left = `${frac * 100}%`;
+  const st = S.monitor ? S.monitor.state : 'unknown';
+  $('marker').style.background =
+    st === 'in' ? 'var(--on)' : st === 'fast' ? 'var(--fast)'
+    : st === 'slow' ? 'var(--slow)' : 'var(--faint)';
+}
+
+function showVerdict(state, trusted) {
+  const map = { in:['on pace','on'], fast:['ease off','fast'], slow:['lift','slow'],
+                unknown:['no pace signal','stop'] };
+  const [text, tone] = trusted ? (map[state] || ['—','faint']) : ['no pace signal','stop'];
+  $('verdict').textContent = text;
+  $('verdict').style.color = `var(--${tone})`;
+}
+
+// =================================================================================================
+// GPS
+// =================================================================================================
+
+function haversine(a, b) {
+  const R = 6371000, rad = d => d * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  const s = Math.sin(dLat/2)**2
+          + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+function onFix(pos) {
+  const { latitude: lat, longitude: lon, accuracy, speed } = pos.coords;
+  S.accuracy = accuracy;
+  $('acc').textContent = accuracy == null ? '—' : `${accuracy.toFixed(0)}`;
+  const fix = { lat, lon, t: pos.timestamp / 1000 };
+  if (accuracy != null && accuracy > MAX_ACCURACY_M) { S.lastFix = fix; return; }
+
+  // iOS supplies a Doppler speed, which beats differencing positions. Fall back to positions only
+  // when it is absent, and reject anything a person cannot produce either way.
+  let v = (speed != null && speed >= 0) ? speed : null;
+  if (v == null && S.lastFix) {
+    const dt = fix.t - S.lastFix.t;
+    if (dt > 0.5) v = haversine(S.lastFix, fix) / dt;
+  }
+  if (v != null && v <= MAX_SPEED_MS) {
+    S.speed = v;
+    if (S.running && S.lastFix) {
+      const dt = fix.t - S.lastFix.t;
+      if (dt > 0 && dt < 10) S.distanceM += v * dt;
+    }
+  }
+  S.lastFix = fix;
+}
+
+// =================================================================================================
+// The loop
+// =================================================================================================
+
+function tickCoach(t, pace, trusted) {
+  S.samples.push({ t_s: t, speed_m_s: S.speed, accuracy_m: S.accuracy });
+  const ev = S.monitor.update(t, pace, { paceTrusted: trusted });
+  if (ev) { play(ev.earcon); S.tones++; log(ev.earcon.replace('_',' '),
+      ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast'); }
+  const line = S.splits.update(S.distanceM, pace, S.monitor.state);
+  if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
+}
+
+function tickIntervals(t) {
+  if (t < S.ivUntil) return;
+  const runS = Number($('runmin').value) * 60, walkS = Number($('walkmin').value) * 60;
+  const reps = Number($('reps').value);
+
+  if (S.ivPhase === null) {
+    S.ivPhase = 'run'; S.ivRep = 1; S.ivUntil = t + runS;
+  } else if (S.ivPhase === 'run') {
+    if (S.ivRep >= reps) { finish('Session complete.'); return; }
+    S.ivPhase = 'walk'; S.ivUntil = t + walkS;
+  } else {
+    S.ivPhase = 'run'; S.ivRep += 1; S.ivUntil = t + runS;
+  }
+
+  const word = S.ivPhase === 'run' ? 'Run' : 'Walk';
+  play('attend');
+  setTimeout(() => say(`${word}. ${S.ivPhase === 'run' ? `Interval ${S.ivRep} of ${reps}` : ''}`),
+             420);
+  log(`${word} — ${S.ivPhase === 'run' ? `rep ${S.ivRep}/${reps}` : 'recover'}`,
+      S.ivPhase === 'run' ? 'fast' : 'on');
+  $('pace').textContent = word.toUpperCase();
+  $('verdict').textContent = S.ivPhase === 'run' ? `rep ${S.ivRep} of ${reps}` : 'recover';
+  $('verdict').style.color = `var(--${S.ivPhase === 'run' ? 'fast' : 'on'})`;
+}
+
+// A scripted 30-minute run, replayed at 20x. Deliberately the pattern your own file showed: out far
+// too fast, a long correction, then steady with drift.
+function scriptedPace(t) {
+  const target = parsePace($('target').value) || 540;
+  if (t < 420) return target * 0.72;
+  if (t < 600) return target * 0.90;
+  if (t < 1500) return target * (1 + 0.02 * Math.sin(t / 90));
+  return target * 1.06;
+}
+
+function tickRehearse() {
+  const target = parsePace($('target').value) || 540;
+  for (let k = 0; k < 20; k++) {           // 20 simulated seconds per real second
+    S.simT += 1;
+    if (S.simT > 1800) { finish('Rehearsal complete.'); return; }
+    const pace = scriptedPace(S.simT);
+    S.distanceM += 1000 / pace;
+    const ev = S.monitor.update(S.simT, pace);
+    if (ev) { play(ev.earcon); S.tones++;
+      log(`${Math.floor(S.simT/60)}:${String(S.simT%60).padStart(2,'0')} — ${ev.earcon.replace('_',' ')}`,
+          ev.earcon === 'in_band' ? 'on' : 'fast'); }
+    const line = S.splits.update(S.distanceM, pace, S.monitor.state);
+    if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
+    $('pace').textContent = fmtPace(pace);
+    setMarker(pace);
+    showVerdict(S.monitor.state, true);
+  }
+  $('elapsed').textContent = `${Math.floor(S.simT/60)}:${String(S.simT%60).padStart(2,'0')}`;
+  $('dist').textContent = (S.distanceM / 1000).toFixed(2);
+}
+
+function tick() {
+  if (!S.running) return;
+  if (S.mode === 'rehearse') return tickRehearse();
+
+  const t = Math.round((Date.now() - S.startedAt) / 1000);
+  $('elapsed').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
+  $('dist').textContent = (S.distanceM / 1000).toFixed(2);
+
+  if (S.mode === 'intervals') return tickIntervals(t);
+
+  const trusted = S.accuracy != null && S.accuracy <= MAX_ACCURACY_M;
+  const pace = (S.speed && S.speed > 0.4) ? 1000 / S.speed : null;
+  $('pace').textContent = fmtPace(pace);
+  setMarker(pace);
+  tickCoach(t, pace, trusted);
+  showVerdict(S.monitor.state, trusted);
+}
+
+// =================================================================================================
+// Lifecycle
+// =================================================================================================
+
+async function keepAwake(on) {
+  try {
+    if (on && 'wakeLock' in navigator) S.wakeLock = await navigator.wakeLock.request('screen');
+    else if (S.wakeLock) { await S.wakeLock.release(); S.wakeLock = null; }
+  } catch { /* the session still runs; the screen may just sleep */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.running && S.mode !== 'rehearse') {
+    log('backgrounded — iOS pauses this', 'stop');
+  } else if (!document.hidden && S.running && !S.wakeLock) keepAwake(true);
+});
+
+$('go').onclick = () => {
+  if (S.running) return finish('Stopped.');
+
+  const target = parsePace($('target').value);
+  if (S.mode !== 'intervals' && !target) {
+    log('Enter a target pace like 9:00 first.', 'stop'); return;
+  }
+  audio();                                  // must be inside the tap or iOS blocks sound later
+
+  S.monitor = new PaceBandMonitor({
+    targetPaceSecKm: target || 540,
+    tolerance: Number($('tol').value) / 100,
+    ceilingOnly: $('ceiling').checked,
+  });
+  S.splits = new SplitAnnouncer(1000);
+  Object.assign(S, { running: true, startedAt: Date.now(), distanceM: 0, samples: [],
+                     tones: 0, lastFix: null, speed: null, accuracy: null,
+                     ivPhase: null, ivRep: 0, ivUntil: 0, simT: 0 });
+  $('log').replaceChildren();
+
+  if (S.mode === 'coach' && navigator.geolocation) {
+    S.watchId = navigator.geolocation.watchPosition(onFix,
+      e => log(`GPS: ${e.message}`, 'stop'),
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+  }
+  S.tickId = setInterval(tick, 1000);
+  if (S.mode !== 'rehearse') keepAwake(true);
+
+  $('go').textContent = 'Stop';
+  $('go').classList.add('stop');
+  $('copy').disabled = true;
+  log(S.mode === 'rehearse' ? 'Rehearsal started — 30 minutes in 90 seconds.' : 'Started.', 'on');
+  play('in_band');
+};
+
+function finish(msg) {
+  S.running = false;
+  clearInterval(S.tickId);
+  if (S.watchId != null) { navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
+  keepAwake(false);
+  $('go').textContent = 'Start';
+  $('go').classList.remove('stop');
+  $('copy').disabled = S.samples.length === 0;
+  const mins = Math.max(1, S.samples.length) / 60;
+  log(`${msg} ${(S.distanceM/1000).toFixed(2)} km, ${S.tones} tones `
+      + `(${(S.tones/mins).toFixed(2)}/min).`, 'on');
+  $('verdict').textContent = 'stopped';
+  $('verdict').style.color = 'var(--faint)';
+}
+
+$('copy').onclick = async () => {
+  // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own
+  // schema. Heart rate is absent and left absent rather than faked — Safari has no Bluetooth.
+  const payload = {
+    schema_version: 1,
+    started_at: new Date(S.startedAt).toISOString(),
+    age: 30, hr_rest: 55,
+    samples: S.samples.map(s => ({
+      t_s: s.t_s, hr_bpm: null,
+      speed_m_s: s.speed_m_s == null ? null : Math.round(s.speed_m_s * 1e4) / 1e4,
+      label: '',
+    })),
+    resting_ppi_ms: [], surface: 'road', strap_position: 'upper_arm',
+    notes: 'Recorded by the Band pace coach in Safari. GPS only, no heart rate.',
+  };
+  const text = JSON.stringify(payload);
+  try {
+    await navigator.clipboard.writeText(text);
+    log(`Copied ${S.samples.length} samples. Paste it into the chat.`, 'on');
+  } catch {
+    log('Clipboard blocked. Screenshot the summary instead.', 'stop');
+  }
+};
+</script>
