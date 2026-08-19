@@ -475,22 +475,33 @@ async function pickDay(page, kind) {
   await ctx.grantPermissions(['geolocation']);
   const START = { latitude: 42.3505, longitude: -71.1054 };
 
-  /** Walk south at `speedMS` for `seconds`, one fix a second, and collect what was played. */
+  // The runner's position persists ACROSS segments. Resetting it to the start each time teleported
+  // him a hundred metres backwards between changes of pace, and the track correctly refused the
+  // jump — the same protection that stops a GPS glitch inventing distance. The harness was fighting
+  // the app's own safeguard and losing, which read as the coaching being broken.
+  let lat = START.latitude;
+  await ctx.setGeolocation({ ...START, accuracy: 5 });
+
+  /** Continue south at `speedMS` for `seconds`, one fix a second. Returns only what is NEW. */
   async function runAt(speedMS, seconds) {
-    let lat = START.latitude;
-    await ctx.setGeolocation({ ...START, accuracy: 5 });
+    // Only lines logged during THIS segment count. The log accumulates, so asking "was there an
+    // ease-off" over the whole run would keep answering yes for the rest of the session.
+    const before = (await page.$$eval('#log div', ds => ds.length));
     await page.evaluate(() => { window.__plays.length = 0; });
     for (let i = 0; i < seconds; i++) {
       lat -= speedMS / 111320;
       await ctx.setGeolocation({ latitude: lat, longitude: START.longitude, accuracy: 5 });
       await page.waitForTimeout(1000);
     }
-    const log = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+    const all = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+    const fresh = all.slice(0, Math.max(0, all.length - before));   // newest first
     return {
       plays: (await page.evaluate(() => window.__plays)).length,
-      eased: log.some(l => /ease/.test(l)),
-      lifted: log.some(l => /lift/.test(l)),
-      inBand: log.some(l => /in band/.test(l)),
+      eased: fresh.some(l => /ease/.test(l)),
+      lifted: fresh.some(l => /lift/.test(l)),
+      inBand: fresh.some(l => /in band/.test(l)),
+      degraded: fresh.some(l => /degraded|untrusted|rejected/.test(l)),
+      log: fresh,
       shown: await page.textContent('#pacetile'),
     };
   }
@@ -524,7 +535,8 @@ async function pickDay(page, kind) {
   // 3. Too slow, now that the pace has been acquired.
   const slow = await runAt(2.2, 45);
   assert.ok(slow.lifted,
-    `30% under an acquired target must produce a lift cue when both edges are enforced`);
+    `30% under an acquired target must produce a lift cue when both edges are enforced. `
+    + `Log for that segment: ${JSON.stringify(slow.log.slice(0, 6))}`);
   await page.click('#go');
   await page.waitForTimeout(200);
   console.log(`  ok  the loop closes: too fast says ease, on target acknowledges, too slow says lift `
