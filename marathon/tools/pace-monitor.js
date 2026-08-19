@@ -189,14 +189,32 @@ export class SplitAnnouncer {
     this.nameSplit = nameSplit;
     this.lastSplitM = 0;
     this.lastSplitT = 0;
+    this.lastSplitAt = 0;
     this.n = 0;
   }
 
   update(tS, distanceM, paceSecKm, state) {
     let due = false;
+    // What gets spoken. For a distance split it is the split's own average; see below.
+    let reported = paceSecKm;
+
     if (this.everyM && distanceM - this.lastSplitM >= this.everyM) {
       this.lastSplitM += this.everyM;
       this.n += 1;
+      // A split is how long that mile took — not the pace at the instant the odometer turned over.
+      //
+      // It was the instantaneous pace, which is a different number wearing the same name. Every
+      // watch, every race clock and every runner means the average when they say "mile three", and
+      // the instantaneous value is far noisier: a momentary surge or a GPS wobble at the wrong
+      // second becomes the mile you remember running. This is also the only number of the run the
+      // athlete hears rather than sees, so it is the one that has to mean what it says.
+      //
+      // Gated on there being a live pace at all: a null `paceSecKm` is the caller saying the pace
+      // channel is degraded, and a distance accumulated while it was degraded is not a distance
+      // worth dividing by. Better to say "no pace signal" and leave the number out.
+      const dt = tS - this.lastSplitAt;
+      if (paceSecKm != null && dt > 0) reported = dt / (this.everyM / 1000);
+      this.lastSplitAt = tS;
       due = true;
     }
     if (this.everyS && tS - this.lastSplitT >= this.everyS) {
@@ -207,7 +225,7 @@ export class SplitAnnouncer {
 
     const parts = [];
     if (this.everyM) parts.push(this.nameSplit(this.n));
-    if (paceSecKm) parts.push(this.formatPace(paceSecKm));
+    if (reported) parts.push(this.formatPace(reported));
     parts.push({ in: 'on pace', fast: 'easing', slow: 'lift',
                  unknown: 'no pace signal' }[state] || '');
     return parts.filter(Boolean).join('. ') + '.';

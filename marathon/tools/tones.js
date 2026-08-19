@@ -37,8 +37,15 @@ export const RECIPES = {
   degraded: [[220.0, PIP * 1.2], [0, GAP], [220.0, PIP * 1.2]],
 };
 
-/** Render `[frequency, seconds]` segments to mono float samples. Frequency 0 is silence. */
-export function renderSamples(segments, rate = RATE) {
+/**
+ * Render `[frequency, seconds]` segments to mono float samples. Frequency 0 is silence.
+ *
+ * `amplitude` is here rather than on the audio element because iOS ignores `HTMLMediaElement.volume`
+ * entirely — assigning it is silently a no-op, and the volume slider would appear to work while
+ * changing nothing. Baking the gain into the samples is the only way to have a volume control on the
+ * one platform this actually ships to.
+ */
+export function renderSamples(segments, rate = RATE, amplitude = 1) {
   const total = segments.reduce((a, [, d]) => a + d, 0);
   const out = new Float32Array(Math.max(1, Math.round(total * rate)));
   let index = 0;
@@ -52,7 +59,7 @@ export function renderSamples(segments, rate = RATE) {
       let env = 1;
       if (i < fade) env = 0.5 * (1 - Math.cos(Math.PI * i / fade));
       else if (i > n - fade) env = 0.5 * (1 - Math.cos(Math.PI * (n - i) / fade));
-      out[index + i] = Math.sin(2 * Math.PI * freq * i / rate) * env;
+      out[index + i] = Math.sin(2 * Math.PI * freq * i / rate) * env * amplitude;
     }
     index += n;
   }
@@ -86,12 +93,15 @@ export function wavBytes(samples, rate = RATE) {
   return new Uint8Array(buf);
 }
 
-export function wavDataUri(segments, rate = RATE) {
-  const bytes = wavBytes(renderSamples(segments, rate), rate);
+export function wavDataUri(segments, rate = RATE, amplitude = 1) {
+  const bytes = wavBytes(renderSamples(segments, rate, amplitude), rate);
   let bin = '';
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
   return 'data:audio/wav;base64,' + btoa(bin);
 }
+
+/// A short run of true silence, used to unlock the elements. See `unlock`.
+export const SILENCE = [[0, 0.05]];
 
 /**
  * Plays the vocabulary through the media path.
@@ -104,42 +114,83 @@ export class Tones {
     this.volume = volume;
     this.pool = {};
     this.unlocked = false;
+    this.unlocking = null;
     this.lastError = null;
-    for (const [name, recipe] of Object.entries(RECIPES)) {
-      const uri = wavDataUri(recipe);
-      this.pool[name] = [new Audio(uri), new Audio(uri)];
-      for (const a of this.pool[name]) { a.preload = 'auto'; a.volume = volume; }
-    }
     this.turn = {};
+
+    // Every element starts life holding silence, and only receives its real sound once a tap has
+    // unlocked it. See `unlock` for why that ordering matters.
+    const silent = wavDataUri(SILENCE);
+    for (const name of Object.keys(RECIPES)) {
+      this.pool[name] = [new Audio(silent), new Audio(silent)];
+      for (const a of this.pool[name]) a.preload = 'auto';
+    }
   }
 
+  /** Re-render every earcon at the current amplitude and swap it in. */
+  _load() {
+    for (const [name, recipe] of Object.entries(RECIPES)) {
+      const uri = wavDataUri(recipe, RATE, this.volume);
+      for (const a of this.pool[name]) a.src = uri;
+    }
+  }
+
+  /**
+   * Change how loud the earcons are.
+   *
+   * This re-renders rather than setting `element.volume`, because iOS ignores that property. The
+   * unlock survives the `src` swap — a media element's user-activation flag belongs to the element,
+   * not to what it currently holds, which is the same property the one-element-many-sounds sprite
+   * technique relies on.
+   */
   setVolume(v) {
     this.volume = v;
-    for (const list of Object.values(this.pool)) for (const a of list) a.volume = v;
+    if (this.unlocked) this._load();
   }
 
   /**
    * Must be called from inside a user gesture, once.
    *
    * iOS refuses to play media that no tap asked for, and the refusal is permanent for that element
-   * until a gesture arrives. Playing every element muted and immediately pausing marks them all as
+   * until a gesture arrives. Playing every element through and pausing it marks them all as
    * user-initiated, so a tone forty minutes later — which no tap asked for — is allowed.
+   *
+   * The elements hold genuine silence at this point rather than being muted. `muted` is the usual
+   * shortcut and it is the wrong one here: muted playback is permitted without user activation on
+   * iOS, so it is not clear that it sets the flag the later unmuted playback needs, and if it does
+   * not the failure is the exact one being fixed — the button appears to work and nothing is heard.
+   * A silent WAV is inaudible for a reason the platform cannot treat specially.
    */
   unlock() {
     if (this.unlocked) return Promise.resolve(true);
+    if (this.unlocking) return this.unlocking;
     const all = Object.values(this.pool).flat();
-    return Promise.all(all.map(a => {
-      a.muted = true;
+    return (this.unlocking = Promise.all(all.map(a => {
       const p = a.play();
       return (p && p.then ? p : Promise.resolve())
-        .then(() => { a.pause(); a.currentTime = 0; a.muted = false; })
-        .catch(e => { this.lastError = e; a.muted = false; });
-    })).then(() => { this.unlocked = true; return true; });
+        .then(() => { a.pause(); try { a.currentTime = 0; } catch { /* not seekable yet */ } })
+        .catch(e => { this.lastError = e; });
+    })).then(() => {
+      this.unlocked = true;
+      this._load();
+      return true;
+    }));
   }
 
   play(name) {
     const list = this.pool[name];
     if (!list) return Promise.resolve(false);
+    // Before the elements are unlocked they still hold silence, so playing one would succeed and be
+    // heard as nothing — indistinguishable from the bug this whole file exists to fix.
+    //
+    // The first tap on a tone button is also the tap that unlocks, and unlocking is asynchronous, so
+    // that tap has to queue behind it rather than be refused. Waiting is safe: once the elements are
+    // unlocked, playback no longer needs to be inside a gesture, which is the entire point of them.
+    if (!this.unlocked) {
+      if (this.unlocking) return this.unlocking.then(() => this.play(name));
+      this.lastError = new Error('sound not unlocked yet — tap any button first');
+      return Promise.resolve(false);
+    }
     const i = (this.turn[name] = ((this.turn[name] || 0) + 1) % list.length);
     const a = list[i];
     try { a.currentTime = 0; } catch { /* not yet loaded; play from wherever it is */ }
@@ -147,5 +198,19 @@ export class Tones {
     return (p && p.then ? p : Promise.resolve())
       .then(() => true)
       .catch(e => { this.lastError = e; return false; });
+  }
+
+  /** What the diagnostics report needs to tell a silent phone from a broken one. */
+  state() {
+    const first = this.pool.in_band && this.pool.in_band[0];
+    return {
+      unlocked: this.unlocked,
+      volume: this.volume,
+      readyState: first ? first.readyState : null,
+      paused: first ? first.paused : null,
+      duration: first && isFinite(first.duration) ? Math.round(first.duration * 1000) / 1000 : null,
+      mediaError: first && first.error ? first.error.code : null,
+      lastError: this.lastError ? String(this.lastError.message || this.lastError) : null,
+    };
   }
 }

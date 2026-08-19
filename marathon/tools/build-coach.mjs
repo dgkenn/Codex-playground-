@@ -79,15 +79,21 @@ for (const [key, value] of Object.entries(parts)) {
 // GitHub Pages can serve from ("deploy from a branch" offers root or /docs, nothing else). A stale
 // copy in either is a page that silently serves an old build, which is the exact failure the build
 // stamp exists to catch — better not to create it in the first place.
+//
+// `index.html` is the loader, `pace-coach.html` is the app. The split exists because githack caches
+// hard and ignores query strings: the entry point has to be a file that never changes, or a fix
+// pushed here does not reach the phone. See `loader.html` for the whole argument.
 const repoRoot = join(root, '..');
-const targets = [
-  join(root, 'docs', 'index.html'),
-  join(root, 'docs', 'pace-coach.html'),
-  join(repoRoot, 'docs', 'index.html'),
-  join(repoRoot, 'docs', 'pace-coach.html'),
-  join(here, 'pace-coach-hosted.html'),
-];
-for (const t of targets) writeFileSync(t, html);
+const loader = readFileSync(join(here, 'loader.html'), 'utf8');
 
-console.log(`built ${(html.length / 1024).toFixed(0)} kB ->`);
-for (const t of targets) console.log(`  ${t.replace(root + '/', '')}`);
+const targets = [
+  [join(root, 'docs', 'pace-coach.html'), html],
+  [join(repoRoot, 'docs', 'pace-coach.html'), html],
+  [join(here, 'pace-coach-hosted.html'), html],
+  [join(root, 'docs', 'index.html'), loader],
+  [join(repoRoot, 'docs', 'index.html'), loader],
+];
+for (const [path, body] of targets) writeFileSync(path, body);
+
+console.log(`app ${(html.length / 1024).toFixed(0)} kB, loader ${(loader.length / 1024).toFixed(1)} kB ->`);
+for (const [path] of targets) console.log(`  ${path.replace(root + '/', '')}`);

@@ -1,2 +1,6 @@
 # local Claude Code harness state (settings, worktree admin) -- not project content
 .claude/
+
+# Installed locally for the browser-level page test (tools/tests/page-test.mjs), which skips
+# without it. Not project content.
+node_modules

@@ -47,6 +47,26 @@ const COMPRESSED_BIT = 0x80;
 /// five seconds is four missed notifications — comfortably past noise.
 export const STALE_HR_MS = 5000;
 
+/// How long a connect step may take before it is called a failure.
+///
+/// Web Bluetooth has no timeout of its own, and third-party WebBLE bridges are the ones most likely
+/// to leave a promise pending forever — the band is off, or another app holds it, and the bridge
+/// simply never answers. A pending promise shows as "connecting" until the page is closed, which is
+/// the same "nothing happened" the full UUIDs already had to be fixed for. Better a wrong-but-loud
+/// verdict at twenty seconds than a right-but-silent one at never.
+export const CONNECT_TIMEOUT_MS = 20000;
+
+/** Reject if `promise` has not settled within `ms`, naming the step that stalled. */
+export function withTimeout(promise, ms, what) {
+  let timer;
+  return Promise.race([
+    promise.finally(() => clearTimeout(timer)),
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`timed out after ${ms / 1000}s while ${what}`)), ms);
+    }),
+  ]);
+}
+
 export function startCommand(measurement, settings) {
   const bytes = [OP_START, measurement];
   for (const [id, value] of settings) {
@@ -199,9 +219,11 @@ export class VeritySensor {
       this._reconnect();
     });
     this._at('connecting');
-    const server = await this.device.gatt.connect();
+    const server = await withTimeout(
+      this.device.gatt.connect(), CONNECT_TIMEOUT_MS,
+      'connecting to the band (is it awake, and has Polar Flow released it?)');
     this._at('connected, looking for heart rate');
-    await this._attach(server);
+    await withTimeout(this._attach(server), CONNECT_TIMEOUT_MS, 'setting up heart-rate notifications');
     this.connected = true;
     this._at('streaming');
     this.onChange();
@@ -214,7 +236,9 @@ export class VeritySensor {
     while (this.device && !this.device.gatt.connected) {
       await new Promise(r => setTimeout(r, delay));
       try {
-        await this._attach(await this.device.gatt.connect());
+        // Timed out here too, or one hung attempt ends the retry loop permanently.
+        const server = await withTimeout(this.device.gatt.connect(), CONNECT_TIMEOUT_MS, 'reconnecting');
+        await withTimeout(this._attach(server), CONNECT_TIMEOUT_MS, 'resubscribing');
         this.connected = true;
         this.onChange();
         this.onLog('armband reconnected', 'on');

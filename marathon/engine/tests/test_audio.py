@@ -311,6 +311,36 @@ def test_split_reports_a_lost_signal_rather_than_a_stale_pace():
     assert line and "no pace signal" in line
 
 
+def test_split_reports_the_split_average_not_the_instantaneous_pace():
+    """"Kilometre three" means the kilometre took that long, not that it did at one instant.
+
+    Every watch and every race clock means the average. The instantaneous reading is a different
+    quantity wearing the same name, and a much noisier one -- a surge or a bad fix at the exact
+    second the odometer turns over becomes the kilometre the athlete remembers running. It is also
+    the only number of the whole run they hear rather than see.
+    """
+    a = SplitAnnouncer(every_m=1000.0)
+    said = []
+    for t in range(1, 2001):
+        instant = 200.0 if t == 2000 else 1000.0   # a spike at the exact moment 2 km completes
+        line = a.update(float(t), float(t) * 1.0, instant, "in")   # 1 m/s -> 16:40 per km
+        if line:
+            said.append(line)
+    assert len(said) == 2, said
+    assert said[0].startswith("1K. 16:40"), said[0]
+    assert said[1].startswith("2K. 16:40"), (
+        f"{said[1]!r} is the instantaneous pace, not what that kilometre took")
+
+
+def test_split_omits_the_average_when_the_pace_signal_is_gone():
+    """A distance accumulated while the pace channel was degraded is not one worth dividing by."""
+    a = SplitAnnouncer(every_m=1000.0)
+    line = None
+    for t in range(400):
+        line = a.update(float(t), float(t) * 3.0, None, "unknown") or line
+    assert line == "1K. no pace signal.", line
+
+
 def test_splits_can_be_disabled():
     a = SplitAnnouncer(every_m=None, every_s=None)
     assert all(a.update(t, float(t) * 3.0, TARGET, "in") is None for t in range(2000))

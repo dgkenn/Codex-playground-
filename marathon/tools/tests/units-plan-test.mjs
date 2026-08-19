@@ -6,6 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { SplitAnnouncer, formatMMSS } from '../pace-monitor.js';
 
 const html = readFileSync(new URL('../pace-coach-hosted.html', import.meta.url), 'utf8');
 // The built page ships a classic script now, for WebView compatibility — see build-coach.mjs.
@@ -63,6 +64,36 @@ unit = 'km';
 assert.equal(U.splitEvery(), 1000);
 assert.equal(U.splitName(3), '3K');
 console.log('  ok  splits count in the unit the athlete thinks in');
+
+{
+  // A split must report how long that split took, not the pace at the instant it ticked over.
+  // Run at a steady 1 m/s — a kilometre every 1000 s, so 16:40 per km — and have the instantaneous
+  // pace spike to 200 s/km at the exact second the second kilometre completes. The announcement must
+  // be the 16:40 that kilometre actually took, not the 3:20 the momentary reading claimed.
+  const split = new SplitAnnouncer({ everyM: 1000, formatPace: formatMMSS });
+  let said = [];
+  for (let t = 1; t <= 2000; t++) {
+    const inst = t === 2000 ? 200 : 1000;
+    const line = split.update(t, t * 1.0, inst, 'in');
+    if (line) said.push(line);
+  }
+  assert.equal(said.length, 2, `expected two splits, got ${said.length}: ${said.join(' / ')}`);
+  assert.match(said[0], /^1K\. 16:40\./, `first split reported "${said[0]}"`);
+  assert.match(said[1], /^2K\. 16:40\./,
+    `second split reported "${said[1]}" — that is the instantaneous pace, not the split average`);
+  console.log('  ok  a split reports the split average, not the pace at the moment it ticked');
+}
+
+{
+  // And when the pace channel is degraded, no number at all. A distance accumulated while the
+  // signal was gone is not a distance worth dividing by, and a confident-sounding average built
+  // from it is worse than saying nothing.
+  const split = new SplitAnnouncer({ everyM: 1000, formatPace: formatMMSS });
+  let line = null;
+  for (let t = 1; t <= 400; t++) line = split.update(t, t * 3.0, null, 'unknown') || line;
+  assert.equal(line, '1K. no pace signal.', `reported "${line}"`);
+  console.log('  ok  a split with no pace signal reports no number rather than a plausible one');
+}
 
 // --- the plan ------------------------------------------------------------------------------------
 

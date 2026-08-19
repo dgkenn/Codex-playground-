@@ -48,24 +48,42 @@ before a suspiciously steady pulse means anything.
 
 ### Running today, with no app
 
-`tools/pace-coach.html`, open in **Safari on your iPhone**. GPS pace, the same five tones, the same
-spoken splits, through your AirPods. No Bluetooth (Safari has none, so no heart rate), no Mac, no
-install.
+One URL, opened in **Bluefy** on the iPhone:
+
+```
+https://raw.githack.com/dgkenn/Codex-playground-/claude/iphone-marathon-training-app-d2xxuc/docs/index.html
+```
+
+GPS pace, the plan, the five tones, spoken splits, and — because Bluefy has Web Bluetooth where
+Safari does not — live heart rate from the Verity Sense. No Mac, no install, no sign-in. Safari
+works too and gives you everything except the armband.
 
 The decision logic is not a re-implementation by eye: it is checked against the same golden vectors
 as the Python engine and the Swift port, so all three agree tone-for-tone on eight full-session
-traces.
+traces. The page itself is tested in a real browser as well — booted, every button clicked, the
+rehearsal run end to end — because every device fault so far has lived in the gap between "the
+module is correct" and "the page works", and all of them looked identical from the phone: nothing
+happens.
 
-**Two things to know before you rely on it.**
+**Three things to know before you rely on it.**
 
-*Music.* Safari cannot ask iOS to mix with other audio the way a real app can — the iOS app sets
-`.mixWithOthers` explicitly and a web page has no equivalent. Your music may duck or pause when a
-tone plays. Press **Hear the tones** with Apple Music playing, standing in your kitchen, and you will
-know in thirty seconds which it does. That is the single most important test to run before a session.
+*Music.* A web page cannot ask iOS to mix with other audio the way a real app can — the iOS app sets
+`.mixWithOthers` explicitly and there is no web equivalent. Your music may duck when a tone plays.
+Press the tone buttons with Apple Music playing, standing in your kitchen, and you will know in
+thirty seconds which it does. That is the single most important test to run before a session.
+
+*The volume slider is real.* The earcons are synthesised at the chosen level rather than played at a
+level the element is told to use, because iOS ignores `volume` on audio elements entirely. Set it
+against your music before you leave.
 
 *Backgrounding.* iOS suspends background tabs. Keep the page open and the screen on; it requests a
 wake lock, but switching apps or locking the screen stops the coaching. This is the real cost of not
 having an app, and it is worth stating plainly rather than discovering at minute twelve.
+
+*If something goes wrong,* press **Copy diagnostics** at the bottom of the page and paste it into
+the chat. It carries the build id, what the browser can and cannot do, the tone and sensor state and
+the last forty log lines — enough to fix it without a second app, a console, or a cable. If the
+browser has no clipboard API it puts the same text on the page, selected, instead.
 
 ### Which recorder for which session
 
@@ -76,7 +94,8 @@ Bluetooth reaches about ten metres, so what can record a session depends on what
 | Treadmill ramp test | **Browser logger** (`tools/verity-logger.html`) on a laptop at the machine | HR + accelerometer + labelled stages. Full sensor health. |
 | Resting / orthostatic block | Browser logger, laptop beside you | Same |
 | Outdoor run, recording only | **Polar Flow on your phone**, in your pocket | HR + GPS distance. No accelerometer, so sensor health reads partial. |
-| Outdoor run, with coaching | **`pace-coach.html` in Safari** + Polar Flow recording alongside | Live pace tones and splits in your AirPods from the page; heart rate recorded by Flow for later import. |
+| Outdoor run, with coaching | **The hosted page in Bluefy**, armband connected | Live pace tones, spoken splits and heart-rate coaching in your AirPods, all recorded by the page. Copy the session out afterwards and `cli import` it. |
+| Outdoor run, coaching without the armband | **The hosted page in Safari** + Polar Flow recording alongside | Pace tones and splits from the page; heart rate recorded by Flow for later import. |
 
 The browser logger is not for outdoor runs and does not pretend to be: the moment you run away from
 the machine the connection drops. That is handled rather than hidden — nothing is written while the

@@ -411,12 +411,29 @@ class SplitAnnouncer:
 
     _last_split_m: float = 0.0
     _last_split_t: float = 0.0
+    _last_split_at: float = 0.0
 
     def update(self, t_s: float, distance_m: float, pace_sec_km: Optional[float],
                state: str) -> Optional[str]:
         due = False
+        # What gets spoken. For a distance split it is that split's own average -- see below.
+        reported = pace_sec_km
         if self.every_m and distance_m - self._last_split_m >= self.every_m:
             self._last_split_m += self.every_m
+            # A split is how long that kilometre took, not the pace at the instant the odometer
+            # turned over. It was the instantaneous value, which is a different quantity wearing the
+            # same name: every watch and every race clock means the average, and the momentary
+            # reading is far noisier -- one surge or one bad fix at the wrong second becomes the
+            # kilometre you remember running. This is also the only number of the run the athlete
+            # hears rather than sees, so it has to mean what it says.
+            #
+            # Gated on there being a live pace at all: ``pace_sec_km is None`` is the caller saying
+            # the pace channel is degraded, and a distance accumulated while it was degraded is not
+            # a distance worth dividing by. Better to say "no pace signal" and nothing else.
+            dt = t_s - self._last_split_at
+            if pace_sec_km is not None and dt > 0:
+                reported = dt / (self.every_m / 1000.0)
+            self._last_split_at = t_s
             due = True
         if self.every_s and t_s - self._last_split_t >= self.every_s:
             self._last_split_t = t_s
@@ -429,8 +446,8 @@ class SplitAnnouncer:
         if self.every_m:
             km = self._last_split_m / 1000.0
             parts.append(f"{km:.0f}K" if km == int(km) else f"{km:.1f}K")
-        if pace_sec_km:
-            parts.append(fmt_pace(pace_sec_km))
+        if reported:
+            parts.append(fmt_pace(reported))
         parts.append({"in": "on pace", "fast": "easing", "slow": "lift",
                       "unknown": "no pace signal"}.get(state, ""))
         return ". ".join(p for p in parts if p) + "."

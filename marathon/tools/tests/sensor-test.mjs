@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { parseHeartRate, parseAccFrame, startCommand, accMagnitude,
-         VeritySensor, STALE_HR_MS } from '../sensor.js';
+         VeritySensor, STALE_HR_MS, withTimeout } from '../sensor.js';
 
 const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
 
@@ -112,6 +112,28 @@ const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
   assert.equal(s.accWindow.length, 0, 'the window must be consumed, not re-averaged next second');
   assert.equal(s.takeAccSd(), null, 'too few samples yields null, not a fabricated zero');
   console.log('  ok  movement sd is computed then the window consumed');
+}
+
+// --- the connect watchdog ------------------------------------------------------------------------
+
+{
+  // A promise that never settles must become a named failure, not a permanent "connecting".
+  const never = new Promise(() => {});
+  const started = Date.now();
+  await assert.rejects(
+    withTimeout(never, 40, 'connecting to the band'),
+    /timed out after 0.04s while connecting to the band/,
+    'a hung GATT connect must fail loudly and say which step hung');
+  assert.ok(Date.now() - started < 1000);
+  console.log('  ok  a connect that never answers times out and names the step');
+}
+{
+  // And the watchdog must not fire on a connect that succeeded, nor leave a timer holding the
+  // process open — a stray handle here is a page that never settles down between runs.
+  assert.equal(await withTimeout(Promise.resolve('server'), 5000, 'connecting'), 'server');
+  await assert.rejects(withTimeout(Promise.reject(new Error('GATT busy')), 5000, 'connecting'),
+                       /GATT busy/, 'a real error must survive the race unchanged');
+  console.log('  ok  the watchdog passes success and real errors through untouched');
 }
 
 console.log('\nAll sensor tests passed.');

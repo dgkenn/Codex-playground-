@@ -240,6 +240,7 @@ public final class SplitAnnouncer {
     private let everyS: Double?
     private var lastSplitM: Double = 0
     private var lastSplitT: Double = 0
+    private var lastSplitAt: Double = 0
 
     public init(everyM: Double? = 1000, everyS: Double? = nil) {
         self.everyM = everyM
@@ -249,7 +250,25 @@ public final class SplitAnnouncer {
     public func update(tS: Double, distanceM: Double, paceSecKm: Double?,
                        state: PaceBandMonitor.State) -> String? {
         var due = false
-        if let m = everyM, distanceM - lastSplitM >= m { lastSplitM += m; due = true }
+        // What gets spoken. For a distance split it is that split's own average -- see below.
+        var reported = paceSecKm
+        if let m = everyM, distanceM - lastSplitM >= m {
+            lastSplitM += m
+            // A split is how long that kilometre took, not the pace at the instant the odometer
+            // turned over. It was the instantaneous value, which is a different quantity wearing
+            // the same name: every watch means the average, and the momentary reading is far
+            // noisier -- one surge or one bad fix at the wrong second becomes the kilometre you
+            // remember running. It is also the only number of the run the athlete hears rather
+            // than sees, so it has to mean what it says.
+            //
+            // Gated on there being a live pace at all: a nil paceSecKm is the caller saying the
+            // pace channel is degraded, and a distance accumulated while it was degraded is not a
+            // distance worth dividing by. Better to say "no pace signal" and leave the number out.
+            let dt = tS - lastSplitAt
+            if paceSecKm != nil, dt > 0 { reported = dt / (m / 1000) }
+            lastSplitAt = tS
+            due = true
+        }
         if let s = everyS, tS - lastSplitT >= s { lastSplitT = tS; due = true }
         guard due else { return nil }
 
@@ -259,7 +278,7 @@ public final class SplitAnnouncer {
             parts.append(km == km.rounded() ? String(format: "%.0fK", km)
                                             : String(format: "%.1fK", km))
         }
-        if let p = paceSecKm { parts.append(Physiology.formatPace(p)) }
+        if let p = reported { parts.append(Physiology.formatPace(p)) }
         switch state {
         case .inBand: parts.append("on pace")
         case .fast: parts.append("easing")

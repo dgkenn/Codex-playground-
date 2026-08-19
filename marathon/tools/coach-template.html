@@ -1,6 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<!-- Without this an iPhone lays the page out at 980 CSS pixels and scales the result down to fit,
+     which shrinks every control by about 2.5x. The tone buttons end up a few millimetres tall and
+     taps land beside them rather than on them — a failure that reads from the phone as "the button
+     does nothing", which is the one diagnosis that cannot be told apart from a genuine fault.
+     Zoom is deliberately left enabled; this is read at arm's length in daylight. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The page commits to a dark ground, so form controls and scrollbars should match rather than
+     arrive as white rectangles in the middle of it. -->
+<meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<!-- The webfonts are loaded so they cannot block the page.
+
+     A plain stylesheet link is render-blocking: the browser will not paint until it arrives or the
+     request gives up. That is a fair trade on a desk and a bad one here, where the page is opened at
+     a trailhead on whatever signal there is, and where a blank screen for eight seconds is
+     indistinguishable from the app being broken. `media="print"` makes the fetch non-blocking and
+     the onload promotes it once it lands; if it never lands, the fallback stack is what you get and
+     the coach still works. `noscript` covers the case where scripting is off, in which the app does
+     not run anyway.
+
+     Everything else on this page is inline. This is the only external request it makes. -->
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<noscript><link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"></noscript>
+<!-- Inline, so the page makes no request for it and no 404 appears in the diagnostics. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230B0C0E'/><path d='M6 20 L12 20 L15 11 L19 25 L22 20 L26 20' fill='none' stroke='%235FD08A' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <title>Band</title>
 
 <style>
@@ -390,8 +417,11 @@
                style="width:100%;accent-color:var(--on)"></label>
     </div>
     <p class="note" style="margin-top:.7rem">
-      Downloads are blocked in this frame, so the session copies to your clipboard instead. Paste it
-      back into the chat and it imports with <code>cli import</code>.
+      The session copies to your clipboard rather than downloading — a browser that will not save a
+      file leaves you with a run you cannot get off the phone. Paste it into the chat and it imports
+      with <code>cli import</code>. <strong>Copy diagnostics</strong> does the same for the build id,
+      what this browser can do, and the last forty log lines: that is what to send when something
+      does not work. If the browser has no clipboard, both put the text on the page instead.
     </p>
   </section>
   <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);
@@ -468,11 +498,12 @@ let audioReady = false;
 function audio() {
   if (!audioReady) {
     audioReady = true;
-    tones.unlock().then(ok => {
+    return tones.unlock().then(ok => {
       if (!ok && tones.lastError) log(`sound blocked: ${tones.lastError.message}`, 'stop');
+      return ok;
     });
   }
-  return tones;
+  return Promise.resolve(true);
 }
 
 function play(earcon, _gain) {
@@ -646,7 +677,7 @@ $('loadsess').onclick = () => {
   } else {
     setMode('coach');
     if (s.pace) {
-      $('target').value = U.pace(s.pace.target_sec_km);
+      setTarget(s.pace.target_sec_km);
       $('tol').value = Math.round(s.pace.tolerance * 100);
     }
     $('ceiling').checked = !!s.ceiling_only;
@@ -800,8 +831,33 @@ function parsePace(text) {
   return secUnit == null ? null : U.toSecKm(secUnit);
 }
 
+/**
+ * The target in seconds per kilometre, kept apart from what the box says.
+ *
+ * The box holds a rounded mm:ss in whichever unit is showing, so re-parsing it on every unit switch
+ * loses up to half a second each way: 14:30 a mile becomes 9:01 a kilometre becomes 14:31 a mile,
+ * and the drift compounds with every toggle. The typed value is authoritative when it is typed; from
+ * then on this is, and the box is only a rendering of it.
+ */
+let targetSecKm = null;
+const syncTargetFromField = () => {
+  // Adopt the field only when it says something other than what the canonical value renders as.
+  // Reading back an unchanged rendering is exactly how the rounding drift got in: the box shows a
+  // whole-second mm:ss, and treating that as a freshly typed target throws away the fraction every
+  // time the unit is switched.
+  if (targetSecKm != null && $('target').value.trim() === U.pace(targetSecKm)) return;
+  const v = parsePace($('target').value);
+  if (v != null) targetSecKm = v;
+};
+/** Set the canonical target and render it in the unit currently showing. */
+function setTarget(secKm) {
+  targetSecKm = secKm;
+  if (secKm != null) $('target').value = U.pace(secKm);
+}
+
 function refreshBand() {
-  const target = parsePace($('target').value);
+  syncTargetFromField();
+  const target = targetSecKm;
   const tol = Number($('tol').value) / 100;
   if (!target) { $('bandtext').textContent = 'Enter a pace like 9:00.'; return; }
   $('bandtext').textContent =
@@ -817,7 +873,7 @@ function refreshBand() {
 refreshBand();
 
 function setMarker(pace) {
-  const target = parsePace($('target').value);
+  const target = targetSecKm;
   const tol = Number($('tol').value) / 100;
   if (!target || !pace) { $('marker').style.left = '50%'; return; }
   const span = target * tol * 2.2;
@@ -1056,7 +1112,7 @@ function tickIntervals(t) {
 // A scripted 30-minute run, replayed at 20x. Deliberately the pattern your own file showed: out far
 // too fast, a long correction, then steady with drift.
 function scriptedPace(t) {
-  const target = parsePace($('target').value) || 540;
+  const target = targetSecKm || 540;
   if (t < 420) return target * 0.72;
   if (t < 600) return target * 0.90;
   if (t < 1500) return target * (1 + 0.02 * Math.sin(t / 90));
@@ -1064,7 +1120,7 @@ function scriptedPace(t) {
 }
 
 function tickRehearse() {
-  const target = parsePace($('target').value) || 540;
+  const target = targetSecKm || 540;
   for (let k = 0; k < 20; k++) {           // 20 simulated seconds per real second
     S.simT += 1;
     if (S.simT > 1800) { finish('Rehearsal complete.'); return; }
@@ -1132,7 +1188,7 @@ document.addEventListener('visibilitychange', () => {
 
 function setUnit(u) {
   if (S.running) return;
-  const target = parsePace($('target').value);          // capture in the OLD unit first
+  syncTargetFromField();                               // whatever was typed, in the OLD unit
   unit = u;
   localStorage.setItem('band.unit', u);
   $('u-mi').setAttribute('aria-pressed', String(u === 'mi'));
@@ -1141,7 +1197,7 @@ function setUnit(u) {
   document.querySelectorAll('.tile .k').forEach(el => {
     if (el.textContent === 'Distance') el.nextElementSibling.textContent = '0.00';
   });
-  if (target) $('target').value = U.pace(target);       // re-render in the NEW unit
+  if (targetSecKm) $('target').value = U.pace(targetSecKm);   // re-render in the NEW unit
   refreshBand();
   renderPlan();
 }
@@ -1149,11 +1205,15 @@ $('u-mi').onclick = () => setUnit('mi');
 $('u-km').onclick = () => setUnit('km');
 
 $('gain').value = String(tones.volume);
-$('gain').oninput = e => {
+// Applied when the drag ends, not on every step. The gain is baked into the samples — iOS ignores
+// element volume — so each change re-renders five WAVs, which is cheap once and visibly not cheap
+// sixty times during a swipe. The audition on release is how you hear what you just chose.
+$('gain').oninput = e => localStorage.setItem('band.gain', e.target.value);
+$('gain').onchange = e => {
+  audio();
   tones.setVolume(Number(e.target.value));
-  localStorage.setItem('band.gain', String(tones.volume));
+  play('in_band');
 };
-$('gain').onchange = () => { audio(); play('in_band'); };
 
 setUnit(unit);
 renderPlan();
@@ -1177,7 +1237,8 @@ addEventListener('resize', () => { if (S.track.path.length > 1) drawMap(); });
 $('go').onclick = () => {
   if (S.running) return finish('Stopped.');
 
-  const target = parsePace($('target').value);
+  syncTargetFromField();
+  const target = targetSecKm;
   if (S.mode !== 'intervals' && !target) {
     log('Enter a target pace like 9:00 first.', 'stop'); return;
   }
@@ -1247,9 +1308,18 @@ function finish(msg) {
   $('go').textContent = 'Start';
   $('go').classList.remove('stop');
   $('copy').disabled = S.samples.length === 0;
-  const mins = Math.max(1, S.samples.length) / 60;
+  // Tones per minute is the number that says whether the coach is coaching or nagging, and the
+  // rehearsal is the only place it can be judged indoors — so it has to be right there above all.
+  // It was computed from the GPS sample count, which the rehearsal never fills: thirty simulated
+  // minutes divided by one second of samples reported four tones as 240 a minute, and zero distance
+  // after five kilometres. Both clocks now come from whichever one the mode was actually running.
+  const rehearsing = S.mode === 'rehearse';
+  const elapsedS = rehearsing ? S.simT
+                 : (S.startedAt ? (Date.now() - S.startedAt) / 1000 : S.samples.length);
+  const metres = rehearsing ? S.simDist : S.track.distanceM;
+  const mins = Math.max(1, elapsedS) / 60;
   const hrSamples = S.samples.filter(x => x.hr_bpm != null).length;
-  log(`${msg} ${U.dist(S.track.distanceM).toFixed(2)} ${U.name}, ${S.tones} tones `
+  log(`${msg} ${U.dist(metres).toFixed(2)} ${U.name}, ${S.tones} tones `
       + `(${(S.tones/mins).toFixed(2)}/min)`
       + (hrSamples ? `, heart rate for ${Math.round(hrSamples / S.samples.length * 100)}%` : '')
       + '.', 'on');
@@ -1263,15 +1333,19 @@ function finish(msg) {
 $('diag').onclick = async () => {
   const lines = [...$('log').children].slice(0, 40).map(d => d.textContent).reverse();
   const report = {
+    build: BUILD,
     when: new Date().toISOString(),
     userAgent: navigator.userAgent,
     bluetooth: bluetoothAvailable(),
     geolocation: !!navigator.geolocation,
     wakeLock: 'wakeLock' in navigator,
     speech: 'speechSynthesis' in window,
-    audioUnlocked: audioReady,
-    audioError: tones.lastError ? String(tones.lastError) : null,
-    toneVolume: tones.volume,
+    voices: ('speechSynthesis' in window) ? speechSynthesis.getVoices().length : null,
+    clipboard: !!(navigator.clipboard && navigator.clipboard.writeText),
+    // The whole tone subsystem in one object. `readyState` 0 with no `mediaError` means the WAV
+    // never loaded; a `mediaError` code says the platform rejected it; unlocked false after tapping
+    // means the gesture did not take. Those are three different bugs that look identical on a phone.
+    tones: tones.state(),
     unit,
     sensor: S.sensor ? {
       step: S.sensor.step, connected: S.sensor.connected, hasAcc: S.sensor.hasAcc,
@@ -1285,13 +1359,36 @@ $('diag').onclick = async () => {
     plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
     log: lines,
   };
+  const text = JSON.stringify(report, null, 2);
   try {
-    await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+    await navigator.clipboard.writeText(text);
     log('diagnostics copied — paste them into the chat', 'on');
-  } catch {
-    log('clipboard blocked; screenshot the log instead', 'stop');
+  } catch (e) {
+    // A screenshot of a log is not a diagnosis — it is cropped, it is lossy, and the field that
+    // matters is usually the one off the bottom. Third-party browsers are exactly where the
+    // clipboard API is most likely to be missing, and they are also the only ones that can reach the
+    // armband, so this path is the likely one rather than the exotic one. Put the text on the page,
+    // selected, so it can be copied by hand.
+    showDiagText(text, e.message || e);
   }
 };
+
+function showDiagText(text, why) {
+  let box = $('diagtext');
+  if (!box) {
+    box = document.createElement('textarea');
+    box.id = 'diagtext';
+    box.readOnly = true;
+    box.style.cssText = 'width:100%;height:11rem;margin-top:.7rem;font:11px/1.4 ui-monospace,'
+      + 'SFMono-Regular,Menlo,monospace;background:#0c0e13;color:var(--ink);'
+      + 'border:1px solid var(--line);border-radius:8px;padding:.6rem';
+    $('diag').parentElement.after(box);
+  }
+  box.value = text;
+  box.focus();
+  box.setSelectionRange(0, text.length);
+  log(`clipboard unavailable (${why}) — the text is below, select all and copy`, 'stop');
+}
 
 $('copy').onclick = async () => {
   // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own
@@ -1321,8 +1418,10 @@ $('copy').onclick = async () => {
   try {
     await navigator.clipboard.writeText(text);
     log(`Copied ${S.samples.length} samples. Paste it into the chat.`, 'on');
-  } catch {
-    log('Clipboard blocked. Screenshot the summary instead.', 'stop');
+  } catch (e) {
+    // Same fallback as the diagnostics. A run that cannot be got off the phone did not happen as far
+    // as the engine is concerned, and no screenshot will reconstruct a thousand samples.
+    showDiagText(text, e.message || e);
   }
 };
 </script>

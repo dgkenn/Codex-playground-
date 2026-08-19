@@ -2,7 +2,7 @@
 // nothing at all, which is indistinguishable on a phone from the bug this replaces.
 
 import assert from 'node:assert/strict';
-import { renderSamples, wavBytes, RECIPES, RATE, PITCH } from '../tones.js';
+import { renderSamples, wavBytes, RECIPES, RATE, PITCH, SILENCE } from '../tones.js';
 
 const str = (b, off, len) => String.fromCharCode(...b.slice(off, off + len));
 const u32 = (b, off) => b[off] | (b[off+1] << 8) | (b[off+2] << 16) | (b[off+3] << 24);
@@ -77,6 +77,33 @@ const u16 = (b, off) => b[off] | (b[off+1] << 8);
     for (const v of renderSamples(recipe)) assert.ok(v >= -1 && v <= 1, `sample out of range: ${v}`);
   }
   console.log('  ok  nothing clips');
+}
+
+{
+  // Volume is baked into the samples because iOS ignores HTMLMediaElement.volume — assigning it is a
+  // silent no-op, so a slider wired to it would appear to work and change nothing. If the amplitude
+  // argument is ever dropped, the control goes back to being decorative on the only platform that
+  // matters, and nothing else would catch it.
+  const full = renderSamples(RECIPES.in_band);
+  const half = renderSamples(RECIPES.in_band, RATE, 0.5);
+  assert.equal(full.length, half.length, 'amplitude must not change the length');
+  const peak = s => Math.max(...Array.from(s, Math.abs));
+  assert.ok(Math.abs(peak(half) / peak(full) - 0.5) < 0.02,
+            `half amplitude peaked at ${(peak(half) / peak(full)).toFixed(3)} of full`);
+  assert.ok(peak(renderSamples(RECIPES.in_band, RATE, 1.0)) <= 1, 'full amplitude must not clip');
+  console.log('  ok  amplitude scales the samples, which is the only volume iOS honours');
+}
+
+{
+  // The unlock buffer must be genuinely silent AND genuinely present: an empty buffer would not play
+  // at all, and a buffer with sound in it would make every unlock audible.
+  const s = renderSamples(SILENCE);
+  assert.ok(s.length > 0.01 * RATE, 'the unlock buffer must be long enough to actually play');
+  assert.equal(Math.max(...Array.from(s, Math.abs)), 0, 'the unlock buffer must be silent');
+  const b = wavBytes(s);
+  assert.equal(str(b, 0, 4), 'RIFF');
+  assert.equal(u32(b, 40), b.length - 44);
+  console.log('  ok  the unlock buffer is a well-formed WAV containing only silence');
 }
 
 console.log('\nAll tone tests passed.');
