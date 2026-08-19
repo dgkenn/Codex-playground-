@@ -328,6 +328,7 @@
       <div class="row">
         <!-- Shown only once the ordinary route has failed, so the normal case stays one button. -->
         <button id="anydevice" class="tiny hide">Any device</button>
+        <button id="btprobe" class="tiny">Bluetooth probe</button>
         <button id="forget" class="tiny">Remembered devices</button>
       </div>
       <div class="zonebar" id="zonebar"></div>
@@ -340,15 +341,14 @@
     </div>
     <p class="note" id="profilenote" style="margin-top:.7rem"></p>
     <p class="note" style="margin-top:.7rem">
-      <strong>If it refuses to connect, in this order.</strong>
-      <br>1 — Force-quit Polar Flow (swipe up, swipe it away). The Verity Sense accepts exactly one
-      Bluetooth connection at a time, and Flow reconnects to it by itself whenever it is running.
-      <br>2 — Power-cycle the band: hold its button until the light goes out, then press once to
-      wake it. This is what releases a link the phone still thinks it owns.
-      <br>3 — Check the light is on and the band is on your <em>upper</em> arm, snug. It reads
-      through skin; on a table it will connect and send nothing at all.
-      <br>4 — Only then tap Connect, once. Tapping again while it is still trying starts a second
-      attempt that fights the first.
+      <strong>If it refuses to connect, run the probe.</strong> It walks the whole connection a step
+      at a time and copies a timestamped report you can paste into the chat — which failures look
+      identical from here are different in the report: refused outright, refused while actually
+      connected, connected then dropped, connected with no heart-rate service, or connected and
+      silent because the band is not against skin. About twenty seconds, band on your arm.
+      <br><br>Worth trying alongside it: press the band's button once so its light is on, and put it
+      on your <em>upper</em> arm rather than your forearm. The Verity Sense holds two Bluetooth
+      connections at once, so Polar Flow being open is not by itself a reason it cannot connect here.
     </p>
     <p class="note" id="btnote" style="margin-top:.7rem"></p>
   </section>
@@ -494,6 +494,8 @@
 /*{{TONES}}*/
 
 /*{{RAMP}}*/
+
+/*{{BTPROBE}}*/
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -1236,6 +1238,53 @@ async function connectArmband({ acceptAll = false } = {}) {
 
 $('connect').onclick = () => connectArmband();
 $('anydevice').onclick = () => connectArmband({ acceptAll: true });
+/**
+ * Take an inventory instead of guessing.
+ *
+ * Four rounds have now been spent on theories — short UUIDs, a name filter, another app holding the
+ * radio — each plausible, none demonstrated, and the last one wrong: the Verity Sense holds more
+ * than one connection at a time, and Polar Flow was closed anyway. This walks the connection one
+ * step at a time and writes down what actually happened at each, including whether the page arrived
+ * through the loader, which replaces the document and with it every listener registered on it.
+ */
+$('btprobe').onclick = async () => {
+  if (connecting) { log('a connection attempt is already running', 'dim'); return; }
+  if (!bluetoothAvailable()) { log('no Web Bluetooth in this browser', 'stop'); return; }
+  connecting = true;
+  $('btprobe').textContent = 'Probing…';
+  log('Bluetooth probe started — this takes about 20 seconds, and wants the band on your arm.', 'on');
+
+  const report = await probeBluetooth({
+    bluetooth: navigator.bluetooth,
+    onLog: m => log(`probe: ${m}`, 'dim'),
+    chooseDevice: async () => {
+      // Prefer the remembered device, exactly as the real connect does, so the probe is measuring
+      // the same path rather than a tidier one.
+      const known = navigator.bluetooth.getDevices ? await navigator.bluetooth.getDevices() : [];
+      const match = known.find(d => /polar|verity|sense/i.test(d.name || ''));
+      if (match) return match;
+      return navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'Polar' }, { services: [HR_SERVICE] }],
+        optionalServices: [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE],
+      });
+    },
+  }).catch(e => ({ fatal: describeError(e) }));
+
+  report.build = BUILD;
+  report.userAgent = navigator.userAgent;
+  connecting = false;
+  $('btprobe').textContent = 'Bluetooth probe';
+  log(report.conclusion || report.fatal || 'probe finished', 'on');
+
+  const text = JSON.stringify(report, null, 2);
+  try {
+    await navigator.clipboard.writeText(text);
+    log('probe report copied — paste it into the chat', 'on');
+  } catch (e) {
+    showDiagText(text, describeError(e));
+  }
+};
+
 $('forget').onclick = async () => {
   // Bluefy remembers a device permission, which is normally the point. When the remembered entry is
   // the thing that is wrong, there has to be a way past it.
@@ -1601,7 +1650,12 @@ $('buildid').textContent = `build ${BUILD.id} · ${BUILD.at}`;
 $('capsline').textContent =
   [bluetoothAvailable() ? 'BT' : 'no BT',
    navigator.geolocation ? 'GPS' : 'no GPS',
-   'speechSynthesis' in window ? 'voice' : 'no voice'].join(' · ');
+   'speechSynthesis' in window ? 'voice' : 'no voice',
+   // Which route the page arrived by, visible without tapping anything. The loader replaces the
+   // document, which removes every listener registered on it — a candidate cause of a native
+   // Bluetooth bridge losing its reply channel. Comparing the two routes is a one-line experiment
+   // as long as you can tell which one you are looking at.
+   window.__viaLoader ? 'via loader' : 'direct'].join(' · ');
 $('btnote').textContent = bluetoothAvailable()
   ? 'This browser can read the armband. Connect before you start and heart rate is recorded with '
     + 'the run.'
@@ -1778,6 +1832,7 @@ $('diag').onclick = async () => {
       permission: geoPermission,
       lastError: S.geoError ? `${S.geoError.code}: ${S.geoError.message}` : null,
     },
+    viaLoader: !!window.__viaLoader,
     profile: { age: profile.age, hrRest: profile.hrRest, confirmed: profile.confirmed },
     session: {
       mode: S.mode, running: S.running,

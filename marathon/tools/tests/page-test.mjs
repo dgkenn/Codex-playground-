@@ -80,6 +80,8 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
 {
   const build = (await page.textContent('#buildid')).trim();
   assert.match(build, /^build \S+ · /, `the build stamp must be visible: got "${build}"`);
+  assert.match(await page.textContent('#capsline'), /direct/,
+    'a page opened straight from its own URL must not claim to have come via the loader');
   console.log(`  ok  the page boots and states its build (${build})`);
 }
 
@@ -120,6 +122,12 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
     'the app must run at the loader\'s own origin, or it loses Bluetooth and location');
   assert.match((await page2.textContent('#buildid')).trim(), /^build \S+ · /);
   assert.ok(await page2.$('button[data-tone="ease"]'), 'the written page must be interactive');
+  // The route has to be visible on the page and in the diagnostics. document.write removes every
+  // listener registered on the document, which is a live candidate for a native Bluetooth bridge
+  // losing its reply channel — so which route was taken must be a recorded fact, not a memory.
+  assert.match(await page2.textContent('#capsline'), /via loader/,
+    'a page handed over by the loader must say so');
+  assert.equal(await page2.evaluate(() => window.__viaLoader), true);
   await page2.close();
   console.log('  ok  the loader fetches the app and hands over to it in place');
 

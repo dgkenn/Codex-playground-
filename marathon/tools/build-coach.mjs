@@ -52,6 +52,7 @@ const parts = {
   HRMONITOR: inline('hr-monitor.js'),
   TONES: inline('tones.js'),
   RAMP: inline('ramp.js'),
+  BTPROBE: inline('bt-probe.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 

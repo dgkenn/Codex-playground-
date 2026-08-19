@@ -76,18 +76,27 @@ of each stage is flagged for the talk test. Every second of heart rate is record
 it belongs to, which is what makes the recording analysable afterwards: copy it out, `cli import` it,
 and the heart-rate/speed fit replaces the estimated paces with measured ones.
 
-**Getting the armband to connect.** The Verity Sense accepts exactly one Bluetooth connection at a
-time, and Polar Flow reconnects to it by itself whenever Flow is running — so the order matters:
+**When the armband will not connect, run the probe.** The **Bluetooth probe** button in the Armband
+panel walks the whole connection one step at a time — availability, remembered devices, choosing,
+connecting, every service and characteristic the band exposes, subscribing, and then twelve seconds
+of watching for readings — and copies a timestamped report to the clipboard. It takes about twenty
+seconds and wants the band on your arm.
 
-1. Force-quit Polar Flow. Swipe up, swipe it away.
-2. Power-cycle the band: hold the button until the light goes out, then press once to wake it. This
-   is what releases a link the phone still believes it owns.
-3. Band on the *upper* arm, snug. It reads through skin; on a table it connects and sends nothing.
-4. Tap Connect once. A second tap while the first attempt is still running starts a competing one.
+It exists because guessing has been expensive. Short UUIDs, a name filter, another app holding the
+radio: each was plausible, none was demonstrated, and the last was wrong — the Verity Sense holds
+more than one connection at a time. The report distinguishes failures that look identical from the
+outside: refused outright, refused-but-actually-connected, connected-then-dropped, connected but
+exposing no heart-rate service, connected and subscribed but silent because the band is not against
+skin.
 
-If the page has connected before, it reuses the remembered permission and skips the picker entirely.
-The connection itself is retried three times before it gives up, because a first-attempt failure is
-routine on iOS rather than meaningful.
+Two things it records that are worth knowing about:
+
+- **Which route the page arrived by** — `direct` or `via loader`, also shown in the footer. The
+  loader hands over with `document.open()`, which removes every event listener on the document; a
+  browser whose Web Bluetooth is a native bridge may route its callbacks through one. Try the
+  loader-free URL in `docs/README.md` if the probe says `viaLoader: true`.
+- **Whether the rejection carried a reason at all.** A promise rejected with no value is a finding,
+  not an absence of one, and it used to render as the word "undefined".
 
 **Three things to know before you rely on it.**
 

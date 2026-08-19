@@ -11,6 +11,20 @@ https://raw.githack.com/dgkenn/Codex-playground-/claude/iphone-marathon-training
 On an iPhone, open it in **Bluefy** rather than Safari. Safari has no Web Bluetooth and is not
 getting it, so it cannot read the armband; everything else works there.
 
+**A second URL, without the loader**, for when the armband is the thing being debugged:
+
+```
+https://raw.githack.com/dgkenn/Codex-playground-/claude/iphone-marathon-training-app-d2xxuc/docs/pace-coach.html
+```
+
+Same app, reached directly. The difference is that the loader hands over with `document.open()` /
+`document.write()`, and `document.open()` removes every event listener registered on the document. A
+browser whose Web Bluetooth is a native bridge may route its callbacks through exactly such a
+listener — which would leave `requestDevice` working, because the picker is native and one-shot,
+while a later `connect` reply has nowhere to land. That is the precise shape of a failure being
+chased, so the two routes are worth comparing. The page's footer says which one you are on: `direct`
+or `via loader`. This URL can serve a stale build; the build id says whether it has.
+
 ## Two files, and why
 
 `index.html` is a 5 kB loader that never changes. `pace-coach.html` is the app, rebuilt constantly.

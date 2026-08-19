@@ -117,6 +117,15 @@
         var complete = html.length > 20000
                     && html.replace(/\s+$/, '').slice(-9).toLowerCase() === '<\/script>';
         if (!complete) throw new Error('incomplete response (' + html.length + ' bytes)');
+        // Leave a mark that survives the handover.
+        //
+        // `document.open()` removes every event listener registered on the document. If a browser's
+        // Web Bluetooth bridge routes its native callbacks through one — a normal WKWebView pattern
+        // — then `requestDevice` would still work, because the picker is native and one-shot, while
+        // a later `connect` reply would have nowhere to land. That is the exact shape of the failure
+        // being chased, so whether this path was taken has to appear in the diagnostics rather than
+        // being argued about.
+        window.__viaLoader = true;
         document.open();
         document.write(html);
         document.close();
