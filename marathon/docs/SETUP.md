@@ -80,6 +80,10 @@ against your music before you leave.
 wake lock, but switching apps or locking the screen stops the coaching. This is the real cost of not
 having an app, and it is worth stating plainly rather than discovering at minute twelve.
 
+*Fixes take up to five minutes to arrive.* The page is served through a CDN that holds a copy for
+that long, so after a fix is pushed, wait a minute or two and reload. The build id in the footer
+says which one you have — compare it against the one you were given, rather than guessing.
+
 *If something goes wrong,* press **Copy diagnostics** at the bottom of the page and paste it into
 the chat. It carries the build id, what the browser can and cannot do, the tone and sensor state and
 the last forty log lines — enough to fix it without a second app, a console, or a cable. If the

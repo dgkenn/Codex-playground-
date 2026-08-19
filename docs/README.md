@@ -28,7 +28,14 @@ That split exists because no single host does both halves of the job:
 githack's caching is what made this necessary: a fix pushed here could take hours to reach the
 phone, which turns every fix into "reload and try again" — a guess, not a debugging loop. Caching a
 file that never changes costs nothing, so the loader sits at the stable URL and the app it retrieves
-is always current.
+is current.
+
+**Current, not instant.** `raw.githubusercontent` sits behind Fastly with `max-age=300`, and the
+edge ignores query strings, so a push takes up to five minutes to reach the phone. The loader's
+`cache: 'no-store'` defeats the browser's cache, not that one. Five bounded minutes is the number to
+work to; the footer's build id says whether you have it yet. Fetching by commit SHA instead would be
+instant and immutable, but the loader would have to know the SHA — which is the one thing a file
+that never changes cannot know.
 
 It hands over with `document.open()`/`write()`/`close()` rather than an iframe, because Web
 Bluetooth and geolocation are gated by Permissions Policy and delegating them into a frame is

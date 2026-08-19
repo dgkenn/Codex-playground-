@@ -65,8 +65,14 @@
   'use strict';
 
   // Pinned to the branch, not to a commit: the point is that the newest push wins without this file
-  // being touched. The cache-buster is belt and braces — raw.githubusercontent revalidates anyway,
-  // but its CDN holds a copy for a few minutes and a unique URL sidesteps that too.
+  // being touched. Fetching by commit SHA would be immutable and instant, and is exactly what a file
+  // that never changes cannot do — it would have to know the SHA.
+  //
+  // The cost of the branch URL is that raw.githubusercontent sits behind Fastly with max-age=300,
+  // and that edge ignores query strings, so a push takes up to five minutes to arrive. `no-store`
+  // defeats the browser's cache, not Fastly's; the cache-buster below is belt and braces for the
+  // same reason. Five bounded minutes against githack's several hours is the trade being made, and
+  // the build id in the footer is how you tell which side of it you are on.
   var APP = 'https://raw.githubusercontent.com/dgkenn/Codex-playground-'
           + '/claude/iphone-marathon-training-app-d2xxuc/docs/pace-coach.html';
 
