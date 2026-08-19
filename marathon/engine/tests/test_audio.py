@@ -336,3 +336,31 @@ def test_the_cap_resets_once_you_reach_pace():
     drive(m, [TARGET] * 120, start=600)                # acquires
     events = drive(m, [TARGET * 1.25] * 600, start=720)
     assert len([e for e in events if e.earcon is Earcon.LIFT]) > 2
+
+
+def test_ignoring_a_correction_backs_off_rather_than_nagging():
+    """Found by simulating the athlete's own demonstrated pattern: a third too fast, and holding it.
+
+    At a fixed fifteen-second interval that produced thirty tones in seven minutes — the same
+    nagging failure the three-tier ladder exists to prevent, reached from the other direction. The
+    ladder handles *how far out* you are and had nothing to say about *how long you have been told*.
+    """
+    m = PaceBandMonitor(target_pace_sec_km=540.0, tolerance=0.08)
+    events = drive(m, [390.0] * 420)          # 33% too fast for seven minutes, never corrected
+    assert len(events) <= 8, f"{len(events)} tones in 7 minutes of being ignored"
+
+    times = [e.t_s for e in events]
+    gaps = [b - a for a, b in zip(times, times[1:])]
+    assert gaps == sorted(gaps), f"intervals should grow, got {gaps}"
+    assert gaps[0] <= 20, "the first reminders must stay urgent — early is when a fix is cheap"
+    assert gaps[-1] >= 60, "later reminders should be sparse"
+
+
+def test_the_backoff_resets_once_you_comply():
+    """Correcting earns you a clean slate; the next mistake is urgent again."""
+    m = PaceBandMonitor(target_pace_sec_km=540.0, tolerance=0.08)
+    drive(m, [390.0] * 300)                   # burn the backoff down
+    drive(m, [540.0] * 120, start=300)        # comply, return to band
+    events = drive(m, [390.0] * 60, start=420)
+    assert events, "a fresh excursion was not reported at all"
+    assert events[0].t_s - 420 < 30, "the reminder after complying should be prompt again"

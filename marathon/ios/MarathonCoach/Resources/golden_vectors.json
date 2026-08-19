@@ -4289,31 +4289,7 @@
      "reason": "still out of the band"
     },
     {
-     "t_s": 37.0,
-     "earcon": "ease",
-     "error": -0.15,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 52.0,
-     "earcon": "ease",
-     "error": -0.15,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 67.0,
-     "earcon": "ease",
-     "error": -0.15,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 82.0,
-     "earcon": "ease",
-     "error": -0.15,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 97.0,
      "earcon": "ease",
      "error": -0.15,
      "reason": "still out of the band"
@@ -4322,12 +4298,6 @@
      "t_s": 112.0,
      "earcon": "ease",
      "error": -0.15,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 127.0,
-     "earcon": "ease",
-     "error": -0.0929,
      "reason": "still out of the band"
     },
     {
@@ -4387,31 +4357,7 @@
      "reason": "still out of the band"
     },
     {
-     "t_s": 37.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 52.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 67.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 82.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 97.0,
      "earcon": "ease",
      "error": -0.2,
      "reason": "still out of the band"
@@ -4423,73 +4369,7 @@
      "reason": "still out of the band"
     },
     {
-     "t_s": 127.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 142.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 157.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 172.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 187.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 202.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 217.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 232.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 247.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 262.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 277.0,
-     "earcon": "ease",
-     "error": -0.2,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 292.0,
      "earcon": "ease",
      "error": -0.2,
      "reason": "still out of the band"
@@ -4516,31 +4396,7 @@
      "reason": "still out of the band"
     },
     {
-     "t_s": 37.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 52.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 67.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 82.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 97.0,
      "earcon": "ease",
      "error": -0.3,
      "reason": "still out of the band"
@@ -4552,91 +4408,7 @@
      "reason": "still out of the band"
     },
     {
-     "t_s": 127.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 142.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 157.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 172.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 187.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 202.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 217.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 232.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 247.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 262.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 277.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 292.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 307.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 322.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 337.0,
      "earcon": "ease",
      "error": -0.3,
      "reason": "still out of the band"
@@ -4648,91 +4420,7 @@
      "reason": "still out of the band"
     },
     {
-     "t_s": 367.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 382.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 397.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 412.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 427.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 442.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 457.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 472.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 487.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 502.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 517.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 532.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 547.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 562.0,
-     "earcon": "ease",
-     "error": -0.3,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 577.0,
      "earcon": "ease",
      "error": -0.3,
      "reason": "still out of the band"
@@ -4773,49 +4461,13 @@
      "reason": "still out of the band"
     },
     {
-     "t_s": 141.0,
-     "earcon": "lift",
-     "error": 0.0601,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 201.0,
      "earcon": "lift",
      "error": 0.0601,
      "reason": "still out of the band"
     },
     {
-     "t_s": 261.0,
-     "earcon": "lift",
-     "error": 0.0601,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 321.0,
-     "earcon": "lift",
-     "error": 0.0601,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 381.0,
-     "earcon": "lift",
-     "error": 0.0601,
-     "reason": "still out of the band"
-    },
-    {
      "t_s": 441.0,
-     "earcon": "lift",
-     "error": 0.0601,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 501.0,
-     "earcon": "lift",
-     "error": 0.0601,
-     "reason": "still out of the band"
-    },
-    {
-     "t_s": 561.0,
      "earcon": "lift",
      "error": 0.0601,
      "reason": "still out of the band"

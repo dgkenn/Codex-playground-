@@ -71,7 +71,7 @@ from collections import deque
 __all__ = ["Earcon", "AudioEvent", "PaceBandMonitor", "SplitAnnouncer", "TONE_MIN_GAP_S",
            "OVERLAP_FLOOR_S", "RETURN_FRACTION", "SMOOTHING_S", "MILD_MULTIPLE", "MILD_GAP_S",
            "LARGE_GAP_S", "MARGINAL_MULTIPLE", "MARGINAL_GAP_S", "ACQUIRE_GRACE_S",
-           "MAX_UNACQUIRED_NUDGES"]
+           "MAX_UNACQUIRED_NUDGES", "REMINDER_BACKOFF_MAX"]
 
 
 # ----------------------------------------------------------------------------------------
@@ -162,6 +162,20 @@ RETURN_FRACTION = 0.6
 #: needs to be told, once, rather than left in a silence they will read as approval.
 ACQUIRE_GRACE_S = 180.0
 
+#: Cap on how far the reminder interval backs off while a correction is ignored.
+#:
+#: Found by simulating the athlete's own demonstrated pattern -- starting a third too fast and
+#: holding it. At a fixed fifteen-second interval that produced thirty tones in seven minutes, which
+#: is the same nagging failure the three-tier ladder was built to prevent, just reached from the
+#: other direction. The ladder handles *how far out* you are; it had nothing to say about *how long
+#: you have been told*.
+#:
+#: So each unheeded reminder doubles the wait, to a ceiling of eight times the base interval. The
+#: first few stay urgent, because early is when a correction is cheap and the session is still
+#: salvageable. After that the app has made its point, and a beep every two minutes is a reminder
+#: rather than an argument. The counter resets the moment you come back into the band.
+REMINDER_BACKOFF_MAX = 8
+
 #: How many times the channel will say "you are not up to pace" before giving up on saying it.
 #:
 #: Same reasoning as the sensor-fault cap in :mod:`marathon_engine.realtime`: the message is
@@ -231,6 +245,8 @@ class PaceBandMonitor:
     _slow_since: Optional[float] = None
     #: How many "not up to pace yet" nudges have been played. Capped.
     _unacquired_nudges: int = 0
+    #: Reminders played during the current unbroken excursion. Drives the backoff.
+    _consecutive_reminders: int = 0
 
     # -- input -------------------------------------------------------------------------------
 
@@ -282,6 +298,7 @@ class PaceBandMonitor:
             self.state = "in"
             self.acquired = True
             self._slow_since = None
+            self._consecutive_reminders = 0
             if was_out and self._pending_ack:
                 # Acknowledge only what was actually announced. Reaching target pace for the first
                 # time is not "back in the band" -- nothing was said, so nothing needs closing, and
@@ -317,6 +334,7 @@ class PaceBandMonitor:
             self._slow_since = None
 
         if changed_side:
+            self._consecutive_reminders = 0
             return self._emit(self._tone_for(side), t_s, error, "crossed to the other side")
 
         if self._last_tone_t is None:
@@ -328,6 +346,8 @@ class PaceBandMonitor:
             gap = MILD_GAP_S
         else:
             gap = MARGINAL_GAP_S
+        # Each unheeded reminder doubles the wait. See REMINDER_BACKOFF_MAX.
+        gap *= min(REMINDER_BACKOFF_MAX, 2 ** max(0, self._consecutive_reminders - 1))
         if t_s - self._last_tone_t >= gap:
             return self._emit(self._tone_for(side), t_s, error, "still out of the band")
         return None
@@ -344,6 +364,7 @@ class PaceBandMonitor:
         self._last_tone = earcon
         if earcon in (Earcon.EASE, Earcon.LIFT):
             self._pending_ack = True
+            self._consecutive_reminders += 1
             if earcon is Earcon.LIFT and not self.acquired:
                 self._unacquired_nudges += 1
         return AudioEvent(earcon=earcon, t_s=t_s, error=round(error, 4), reason=reason)

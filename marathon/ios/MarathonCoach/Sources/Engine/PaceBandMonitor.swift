@@ -53,6 +53,14 @@ public enum AudioTuning {
     /// How many "not up to pace" nudges before the channel gives up saying it. Same reasoning as the
     /// sensor-fault cap: actionable twice, nagging after that.
     public static let maxUnacquiredNudges = 2
+    /// Cap on how far the reminder interval backs off while a correction is ignored.
+    ///
+    /// Found by simulation: at a fixed 15 s interval, an athlete a third too fast and holding it
+    /// earned thirty tones in seven minutes — the same nagging failure the three-tier ladder exists
+    /// to prevent, reached from the other direction. The ladder handles how far out you are and had
+    /// nothing to say about how long you have been told. Each unheeded reminder now doubles the
+    /// wait, to eight times the base; the counter resets on returning to the band.
+    public static let reminderBackoffMax = 8
     public static let smoothingS: Double = 20
     public static let minSamples = 8
 }
@@ -81,6 +89,8 @@ public final class PaceBandMonitor {
     private var slowSince: Double?
     /// How many "not up to pace yet" nudges have been played. Capped.
     private var unacquiredNudges = 0
+    /// Reminders played during the current unbroken excursion. Drives the backoff.
+    private var consecutiveReminders = 0
 
     public init(targetPaceSecKm: Double?, tolerance: Double = 0.06,
                 ceilingOnly: Bool = false, enabled: Bool = true) {
@@ -133,6 +143,7 @@ public final class PaceBandMonitor {
             state = .inBand
             acquired = true
             slowSince = nil
+            consecutiveReminders = 0
             if wasOut, pendingAck {
                 // Acknowledge only what was actually announced. Reaching target pace for the first
                 // time is not "back in the band" — nothing was said, so nothing needs closing, and
@@ -167,6 +178,7 @@ public final class PaceBandMonitor {
         }
 
         if changedSide {
+            consecutiveReminders = 0
             return emit(tone(for: side), tS, error, "crossed to the other side")
         }
         guard let last = lastToneT else {
@@ -181,7 +193,10 @@ public final class PaceBandMonitor {
         } else {
             gap = AudioTuning.marginalGapS
         }
-        if tS - last >= gap {
+        // Each unheeded reminder doubles the wait. See reminderBackoffMax.
+        let backoff = min(AudioTuning.reminderBackoffMax,
+                          1 << max(0, consecutiveReminders - 1))
+        if tS - last >= gap * Double(backoff) {
             return emit(tone(for: side), tS, error, "still out of the band")
         }
         return nil
@@ -197,6 +212,7 @@ public final class PaceBandMonitor {
         lastToneT = tS
         if earcon == .ease || earcon == .lift {
             pendingAck = true
+            consecutiveReminders += 1
             if earcon == .lift, !acquired { unacquiredNudges += 1 }
         }
         return AudioEvent(earcon: earcon, tS: tS,

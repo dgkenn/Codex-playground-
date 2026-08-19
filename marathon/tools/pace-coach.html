@@ -1,0 +1,363 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Pace coach</title>
+
+<style>
+  :root {
+    --bg:#0e0e0d; --fg:#f2f1ee; --dim:#8f8d86; --line:#2c2b28;
+    --ok:#6fbf8b; --warn:#d9a24a; --bad:#e07a7a; --accent:#7aa5e0;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  body { background:var(--bg); color:var(--fg); margin:0;
+         font:16px/1.5 ui-sans-serif,-apple-system,system-ui,sans-serif;
+         padding-bottom:env(safe-area-inset-bottom); }
+  main { max-width:34rem; margin:0 auto; padding:1rem 1rem 4rem; }
+  h1 { font-size:1.15rem; margin:0 0 .2rem; }
+  .sub { color:var(--dim); font-size:.85rem; margin:0 0 1rem; }
+  h2 { font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--dim);
+       margin:1.6rem 0 .5rem; font-weight:600; }
+  button { font:inherit; padding:.85rem 1rem; border-radius:10px; border:1px solid var(--line);
+           background:transparent; color:var(--fg); cursor:pointer; min-height:3rem; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#0b0b0a;
+                   font-weight:600; }
+  button.big { width:100%; font-size:1.1rem; padding:1.1rem; }
+  button:disabled { opacity:.35; }
+  .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  input { font:inherit; padding:.55rem; border-radius:8px; border:1px solid var(--line);
+          background:transparent; color:var(--fg); width:5rem; }
+  label { font-size:.85rem; color:var(--dim); }
+  .hero { text-align:center; padding:1.2rem 0 .5rem; }
+  .hero .pace { font-size:3.6rem; font-variant-numeric:tabular-nums; line-height:1;
+                letter-spacing:-.02em; }
+  .hero .verdict { font-size:1rem; margin-top:.4rem; letter-spacing:.02em; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin-top:1rem; }
+  .tile { border:1px solid var(--line); border-radius:10px; padding:.55rem .6rem; text-align:center; }
+  .tile .k { font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); }
+  .tile .v { font-size:1.25rem; font-variant-numeric:tabular-nums; }
+  #status { border:1px solid var(--line); border-radius:9px; padding:.6rem .75rem; font-size:.85rem; }
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .dim{color:var(--dim)}
+  .note { border-left:2px solid var(--line); padding-left:.85rem; color:var(--dim); font-size:.85rem; }
+  ul { padding-left:1.1rem; } li { margin:.3rem 0; }
+  #said { font-size:.85rem; color:var(--dim); max-height:9rem; overflow-y:auto; }
+  #said div { padding:.15rem 0; border-bottom:1px solid var(--line); }
+  code { font-family:ui-monospace,Menlo,monospace; font-size:.85em; }
+</style>
+
+<main>
+  <h1>Pace coach</h1>
+  <p class="sub">GPS pace, in your ears, from the phone in your pocket. No app, no Mac.</p>
+
+  <div id="status" class="dim">Not started.</div>
+
+  <div class="note" style="margin-top:.9rem">
+    <strong>Test the sound before you run.</strong> Start Apple Music, then press <em>Hear the
+    tones</em> below. Safari cannot ask iOS to mix with other audio the way a real app can, so your
+    music may duck or pause. Thirty seconds now tells you which, standing still, instead of at
+    minute twelve.
+  </div>
+
+  <div class="row" style="margin-top:.8rem">
+    <button id="test">Hear the tones</button>
+    <button id="testvoice">Hear the voice</button>
+  </div>
+
+  <h2>Session</h2>
+  <div class="row">
+    <label>target pace <input id="target" type="text" inputmode="numeric" value="9:00"></label>
+    <label>± <input id="tol" type="number" min="2" max="20" step="1" value="8" style="width:3.5rem"> %</label>
+  </div>
+  <div class="row" style="margin-top:.5rem">
+    <label><input type="checkbox" id="ceiling" checked style="width:auto"> easy run (ceiling only —
+      never tells you to speed up)</label>
+  </div>
+  <p id="bandtext" class="sub" style="margin-top:.5rem"></p>
+
+  <button id="go" class="big primary" style="margin-top:.6rem">Start</button>
+
+  <div class="hero">
+    <div class="pace" id="pace">—:—</div>
+    <div class="verdict dim" id="verdict">waiting for GPS</div>
+  </div>
+
+  <div class="grid">
+    <div class="tile"><div class="k">Elapsed</div><div class="v" id="elapsed">0:00</div></div>
+    <div class="tile"><div class="k">Distance</div><div class="v" id="dist">0.00</div></div>
+    <div class="tile"><div class="k">GPS ±</div><div class="v" id="acc">—</div></div>
+  </div>
+
+  <h2>Said so far</h2>
+  <div id="said"></div>
+
+  <h2>After</h2>
+  <button id="save" disabled>Download session</button>
+  <p class="note" style="margin-top:.6rem">Import with
+  <code>cli import session.json --log</code>. No heart rate — Safari has no Bluetooth — so this
+  records pace and distance only.</p>
+
+  <h2>Before you go</h2>
+  <ul class="sub">
+    <li><strong>Keep this page open and the screen on.</strong> iOS suspends background tabs; the
+    coaching stops if you switch away or the screen locks. The page requests a wake lock, but keep
+    it foreground.</li>
+    <li><strong>Silent switch off.</strong> Web audio respects it on some iOS versions.</li>
+    <li>Falling pair = ease off. Rising pair = lift. Single note = back on pace. Silence = you are
+    inside the band.</li>
+  </ul>
+</main>
+
+<script type="module">
+import { PaceBandMonitor, SplitAnnouncer, Earcon, fmtPace } from './pace-monitor.js';
+
+// ---------------------------------------------------------------------------------------------
+// Audio. Same five sounds, same pitches and envelope as the iOS EarconPlayer, so what you learn
+// here transfers unchanged if the app is ever built.
+// ---------------------------------------------------------------------------------------------
+
+const PITCH = { low: 587.33, mid: 740.0, high: 880.0 };
+const PIP = 0.09, GAP = 0.055, FADE = 0.008;
+
+const RECIPES = {
+  [Earcon.EASE]:     [[PITCH.high, PIP], [0, GAP], [PITCH.low, PIP]],
+  [Earcon.LIFT]:     [[PITCH.low, PIP], [0, GAP], [PITCH.high, PIP]],
+  [Earcon.IN_BAND]:  [[PITCH.mid, PIP * 1.3]],
+  [Earcon.ATTEND]:   [[PITCH.low, PIP * .6], [0, GAP * .7], [PITCH.mid, PIP * .6],
+                      [0, GAP * .7], [PITCH.high, PIP * .6]],
+  [Earcon.DEGRADED]: [[220, PIP * 1.2], [0, GAP], [220, PIP * 1.2]],
+};
+
+let ctx = null;
+function audio() {
+  // Created lazily inside a user gesture — iOS refuses to start an AudioContext otherwise, and a
+  // context created at load time is born suspended and never recovers on its own.
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+
+function play(earcon, gain = 0.5) {
+  const c = audio();
+  let t = c.currentTime + 0.02;
+  for (const [freq, dur] of RECIPES[earcon] || []) {
+    if (freq > 0) {
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      // Raised-cosine-ish envelope. A raw burst clicks at both ends, and the click is louder and
+      // more startling than the tone it wraps.
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + FADE);
+      g.gain.setValueAtTime(gain, t + dur - FADE);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g).connect(c.destination);
+      osc.start(t); osc.stop(t + dur + 0.01);
+    }
+    t += dur;
+  }
+}
+
+function say(text) {
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.08;
+  speechSynthesis.speak(u);
+  log(text);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Pace from GPS
+// ---------------------------------------------------------------------------------------------
+
+// A fix looser than this is not a pace, it is a rumour. Twenty-five metres is permissive enough to
+// keep working under trees and tight enough that a wild fix cannot invent a sprint.
+const MAX_ACCURACY_M = 25;
+const MAX_PLAUSIBLE_MS = 8;
+
+const S = {
+  running: false, startedAt: 0, distanceM: 0, lastFix: null,
+  speed: null, accuracy: null, samples: [], watchId: null, tickId: null,
+  monitor: null, splits: null, tones: 0,
+};
+
+function haversine(a, b) {
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
+  const s = Math.sin(dLat / 2) ** 2
+          + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+function onFix(pos) {
+  const { latitude: lat, longitude: lon, accuracy, speed } = pos.coords;
+  S.accuracy = accuracy;
+  $('acc').textContent = accuracy == null ? '—' : `${accuracy.toFixed(0)}m`;
+
+  const fix = { lat, lon, t: pos.timestamp / 1000 };
+  if (accuracy != null && accuracy > MAX_ACCURACY_M) { S.lastFix = fix; return; }
+
+  // iOS supplies a Doppler speed, which is far better than differencing positions. Fall back to
+  // positions only when it is absent, and reject anything a person cannot produce either way.
+  let v = (speed != null && speed >= 0) ? speed : null;
+  if (v == null && S.lastFix) {
+    const dt = fix.t - S.lastFix.t;
+    if (dt > 0.5) v = haversine(S.lastFix, fix) / dt;
+  }
+  if (v != null && v <= MAX_PLAUSIBLE_MS) {
+    S.speed = v;
+    if (S.running && S.lastFix) {
+      const dt = fix.t - S.lastFix.t;
+      if (dt > 0 && dt < 10) S.distanceM += v * dt;
+    }
+  }
+  S.lastFix = fix;
+}
+
+function tick() {
+  if (!S.running) return;
+  const t = Math.round((Date.now() - S.startedAt) / 1000);
+  $('elapsed').textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+  $('dist').textContent = (S.distanceM / 1000).toFixed(2);
+
+  const trusted = S.accuracy != null && S.accuracy <= MAX_ACCURACY_M;
+  const pace = (S.speed && S.speed > 0.4) ? 1000 / S.speed : null;
+  $('pace').textContent = pace ? fmtPace(pace) : '—:—';
+
+  S.samples.push({ t_s: t, speed_m_s: S.speed, accuracy_m: S.accuracy });
+
+  const ev = S.monitor.update(t, pace, { paceTrusted: trusted });
+  if (ev) {
+    play(ev.earcon);
+    S.tones++;
+    log(`(${ev.earcon})`);
+  }
+
+  const line = S.splits.update(t, S.distanceM, pace, S.monitor.state);
+  if (line) {
+    play(Earcon.ATTEND);
+    setTimeout(() => say(line), 400);
+  }
+
+  const v = $('verdict');
+  const map = { in: ['on pace', 'ok'], fast: ['ease off', 'warn'], slow: ['lift', 'warn'],
+                unknown: ['no pace signal', 'bad'] };
+  const [text, cls] = map[S.monitor.state] || ['—', 'dim'];
+  v.textContent = trusted ? text : 'no pace signal';
+  v.className = 'verdict ' + (trusted ? cls : 'bad');
+}
+
+// ---------------------------------------------------------------------------------------------
+// Wiring
+// ---------------------------------------------------------------------------------------------
+
+const $ = id => document.getElementById(id);
+function log(s) {
+  const d = document.createElement('div');
+  const t = S.startedAt ? Math.round((Date.now() - S.startedAt) / 1000) : 0;
+  d.textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}  ${s}`;
+  $('said').prepend(d);
+}
+function setStatus(msg, cls) { $('status').textContent = msg; $('status').className = cls || 'dim'; }
+
+function parsePace(text) {
+  const m = String(text).trim().match(/^(\d+):(\d{1,2})$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  const n = Number(text);
+  return Number.isFinite(n) && n > 60 ? n : null;
+}
+
+function refreshBand() {
+  const target = parsePace($('target').value);
+  const tol = Number($('tol').value) / 100;
+  if (!target) { $('bandtext').textContent = 'Enter a target pace like 9:00.'; return; }
+  $('bandtext').textContent =
+    `Band: ${fmtPace(target * (1 - tol))} – ${fmtPace(target * (1 + tol))} per km`
+    + ($('ceiling').checked ? '. Only the fast edge is enforced.' : '.');
+}
+['target', 'tol', 'ceiling'].forEach(id => $(id).addEventListener('input', refreshBand));
+refreshBand();
+
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    else if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { /* not fatal; the screen may just sleep */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.running) log('page backgrounded — coaching paused by iOS');
+  else if (!document.hidden && S.running && !wakeLock) keepAwake(true);
+});
+
+$('test').onclick = () => {
+  const order = [Earcon.EASE, Earcon.LIFT, Earcon.IN_BAND, Earcon.ATTEND, Earcon.DEGRADED];
+  const names = ['ease off', 'lift', 'back on pace', 'voice incoming', 'signal lost'];
+  order.forEach((e, i) => setTimeout(() => { play(e); log(`${names[i]}  (${e})`); }, i * 1100));
+  setStatus('Playing all five. If your music stopped, that is iOS, not a bug — see the note.', 'warn');
+};
+$('testvoice').onclick = () => { audio(); say('3K. 8 41. On pace.'); };
+
+$('go').onclick = async () => {
+  if (S.running) return stop();
+
+  const target = parsePace($('target').value);
+  if (!target) { setStatus('Enter a target pace like 9:00 first.', 'bad'); return; }
+  if (!navigator.geolocation) { setStatus('This browser has no geolocation.', 'bad'); return; }
+
+  audio();                       // must happen inside the tap, or iOS will not allow sound later
+  S.monitor = new PaceBandMonitor({
+    targetPaceSecKm: target,
+    tolerance: Number($('tol').value) / 100,
+    ceilingOnly: $('ceiling').checked,
+  });
+  S.splits = new SplitAnnouncer({ everyM: 1000 });
+  S.distanceM = 0; S.samples = []; S.tones = 0; S.lastFix = null; S.speed = null;
+  S.startedAt = Date.now(); S.running = true;
+
+  S.watchId = navigator.geolocation.watchPosition(onFix,
+    err => setStatus(`GPS: ${err.message}`, 'bad'),
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+  S.tickId = setInterval(tick, 1000);
+  keepAwake(true);
+
+  $('go').textContent = 'Stop';
+  $('go').classList.remove('primary');
+  $('save').disabled = true;
+  setStatus('Running. Silence means you are inside the band.', 'ok');
+  play(Earcon.IN_BAND);
+};
+
+function stop() {
+  S.running = false;
+  clearInterval(S.tickId);
+  if (S.watchId != null) navigator.geolocation.clearWatch(S.watchId);
+  keepAwake(false);
+  $('go').textContent = 'Start';
+  $('go').classList.add('primary');
+  $('save').disabled = S.samples.length === 0;
+  const mins = S.samples.length / 60;
+  setStatus(`Stopped. ${(S.distanceM / 1000).toFixed(2)} km in ${mins.toFixed(0)} min, `
+            + `${S.tones} tones (${(S.tones / Math.max(1, mins)).toFixed(2)}/min).`, 'ok');
+}
+
+$('save').onclick = () => {
+  // The engine's calibration schema, so `cli import` reads it with no conversion. Heart rate is
+  // absent and left absent rather than faked — Safari has no Bluetooth, and a null is honest.
+  const payload = {
+    schema_version: 1,
+    started_at: new Date(S.startedAt).toISOString(),
+    age: 30, hr_rest: 55,
+    samples: S.samples.map(s => ({
+      t_s: s.t_s, hr_bpm: null,
+      speed_m_s: s.speed_m_s == null ? null : Math.round(s.speed_m_s * 1e4) / 1e4,
+      label: '',
+    })),
+    resting_ppi_ms: [], surface: 'road', strap_position: 'upper_arm',
+    notes: 'Recorded by the Safari pace coach. GPS only — no heart rate, no accelerometer.',
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pace-session.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+</script>
