@@ -394,6 +394,12 @@
       back into the chat and it imports with <code>cli import</code>.
     </p>
   </section>
+  <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);
+                 font-size:.75rem;color:var(--faint);display:flex;gap:.6rem;flex-wrap:wrap">
+    <span>Band</span>
+    <span id="buildid">—</span>
+    <span id="capsline" style="margin-left:auto"></span>
+  </footer>
 </main>
 
 <script type="module">
@@ -528,6 +534,7 @@ function log(msg, cls) {
 // =================================================================================================
 
 const PLAN = /*{{PLAN}}*/;
+const BUILD = /*{{BUILD}}*/;
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
@@ -1151,6 +1158,14 @@ $('gain').onchange = () => { audio(); play('in_band'); };
 setUnit(unit);
 renderPlan();
 updateSensorUi();
+
+// Build id and capabilities, visible without tapping anything. After a fix is pushed, this is how
+// "reload and try again" gets confirmed instead of assumed.
+$('buildid').textContent = `build ${BUILD.id} · ${BUILD.at}`;
+$('capsline').textContent =
+  [bluetoothAvailable() ? 'BT' : 'no BT',
+   navigator.geolocation ? 'GPS' : 'no GPS',
+   'speechSynthesis' in window ? 'voice' : 'no voice'].join(' · ');
 $('btnote').textContent = bluetoothAvailable()
   ? 'This browser can read the armband. Connect before you start and heart rate is recorded with '
     + 'the run.'

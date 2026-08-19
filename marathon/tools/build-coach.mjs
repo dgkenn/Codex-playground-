@@ -16,6 +16,7 @@
 // an intention.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -31,6 +32,19 @@ function inline(path) {
     .trim();
 }
 
+// A build stamp, so "reload and try again" can be verified rather than assumed.
+//
+// The loop is: something breaks on the phone, it gets fixed here, the fix is pushed, the page is
+// reloaded. Without a visible build id the first question after every fix is "are you sure you have
+// the new one", which is a question neither side can answer.
+let stamp;
+try {
+  stamp = execSync('git rev-parse --short HEAD', { cwd: root }).toString().trim();
+} catch {
+  stamp = 'local';
+}
+const built = new Date().toISOString().replace('T', ' ').slice(0, 16) + 'Z';
+
 const parts = {
   MONITOR: inline('pace-monitor.js'),
   GEO: inline('geo.js'),
@@ -38,6 +52,7 @@ const parts = {
   HRMONITOR: inline('hr-monitor.js'),
   TONES: inline('tones.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
+  BUILD: JSON.stringify({ id: stamp, at: built }),
 };
 
 let html = readFileSync(join(here, 'coach-template.html'), 'utf8');
