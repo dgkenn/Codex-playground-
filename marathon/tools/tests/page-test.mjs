@@ -488,8 +488,9 @@ async function pickDay(page, kind) {
     const log = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
     return {
       plays: (await page.evaluate(() => window.__plays)).length,
-      eased: log.some(l => /^\d+:\d+ease/.test(l.replace(/\s/g, ''))) || log.some(l => /ease/.test(l)),
+      eased: log.some(l => /ease/.test(l)),
       lifted: log.some(l => /lift/.test(l)),
+      inBand: log.some(l => /in band/.test(l)),
       shown: await page.textContent('#pacetile'),
     };
   }
@@ -498,22 +499,35 @@ async function pickDay(page, kind) {
   await page.click('#r-pace');
   // Target 8:20 per mile = 3.22 m/s. Comfortably inside what the simulated fixes can hold.
   await page.fill('#target', '8:20');
+  // Both edges enforced, and set BEFORE starting: the monitor is constructed when Start is pressed,
+  // so unchecking this mid-run changes a checkbox and nothing else.
+  await page.uncheck('#ceiling');
   await page.waitForTimeout(150);
   await page.click('#go');
 
-  // Too fast: 4.2 m/s against a 3.22 m/s target is 30% over, well outside any tolerance.
+  // 1. Too fast. 4.2 m/s against a 3.22 m/s target is 30% over, well outside any tolerance.
   const fast = await runAt(4.2, 30);
   assert.ok(fast.eased, 'running 30% too fast must produce an ease-off cue');
   assert.ok(fast.plays > 0, 'and it must actually reach the audio element');
   assert.match(fast.shown, /^\d+:\d\d$/, `the measured pace must be on screen: "${fast.shown}"`);
 
-  // Too slow: 2.2 m/s is 30% under. The band is not ceiling-only here, so it must say lift.
-  await page.uncheck('#ceiling');
+  // 2. On target. This is not padding — it is what makes step 3 mean anything.
+  //
+  // The monitor deliberately does not police SLOW until the target has been reached at least once:
+  // an athlete who has not yet found the pace is not drifting off it, and nagging someone during
+  // their first three minutes is how the cues get tuned out. So a test that goes straight from too
+  // fast to too slow gets silence, correctly, and proves nothing about the lift cue.
+  const onTarget = await runAt(3.22, 40);
+  assert.ok(onTarget.plays > 0 || onTarget.inBand,
+    'returning to the band should be acknowledged once, so silence afterwards can be trusted');
+
+  // 3. Too slow, now that the pace has been acquired.
   const slow = await runAt(2.2, 45);
-  assert.ok(slow.lifted, 'running 30% too slow must produce a lift cue when both edges are enforced');
+  assert.ok(slow.lifted,
+    `30% under an acquired target must produce a lift cue when both edges are enforced`);
   await page.click('#go');
   await page.waitForTimeout(200);
-  console.log(`  ok  the loop closes: measured, compared, and spoken both ways `
+  console.log(`  ok  the loop closes: too fast says ease, on target acknowledges, too slow says lift `
             + `(showed ${fast.shown} while over)`);
 }
 
