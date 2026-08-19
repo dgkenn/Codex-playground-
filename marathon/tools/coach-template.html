@@ -382,6 +382,7 @@
     <div id="log"></div>
     <div class="row" style="margin-top:.65rem">
       <button id="copy" disabled>Copy session data</button>
+      <button id="diag" class="tiny">Copy diagnostics</button>
     </div>
     <div class="row" style="margin-top:.65rem">
       <label style="flex:1">tone volume
@@ -412,6 +413,8 @@
 /*{{SENSOR}}*/
 
 /*{{HRMONITOR}}*/
+
+/*{{TONES}}*/
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -445,45 +448,31 @@ const fmtPace = secKm => U.pace(secKm);
 // transfers unchanged if the app is ever built.
 // =================================================================================================
 
-const P = { low: 587.33, mid: 740.0, high: 880.0 };
-const PIP = 0.09, GAP = 0.055, FADE = 0.008;
-const RECIPES = {
-  ease:     [[P.high, PIP], [0, GAP], [P.low, PIP]],
-  lift:     [[P.low, PIP], [0, GAP], [P.high, PIP]],
-  in_band:  [[P.mid, PIP * 1.3]],
-  attend:   [[P.low, PIP*.6], [0, GAP*.7], [P.mid, PIP*.6], [0, GAP*.7], [P.high, PIP*.6]],
-  degraded: [[220, PIP*1.2], [0, GAP], [220, PIP*1.2]],
-};
+// Sound goes through the media path, not Web Audio.
+//
+// It was Web Audio, and on an iPhone the tones were silent while the spoken splits worked. That
+// split IS the diagnosis: iOS treats an AudioContext as ambient audio, which the hardware silent
+// switch mutes, while speech and <audio> playback go through the media path, which it does not. No
+// amount of fixing gestures or envelopes could have helped — the sound was in the wrong category,
+// and nothing inside the Web Audio API can change that.
+const tones = new Tones({ volume: Number(localStorage.getItem('band.gain') || 0.65) });
+let audioReady = false;
 
-let ctx = null;
+/** Must run inside a tap. Safe to call repeatedly; it only does work once. */
 function audio() {
-  // Created lazily inside a user gesture. iOS refuses to start an AudioContext otherwise, and one
-  // created at load time is born suspended and never recovers on its own.
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === 'suspended') ctx.resume();
-  return ctx;
+  if (!audioReady) {
+    audioReady = true;
+    tones.unlock().then(ok => {
+      if (!ok && tones.lastError) log(`sound blocked: ${tones.lastError.message}`, 'stop');
+    });
+  }
+  return tones;
 }
 
-let toneGain = Number(localStorage.getItem('band.gain') || 0.65);
-
-function play(earcon, gain = toneGain) {
-  const c = audio();
-  let t = c.currentTime + 0.02;
-  for (const [freq, dur] of RECIPES[earcon] || []) {
-    if (freq > 0) {
-      const osc = c.createOscillator(), g = c.createGain();
-      osc.type = 'sine'; osc.frequency.value = freq;
-      // Without an envelope a raw burst clicks at both ends, and the click is louder and more
-      // startling than the tone it wraps.
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(gain, t + FADE);
-      g.gain.setValueAtTime(gain, t + dur - FADE);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      osc.connect(g).connect(c.destination);
-      osc.start(t); osc.stop(t + dur + 0.01);
-    }
-    t += dur;
-  }
+function play(earcon, _gain) {
+  tones.play(earcon).then(ok => {
+    if (!ok && tones.lastError) log(`could not play ${earcon}: ${tones.lastError.message}`, 'stop');
+  });
 }
 
 function say(text) {
@@ -670,6 +659,8 @@ const CHECKS = [
     hint: 'A tone must actually reach your AirPods.' },
   { id: 'voice', name: 'Voice',
     hint: 'The kilometre splits are spoken.' },
+  { id: 'bt', name: 'Armband (Bluetooth)',
+    hint: 'Safari cannot; Bluefy can.' },
   { id: 'gps', name: 'Location',
     hint: 'Pace comes from GPS. Blocked here means run/walk mode instead.' },
   { id: 'wake', name: 'Screen stays on',
@@ -696,11 +687,15 @@ function mark(id, status, detail) {
 }
 
 $('preflight').onclick = async () => {
-  const c = audio();
-  mark('audio', c.state === 'running' ? 'pass' : 'warn',
-       c.state === 'running' ? 'Audio running. Listen for the tone now.'
-                             : `Audio context is "${c.state}" — tap again.`);
+  audio();
   play('in_band');
+  mark('audio', 'warn', 'Playing a tone now — did you hear it?');
+  setTimeout(() => {
+    mark('audio', tones.lastError ? 'fail' : 'pass',
+         tones.lastError
+           ? `Blocked: ${tones.lastError.message}`
+           : 'Sound is playing through the media channel, so the silent switch does not mute it.');
+  }, 900);
 
   if ('speechSynthesis' in window) {
     let spoke = false;
@@ -709,31 +704,34 @@ $('preflight').onclick = async () => {
     u.onstart = () => { spoke = true; mark('voice', 'pass', 'Speaking now.'); };
     u.onerror = e => mark('voice', 'fail', `Speech failed: ${e.error}`);
     setTimeout(() => { if (!spoke) mark('voice', 'warn', 'No start event — turn the volume up.'); },
-               2500);
-    setTimeout(() => speechSynthesis.speak(u), 1400);
+               2600);
+    setTimeout(() => speechSynthesis.speak(u), 1500);
   } else {
     mark('voice', 'fail', 'This browser has no speech synthesis.');
   }
 
+  mark('bt', bluetoothAvailable() ? 'pass' : 'fail',
+       bluetoothAvailable()
+         ? 'This browser can reach the armband.'
+         : 'No Web Bluetooth here. On iPhone use Bluefy; Safari cannot do it.');
+
   mark('gps', 'warn', 'Asking for permission…');
   if (!navigator.geolocation) {
-    mark('gps', 'fail', 'No geolocation in this browser. Use run/walk mode.');
+    mark('gps', 'fail', 'No geolocation. Use run/walk mode, which needs none.');
   } else {
     navigator.geolocation.getCurrentPosition(
-      p => mark('gps', p.coords.accuracy <= MAX_ACCURACY_M ? 'pass' : 'warn',
+      p => mark('gps', p.coords.accuracy <= 25 ? 'pass' : 'warn',
                 `Fix to ±${p.coords.accuracy.toFixed(0)} m`
-                + (p.coords.accuracy > MAX_ACCURACY_M
-                   ? ' — too loose to coach from yet. Step outside and retry.'
-                   : '. Good enough to coach from.')),
-      e => mark('gps', 'fail',
-                `${e.message}. If this frame blocks location, use run/walk mode — it needs none.`),
+                + (p.coords.accuracy > 25 ? ' — too loose to coach from. Step outside and retry.'
+                                          : '. Good enough to coach from.')),
+      e => mark('gps', 'fail', `${e.message}. Run/walk mode needs no location.`),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
 
   if ('wakeLock' in navigator) {
     try {
       const wl = await navigator.wakeLock.request('screen');
-      mark('wake', 'pass', 'Granted. The screen will stay on while a session runs.');
+      mark('wake', 'pass', 'Granted. The screen stays on while a session runs.');
       await wl.release();
     } catch (e) {
       mark('wake', 'warn', `Denied (${e.name}). Set Auto-Lock to Never in Settings → Display.`);
@@ -891,18 +889,38 @@ function updateSensorUi() {
 
 $('connect').onclick = async () => {
   if (!bluetoothAvailable()) {
-    log('This browser has no Bluetooth. On iPhone, open this page in Bluefy.', 'stop');
+    $('hrstate').textContent = 'This browser has no Bluetooth — use Bluefy on iPhone';
+    log('no Web Bluetooth in this browser', 'stop');
     return;
   }
-  if (S.sensor && S.sensor.connected) { S.sensor.disconnect(); log('armband disconnected'); return; }
+  if (S.sensor && S.sensor.connected) {
+    S.sensor.disconnect();
+    $('connect').textContent = 'Connect';
+    log('armband disconnected');
+    updateSensorUi();
+    return;
+  }
+  // Every step is shown where you are already looking. "Nothing happened" is not a diagnosis, and
+  // on a phone there is no console to open — so the panel has to be the console.
+  const step = m => { $('hrstate').textContent = m; log(m, 'dim'); };
   try {
-    S.sensor = new VeritySensor({ onLog: (m, c) => log(m, c), onChange: updateSensorUi });
-    log('choose "Polar Sense" in the dialog…');
+    S.sensor = new VeritySensor({
+      onLog: (m, c) => log(m, c),
+      onChange: updateSensorUi,
+      onStep: step,
+    });
     await S.sensor.connect();
-    log(`armband connected${S.sensor.hasAcc ? ' with accelerometer' : ' (heart rate only)'}`, 'on');
     $('connect').textContent = 'Disconnect';
+    log(`connected${S.sensor.hasAcc ? ' with accelerometer' : ' — heart rate only'}`, 'on');
   } catch (e) {
-    log(`could not connect: ${e.message}`, 'stop');
+    const where = S.sensor ? S.sensor.step : 'starting';
+    $('hrstate').textContent = `failed at: ${where}`;
+    log(`failed at "${where}": ${e.name || 'Error'} — ${e.message}`, 'stop');
+    if (/User cancelled|cancelled/i.test(e.message)) {
+      log('picker dismissed without choosing', 'dim');
+    } else if (/GATT|connect/i.test(e.message)) {
+      log('the band may still be held by Polar Flow — force-quit Flow and retry', 'stop');
+    }
   }
   updateSensorUi();
 };
@@ -1123,10 +1141,10 @@ function setUnit(u) {
 $('u-mi').onclick = () => setUnit('mi');
 $('u-km').onclick = () => setUnit('km');
 
-$('gain').value = String(toneGain);
+$('gain').value = String(tones.volume);
 $('gain').oninput = e => {
-  toneGain = Number(e.target.value);
-  localStorage.setItem('band.gain', String(toneGain));
+  tones.setVolume(Number(e.target.value));
+  localStorage.setItem('band.gain', String(tones.volume));
 };
 $('gain').onchange = () => { audio(); play('in_band'); };
 
@@ -1224,6 +1242,41 @@ function finish(msg) {
   $('verdict').textContent = 'stopped';
   $('verdict').style.color = 'var(--faint)';
 }
+
+// Everything worth asking about, in one paste. The alternative is a conversation of twenty
+// questions conducted while standing outside in the cold.
+$('diag').onclick = async () => {
+  const lines = [...$('log').children].slice(0, 40).map(d => d.textContent).reverse();
+  const report = {
+    when: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    bluetooth: bluetoothAvailable(),
+    geolocation: !!navigator.geolocation,
+    wakeLock: 'wakeLock' in navigator,
+    speech: 'speechSynthesis' in window,
+    audioUnlocked: audioReady,
+    audioError: tones.lastError ? String(tones.lastError) : null,
+    toneVolume: tones.volume,
+    unit,
+    sensor: S.sensor ? {
+      step: S.sensor.step, connected: S.sensor.connected, hasAcc: S.sensor.hasAcc,
+      battery: S.sensor.battery, hr: S.sensor.hr,
+      hrAgeMs: S.sensor.hrAt ? Date.now() - S.sensor.hrAt : null,
+    } : null,
+    gps: {
+      accepted: S.track.accepted, rejected: S.track.rejected,
+      lastAccuracy: S.track.lastAccuracy, distanceM: Math.round(S.track.distanceM),
+    },
+    plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
+    log: lines,
+  };
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+    log('diagnostics copied — paste them into the chat', 'on');
+  } catch {
+    log('clipboard blocked; screenshot the log instead', 'stop');
+  }
+};
 
 $('copy').onclick = async () => {
   // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own

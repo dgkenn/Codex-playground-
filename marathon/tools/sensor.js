@@ -13,10 +13,19 @@
 // this the hard way — without the check it wrote its last reading every second for the rest of the
 // session, producing a flat, plausible, entirely fabricated trace.
 
-export const HR_SERVICE = 'heart_rate';
-export const HR_CHAR = 'heart_rate_measurement';
-export const BATTERY_SERVICE = 'battery_service';
-export const BATTERY_CHAR = 'battery_level';
+// Full 128-bit UUIDs, not the short aliases.
+//
+// It was `'heart_rate'` and `'battery_service'`, which the spec allows and Chrome accepts. Third-
+// party WebBLE browsers frequently do not, and the failure is quiet in the worst way: the device
+// picker appears and works, the GATT connection succeeds, and then the service lookup throws — so
+// from the outside it looks as though selecting the armband simply did nothing.
+//
+// Bluefy is the only route to the armband from an iPhone, so the canonical form is the correct one
+// to ship. It costs nothing on browsers that accepted the alias.
+export const HR_SERVICE = '0000180d-0000-1000-8000-00805f9b34fb';
+export const HR_CHAR = '00002a37-0000-1000-8000-00805f9b34fb';
+export const BATTERY_SERVICE = '0000180f-0000-1000-8000-00805f9b34fb';
+export const BATTERY_CHAR = '00002a19-0000-1000-8000-00805f9b34fb';
 export const PMD_SERVICE = 'fb005c80-02e7-f387-1cad-8acd2d8df0c8';
 export const PMD_CONTROL = 'fb005c81-02e7-f387-1cad-8acd2d8df0c8';
 export const PMD_DATA = 'fb005c82-02e7-f387-1cad-8acd2d8df0c8';
@@ -137,9 +146,13 @@ export const bluetoothAvailable = () =>
  * directly, or a band that has gone out of range keeps reporting its last value forever.
  */
 export class VeritySensor {
-  constructor({ onLog = () => {}, onChange = () => {} } = {}) {
+  constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {} } = {}) {
     this.onLog = onLog;
     this.onChange = onChange;
+    // Named so a failure can say which step it stopped at. "Nothing happened" is not a diagnosis,
+    // and on a phone there is no console to go and look in.
+    this.onStep = onStep;
+    this.step = 'idle';
     this.device = null;
     this.hr = null;
     this.hrAt = 0;
@@ -167,19 +180,30 @@ export class VeritySensor {
     return sd;
   }
 
+  _at(step) { this.step = step; this.onStep(step); }
+
   async connect() {
+    this._at('asking for the device');
     this.device = await navigator.bluetooth.requestDevice({
+      // `acceptAllDevices` is deliberately not used: a name filter keeps the picker to the armband,
+      // and `optionalServices` must still list everything that will be read afterwards or the
+      // lookups are blocked even on a device the user chose.
       filters: [{ namePrefix: 'Polar' }],
       optionalServices: [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE],
     });
+    this._at(`selected ${this.device.name || 'device'}`);
     this.device.addEventListener('gattserverdisconnected', () => {
       this.connected = false;
       this.onChange();
       this.onLog('armband disconnected — retrying', 'bad');
       this._reconnect();
     });
-    await this._attach(await this.device.gatt.connect());
+    this._at('connecting');
+    const server = await this.device.gatt.connect();
+    this._at('connected, looking for heart rate');
+    await this._attach(server);
     this.connected = true;
+    this._at('streaming');
     this.onChange();
   }
 
@@ -205,8 +229,16 @@ export class VeritySensor {
   }
 
   async _attach(server) {
-    const hrService = await server.getPrimaryService(HR_SERVICE);
+    let hrService;
+    try {
+      hrService = await server.getPrimaryService(HR_SERVICE);
+    } catch (e) {
+      // Name the step. Without this the whole connect reads as "nothing happened".
+      throw new Error(`heart-rate service not found (${e.message}). `
+                    + 'If this browser wants short names rather than UUIDs, that is the cause.');
+    }
     const hrChar = await hrService.getCharacteristic(HR_CHAR);
+    this._at('subscribing to heart rate');
     await hrChar.startNotifications();
     hrChar.addEventListener('characteristicvaluechanged', e => {
       const { hr, rr } = parseHeartRate(e.target.value);

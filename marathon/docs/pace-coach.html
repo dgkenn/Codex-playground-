@@ -382,6 +382,7 @@
     <div id="log"></div>
     <div class="row" style="margin-top:.65rem">
       <button id="copy" disabled>Copy session data</button>
+      <button id="diag" class="tiny">Copy diagnostics</button>
     </div>
     <div class="row" style="margin-top:.65rem">
       <label style="flex:1">tone volume
@@ -888,10 +889,19 @@ class GpsTrack {
 // this the hard way — without the check it wrote its last reading every second for the rest of the
 // session, producing a flat, plausible, entirely fabricated trace.
 
-const HR_SERVICE = 'heart_rate';
-const HR_CHAR = 'heart_rate_measurement';
-const BATTERY_SERVICE = 'battery_service';
-const BATTERY_CHAR = 'battery_level';
+// Full 128-bit UUIDs, not the short aliases.
+//
+// It was `'heart_rate'` and `'battery_service'`, which the spec allows and Chrome accepts. Third-
+// party WebBLE browsers frequently do not, and the failure is quiet in the worst way: the device
+// picker appears and works, the GATT connection succeeds, and then the service lookup throws — so
+// from the outside it looks as though selecting the armband simply did nothing.
+//
+// Bluefy is the only route to the armband from an iPhone, so the canonical form is the correct one
+// to ship. It costs nothing on browsers that accepted the alias.
+const HR_SERVICE = '0000180d-0000-1000-8000-00805f9b34fb';
+const HR_CHAR = '00002a37-0000-1000-8000-00805f9b34fb';
+const BATTERY_SERVICE = '0000180f-0000-1000-8000-00805f9b34fb';
+const BATTERY_CHAR = '00002a19-0000-1000-8000-00805f9b34fb';
 const PMD_SERVICE = 'fb005c80-02e7-f387-1cad-8acd2d8df0c8';
 const PMD_CONTROL = 'fb005c81-02e7-f387-1cad-8acd2d8df0c8';
 const PMD_DATA = 'fb005c82-02e7-f387-1cad-8acd2d8df0c8';
@@ -1012,9 +1022,13 @@ const bluetoothAvailable = () =>
  * directly, or a band that has gone out of range keeps reporting its last value forever.
  */
 class VeritySensor {
-  constructor({ onLog = () => {}, onChange = () => {} } = {}) {
+  constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {} } = {}) {
     this.onLog = onLog;
     this.onChange = onChange;
+    // Named so a failure can say which step it stopped at. "Nothing happened" is not a diagnosis,
+    // and on a phone there is no console to go and look in.
+    this.onStep = onStep;
+    this.step = 'idle';
     this.device = null;
     this.hr = null;
     this.hrAt = 0;
@@ -1042,19 +1056,30 @@ class VeritySensor {
     return sd;
   }
 
+  _at(step) { this.step = step; this.onStep(step); }
+
   async connect() {
+    this._at('asking for the device');
     this.device = await navigator.bluetooth.requestDevice({
+      // `acceptAllDevices` is deliberately not used: a name filter keeps the picker to the armband,
+      // and `optionalServices` must still list everything that will be read afterwards or the
+      // lookups are blocked even on a device the user chose.
       filters: [{ namePrefix: 'Polar' }],
       optionalServices: [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE],
     });
+    this._at(`selected ${this.device.name || 'device'}`);
     this.device.addEventListener('gattserverdisconnected', () => {
       this.connected = false;
       this.onChange();
       this.onLog('armband disconnected — retrying', 'bad');
       this._reconnect();
     });
-    await this._attach(await this.device.gatt.connect());
+    this._at('connecting');
+    const server = await this.device.gatt.connect();
+    this._at('connected, looking for heart rate');
+    await this._attach(server);
     this.connected = true;
+    this._at('streaming');
     this.onChange();
   }
 
@@ -1080,8 +1105,16 @@ class VeritySensor {
   }
 
   async _attach(server) {
-    const hrService = await server.getPrimaryService(HR_SERVICE);
+    let hrService;
+    try {
+      hrService = await server.getPrimaryService(HR_SERVICE);
+    } catch (e) {
+      // Name the step. Without this the whole connect reads as "nothing happened".
+      throw new Error(`heart-rate service not found (${e.message}). `
+                    + 'If this browser wants short names rather than UUIDs, that is the cause.');
+    }
     const hrChar = await hrService.getCharacteristic(HR_CHAR);
+    this._at('subscribing to heart rate');
     await hrChar.startNotifications();
     hrChar.addEventListener('characteristicvaluechanged', e => {
       const { hr, rr } = parseHeartRate(e.target.value);
@@ -1276,6 +1309,158 @@ class HrCeilingMonitor {
   }
 }
 
+// The earcons, rendered to WAV and played as media rather than through Web Audio.
+//
+// Why not Web Audio
+// -----------------
+// It was Web Audio, and on an iPhone the tones were silent while the spoken splits worked. That
+// split is the whole diagnosis: iOS treats an `AudioContext` as *ambient* audio, which the hardware
+// silent switch mutes, while `speechSynthesis` and `<audio>` playback go through the media path,
+// which it does not. So the failure was not the gesture handling, the oscillators, or the envelope —
+// it was the category the platform had put the sound in, and nothing inside the Web Audio API can
+// change that.
+//
+// Playing an `HTMLAudioElement` moves the sound onto the media path. The tones then behave like the
+// voice: audible with the ring switch either way, and mixed against music by the same rules.
+//
+// The samples are synthesised at load time into WAV blobs rather than shipped as files, for the same
+// reason they were synthesised before: every constant here — pitch, duration, the gap inside a pair,
+// the envelope — will want adjusting once heard through AirPods at 160 steps per minute with music
+// underneath, and a number in a source file can be adjusted where a rendered asset cannot.
+
+const RATE = 44100;
+
+/// Pitches sit above most music's vocal range so they are audible without being loud, and far enough
+/// apart that the rise/fall contour survives compression and wind noise.
+const PITCH = { low: 587.33, mid: 740.0, high: 880.0 };
+const PIP = 0.09, GAP = 0.055, FADE = 0.008;
+
+/// Contour carries the meaning: falling means back off, rising means more. The same mapping as
+/// almost every other interface a person has used, which is the point — nothing to learn.
+const RECIPES = {
+  ease:     [[PITCH.high, PIP], [0, GAP], [PITCH.low, PIP]],
+  lift:     [[PITCH.low, PIP], [0, GAP], [PITCH.high, PIP]],
+  in_band:  [[PITCH.mid, PIP * 1.3]],
+  attend:   [[PITCH.low, PIP * 0.6], [0, GAP * 0.7], [PITCH.mid, PIP * 0.6],
+             [0, GAP * 0.7], [PITCH.high, PIP * 0.6]],
+  // Deliberately unlike the others — low, dull, doubled — so a degradation notice is never mistaken
+  // for a pace instruction.
+  degraded: [[220.0, PIP * 1.2], [0, GAP], [220.0, PIP * 1.2]],
+};
+
+/** Render `[frequency, seconds]` segments to mono float samples. Frequency 0 is silence. */
+function renderSamples(segments, rate = RATE) {
+  const total = segments.reduce((a, [, d]) => a + d, 0);
+  const out = new Float32Array(Math.max(1, Math.round(total * rate)));
+  let index = 0;
+  for (const [freq, dur] of segments) {
+    const n = Math.round(dur * rate);
+    const fade = Math.max(1, Math.round(FADE * rate));
+    for (let i = 0; i < n && index + i < out.length; i++) {
+      if (freq <= 0) continue;
+      // Raised-cosine envelope at both ends. Without it the discontinuity where the burst starts and
+      // stops is audible as a click, and the click is louder and more startling than the tone.
+      let env = 1;
+      if (i < fade) env = 0.5 * (1 - Math.cos(Math.PI * i / fade));
+      else if (i > n - fade) env = 0.5 * (1 - Math.cos(Math.PI * (n - i) / fade));
+      out[index + i] = Math.sin(2 * Math.PI * freq * i / rate) * env;
+    }
+    index += n;
+  }
+  return out;
+}
+
+/** Wrap float samples in a 16-bit PCM WAV container. */
+function wavBytes(samples, rate = RATE) {
+  const n = samples.length;
+  const buf = new ArrayBuffer(44 + n * 2);
+  const v = new DataView(buf);
+  const ascii = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+
+  ascii(0, 'RIFF');
+  v.setUint32(4, 36 + n * 2, true);
+  ascii(8, 'WAVE');
+  ascii(12, 'fmt ');
+  v.setUint32(16, 16, true);          // PCM chunk size
+  v.setUint16(20, 1, true);           // format: PCM
+  v.setUint16(22, 1, true);           // channels: mono
+  v.setUint32(24, rate, true);
+  v.setUint32(28, rate * 2, true);    // byte rate
+  v.setUint16(32, 2, true);           // block align
+  v.setUint16(34, 16, true);          // bits per sample
+  ascii(36, 'data');
+  v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Uint8Array(buf);
+}
+
+function wavDataUri(segments, rate = RATE) {
+  const bytes = wavBytes(renderSamples(segments, rate), rate);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return 'data:audio/wav;base64,' + btoa(bin);
+}
+
+/**
+ * Plays the vocabulary through the media path.
+ *
+ * Two elements per sound, alternated, so a tone arriving while the previous one is still finishing
+ * does not cut it off mid-envelope — which sounds like a fault rather than a cue.
+ */
+class Tones {
+  constructor({ volume = 0.65 } = {}) {
+    this.volume = volume;
+    this.pool = {};
+    this.unlocked = false;
+    this.lastError = null;
+    for (const [name, recipe] of Object.entries(RECIPES)) {
+      const uri = wavDataUri(recipe);
+      this.pool[name] = [new Audio(uri), new Audio(uri)];
+      for (const a of this.pool[name]) { a.preload = 'auto'; a.volume = volume; }
+    }
+    this.turn = {};
+  }
+
+  setVolume(v) {
+    this.volume = v;
+    for (const list of Object.values(this.pool)) for (const a of list) a.volume = v;
+  }
+
+  /**
+   * Must be called from inside a user gesture, once.
+   *
+   * iOS refuses to play media that no tap asked for, and the refusal is permanent for that element
+   * until a gesture arrives. Playing every element muted and immediately pausing marks them all as
+   * user-initiated, so a tone forty minutes later — which no tap asked for — is allowed.
+   */
+  unlock() {
+    if (this.unlocked) return Promise.resolve(true);
+    const all = Object.values(this.pool).flat();
+    return Promise.all(all.map(a => {
+      a.muted = true;
+      const p = a.play();
+      return (p && p.then ? p : Promise.resolve())
+        .then(() => { a.pause(); a.currentTime = 0; a.muted = false; })
+        .catch(e => { this.lastError = e; a.muted = false; });
+    })).then(() => { this.unlocked = true; return true; });
+  }
+
+  play(name) {
+    const list = this.pool[name];
+    if (!list) return Promise.resolve(false);
+    const i = (this.turn[name] = ((this.turn[name] || 0) + 1) % list.length);
+    const a = list[i];
+    try { a.currentTime = 0; } catch { /* not yet loaded; play from wherever it is */ }
+    const p = a.play();
+    return (p && p.then ? p : Promise.resolve())
+      .then(() => true)
+      .catch(e => { this.lastError = e; return false; });
+  }
+}
+
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
 const mmss = formatMMSS;
@@ -1308,45 +1493,31 @@ const fmtPace = secKm => U.pace(secKm);
 // transfers unchanged if the app is ever built.
 // =================================================================================================
 
-const P = { low: 587.33, mid: 740.0, high: 880.0 };
-const PIP = 0.09, GAP = 0.055, FADE = 0.008;
-const RECIPES = {
-  ease:     [[P.high, PIP], [0, GAP], [P.low, PIP]],
-  lift:     [[P.low, PIP], [0, GAP], [P.high, PIP]],
-  in_band:  [[P.mid, PIP * 1.3]],
-  attend:   [[P.low, PIP*.6], [0, GAP*.7], [P.mid, PIP*.6], [0, GAP*.7], [P.high, PIP*.6]],
-  degraded: [[220, PIP*1.2], [0, GAP], [220, PIP*1.2]],
-};
+// Sound goes through the media path, not Web Audio.
+//
+// It was Web Audio, and on an iPhone the tones were silent while the spoken splits worked. That
+// split IS the diagnosis: iOS treats an AudioContext as ambient audio, which the hardware silent
+// switch mutes, while speech and <audio> playback go through the media path, which it does not. No
+// amount of fixing gestures or envelopes could have helped — the sound was in the wrong category,
+// and nothing inside the Web Audio API can change that.
+const tones = new Tones({ volume: Number(localStorage.getItem('band.gain') || 0.65) });
+let audioReady = false;
 
-let ctx = null;
+/** Must run inside a tap. Safe to call repeatedly; it only does work once. */
 function audio() {
-  // Created lazily inside a user gesture. iOS refuses to start an AudioContext otherwise, and one
-  // created at load time is born suspended and never recovers on its own.
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === 'suspended') ctx.resume();
-  return ctx;
+  if (!audioReady) {
+    audioReady = true;
+    tones.unlock().then(ok => {
+      if (!ok && tones.lastError) log(`sound blocked: ${tones.lastError.message}`, 'stop');
+    });
+  }
+  return tones;
 }
 
-let toneGain = Number(localStorage.getItem('band.gain') || 0.65);
-
-function play(earcon, gain = toneGain) {
-  const c = audio();
-  let t = c.currentTime + 0.02;
-  for (const [freq, dur] of RECIPES[earcon] || []) {
-    if (freq > 0) {
-      const osc = c.createOscillator(), g = c.createGain();
-      osc.type = 'sine'; osc.frequency.value = freq;
-      // Without an envelope a raw burst clicks at both ends, and the click is louder and more
-      // startling than the tone it wraps.
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(gain, t + FADE);
-      g.gain.setValueAtTime(gain, t + dur - FADE);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      osc.connect(g).connect(c.destination);
-      osc.start(t); osc.stop(t + dur + 0.01);
-    }
-    t += dur;
-  }
+function play(earcon, _gain) {
+  tones.play(earcon).then(ok => {
+    if (!ok && tones.lastError) log(`could not play ${earcon}: ${tones.lastError.message}`, 'stop');
+  });
 }
 
 function say(text) {
@@ -1533,6 +1704,8 @@ const CHECKS = [
     hint: 'A tone must actually reach your AirPods.' },
   { id: 'voice', name: 'Voice',
     hint: 'The kilometre splits are spoken.' },
+  { id: 'bt', name: 'Armband (Bluetooth)',
+    hint: 'Safari cannot; Bluefy can.' },
   { id: 'gps', name: 'Location',
     hint: 'Pace comes from GPS. Blocked here means run/walk mode instead.' },
   { id: 'wake', name: 'Screen stays on',
@@ -1559,11 +1732,15 @@ function mark(id, status, detail) {
 }
 
 $('preflight').onclick = async () => {
-  const c = audio();
-  mark('audio', c.state === 'running' ? 'pass' : 'warn',
-       c.state === 'running' ? 'Audio running. Listen for the tone now.'
-                             : `Audio context is "${c.state}" — tap again.`);
+  audio();
   play('in_band');
+  mark('audio', 'warn', 'Playing a tone now — did you hear it?');
+  setTimeout(() => {
+    mark('audio', tones.lastError ? 'fail' : 'pass',
+         tones.lastError
+           ? `Blocked: ${tones.lastError.message}`
+           : 'Sound is playing through the media channel, so the silent switch does not mute it.');
+  }, 900);
 
   if ('speechSynthesis' in window) {
     let spoke = false;
@@ -1572,31 +1749,34 @@ $('preflight').onclick = async () => {
     u.onstart = () => { spoke = true; mark('voice', 'pass', 'Speaking now.'); };
     u.onerror = e => mark('voice', 'fail', `Speech failed: ${e.error}`);
     setTimeout(() => { if (!spoke) mark('voice', 'warn', 'No start event — turn the volume up.'); },
-               2500);
-    setTimeout(() => speechSynthesis.speak(u), 1400);
+               2600);
+    setTimeout(() => speechSynthesis.speak(u), 1500);
   } else {
     mark('voice', 'fail', 'This browser has no speech synthesis.');
   }
 
+  mark('bt', bluetoothAvailable() ? 'pass' : 'fail',
+       bluetoothAvailable()
+         ? 'This browser can reach the armband.'
+         : 'No Web Bluetooth here. On iPhone use Bluefy; Safari cannot do it.');
+
   mark('gps', 'warn', 'Asking for permission…');
   if (!navigator.geolocation) {
-    mark('gps', 'fail', 'No geolocation in this browser. Use run/walk mode.');
+    mark('gps', 'fail', 'No geolocation. Use run/walk mode, which needs none.');
   } else {
     navigator.geolocation.getCurrentPosition(
-      p => mark('gps', p.coords.accuracy <= MAX_ACCURACY_M ? 'pass' : 'warn',
+      p => mark('gps', p.coords.accuracy <= 25 ? 'pass' : 'warn',
                 `Fix to ±${p.coords.accuracy.toFixed(0)} m`
-                + (p.coords.accuracy > MAX_ACCURACY_M
-                   ? ' — too loose to coach from yet. Step outside and retry.'
-                   : '. Good enough to coach from.')),
-      e => mark('gps', 'fail',
-                `${e.message}. If this frame blocks location, use run/walk mode — it needs none.`),
+                + (p.coords.accuracy > 25 ? ' — too loose to coach from. Step outside and retry.'
+                                          : '. Good enough to coach from.')),
+      e => mark('gps', 'fail', `${e.message}. Run/walk mode needs no location.`),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
 
   if ('wakeLock' in navigator) {
     try {
       const wl = await navigator.wakeLock.request('screen');
-      mark('wake', 'pass', 'Granted. The screen will stay on while a session runs.');
+      mark('wake', 'pass', 'Granted. The screen stays on while a session runs.');
       await wl.release();
     } catch (e) {
       mark('wake', 'warn', `Denied (${e.name}). Set Auto-Lock to Never in Settings → Display.`);
@@ -1754,18 +1934,38 @@ function updateSensorUi() {
 
 $('connect').onclick = async () => {
   if (!bluetoothAvailable()) {
-    log('This browser has no Bluetooth. On iPhone, open this page in Bluefy.', 'stop');
+    $('hrstate').textContent = 'This browser has no Bluetooth — use Bluefy on iPhone';
+    log('no Web Bluetooth in this browser', 'stop');
     return;
   }
-  if (S.sensor && S.sensor.connected) { S.sensor.disconnect(); log('armband disconnected'); return; }
+  if (S.sensor && S.sensor.connected) {
+    S.sensor.disconnect();
+    $('connect').textContent = 'Connect';
+    log('armband disconnected');
+    updateSensorUi();
+    return;
+  }
+  // Every step is shown where you are already looking. "Nothing happened" is not a diagnosis, and
+  // on a phone there is no console to open — so the panel has to be the console.
+  const step = m => { $('hrstate').textContent = m; log(m, 'dim'); };
   try {
-    S.sensor = new VeritySensor({ onLog: (m, c) => log(m, c), onChange: updateSensorUi });
-    log('choose "Polar Sense" in the dialog…');
+    S.sensor = new VeritySensor({
+      onLog: (m, c) => log(m, c),
+      onChange: updateSensorUi,
+      onStep: step,
+    });
     await S.sensor.connect();
-    log(`armband connected${S.sensor.hasAcc ? ' with accelerometer' : ' (heart rate only)'}`, 'on');
     $('connect').textContent = 'Disconnect';
+    log(`connected${S.sensor.hasAcc ? ' with accelerometer' : ' — heart rate only'}`, 'on');
   } catch (e) {
-    log(`could not connect: ${e.message}`, 'stop');
+    const where = S.sensor ? S.sensor.step : 'starting';
+    $('hrstate').textContent = `failed at: ${where}`;
+    log(`failed at "${where}": ${e.name || 'Error'} — ${e.message}`, 'stop');
+    if (/User cancelled|cancelled/i.test(e.message)) {
+      log('picker dismissed without choosing', 'dim');
+    } else if (/GATT|connect/i.test(e.message)) {
+      log('the band may still be held by Polar Flow — force-quit Flow and retry', 'stop');
+    }
   }
   updateSensorUi();
 };
@@ -1986,10 +2186,10 @@ function setUnit(u) {
 $('u-mi').onclick = () => setUnit('mi');
 $('u-km').onclick = () => setUnit('km');
 
-$('gain').value = String(toneGain);
+$('gain').value = String(tones.volume);
 $('gain').oninput = e => {
-  toneGain = Number(e.target.value);
-  localStorage.setItem('band.gain', String(toneGain));
+  tones.setVolume(Number(e.target.value));
+  localStorage.setItem('band.gain', String(tones.volume));
 };
 $('gain').onchange = () => { audio(); play('in_band'); };
 
@@ -2087,6 +2287,41 @@ function finish(msg) {
   $('verdict').textContent = 'stopped';
   $('verdict').style.color = 'var(--faint)';
 }
+
+// Everything worth asking about, in one paste. The alternative is a conversation of twenty
+// questions conducted while standing outside in the cold.
+$('diag').onclick = async () => {
+  const lines = [...$('log').children].slice(0, 40).map(d => d.textContent).reverse();
+  const report = {
+    when: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    bluetooth: bluetoothAvailable(),
+    geolocation: !!navigator.geolocation,
+    wakeLock: 'wakeLock' in navigator,
+    speech: 'speechSynthesis' in window,
+    audioUnlocked: audioReady,
+    audioError: tones.lastError ? String(tones.lastError) : null,
+    toneVolume: tones.volume,
+    unit,
+    sensor: S.sensor ? {
+      step: S.sensor.step, connected: S.sensor.connected, hasAcc: S.sensor.hasAcc,
+      battery: S.sensor.battery, hr: S.sensor.hr,
+      hrAgeMs: S.sensor.hrAt ? Date.now() - S.sensor.hrAt : null,
+    } : null,
+    gps: {
+      accepted: S.track.accepted, rejected: S.track.rejected,
+      lastAccuracy: S.track.lastAccuracy, distanceM: Math.round(S.track.distanceM),
+    },
+    plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
+    log: lines,
+  };
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+    log('diagnostics copied — paste them into the chat', 'on');
+  } catch {
+    log('clipboard blocked; screenshot the log instead', 'stop');
+  }
+};
 
 $('copy').onclick = async () => {
   // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own
