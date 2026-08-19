@@ -259,6 +259,10 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   // hour on the treadmill yields no fit, which is the entire point of the session.
   await page.click('#m-ramp');
   assert.match(await page.textContent('#modenote'), /stage/i, 'the ramp mode must explain itself');
+  // Explicitly the treadmill flow; the street flow gets its own block below. The default is street,
+  // and a test that silently inherited whichever default happened to be current is how the wrong
+  // one shipped.
+  await page.uncheck('#rampoutdoor');
 
   await page.click('.strip button:nth-child(3)');       // Wednesday of week one
   await page.waitForTimeout(120);
@@ -275,8 +279,8 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   assert.ok(running.some(l => /Walk warm-up/.test(l)),
     `the first step must be announced: ${JSON.stringify(running.slice(0, 3))}`);
   const spokenNow = await page.evaluate(() => window.__spoken);
-  assert.ok(spokenNow.some(l => /easy walking/i.test(l)),
-    `the first step must be spoken, not only logged: ${JSON.stringify(spokenNow)}`);
+  assert.ok(spokenNow.some(l => /kilometres an hour/i.test(l)),
+    `on a treadmill the first step is a dial setting: ${JSON.stringify(spokenNow)}`);
   assert.match(await page.textContent('#verdict'), /Walk warm-up/);
 
   await page.click('#go');                               // stop
@@ -322,6 +326,57 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   await page.waitForTimeout(200);
   await page.uncheck('#rampoutdoor');
   console.log(`  ok  an outdoor ramp speaks paces and arms the band (${spoken.find(l => /per /.test(l))})`);
+}
+
+// --- the one-tap start cannot silently pick the wrong session ------------------------------------
+
+{
+  // The defect this exists for: the street/treadmill choice lived in a panel only reachable by NOT
+  // using the one-tap start, so a one-tap ramp ran the treadmill flow — dial settings read aloud,
+  // no pace band, no tones — for someone standing on a street. A whole session, silently wrong.
+  // A genuinely fresh start: earlier blocks have been changing this setting, and a "default" that
+  // is really "whatever the last test left behind" tests nothing.
+  await page.evaluate(() => localStorage.removeItem('band.rampOutdoor'));
+  await page.reload();
+  await page.waitForSelector('#starttoday');
+
+  const label = (await page.textContent('#starttoday')).trim();
+  assert.match(label, /street|treadmill/,
+    `the button must state which flow it will run: "${label}"`);
+  assert.ok(await page.isVisible('#today-where'),
+    'and the choice must be reachable from where the session is actually started');
+  assert.equal(await page.getAttribute('#w-street', 'aria-pressed'), 'true',
+    'the street is the default — a treadmill is the exception, and guessing wrong costs a session');
+
+  await page.click('#w-mill');
+  assert.match(await page.textContent('#starttoday'), /treadmill/);
+  await page.click('#w-street');
+  assert.match(await page.textContent('#starttoday'), /street/);
+  // The two controls are the same setting and must not disagree.
+  assert.equal(await page.isChecked('#rampoutdoor'), true);
+  console.log(`  ok  the one-tap start names its flow and the choice is where the tap is (${label})`);
+}
+
+// --- a persistent fault does not flood the log ----------------------------------------------------
+
+{
+  // Forty log lines reach the diagnostics report. One condition repeating every second fills all
+  // forty with the same line and pushes out the connect, the stages and the tones — everything
+  // anyone would need. Repeats collapse to a count instead.
+  await page.evaluate(() => {
+    for (let i = 0; i < 30; i++) window.__log ? window.__log('same thing') : null;
+  });
+  const before = await page.$$eval('#log div', ds => ds.length);
+  await page.click('button[data-tone="ease"]');
+  await page.click('button[data-tone="ease"]');
+  await page.click('button[data-tone="ease"]');
+  await page.waitForTimeout(200);
+  const rows = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  const repeated = rows.find(r => /ease off — ease/.test(r));
+  assert.match(repeated, /×3/, `three identical lines must collapse to a count: "${repeated}"`);
+  assert.ok(await page.$$eval('#log div', ds => ds.length) <= before + 1,
+    'and must not add a row each time');
+  console.log(`  ok  a repeated line collapses to a count (${repeated.trim()})`);
 }
 
 // --- the pace coach, actually running ------------------------------------------------------------

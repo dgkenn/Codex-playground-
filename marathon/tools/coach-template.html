@@ -284,6 +284,10 @@
           <div class="weeklabel" id="todaydetail"></div>
         </div>
       </div>
+      <div class="seg hide" id="today-where" role="group">
+        <button id="w-street" aria-pressed="true">On the street</button>
+        <button id="w-mill" aria-pressed="false">Treadmill</button>
+      </div>
       <button id="starttoday" class="go">Start</button>
     </div>
     <p class="note" style="margin-top:.7rem">
@@ -596,17 +600,40 @@ const S = {
   hrZones: null,
 };
 
+/**
+ * The session log, with repeats collapsed.
+ *
+ * A condition that persists writes the same line every second. One flaky GPS second is a line; a
+ * minute under a bridge is sixty identical lines, and the forty the diagnostics report carries are
+ * then all the same line — which pushes out the connect, the stage boundaries and the tones, the
+ * things anyone actually needs to see. Collapsing keeps a persistent fault visible as a count rather
+ * than as a flood that hides everything around it.
+ */
+let lastLogMsg = null, lastLogRow = null, lastLogCount = 1;
+
 function log(msg, cls) {
-  const d = document.createElement('div');
   const t = S.startedAt ? Math.round((Date.now() - S.startedAt) / 1000) : 0;
+  const stamp = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
+
+  if (msg === lastLogMsg && lastLogRow && lastLogRow.parentNode) {
+    lastLogCount += 1;
+    lastLogRow.lastChild.textContent = `${msg} (×${lastLogCount})`;
+    return;
+  }
+
+  const d = document.createElement('div');
   const span = document.createElement('span');
   span.className = 't';
-  span.textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
+  span.textContent = stamp;
   const body = document.createElement('span');
   body.textContent = msg;
   if (cls) body.style.color = `var(--${cls})`;
   d.append(span, body);
   $('log').prepend(d);
+
+  lastLogMsg = msg;
+  lastLogRow = d;
+  lastLogCount = 1;
 }
 
 // =================================================================================================
@@ -804,9 +831,13 @@ function renderToday() {
   if (s.run_walk) bits.push(`${s.run_walk.reps} × ${s.run_walk.run_min}/${s.run_walk.walk_min} min`);
   if (s.ramp) bits.push(`${s.ramp.steps.filter(x => x.kind === 'stage').length} stages`);
   $('todaydetail').textContent = bits.join(' · ');
+  $('today-where').classList.toggle('hide', !s.ramp);
   $('starttoday').disabled = !runnable(s);
+  // The label states which flow is about to run. A one-tap start that silently picks between two
+  // materially different sessions is a tap you cannot check before making.
   $('starttoday').textContent = runnable(s)
-    ? `Start ${s.ramp ? 'the ramp test' : s.run_walk ? 'run / walk' : 'the run'}`
+    ? (s.ramp ? `Start the ramp test — ${S.rampOutdoor ? 'street' : 'treadmill'}`
+              : `Start ${s.run_walk ? 'run / walk' : 'the run'}`)
     : 'Not a session the app can run';
 }
 
@@ -1009,14 +1040,24 @@ function renderRampNote() {
   $('rampnote').style.color = warnings.length ? 'var(--fast)' : 'var(--dim)';
 }
 
-$('rampoutdoor').checked = localStorage.getItem('band.rampOutdoor') === '1';
+// Defaults to the street. Stored as an explicit '0'/'1' so "never chosen" and "chose treadmill"
+// are different states: the previous default of off meant a one-tap start silently picked the
+// treadmill flow — dial settings read aloud, no pace band, no tones — for someone outdoors.
+$('rampoutdoor').checked = (localStorage.getItem('band.rampOutdoor') || '1') === '1';
 S.rampOutdoor = $('rampoutdoor').checked;
-$('rampoutdoor').onchange = e => {
-  S.rampOutdoor = e.target.checked;
-  localStorage.setItem('band.rampOutdoor', S.rampOutdoor ? '1' : '0');
+function setRampWhere(outdoor) {
+  S.rampOutdoor = outdoor;
+  localStorage.setItem('band.rampOutdoor', outdoor ? '1' : '0');
+  $('rampoutdoor').checked = outdoor;
+  $('w-street').setAttribute('aria-pressed', String(outdoor));
+  $('w-mill').setAttribute('aria-pressed', String(!outdoor));
   renderRampNote();
   refreshGauge();
-};
+  renderToday();
+}
+$('rampoutdoor').onchange = e => setRampWhere(e.target.checked);
+$('w-street').onclick = () => setRampWhere(true);
+$('w-mill').onclick = () => setRampWhere(false);
 
 ['coach','intervals','ramp','rehearse'].forEach(k => { $(`m-${k}`).onclick = () => setMode(k); });
 setMode('coach');
@@ -1887,6 +1928,7 @@ $('go').onclick = () => {
                      // built. Its per-run position is reset where the runner is created.
                      geoError: null, simT: 0, simDist: 0 });
   $('log').replaceChildren();
+  lastLogMsg = null; lastLogRow = null; lastLogCount = 1;
 
   if (S.mode !== 'rehearse' && navigator.geolocation) {
     S.watchId = navigator.geolocation.watchPosition(pos => {
