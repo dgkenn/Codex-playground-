@@ -224,6 +224,90 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   console.log('  ok  the profile is editable, moves the zones, and persists');
 }
 
+// --- today, in one tap ---------------------------------------------------------------------------
+
+{
+  // The plan strip is seven buttons, a card, a mode picker and three numbers to copy across, all
+  // before a run. This is the one button that does it.
+  const title = (await page.textContent('#todaytitle')).trim();
+  const detail = (await page.textContent('#todaydetail')).trim();
+  assert.ok(title.length > 2, 'today must name its session');
+  assert.match(detail, /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/, `today must say which day: "${detail}"`);
+  const label = (await page.textContent('#starttoday')).trim();
+  const disabled = await page.getAttribute('#starttoday', 'disabled');
+  // Either it can run today's session and says which kind, or it says plainly that it cannot.
+  assert.ok(/^Start /.test(label) ? disabled === null : disabled !== null,
+    `the button's label and its enabled state must agree: "${label}", disabled=${disabled}`);
+  console.log(`  ok  today is named and offered in one tap (${title} — ${label})`);
+}
+
+// --- the ramp test -------------------------------------------------------------------------------
+
+{
+  // The session week 1 exists for. Its timing is covered second-by-second in tests/ramp-test.mjs
+  // against the real protocol; what is checked here is the wiring — that the plan's protocol reaches
+  // the runner, that starting it announces the first step out loud, and that the samples it records
+  // carry the stage label. Without that label the recording is one undifferentiated blob and the
+  // hour on the treadmill yields no fit, which is the entire point of the session.
+  await page.click('#m-ramp');
+  assert.match(await page.textContent('#modenote'), /stage/i, 'the ramp mode must explain itself');
+
+  await page.click('.strip button:nth-child(3)');       // Wednesday of week one
+  await page.waitForTimeout(120);
+  assert.equal(await page.getAttribute('#loadsess', 'disabled'), null,
+    'the ramp must be loadable — "coachable" is about the pace band, not about runnability');
+  await page.click('#loadsess');
+  await page.waitForTimeout(120);
+  const loaded = await page.$$eval('#log div', ds => ds[0].textContent);
+  assert.match(loaded, /(\d+) stages/, `loading must state the protocol's shape: "${loaded}"`);
+
+  await page.click('#go');
+  await page.waitForTimeout(2500);
+  const running = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(running.some(l => /Walk warm-up/.test(l)),
+    `the first step must be announced: ${JSON.stringify(running.slice(0, 3))}`);
+  const spokenNow = await page.evaluate(() => window.__spoken);
+  assert.ok(spokenNow.some(l => /easy walking/i.test(l)),
+    `the first step must be spoken, not only logged: ${JSON.stringify(spokenNow)}`);
+  assert.match(await page.textContent('#verdict'), /Walk warm-up/);
+
+  await page.click('#go');                               // stop
+  await page.waitForTimeout(200);
+
+  // The samples must be labelled. Read them the way the athlete would — through the copy button —
+  // so the export path is exercised too, not just the in-memory array.
+  await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
+  await page.click('#copy');
+  await page.waitForSelector('#diagtext', { timeout: 5000 });
+  const payload = JSON.parse(await page.inputValue('#diagtext'));
+  assert.ok(payload.samples.length > 0, 'the ramp must record samples — it recorded none at all');
+  assert.ok(payload.samples.every(x => x.label === 'warmup'),
+    `every sample must carry its stage: ${JSON.stringify(payload.samples.slice(0, 2))}`);
+  console.log(`  ok  the ramp loads, announces and labels (${loaded.trim().slice(6)}, `
+            + `${payload.samples.length} samples labelled warmup)`);
+}
+
+// --- the pace coach, actually running ------------------------------------------------------------
+
+{
+  // The main mode, started for real. The rehearsal replays through `tickRehearse` and never touches
+  // `tickCoach`, so the mode the athlete spends every run in had no test that executed it at all —
+  // and a refactor duly left two free variables in it, which throws on the first tick.
+  await page.click('#m-coach');
+  await page.fill('#target', '9:00');
+  await page.click('#go');
+  await page.waitForTimeout(2500);
+  assert.equal(await page.textContent('#go'), 'Stop', 'the session must actually be running');
+  const lines = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /Started/.test(l)), `no start line: ${JSON.stringify(lines)}`);
+  assert.ok(!lines.some(l => /is not defined|undefined is not/.test(l)));
+  const elapsed = await page.textContent('#elapsed');
+  assert.match(elapsed, /^0:0[1-9]/, `the clock must advance: "${elapsed}"`);
+  await page.click('#go');
+  await page.waitForTimeout(200);
+  console.log(`  ok  the pace coach starts, ticks and stops (${elapsed} elapsed)`);
+}
+
 // --- the whole coach, indoors --------------------------------------------------------------------
 
 {

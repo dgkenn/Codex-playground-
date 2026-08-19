@@ -51,6 +51,7 @@ const parts = {
   SENSOR: inline('sensor.js'),
   HRMONITOR: inline('hr-monitor.js'),
   TONES: inline('tones.js'),
+  RAMP: inline('ramp.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 

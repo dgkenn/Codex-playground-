@@ -275,6 +275,23 @@
     </p>
   </section>
 
+  <section id="today-section">
+    <h2>Today</h2>
+    <div class="instrument" style="gap:.7rem">
+      <div class="planhead">
+        <div>
+          <div class="phase" id="todaytitle">—</div>
+          <div class="weeklabel" id="todaydetail"></div>
+        </div>
+      </div>
+      <button id="starttoday" class="go">Start</button>
+    </div>
+    <p class="note" style="margin-top:.7rem">
+      Loads what the plan has scheduled for today, in the right mode, and starts it. Connect the
+      armband first if you want heart rate recorded with it.
+    </p>
+  </section>
+
   <section id="plan-section">
     <h2>Your plan</h2>
     <div class="instrument" style="gap:.8rem">
@@ -308,6 +325,11 @@
         </div>
         <button id="connect" class="tiny">Connect</button>
       </div>
+      <div class="row">
+        <!-- Shown only once the ordinary route has failed, so the normal case stays one button. -->
+        <button id="anydevice" class="tiny hide">Any device</button>
+        <button id="forget" class="tiny">Remembered devices</button>
+      </div>
       <div class="zonebar" id="zonebar"></div>
       <div class="row">
         <label>age <input id="age" type="number" min="14" max="90" step="1"
@@ -317,6 +339,12 @@
       </div>
     </div>
     <p class="note" id="profilenote" style="margin-top:.7rem"></p>
+    <p class="note" style="margin-top:.7rem">
+      <strong>Force-quit Polar Flow first.</strong> Two apps cannot hold the band at once, and this
+      is the likeliest reason a connection stalls: the picker lists the band, you tap it, and nothing
+      comes back — because the tap is waiting on a radio another app is already using. Swipe Flow
+      away, check the band's light is on, then Connect.
+    </p>
     <p class="note" id="btnote" style="margin-top:.7rem"></p>
   </section>
 
@@ -325,6 +353,7 @@
     <div class="seg" role="group">
       <button id="m-coach" aria-pressed="true">Pace coach</button>
       <button id="m-intervals" aria-pressed="false">Run / walk</button>
+      <button id="m-ramp" aria-pressed="false">Ramp test</button>
       <button id="m-rehearse" aria-pressed="false">Rehearse</button>
     </div>
     <p class="note" id="modenote" style="margin-top:.7rem"></p>
@@ -459,6 +488,8 @@
 
 /*{{TONES}}*/
 
+/*{{RAMP}}*/
+
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
 const mmss = formatMMSS;
@@ -543,6 +574,8 @@ const S = {
   governedBy: 'pace',
   watchId: null, tickId: null, wakeLock: null,
   ivPhase: null, ivRep: 0, ivUntil: 0,
+  geoError: null,
+  ramp: null, rampNotes: '',
   simT: 0, simDist: 0, plannedSession: null,
   hrZones: null,
 };
@@ -648,8 +681,10 @@ function renderPlan() {
     if (s.zones && s.zones.length) bits.push(`Z${s.zones.join('/')}`);
     if (s.structure) bits.push(s.structure);
     $('sessdetail').textContent = bits.join(' · ');
-    $('loadsess').disabled = !s.coachable;
-    $('loadsess').textContent = s.coachable ? 'Load this session' : 'Not a running session';
+    // `coachable` is about the pace band, not about whether the app can run the session. The ramp
+    // test is not coachable and is the session the app helps with most.
+    $('loadsess').disabled = !runnable(s);
+    $('loadsess').textContent = runnable(s) ? 'Load this session' : 'Not a running session';
     $('donesess').disabled = false;
     $('donesess').textContent = prog.done[doneKey(selectedDay)] ? 'Undo' : 'Mark done';
   }
@@ -669,18 +704,38 @@ $('donesess').onclick = () => {
 
 $('advance').onclick = () => {
   const ph = curPhase();
-  if (prog.week < ph.weeks.length) { prog.week += 1; selectedDay = null; saveProg(); renderPlan(); }
+  if (prog.week < ph.weeks.length) {
+    prog.week += 1; selectedDay = null; saveProg(); renderPlan(); renderToday();
+  }
 };
 
-$('loadsess').onclick = () => {
-  const s = sessionFor(selectedDay);
-  if (!s || !s.coachable) return;
-  if (s.run_walk) {
+/**
+ * Whether the app can actually run this session, as opposed to merely describe it.
+ *
+ * `coachable` means the pace band applies, which is not the same question: the ramp test is not
+ * coachable — there is no target pace, it is a treadmill protocol — and it is the session the app is
+ * most useful for, because it is a sequence of timed stages read out loud.
+ */
+const runnable = s => !!s && (s.coachable || !!s.ramp);
+
+/** Put a planned session into the controls, and say which mode it will run in. */
+function loadSession(s) {
+  if (!runnable(s)) return false;
+  if (s.ramp) {
+    setMode('ramp');
+    S.ramp = new RampRunner(s.ramp.steps);
+    S.rampNotes = s.ramp.at_each_stage || '';
+    const stages = s.ramp.steps.filter(x => x.kind === 'stage');
+    log(`Loaded: ${s.title} — ${stages.length} stages, `
+        + `${stages[0].speed_kmh} to ${stages[stages.length - 1].speed_kmh} km/h, `
+        + `${Math.round(s.ramp.total_min)} min total`, 'on');
+  } else if (s.run_walk) {
     setMode('intervals');
     $('runmin').value = s.run_walk.run_min;
     $('walkmin').value = s.run_walk.walk_min;
     $('reps').value = s.run_walk.reps;
-    log(`Loaded: ${s.title}`, 'on');
+    log(`Loaded: ${s.title} — ${s.run_walk.reps} x ${s.run_walk.run_min}/${s.run_walk.walk_min} min`,
+        'on');
   } else {
     setMode('coach');
     if (s.pace) {
@@ -692,7 +747,61 @@ $('loadsess').onclick = () => {
     log(`Loaded: ${s.title}`, 'on');
   }
   S.plannedSession = { phase: prog.phase, week: prog.week, day: selectedDay, title: s.title };
-  $('go').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return true;
+}
+
+$('loadsess').onclick = () => {
+  if (loadSession(sessionFor(selectedDay))) {
+    $('go').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+};
+
+// =================================================================================================
+// Today
+//
+// One button that does the whole thing: finds the session the plan has scheduled for today, puts it
+// into the right mode with the right numbers, and starts it. Asked for directly, and the reason is
+// obvious once said out loud — the alternative is finding today on a strip of seven days, reading
+// the card, choosing a mode, copying three numbers across and then starting, all before a run, in
+// the cold, on a phone.
+//
+// The weekday comes from the device rather than from progress, because the plan's day 0 is Monday
+// and `getDay()` calls Sunday 0.
+// =================================================================================================
+
+const todayIndex = () => (new Date().getDay() + 6) % 7;
+const todaySession = () => sessionFor(todayIndex());
+
+function renderToday() {
+  const s = todaySession();
+  const name = DAYS[todayIndex()];
+  if (!s) {
+    $('todaytitle').textContent = `${name} — nothing scheduled`;
+    $('todaydetail').textContent = '';
+    $('starttoday').disabled = true;
+    $('starttoday').textContent = 'Nothing scheduled';
+    return;
+  }
+  $('todaytitle').textContent = s.title;
+  const bits = [name, shortType(s.type)];
+  if (s.minutes) bits.push(`${s.minutes} min`);
+  if (s.run_walk) bits.push(`${s.run_walk.reps} × ${s.run_walk.run_min}/${s.run_walk.walk_min} min`);
+  if (s.ramp) bits.push(`${s.ramp.steps.filter(x => x.kind === 'stage').length} stages`);
+  $('todaydetail').textContent = bits.join(' · ');
+  $('starttoday').disabled = !runnable(s);
+  $('starttoday').textContent = runnable(s)
+    ? `Start ${s.ramp ? 'the ramp test' : s.run_walk ? 'run / walk' : 'the run'}`
+    : 'Not a session the app can run';
+}
+
+$('starttoday').onclick = () => {
+  // Inside the tap, before anything async, or iOS refuses to make a sound for the rest of the run.
+  audio();
+  const s = todaySession();
+  if (!loadSession(s)) { log('Today is not a session the app can run.', 'fast'); return; }
+  selectedDay = todayIndex();
+  renderPlan();
+  if (!S.running) $('go').click();
 };
 
 // =================================================================================================
@@ -769,7 +878,7 @@ $('preflight').onclick = async () => {
                 `Fix to ±${p.coords.accuracy.toFixed(0)} m`
                 + (p.coords.accuracy > 25 ? ' — too loose to coach from. Step outside and retry.'
                                           : '. Good enough to coach from.')),
-      e => mark('gps', 'fail', `${e.message}. Run/walk mode needs no location.`),
+      e => mark('gps', 'fail', explainGeoError(e)),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
 
@@ -807,6 +916,9 @@ $('testvoice').onclick = () => { audio(); say('1 mile. 14 29. On pace.'); log('v
 const MODE_NOTES = {
   coach: 'GPS pace, tones and spoken splits. Needs location and a clear view of the sky.',
   intervals: 'Spoken run and walk commands on a timer. No GPS, no permissions — it always works.',
+  ramp: 'The graded treadmill test, run for you: every stage timed, every speed change called out, '
+      + 'the final minute of each stage flagged for the talk test. Heart rate is recorded against '
+      + 'the stage it belongs to, which is what makes the recording analysable afterwards.',
   rehearse: 'A scripted 30-minute run replayed in 90 seconds, through the real tones and the real '
           + 'voice. The full test, indoors, standing still.',
 };
@@ -814,16 +926,18 @@ const MODE_NOTES = {
 function setMode(m) {
   if (S.running) return;
   S.mode = m;
-  for (const k of ['coach', 'intervals', 'rehearse']) {
+  for (const k of ['coach', 'intervals', 'ramp', 'rehearse']) {
     $(`m-${k}`).setAttribute('aria-pressed', String(k === m));
   }
-  $('cfg-coach').classList.toggle('hide', m === 'intervals');
+  // The pace band means nothing in the two modes that are driven by a clock rather than by speed.
+  const timed = m === 'intervals' || m === 'ramp';
+  $('cfg-coach').classList.toggle('hide', timed);
   $('cfg-intervals').classList.toggle('hide', m !== 'intervals');
   $('modenote').textContent = MODE_NOTES[m];
-  $('perlabel').textContent = m === 'intervals' ? '' : '/ KM';
-  $('gauge').classList.toggle('hide', m === 'intervals');
+  $('perlabel').textContent = timed ? '' : U.paceLabel;
+  $('gauge').classList.toggle('hide', timed);
 }
-['coach','intervals','rehearse'].forEach(k => { $(`m-${k}`).onclick = () => setMode(k); });
+['coach','intervals','ramp','rehearse'].forEach(k => { $(`m-${k}`).onclick = () => setMode(k); });
 setMode('coach');
 
 // =================================================================================================
@@ -831,6 +945,26 @@ setMode('coach');
 // =================================================================================================
 
 /** Parse what the athlete typed, in the displayed unit, and return seconds per kilometre. */
+/**
+ * What a geolocation failure actually means, and what to do about it.
+ *
+ * `PositionError.message` on iOS is "Origin does not have permission to use Geolocation service",
+ * which names the mechanism and not one thing the person holding the phone can act on. In a
+ * third-party browser it almost always means the app itself has no location permission from iOS —
+ * a setting two levels away from anything on this page, and invisible from here.
+ */
+function explainGeoError(e) {
+  const m = String(e && e.message || '');
+  if (e && e.code === 1 || /permission|denied/i.test(m)) {
+    return 'Location is blocked. In Bluefy: tap the ⋯ menu → Settings and allow location, then '
+         + 'check iOS Settings → Privacy & Security → Location Services → Bluefy is set to "While '
+         + 'Using". Run/walk mode needs no location at all.';
+  }
+  if (e && e.code === 2) return `No fix available (${m}). Step outside with a view of the sky.`;
+  if (e && e.code === 3) return 'Timed out waiting for a fix. Outdoors it usually takes under 30 s.';
+  return m || 'Unknown location error.';
+}
+
 function parsePace(text) {
   const m = String(text).trim().match(/^(\d+):(\d{1,2})$/);
   const secUnit = m ? Number(m[1]) * 60 + Number(m[2])
@@ -994,7 +1128,26 @@ function updateSensorUi() {
   renderZones(fresh ? sn.hr : null);
 }
 
-$('connect').onclick = async () => {
+/**
+ * Connect to the armband, and say what is happening at every step.
+ *
+ * The reported failure was the picker appearing, listing the band, and then nothing — `step` stuck
+ * on "asking for the device" for ever, because `requestDevice` never settled when the row was
+ * tapped. Three things follow from that, and all three are here:
+ *
+ *   1. Try the remembered device first. Bluefy offers to remember the permission, and a remembered
+ *      device needs no picker at all — which routes around the part that does not work.
+ *   2. Bound the picker. A promise that never settles must become a stated failure, not a hang.
+ *   3. Offer the retry without a name filter, since a filter that fails to match produces exactly
+ *      this symptom: a row that is listed and cannot be chosen.
+ *
+ * Every step is shown where you are already looking. "Nothing happened" is not a diagnosis, and on a
+ * phone there is no console to open — so the panel has to be the console.
+ */
+let connecting = false;
+
+async function connectArmband({ acceptAll = false } = {}) {
+  if (connecting) { log('already trying — give it a moment', 'dim'); return; }
   if (!bluetoothAvailable()) {
     $('hrstate').textContent = 'This browser has no Bluetooth — use Bluefy on iPhone';
     log('no Web Bluetooth in this browser', 'stop');
@@ -1007,29 +1160,70 @@ $('connect').onclick = async () => {
     updateSensorUi();
     return;
   }
-  // Every step is shown where you are already looking. "Nothing happened" is not a diagnosis, and
-  // on a phone there is no console to open — so the panel has to be the console.
+
+  connecting = true;
+  $('connect').textContent = 'Connecting…';
   const step = m => { $('hrstate').textContent = m; log(m, 'dim'); };
+
+  // A visible clock while a step is outstanding. Without it a slow step and a dead one look the
+  // same, and the only honest answer to "is this stuck?" is a number that keeps going up.
+  let since = Date.now();
+  const ticker = setInterval(() => {
+    const s = Math.round((Date.now() - since) / 1000);
+    if (s >= 8 && S.sensor) $('hrstate').textContent = `${S.sensor.step} — ${s}s`;
+  }, 1000);
+
   try {
     S.sensor = new VeritySensor({
       onLog: (m, c) => log(m, c),
       onChange: updateSensorUi,
-      onStep: step,
+      onStep: m => { since = Date.now(); step(m); },
     });
-    await S.sensor.connect();
+    await S.sensor.connect({ acceptAll });
     $('connect').textContent = 'Disconnect';
     log(`connected${S.sensor.hasAcc ? ' with accelerometer' : ' — heart rate only'}`, 'on');
   } catch (e) {
+    if (S.sensor) S.sensor.lastError = e;
     const where = S.sensor ? S.sensor.step : 'starting';
     $('hrstate').textContent = `failed at: ${where}`;
+    $('connect').textContent = 'Connect';
     log(`failed at "${where}": ${e.name || 'Error'} — ${e.message}`, 'stop');
-    if (/User cancelled|cancelled/i.test(e.message)) {
+
+    if (/cancell?ed|NotFoundError/i.test(`${e.name} ${e.message}`)) {
       log('picker dismissed without choosing', 'dim');
+    } else if (/device picker/i.test(e.message)) {
+      // The specific failure this whole path exists for. Say what to do next rather than what broke.
+      // The message matters more than the error here. Everything about this failure points at the
+      // band being held elsewhere: the picker can list a peripheral it can see, and then stall on
+      // the connect it performs internally to enumerate services for the permission grant.
+      log('the picker never handed the device back. Almost always this means another app is '
+          + 'holding the band — force-quit Polar Flow (swipe up, swipe it away) and try again. '
+          + 'If Flow is already closed, tap "Any device" to retry without the name filter.', 'fast');
+      $('anydevice').classList.remove('hide');
     } else if (/GATT|connect/i.test(e.message)) {
       log('the band may still be held by Polar Flow — force-quit Flow and retry', 'stop');
     }
+  } finally {
+    clearInterval(ticker);
+    connecting = false;
+    updateSensorUi();
   }
-  updateSensorUi();
+}
+
+$('connect').onclick = () => connectArmband();
+$('anydevice').onclick = () => connectArmband({ acceptAll: true });
+$('forget').onclick = async () => {
+  // Bluefy remembers a device permission, which is normally the point. When the remembered entry is
+  // the thing that is wrong, there has to be a way past it.
+  const sn = S.sensor || new VeritySensor({ onLog: (m, c) => log(m, c) });
+  const known = await sn.remembered();
+  log(`${known.length} remembered device${known.length === 1 ? '' : 's'}`
+      + (known.length ? ': ' + known.map(d => d.name || '(unnamed)').join(', ') : ''), 'dim');
+  for (const d of known) {
+    if (d.forget) { try { await d.forget(); log(`forgot ${d.name || 'device'}`, 'on'); } catch (e) {
+      log(`could not forget ${d.name || 'device'}: ${e.message}`, 'stop'); } }
+    else log('this browser cannot forget a device from the page — clear it in browser settings', 'fast');
+  }
 };
 
 // =================================================================================================
@@ -1086,7 +1280,18 @@ function drawMap() {
 // The loop
 // =================================================================================================
 
-function tickCoach(t, pace, trusted) {
+/**
+ * One second of the session, written down.
+ *
+ * This lived inside the pace coach, which meant run/walk and the ramp test recorded nothing at all —
+ * including the ramp test, whose entire purpose is to produce the heart-rate/speed fit that every
+ * pace in the plan is derived from. An hour on a treadmill wearing the armband, with the app running
+ * the protocol out loud, and no data at the end of it.
+ *
+ * `label` is what makes a recording analysable rather than merely present: the engine's stage
+ * analysis groups by it, so "stage_3" here becomes a point on the fit there.
+ */
+function recordSample(t, label = '') {
   const sn = S.sensor;
   const fresh = sn && sn.hrFresh();
   S.samples.push({
@@ -1099,7 +1304,16 @@ function tickCoach(t, pace, trusted) {
     accel_sd_g: sn ? sn.takeAccSd() : null,
     grade: Math.round(S.track.grade * 1e4) / 1e4,
     accuracy_m: S.track.lastAccuracy,
+    label,
   });
+}
+
+function tickCoach(t, pace, trusted) {
+  // Read here rather than inherited from the caller. These moved out with `recordSample` and left
+  // two free variables behind — which throws on the first tick of a real run, in the mode that
+  // matters most, and in the one place the rehearsal never reaches.
+  const sn = S.sensor;
+  const fresh = sn && sn.hrFresh();
 
   // Which signal governs.
   //
@@ -1126,6 +1340,68 @@ function tickCoach(t, pace, trusted) {
   }
   const line = S.splits.update(t, S.track.distanceM, pace, S.monitor.state);
   if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
+}
+
+// =================================================================================================
+// The ramp test
+//
+// The one session in week 1 that everything else is derived from: the heart-rate/speed fit, the
+// talk-test threshold, the seed VDOT. It was shipped as a paragraph — "4 min stages at 5, 6, 7, 8,
+// 9 km/h" — which means standing on a treadmill timing stages by hand while trying to remember
+// which speed is next, during the hour whose entire value is clean stage boundaries.
+//
+// The protocol is generated by the engine (marathon_engine.app_plan._ramp_dict, from the same
+// calibration_protocol that later analyses the recording), so the stages the voice announces and the
+// stages the analysis expects cannot drift apart.
+// =================================================================================================
+
+/**
+ * Drive the ramp from the tested runner in tools/ramp.js.
+ *
+ * The stepping lived here, inline, which put the one hour that the whole plan is derived from behind
+ * the only kind of test that cannot be written — reading it. It is now the same arrangement as the
+ * pace monitor: the logic is a module with its own suite, the build inlines it, and this is only the
+ * part that makes noise.
+ */
+function rampLabel() { return S.ramp ? S.ramp.label : ''; }
+
+function tickRamp(t) {
+  if (!S.ramp) return finish('No ramp protocol loaded.');
+  const ev = S.ramp.update(t);
+
+  if (!ev) {
+    const step = S.ramp.step, left = S.ramp.remaining(t);
+    if (step) {
+      $('verdict').textContent =
+        `${step.label} · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} left`;
+    }
+    return;
+  }
+
+  if (ev.kind === 'done') {
+    say('Ramp test complete. Copy the session and import it.');
+    return finish('Ramp test complete.');
+  }
+
+  if (ev.kind === 'final_minute') {
+    // The only part of the stage the fit uses, and the only moment the talk test can happen. No
+    // sensor can recover this observation afterwards, so it has to be asked for out loud.
+    play('attend');
+    setTimeout(() => say('Final minute. Say a sentence out loud.'), 420);
+    log(`${ev.step.label} — final minute, talk test`, 'dim');
+    return;
+  }
+
+  const step = ev.step;
+  play('attend');
+  const extra = step.kind === 'stage' && S.rampNotes ? ` ${S.rampNotes}` : '';
+  setTimeout(() => say(step.say + extra), 420);
+  log(`${step.label}${step.speed_kmh ? ` — ${step.speed_kmh} km/h` : ''} for ${step.minutes} min`,
+      step.kind === 'stage' ? 'fast' : 'on');
+  $('pace').textContent = step.speed_kmh ? `${step.speed_kmh}` : step.label.toUpperCase();
+  $('perlabel').textContent = step.speed_kmh ? 'KM/H' : '';
+  $('verdict').textContent = step.label;
+  $('verdict').style.color = `var(--${step.kind === 'stage' ? 'fast' : 'on'})`;
 }
 
 function tickIntervals(t) {
@@ -1195,7 +1471,23 @@ function tick() {
   $('dist').textContent = U.dist(S.track.distanceM).toFixed(2);
   updateSensorUi();
 
-  if (S.mode === 'intervals') return tickIntervals(t);
+  // Every live mode records, labelled with whatever phase it is in. Only the rehearsal does not,
+  // and it returned above — a replay is not a recording.
+  //
+  // The phase is advanced BEFORE the sample is written. Recording first left the opening second of
+  // every session labelled with the empty string, because the runner had not yet entered its first
+  // step — an orphaned sample at exactly the boundary the stage analysis cuts on.
+  if (S.mode === 'intervals') {
+    tickIntervals(t);
+    if (S.running) recordSample(t, S.ivPhase || '');
+    return;
+  }
+  if (S.mode === 'ramp') {
+    tickRamp(t);
+    if (S.running) recordSample(t, rampLabel());
+    return;
+  }
+  recordSample(t);
 
   const trusted = S.track.trustedAt(nowSeconds());
   const pace = S.track.paceSecKm;
@@ -1275,6 +1567,7 @@ for (const [id, key, lo, hi] of [['age', 'age', 14, 90], ['hrrest', 'hrRest', 30
 
 setUnit(unit);
 renderPlan();
+renderToday();
 updateSensorUi();
 renderProfileNote();
 
@@ -1298,7 +1591,12 @@ $('go').onclick = () => {
 
   syncTargetFromField();
   const target = targetSecKm;
-  if (S.mode !== 'intervals' && !target) {
+  if (S.mode === 'ramp') {
+    if (!S.ramp) { log('Load the ramp test from the plan first.', 'stop'); return; }
+    // A fresh runner per start: a second attempt must not inherit the first one's position.
+    S.ramp = new RampRunner(S.ramp.steps);
+  }
+  if (S.mode === 'coach' && !target) {
     log('Enter a target pace like 9:00 first.', 'stop'); return;
   }
   audio();                                  // must be inside the tap or iOS blocks sound later
@@ -1312,7 +1610,10 @@ $('go').onclick = () => {
   // naming go in rather than a second unit-aware copy of the class living here.
   // The heart-rate ceiling comes from the session's own prescribed zones when a session was loaded,
   // and from Z2 otherwise — the band an easy run lives in.
-  S.hrZones = zoneModel(PLAN.generated_for.hr_max, PLAN.generated_for.hr_rest);
+  // From the athlete's own numbers, not the plan's placeholders. This read PLAN.generated_for,
+  // which meant a resting rate entered in the panel above moved the zone bar and was then thrown
+  // away the instant Start was pressed — the one moment it governs anything.
+  S.hrZones = zoneModel(hrMaxFor(profile.age), profile.hrRest);
   const sess = S.plannedSession ? sessionFor(S.plannedSession.day) : null;
   const wanted = sess && sess.zones && sess.zones.length ? sess.zones : [2];
   const zs = S.hrZones.filter(z => wanted.includes(z.index));
@@ -1330,10 +1631,14 @@ $('go').onclick = () => {
   Object.assign(S, { running: true, startedAt: Date.now(), samples: [], tones: 0,
                      governedBy: 'pace',
                      track: new GpsTrack(), trackState: [],
-                     ivPhase: null, ivRep: 0, ivUntil: 0, simT: 0, simDist: 0 });
+                     ivPhase: null, ivRep: 0, ivUntil: 0,
+                     // NOT `ramp`: the loaded protocol is a selection the athlete made, like the
+                     // target pace, and clearing it here wiped the runner one line after it was
+                     // built. Its per-run position is reset where the runner is created.
+                     geoError: null, simT: 0, simDist: 0 });
   $('log').replaceChildren();
 
-  if (S.mode === 'coach' && navigator.geolocation) {
+  if (S.mode !== 'rehearse' && navigator.geolocation) {
     S.watchId = navigator.geolocation.watchPosition(pos => {
       const c = pos.coords;
       const r = S.track.add({
@@ -1342,7 +1647,10 @@ $('go').onclick = () => {
       });
       $('acc').textContent = c.accuracy == null ? '—' : `${c.accuracy.toFixed(0)}`;
       if (!r.accepted && r.reason === 'implausible jump') log('rejected a GPS jump', 'stop');
-    }, e => log(`GPS: ${e.message}`, 'stop'),
+    }, e => {
+      log(`GPS: ${explainGeoError(e)}`, 'stop');
+      S.geoError = e;
+    },
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
   }
   S.tickId = setInterval(tick, 1000);
@@ -1391,6 +1699,30 @@ function finish(msg) {
 // questions conducted while standing outside in the cold.
 $('diag').onclick = async () => {
   const lines = [...$('log').children].slice(0, 40).map(d => d.textContent).reverse();
+
+  // Asked for rather than inferred. A permission the page never queried is a permission nobody can
+  // rule out, and "geolocation: true" only ever meant the API exists — which it did while every
+  // call was being refused.
+  let geoPermission = 'unknown';
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      geoPermission = (await navigator.permissions.query({ name: 'geolocation' })).state;
+    }
+  } catch (e) { geoPermission = `query failed: ${e.message}`; }
+
+  let btAvailability = 'unknown';
+  try {
+    if (navigator.bluetooth && navigator.bluetooth.getAvailability) {
+      btAvailability = await navigator.bluetooth.getAvailability();
+    }
+  } catch (e) { btAvailability = `query failed: ${e.message}`; }
+
+  let rememberedNames = null;
+  try {
+    if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+      rememberedNames = (await navigator.bluetooth.getDevices()).map(d => d.name || '(unnamed)');
+    }
+  } catch (e) { rememberedNames = `getDevices failed: ${e.message}`; }
   const report = {
     build: BUILD,
     when: new Date().toISOString(),
@@ -1406,14 +1738,29 @@ $('diag').onclick = async () => {
     // means the gesture did not take. Those are three different bugs that look identical on a phone.
     tones: tones.state(),
     unit,
-    sensor: S.sensor ? {
-      step: S.sensor.step, connected: S.sensor.connected, hasAcc: S.sensor.hasAcc,
-      battery: S.sensor.battery, hr: S.sensor.hr,
-      hrAgeMs: S.sensor.hrAt ? Date.now() - S.sensor.hrAt : null,
-    } : null,
+    // The whole sensor object rather than a hand-picked five fields. Which field mattered was never
+    // knowable in advance: the connect failure turned out to hinge on `step` never advancing, and
+    // "is it streaming" turns out to need a packet count rather than a connected flag.
+    sensor: S.sensor ? S.sensor.state() : null,
+    bluetoothApi: {
+      present: bluetoothAvailable(),
+      getDevices: !!(navigator.bluetooth && navigator.bluetooth.getDevices),
+      remembered: rememberedNames,
+      availability: btAvailability,
+    },
     gps: {
       accepted: S.track.accepted, rejected: S.track.rejected,
       lastAccuracy: S.track.lastAccuracy, distanceM: Math.round(S.track.distanceM),
+      permission: geoPermission,
+      lastError: S.geoError ? `${S.geoError.code}: ${S.geoError.message}` : null,
+    },
+    profile: { age: profile.age, hrRest: profile.hrRest, confirmed: profile.confirmed },
+    session: {
+      mode: S.mode, running: S.running,
+      elapsedS: S.startedAt ? Math.round((Date.now() - S.startedAt) / 1000) : 0,
+      samples: S.samples.length, tones: S.tones,
+      governedBy: S.governedBy,
+      planned: S.plannedSession ? S.plannedSession.title : null,
     },
     plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
     log: lines,
@@ -1463,7 +1810,7 @@ $('copy').onclick = async () => {
     samples: S.samples.map(x => ({
       t_s: x.t_s, hr_bpm: x.hr_bpm,
       speed_m_s: x.speed_m_s == null ? null : Math.round(x.speed_m_s * 1e4) / 1e4,
-      accel_sd_g: x.accel_sd_g, grade: x.grade, label: '',
+      accel_sd_g: x.accel_sd_g, grade: x.grade, label: x.label || '',
     })),
     route: S.track.path.map(([la, lo, t, al]) => [
       Math.round(la * 1e6) / 1e6, Math.round(lo * 1e6) / 1e6, Math.round(t),

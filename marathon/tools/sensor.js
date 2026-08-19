@@ -56,6 +56,13 @@ export const STALE_HR_MS = 5000;
 /// verdict at twenty seconds than a right-but-silent one at never.
 export const CONNECT_TIMEOUT_MS = 20000;
 
+/// How long the device picker may stay open before it is called a failure.
+///
+/// Longer than the connect budget because a person is choosing from a list, and being cut off
+/// mid-tap would be its own bug. Bounded anyway: an unbounded wait is exactly what left the panel
+/// reading "asking for the device" indefinitely with nothing to act on.
+export const PICKER_TIMEOUT_MS = 75000;
+
 /** Reject if `promise` has not settled within `ms`, naming the step that stalled. */
 export function withTimeout(promise, ms, what) {
   let timer;
@@ -183,6 +190,36 @@ export class VeritySensor {
     this.connected = false;
     this.reconnecting = false;
     this.hasAcc = false;
+    /// The last thing that went wrong, kept rather than thrown away: on a phone there is no console
+    /// and the diagnostics report is the only way a failure reaches anyone who can fix it.
+    this.lastError = null;
+    /// Counters, because "connected" and "actually sending data" are different states and only one
+    /// of them is worth starting a run on.
+    this.hrCount = 0;
+    this.rrCount = 0;
+    this.accFrames = 0;
+    this.connectedAt = 0;
+  }
+
+  /** Everything the diagnostics report needs to tell a silent band from a broken page. */
+  state() {
+    return {
+      step: this.step,
+      connected: this.connected,
+      reconnecting: this.reconnecting,
+      deviceName: this.device ? (this.device.name || '(unnamed)') : null,
+      deviceId: this.device ? String(this.device.id || '').slice(0, 8) : null,
+      gattConnected: !!(this.device && this.device.gatt && this.device.gatt.connected),
+      hasAcc: this.hasAcc,
+      battery: this.battery,
+      hr: this.hr,
+      hrAgeMs: this.hrAt ? Date.now() - this.hrAt : null,
+      hrCount: this.hrCount,
+      rrCount: this.rrCount,
+      accFrames: this.accFrames,
+      connectedForS: this.connectedAt ? Math.round((Date.now() - this.connectedAt) / 1000) : null,
+      lastError: this.lastError ? `${this.lastError.name || 'Error'}: ${this.lastError.message}` : null,
+    };
   }
 
   hrFresh(now = Date.now()) {
@@ -202,15 +239,67 @@ export class VeritySensor {
 
   _at(step) { this.step = step; this.onStep(step); }
 
-  async connect() {
-    this._at('asking for the device');
-    this.device = await navigator.bluetooth.requestDevice({
-      // `acceptAllDevices` is deliberately not used: a name filter keeps the picker to the armband,
-      // and `optionalServices` must still list everything that will be read afterwards or the
-      // lookups are blocked even on a device the user chose.
-      filters: [{ namePrefix: 'Polar' }],
-      optionalServices: [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE],
-    });
+  /**
+   * Devices this browser has already been given permission for.
+   *
+   * Bluefy's picker offers "Allow this website to establish future background connections with
+   * selected device", and when that is on the permission is remembered — so the device can be
+   * reached again with no picker at all. That matters more than convenience here: on the device in
+   * question the picker appears, lists the armband, and then `requestDevice` never settles when the
+   * row is tapped. The promise stays pending for ever, the step stays at "asking for the device",
+   * and nothing distinguishes it from a hang. Going through the remembered list skips the part that
+   * is broken.
+   *
+   * `getDevices` is not universally implemented, so its absence is a normal outcome, not an error.
+   */
+  async remembered() {
+    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return [];
+    try {
+      return await withTimeout(navigator.bluetooth.getDevices(), 5000, 'listing known devices');
+    } catch (e) {
+      this.lastError = e;
+      return [];
+    }
+  }
+
+  /**
+   * Connect to the armband.
+   *
+   * `acceptAllDevices` is the fallback rather than the default: a name filter keeps the picker to
+   * the armband. But a filter is also a thing that can fail to match — a device whose advertised
+   * name differs from its display name will be listed and then not selectable — so it has to be
+   * possible to try without one.
+   */
+  async connect({ acceptAll = false, usePicker = true } = {}) {
+    this.lastError = null;
+    this.device = null;
+
+    // Anything already permitted, first. No picker, no tap, and it survives a reload.
+    const known = await this.remembered();
+    const match = known.find(d => /polar|verity|sense/i.test(d.name || ''))
+               || (known.length === 1 ? known[0] : null);
+    if (match) {
+      this.device = match;
+      this._at(`remembered ${match.name || 'device'}`);
+    } else if (!usePicker) {
+      throw new Error('no remembered device, and the picker was not allowed');
+    } else {
+      this._at('asking for the device');
+      const options = acceptAll
+        ? { acceptAllDevices: true }
+        // Two filters, not one. A device may advertise its heart-rate service without a name the
+        // prefix matches, or the reverse; either alone is a picker that shows nothing, or shows a
+        // row that cannot be chosen.
+        : { filters: [{ namePrefix: 'Polar' }, { services: [HR_SERVICE] }] };
+      options.optionalServices = [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE];
+
+      // The picker is a human waiting to tap, so the budget is generous — but not unbounded. An
+      // unbounded wait is what produced "asking for the device" and nothing else, for ever.
+      this.device = await withTimeout(
+        navigator.bluetooth.requestDevice(options), PICKER_TIMEOUT_MS,
+        'waiting for the device picker (it never returned the device you tapped)');
+    }
+    if (!this.device) throw new Error('no device was chosen');
     this._at(`selected ${this.device.name || 'device'}`);
     this.device.addEventListener('gattserverdisconnected', () => {
       this.connected = false;
@@ -225,6 +314,7 @@ export class VeritySensor {
     this._at('connected, looking for heart rate');
     await withTimeout(this._attach(server), CONNECT_TIMEOUT_MS, 'setting up heart-rate notifications');
     this.connected = true;
+    this.connectedAt = Date.now();
     this._at('streaming');
     this.onChange();
   }
@@ -268,7 +358,8 @@ export class VeritySensor {
       const { hr, rr } = parseHeartRate(e.target.value);
       this.hr = hr;
       this.hrAt = Date.now();
-      if (rr.length) this.rr.push(...rr);
+      this.hrCount += 1;
+      if (rr.length) { this.rr.push(...rr); this.rrCount += rr.length; }
       this.onChange();
     });
 
@@ -289,7 +380,10 @@ export class VeritySensor {
       await data.startNotifications();
       data.addEventListener('characteristicvaluechanged', e => {
         const samples = parseAccFrame(e.target.value);
-        if (samples) for (const s of samples) this.accWindow.push(accMagnitude(s));
+        if (samples) {
+          this.accFrames += 1;
+          for (const s of samples) this.accWindow.push(accMagnitude(s));
+        }
       });
       await control.writeValueWithResponse(startCommand(MEAS_ACC, ACC_SETTINGS));
       this.hasAcc = true;

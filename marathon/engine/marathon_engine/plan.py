@@ -919,10 +919,16 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                     intent="Find the weak link before load finds it."),
             Session(day_offset=2, type=SessionType.RAMP_TEST, title="Graded ramp test",
                     duration_min=35,
-                    structure="5 min walk warm-up, then 4 min stages at 5, 6, 7, 8, 9 km/h. "
-                              "Record heart rate over the final 60 s of each stage, plus Borg "
-                              "6-20 and the talk test. Stop at 85% of heart-rate reserve, "
-                              "RPE 15/20, or when speech becomes impossible.",
+                    # Deliberately does not enumerate the ladder. It used to say "stages at 5, 6,
+                    # 7, 8, 9 km/h", which is five stages; calibration.calibration_protocol -- the
+                    # code that actually derives the ladder, and the code that later analyses the
+                    # recording -- generates six, descending from a top stage that depends on the
+                    # athlete. A hand-written summary that disagrees with the generator is a card
+                    # that contradicts the voice in your ear halfway through the session.
+                    structure="Walk warm-up, then 4 min stages rising by 1 km/h, a walk recovery "
+                              "and a 20 min steady block. Record heart rate over the final 60 s of "
+                              "each stage, plus Borg 6-20 and the talk test. Stop at 85% of "
+                              "heart-rate reserve, RPE 15/20, or when speech becomes impossible.",
                     intent="Derive the heart-rate/speed relationship, the talk-test threshold, "
                            "cadence at each speed, and the seed VDOT. Everything else follows."),
             _rest(3, "Recover from the ramp."),

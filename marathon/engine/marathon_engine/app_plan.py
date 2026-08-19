@@ -53,7 +53,52 @@ SHIPPED_PHASES = (
 COACHABLE = {"easy", "long", "run_walk", "steady", "threshold", "marathon_pace", "recovery"}
 
 
-def _session_dict(s: planmod.Session, paces: Any) -> Dict[str, Any]:
+def _ramp_dict(profile: FitnessProfile) -> Dict[str, Any]:
+    """The ramp test as a timed sequence the phone can actually run.
+
+    The protocol already exists in machine-readable form in ``calibration.calibration_protocol``;
+    what was shipped to the phone was its prose summary, which a person can read and an app cannot
+    run. So the athlete stood on a treadmill with a paragraph, timing four-minute stages by hand and
+    trying to remember which of five speeds came next -- during the one session whose entire purpose
+    is to produce a clean heart-rate/speed fit.
+
+    Only the timed part crosses over. The resting block, the device setup and the analysis stay in
+    the engine, because they are not things a stopwatch can help with.
+    """
+    from marathon_engine.calibration import calibration_protocol
+
+    proto = calibration_protocol(profile.age, profile.hr_rest)
+    steps: List[Dict[str, Any]] = [
+        {"kind": "warmup", "label": "Walk warm-up", "minutes": 5.0, "speed_kmh": 4.5,
+         "say": "Five minutes easy walking. Four and a half kilometres an hour."},
+    ]
+    for i, st in enumerate(proto["stages"], start=1):
+        steps.append({
+            "kind": "stage", "label": f"Stage {i}", "index": i,
+            "minutes": float(st["duration_min"]), "speed_kmh": float(st["speed_kmh"]),
+            # The last minute is the only part the fit uses, so it gets its own announcement.
+            "measure_last_s": 60,
+            "say": f"Stage {i}. {st['speed_kmh']:g} kilometres an hour.",
+        })
+    steps.append({"kind": "recovery", "label": "Walk recovery", "minutes": 5.0, "speed_kmh": 4.5,
+                  "say": "Five minutes walking. Recover."})
+    steps.append({"kind": "steady", "label": "Steady block", "minutes": 20.0,
+                  "say": "Twenty minutes at the fastest speed you could still talk comfortably."})
+    steps.append({"kind": "cooldown", "label": "Cool down", "minutes": 5.0, "speed_kmh": 4.5,
+                  "say": "Five minutes walking to cool down."})
+
+    return {
+        "steps": steps,
+        "stop_when_any": list(proto["stop_when_any"]),
+        # Repeated at every stage change, because it is the one thing the recording cannot capture
+        # and the single most informative observation in the session.
+        "at_each_stage": "Say a full sentence out loud. Comfortable, effortful, or impossible?",
+        "total_min": sum(float(x["minutes"]) for x in steps),
+    }
+
+
+def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfile] = None
+                  ) -> Dict[str, Any]:
     """One session, reduced to what a phone can act on."""
     out: Dict[str, Any] = {
         "day": s.day_offset,
@@ -89,6 +134,12 @@ def _session_dict(s: planmod.Session, paces: Any) -> Dict[str, Any]:
     out["ceiling_only"] = s.type.value in ("easy", "long", "run_walk", "recovery")
     if s.structure:
         out["structure"] = s.structure
+    if s.type.value == "ramp_test" and profile is not None:
+        out["ramp"] = _ramp_dict(profile)
+        # The session's own duration was a hand-written 35 minutes against a protocol that runs to
+        # nearly an hour once the steady block and cool-down are counted. Whichever number is wrong,
+        # showing both is worse: take the one the app is about to actually run.
+        out["minutes"] = round(out["ramp"]["total_min"])
     return out
 
 
@@ -112,7 +163,7 @@ def build_app_plan(profile: FitnessProfile, *,
                 "volume_km": round(w.volume_target_km, 1) if w.volume_target_km else None,
                 "volume_min": round(w.volume_target_min) if w.volume_target_min else None,
                 "notes": w.notes,
-                "sessions": [_session_dict(s, profile.paces) for s in w.sessions],
+                "sessions": [_session_dict(s, profile.paces, profile) for s in w.sessions],
             })
         phases.append({
             "phase": phase.value,

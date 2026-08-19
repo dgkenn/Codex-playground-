@@ -3,9 +3,12 @@
 
 import assert from 'node:assert/strict';
 import { parseHeartRate, parseAccFrame, startCommand, accMagnitude,
-         VeritySensor, STALE_HR_MS, withTimeout } from '../sensor.js';
+         VeritySensor, STALE_HR_MS, withTimeout, PICKER_TIMEOUT_MS } from '../sensor.js';
 
 const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
+
+/// The connect watchdog's budget, for the ordering assertion below.
+const CONNECT_BUDGET_HINT = 20000;
 
 // --- heart rate ----------------------------------------------------------------------------------
 
@@ -134,6 +137,80 @@ const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
   await assert.rejects(withTimeout(Promise.reject(new Error('GATT busy')), 5000, 'connecting'),
                        /GATT busy/, 'a real error must survive the race unchanged');
   console.log('  ok  the watchdog passes success and real errors through untouched');
+}
+
+// --- choosing a device ---------------------------------------------------------------------------
+//
+// The reported failure: the picker appears, lists the armband, and `requestDevice` never settles
+// when the row is tapped. The step stays on "asking for the device" for ever and nothing tells the
+// difference between that and a slow connection. These cover the three answers to it.
+
+// Node defines `navigator` as a getter-only global, so it is replaced by its property descriptor
+// rather than by assignment, and restored the same way.
+const fakeBluetooth = impl => {
+  const prev = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator',
+                        { value: { bluetooth: impl }, configurable: true, writable: true });
+  return () => {
+    if (prev) Object.defineProperty(globalThis, 'navigator', prev);
+    else delete globalThis.navigator;
+  };
+};
+
+{
+  // A remembered device is used without opening the picker at all. This is the route around the
+  // broken part: Bluefy offers to remember the permission, and a remembered device needs no tap.
+  let pickerOpened = false;
+  const restore = fakeBluetooth({
+    getDevices: async () => [{ name: 'Polar Sense 16961D33' }],
+    requestDevice: async () => { pickerOpened = true; return { name: 'nope' }; },
+  });
+  const s = new VeritySensor();
+  const steps = [];
+  s.onStep = m => steps.push(m);
+  // _attach needs a GATT server; the point here is which device was chosen, so stop before that.
+  s.device = null;
+  const known = await s.remembered();
+  assert.equal(known.length, 1);
+  assert.equal(pickerOpened, false, 'a remembered device must not open the picker');
+  restore();
+  console.log('  ok  a remembered device is found without opening the picker');
+}
+
+{
+  // A picker that never resolves must become a stated failure. Before this it was an await with no
+  // timeout, which is indistinguishable from the app having died.
+  const restore = fakeBluetooth({
+    getDevices: async () => [],
+    requestDevice: () => new Promise(() => {}),      // exactly the reported behaviour
+  });
+  const s = new VeritySensor();
+  const started = Date.now();
+  // Reach into the same helper the connect path uses, at a testable scale.
+  await assert.rejects(
+    withTimeout(navigator.bluetooth.requestDevice({}), 40, 'waiting for the device picker'),
+    /timed out .* waiting for the device picker/,
+    'a picker that never returns must fail loudly');
+  assert.ok(Date.now() - started < 1000);
+  assert.ok(PICKER_TIMEOUT_MS > CONNECT_BUDGET_HINT,
+    'the picker budget must exceed the connect budget — a person is choosing from a list');
+  restore();
+  console.log('  ok  a picker that never returns times out instead of hanging for ever');
+}
+
+{
+  // The diagnostics object is how a failure gets from the phone to the fix, so it has to carry the
+  // fields that distinguish the failure modes: connected-but-silent, never-connected, and
+  // connected-and-streaming are three different bugs.
+  const s = new VeritySensor();
+  const st = s.state();
+  for (const k of ['step', 'connected', 'gattConnected', 'deviceName', 'hr', 'hrAgeMs',
+                   'hrCount', 'rrCount', 'accFrames', 'lastError']) {
+    assert.ok(k in st, `sensor diagnostics must report ${k}`);
+  }
+  assert.equal(st.hrCount, 0);
+  assert.equal(st.lastError, null);
+  console.log('  ok  the sensor reports enough state to tell the failure modes apart');
 }
 
 console.log('\nAll sensor tests passed.');
