@@ -3,7 +3,8 @@
 
 import assert from 'node:assert/strict';
 import { parseHeartRate, parseAccFrame, startCommand, accMagnitude,
-         VeritySensor, STALE_HR_MS, withTimeout, PICKER_TIMEOUT_MS } from '../sensor.js';
+         VeritySensor, STALE_HR_MS, withTimeout, PICKER_TIMEOUT_MS,
+         describeError, GATT_ATTEMPTS } from '../sensor.js';
 
 const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
 
@@ -211,6 +212,146 @@ const fakeBluetooth = impl => {
   assert.equal(st.hrCount, 0);
   assert.equal(st.lastError, null);
   console.log('  ok  the sensor reports enough state to tell the failure modes apart');
+}
+
+// --- reporting what went wrong -------------------------------------------------------------------
+
+{
+  // The line that made this necessary, in full: `failed at "connecting": Error — undefined`. The
+  // bridge rejected with something that was not an Error, and printing `e.name` and `e.message`
+  // produced a sentence that looked like a diagnosis and contained nothing. Every shape a bridge
+  // has actually thrown is covered here, because the one that is not covered is the one that will
+  // come back as "undefined" on a phone with no console.
+  assert.match(describeError(undefined), /no reason at all/);
+  assert.match(describeError(null), /null/);
+  assert.equal(describeError('GATT operation failed'), 'GATT operation failed');
+  assert.match(describeError(''), /empty string/);
+  assert.equal(describeError(new Error('boom')), 'Error: boom');
+
+  const dom = new Error('Connection failed');
+  dom.name = 'NetworkError';
+  dom.code = 19;
+  assert.equal(describeError(dom), 'NetworkError: Connection failed: code 19');
+
+  // A plain object with nothing standard on it must still yield its contents.
+  assert.match(describeError({ reason: 'busy', peripheral: 'Polar' }),
+               /reason=busy.*peripheral=Polar/);
+  // And one with nothing at all must say so rather than printing "[object Object]".
+  assert.match(describeError({}), /no readable properties/);
+  assert.doesNotMatch(describeError({}), /\[object Object\]/);
+
+  assert.match(describeError(42), /number: 42/);
+  for (const v of [undefined, null, '', {}, 42, new Error('x'), Symbol.iterator]) {
+    const out = describeError(v);
+    assert.equal(typeof out, 'string');
+    assert.ok(out.length > 0, `describeError(${String(v)}) produced nothing`);
+    assert.doesNotMatch(out, /undefined$/, `describeError(${String(v)}) still ends in "undefined"`);
+  }
+  console.log('  ok  anything thrown becomes something readable, never "undefined"');
+}
+
+// --- opening the link ----------------------------------------------------------------------------
+
+const fakeDevice = ({ failures = 0, connectedAfterReject = false, throwValue = undefined } = {}) => {
+  let attempts = 0;
+  const gatt = {
+    connected: false,
+    connect() {
+      attempts += 1;
+      if (attempts <= failures) {
+        if (connectedAfterReject) gatt.connected = true;   // a bridge that lies about the outcome
+        return Promise.reject(throwValue);
+      }
+      gatt.connected = true;
+      return Promise.resolve(gatt);
+    },
+    disconnect() { gatt.connected = false; },
+  };
+  return { name: 'Polar Sense', gatt, get attempts() { return attempts; } };
+};
+
+{
+  // Two failures then success. A first-attempt failure is routine on iOS bridges, and giving up on
+  // it is the difference between "armband unusable" and a pause nobody notices.
+  const s = new VeritySensor();
+  s.device = fakeDevice({ failures: 2 });
+  const server = await s._openGatt();
+  assert.equal(server.connected, true);
+  assert.equal(s.device.attempts, 3, 'it must retry rather than fail on the first attempt');
+  console.log('  ok  a connection that fails twice still succeeds on the third attempt');
+}
+
+{
+  // The reported failure: rejected with `undefined`, every time. It must end as a stated failure
+  // that names what to do, not as the word "undefined".
+  const s = new VeritySensor();
+  s.device = fakeDevice({ failures: 99 });
+  await assert.rejects(s._openGatt(), err => {
+    assert.match(err.message, new RegExp(`after ${GATT_ATTEMPTS} attempts`));
+    assert.match(err.message, /no reason at all/, 'it must describe the valueless rejection');
+    assert.match(err.message, /Polar Flow/, 'and say the most likely cause');
+    assert.doesNotMatch(err.message, /undefined\./);
+    return true;
+  });
+  assert.equal(s.device.attempts, GATT_ATTEMPTS);
+  console.log(`  ok  ${GATT_ATTEMPTS} failed attempts produce a stated cause, not "undefined"`);
+}
+
+{
+  // `gatt.connected` outranks the promise: some bridges reject while the link is actually up, and
+  // treating that as a failure throws away a working connection.
+  const s = new VeritySensor();
+  s.device = fakeDevice({ failures: 99, connectedAfterReject: true });
+  const server = await s._openGatt();
+  assert.equal(server.connected, true);
+  assert.equal(s.device.attempts, 1, 'it must not retry a link that is already up');
+  console.log('  ok  a rejection is not believed when the link is demonstrably connected');
+}
+
+{
+  // Already connected: no attempt at all.
+  const s = new VeritySensor();
+  const dev = fakeDevice();
+  dev.gatt.connected = true;
+  s.device = dev;
+  await s._openGatt();
+  assert.equal(dev.attempts, 0);
+  assert.equal(s.step, 'already connected');
+  console.log('  ok  an existing link is reused rather than reopened');
+}
+
+{
+  // A device with no GATT at all must be named as such, not dereferenced into a TypeError.
+  const s = new VeritySensor();
+  s.device = { name: 'Polar Sense' };
+  await assert.rejects(s._openGatt(), /no GATT server/);
+  console.log('  ok  a device with no GATT server is reported rather than crashed on');
+}
+
+{
+  // A remembered entry that no longer works must not block the picker. The permission outlives the
+  // pairing, so a band that has been reset is still in the list — and without this fallback that one
+  // stale entry is a permanent dead end with no way to clear it from a phone.
+  let pickerOpened = false;
+  const good = fakeDevice();
+  good.addEventListener = () => {};
+  good.gatt.getPrimaryService = async () => { throw new Error('stop here'); };
+  const stale = fakeDevice({ failures: 99 });
+  stale.addEventListener = () => {};
+
+  const restore = fakeBluetooth({
+    getDevices: async () => [stale],
+    requestDevice: async () => { pickerOpened = true; return good; },
+  });
+  const s = new VeritySensor();
+  // _attach will fail on the fake (no real services); what is being checked is that the picker was
+  // reached at all after the remembered device failed to connect.
+  await s.connect().catch(() => {});
+  assert.equal(pickerOpened, true,
+    'a remembered device that will not connect must fall through to the picker');
+  assert.ok(stale.attempts >= GATT_ATTEMPTS, 'and only after genuinely trying it');
+  restore();
+  console.log('  ok  a stale remembered device falls through to the picker instead of blocking it');
 }
 
 console.log('\nAll sensor tests passed.');

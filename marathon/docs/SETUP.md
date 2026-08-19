@@ -76,10 +76,18 @@ of each stage is flagged for the talk test. Every second of heart rate is record
 it belongs to, which is what makes the recording analysable afterwards: copy it out, `cli import` it,
 and the heart-rate/speed fit replaces the estimated paces with measured ones.
 
-**Before you connect the armband: force-quit Polar Flow.** Two apps cannot hold the band at once.
-This is the likeliest reason a connection stalls — the picker lists the band, you tap it, and
-nothing comes back, because the tap is waiting on a radio another app already has. Swipe Flow away
-first. If the page has connected once before, it will reconnect without the picker at all.
+**Getting the armband to connect.** The Verity Sense accepts exactly one Bluetooth connection at a
+time, and Polar Flow reconnects to it by itself whenever Flow is running — so the order matters:
+
+1. Force-quit Polar Flow. Swipe up, swipe it away.
+2. Power-cycle the band: hold the button until the light goes out, then press once to wake it. This
+   is what releases a link the phone still believes it owns.
+3. Band on the *upper* arm, snug. It reads through skin; on a table it connects and sends nothing.
+4. Tap Connect once. A second tap while the first attempt is still running starts a competing one.
+
+If the page has connected before, it reuses the remembered permission and skips the picker entirely.
+The connection itself is retried three times before it gives up, because a first-attempt failure is
+routine on iOS rather than meaningful.
 
 **Three things to know before you rely on it.**
 

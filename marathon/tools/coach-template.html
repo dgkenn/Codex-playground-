@@ -340,10 +340,15 @@
     </div>
     <p class="note" id="profilenote" style="margin-top:.7rem"></p>
     <p class="note" style="margin-top:.7rem">
-      <strong>Force-quit Polar Flow first.</strong> Two apps cannot hold the band at once, and this
-      is the likeliest reason a connection stalls: the picker lists the band, you tap it, and nothing
-      comes back — because the tap is waiting on a radio another app is already using. Swipe Flow
-      away, check the band's light is on, then Connect.
+      <strong>If it refuses to connect, in this order.</strong>
+      <br>1 — Force-quit Polar Flow (swipe up, swipe it away). The Verity Sense accepts exactly one
+      Bluetooth connection at a time, and Flow reconnects to it by itself whenever it is running.
+      <br>2 — Power-cycle the band: hold its button until the light goes out, then press once to
+      wake it. This is what releases a link the phone still thinks it owns.
+      <br>3 — Check the light is on and the band is on your <em>upper</em> arm, snug. It reads
+      through skin; on a table it will connect and send nothing at all.
+      <br>4 — Only then tap Connect, once. Tapping again while it is still trying starts a second
+      attempt that fights the first.
     </p>
     <p class="note" id="btnote" style="margin-top:.7rem"></p>
   </section>
@@ -1182,16 +1187,32 @@ async function connectArmband({ acceptAll = false } = {}) {
     await S.sensor.connect({ acceptAll });
     $('connect').textContent = 'Disconnect';
     log(`connected${S.sensor.hasAcc ? ' with accelerometer' : ' — heart rate only'}`, 'on');
+
+    // Connected and silent is a third state, and it looks identical to the other two from the
+    // outside. The Verity needs skin contact to produce a reading at all, so a band sitting on a
+    // table connects perfectly and sends nothing — which reads as "it still isn't working".
+    setTimeout(() => {
+      if (!S.sensor || !S.sensor.connected) return;
+      if (S.sensor.hrCount > 0) return;
+      log('connected, but no heart rate has arrived. The band only reads through skin — check it is '
+          + 'on your upper arm, snug, one notch tighter than feels necessary.', 'fast');
+      $('hrstate').textContent = 'connected — no readings yet';
+    }, 10000);
   } catch (e) {
     if (S.sensor) S.sensor.lastError = e;
     const where = S.sensor ? S.sensor.step : 'starting';
     $('hrstate').textContent = `failed at: ${where}`;
     $('connect').textContent = 'Connect';
-    log(`failed at "${where}": ${e.name || 'Error'} — ${e.message}`, 'stop');
+    // `describeError` rather than `e.message`. The report that mattered most read, in full,
+    // `failed at "connecting": Error — undefined` — the bridge had rejected with a value that was
+    // not an Error, and printing its missing fields produced a line that looked like information
+    // and carried none.
+    const why = describeError(e);
+    log(`failed at "${where}": ${why}`, 'stop');
 
-    if (/cancell?ed|NotFoundError/i.test(`${e.name} ${e.message}`)) {
+    if (/cancell?ed|NotFoundError/i.test(why)) {
       log('picker dismissed without choosing', 'dim');
-    } else if (/device picker/i.test(e.message)) {
+    } else if (/device picker/i.test(why)) {
       // The specific failure this whole path exists for. Say what to do next rather than what broke.
       // The message matters more than the error here. Everything about this failure points at the
       // band being held elsewhere: the picker can list a peripheral it can see, and then stall on
@@ -1200,8 +1221,11 @@ async function connectArmband({ acceptAll = false } = {}) {
           + 'holding the band — force-quit Polar Flow (swipe up, swipe it away) and try again. '
           + 'If Flow is already closed, tap "Any device" to retry without the name filter.', 'fast');
       $('anydevice').classList.remove('hide');
-    } else if (/GATT|connect/i.test(e.message)) {
-      log('the band may still be held by Polar Flow — force-quit Flow and retry', 'stop');
+    } else if (/connection|GATT|connect/i.test(why)) {
+      log('the band accepted being chosen and then refused the connection. In order of likelihood: '
+          + 'Polar Flow still holds it (force-quit Flow), the band is asleep (press its button once '
+          + 'so the light comes on), or it is out of range.', 'fast');
+      $('anydevice').classList.remove('hide');
     }
   } finally {
     clearInterval(ticker);
@@ -1221,7 +1245,7 @@ $('forget').onclick = async () => {
       + (known.length ? ': ' + known.map(d => d.name || '(unnamed)').join(', ') : ''), 'dim');
   for (const d of known) {
     if (d.forget) { try { await d.forget(); log(`forgot ${d.name || 'device'}`, 'on'); } catch (e) {
-      log(`could not forget ${d.name || 'device'}: ${e.message}`, 'stop'); } }
+      log(`could not forget ${d.name || 'device'}: ${describeError(e)}`, 'stop'); } }
     else log('this browser cannot forget a device from the page — clear it in browser settings', 'fast');
   }
 };

@@ -63,6 +63,53 @@ export const CONNECT_TIMEOUT_MS = 20000;
 /// reading "asking for the device" indefinitely with nothing to act on.
 export const PICKER_TIMEOUT_MS = 75000;
 
+/// How many times to try opening the GATT link before giving up.
+///
+/// A first-attempt failure is routine rather than exceptional on iOS WebBLE bridges: the radio is
+/// still tearing down a previous link, or the peripheral is mid-advertisement. Retrying is what a
+/// native app does silently, and it is the difference between "armband unusable" and a two-second
+/// pause nobody notices.
+export const GATT_ATTEMPTS = 3;
+export const GATT_RETRY_MS = 800;
+
+/**
+ * Turn anything that was thrown into something a person can read.
+ *
+ * This exists because of a diagnostics line that said, in full: `failed at "connecting": Error —
+ * undefined`. The connect had rejected with a value that was not an Error — no `name`, no `message`
+ * — and the report faithfully printed both missing fields. The single most important field in the
+ * whole report was the word "undefined", which is worse than useless: it looks like information.
+ *
+ * Bridges reject with strings, with bare `undefined`, with plain objects, and with DOMExceptions
+ * whose useful content is in non-enumerable properties. All of them end up here.
+ */
+export function describeError(e) {
+  if (e === undefined) return 'the connection was rejected with no reason at all (undefined)';
+  if (e === null) return 'the connection was rejected with null';
+  if (typeof e === 'string') return e || '(empty string)';
+  if (typeof e !== 'object') return `${typeof e}: ${String(e)}`;
+
+  const bits = [];
+  if (e.name) bits.push(String(e.name));
+  if (e.message) bits.push(String(e.message));
+  if (e.code != null) bits.push(`code ${e.code}`);
+  if (!bits.length) {
+    // Nothing standard on it. Take whatever it does carry rather than reporting a blank.
+    try {
+      const own = Object.getOwnPropertyNames(e)
+        .filter(k => typeof e[k] !== 'function')
+        .slice(0, 8)
+        .map(k => `${k}=${String(e[k])}`);
+      if (own.length) bits.push(own.join(', '));
+    } catch { /* exotic object; fall through to String() */ }
+  }
+  if (!bits.length) {
+    const s = String(e);
+    bits.push(s === '[object Object]' ? 'an object carrying no readable properties' : s);
+  }
+  return bits.join(': ');
+}
+
 /** Reject if `promise` has not settled within `ms`, naming the step that stalled. */
 export function withTimeout(promise, ms, what) {
   let timer;
@@ -218,7 +265,7 @@ export class VeritySensor {
       rrCount: this.rrCount,
       accFrames: this.accFrames,
       connectedForS: this.connectedAt ? Math.round((Date.now() - this.connectedAt) / 1000) : null,
-      lastError: this.lastError ? `${this.lastError.name || 'Error'}: ${this.lastError.message}` : null,
+      lastError: this.lastError ? describeError(this.lastError) : null,
     };
   }
 
@@ -270,6 +317,24 @@ export class VeritySensor {
    * name differs from its display name will be listed and then not selectable — so it has to be
    * possible to try without one.
    */
+  /** Open the picker and return whatever was chosen. */
+  async _ask(acceptAll) {
+    this._at('asking for the device');
+    const options = acceptAll
+      ? { acceptAllDevices: true }
+      // Two filters, not one. A device may advertise its heart-rate service without a name the
+      // prefix matches, or the reverse; either alone is a picker that shows nothing, or shows a row
+      // that cannot be chosen.
+      : { filters: [{ namePrefix: 'Polar' }, { services: [HR_SERVICE] }] };
+    options.optionalServices = [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE];
+
+    // The picker is a human waiting to tap, so the budget is generous — but not unbounded. An
+    // unbounded wait is what produced "asking for the device" and nothing else, for ever.
+    return withTimeout(
+      navigator.bluetooth.requestDevice(options), PICKER_TIMEOUT_MS,
+      'waiting for the device picker (it never returned the device you tapped)');
+  }
+
   async connect({ acceptAll = false, usePicker = true } = {}) {
     this.lastError = null;
     this.device = null;
@@ -278,28 +343,32 @@ export class VeritySensor {
     const known = await this.remembered();
     const match = known.find(d => /polar|verity|sense/i.test(d.name || ''))
                || (known.length === 1 ? known[0] : null);
+
     if (match) {
+      // A remembered device can be a stale entry — the permission outlives the pairing, and a band
+      // that has since been reset or given to someone else is still in the list. So a failure here
+      // falls through to the picker rather than ending the attempt: otherwise one bad entry blocks
+      // the only other route in, permanently, with no way to clear it from a phone.
       this.device = match;
       this._at(`remembered ${match.name || 'device'}`);
+      try {
+        return await this._finishConnect();
+      } catch (e) {
+        this.lastError = e;
+        if (!usePicker) throw e;
+        this.onLog(`the remembered device did not connect (${describeError(e)}) — asking again`,
+                   'bad');
+      }
     } else if (!usePicker) {
       throw new Error('no remembered device, and the picker was not allowed');
-    } else {
-      this._at('asking for the device');
-      const options = acceptAll
-        ? { acceptAllDevices: true }
-        // Two filters, not one. A device may advertise its heart-rate service without a name the
-        // prefix matches, or the reverse; either alone is a picker that shows nothing, or shows a
-        // row that cannot be chosen.
-        : { filters: [{ namePrefix: 'Polar' }, { services: [HR_SERVICE] }] };
-      options.optionalServices = [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE];
-
-      // The picker is a human waiting to tap, so the budget is generous — but not unbounded. An
-      // unbounded wait is what produced "asking for the device" and nothing else, for ever.
-      this.device = await withTimeout(
-        navigator.bluetooth.requestDevice(options), PICKER_TIMEOUT_MS,
-        'waiting for the device picker (it never returned the device you tapped)');
     }
+
+    this.device = await this._ask(acceptAll);
     if (!this.device) throw new Error('no device was chosen');
+    return this._finishConnect();
+  }
+
+  async _finishConnect() {
     this._at(`selected ${this.device.name || 'device'}`);
     this.device.addEventListener('gattserverdisconnected', () => {
       this.connected = false;
@@ -307,16 +376,61 @@ export class VeritySensor {
       this.onLog('armband disconnected — retrying', 'bad');
       this._reconnect();
     });
-    this._at('connecting');
-    const server = await withTimeout(
-      this.device.gatt.connect(), CONNECT_TIMEOUT_MS,
-      'connecting to the band (is it awake, and has Polar Flow released it?)');
+    const server = await this._openGatt();
     this._at('connected, looking for heart rate');
     await withTimeout(this._attach(server), CONNECT_TIMEOUT_MS, 'setting up heart-rate notifications');
     this.connected = true;
     this.connectedAt = Date.now();
     this._at('streaming');
     this.onChange();
+  }
+
+  /**
+   * Open the GATT link, retrying, and tolerating a bridge that lies about the outcome.
+   *
+   * Two behaviours here are specific to what actually happened rather than to the specification:
+   *
+   *   - A rejection is not proof of failure. Some bridges reject the promise while the link is up;
+   *     `gatt.connected` is the ground truth, so it is checked before the attempt is written off.
+   *   - A failed attempt leaves state behind. Disconnecting before retrying is what makes the second
+   *     attempt a fresh one rather than the first one's wreckage.
+   */
+  async _openGatt() {
+    const gatt = this.device.gatt;
+    if (!gatt) {
+      throw new Error('the browser gave back a device with no GATT server, which means it cannot '
+                    + 'open a connection to it at all');
+    }
+    if (gatt.connected) {
+      this._at('already connected');
+      return gatt;
+    }
+
+    let last = null;
+    for (let attempt = 1; attempt <= GATT_ATTEMPTS; attempt++) {
+      this._at(attempt === 1 ? 'connecting' : `connecting — attempt ${attempt} of ${GATT_ATTEMPTS}`);
+      try {
+        return await withTimeout(gatt.connect(), CONNECT_TIMEOUT_MS,
+                                 'opening the connection to the band');
+      } catch (e) {
+        last = e;
+        this.lastError = e;
+        // `gatt.connected` outranks the promise. If the link is up, the rejection was noise.
+        if (gatt.connected) {
+          this.onLog('the connect call reported an error but the link is up — continuing', 'on');
+          return gatt;
+        }
+        this.onLog(`attempt ${attempt} of ${GATT_ATTEMPTS} failed: ${describeError(e)}`, 'bad');
+        try { gatt.disconnect(); } catch { /* nothing to tear down */ }
+        if (attempt < GATT_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, GATT_RETRY_MS * attempt));
+        }
+      }
+    }
+    throw new Error(`could not open a connection after ${GATT_ATTEMPTS} attempts. `
+                  + `Last: ${describeError(last)}. `
+                  + 'The usual cause is another app holding the band — force-quit Polar Flow. '
+                  + 'Otherwise press the band\'s button once to wake it and try again.');
   }
 
   async _reconnect() {
@@ -327,7 +441,7 @@ export class VeritySensor {
       await new Promise(r => setTimeout(r, delay));
       try {
         // Timed out here too, or one hung attempt ends the retry loop permanently.
-        const server = await withTimeout(this.device.gatt.connect(), CONNECT_TIMEOUT_MS, 'reconnecting');
+        const server = await this._openGatt();
         await withTimeout(this._attach(server), CONNECT_TIMEOUT_MS, 'resubscribing');
         this.connected = true;
         this.onChange();
@@ -348,8 +462,9 @@ export class VeritySensor {
       hrService = await server.getPrimaryService(HR_SERVICE);
     } catch (e) {
       // Name the step. Without this the whole connect reads as "nothing happened".
-      throw new Error(`heart-rate service not found (${e.message}). `
-                    + 'If this browser wants short names rather than UUIDs, that is the cause.');
+      throw new Error(`heart-rate service not found (${describeError(e)}). `
+                    + 'The band may be in a mode that does not expose it — press its button once '
+                    + 'so the heart symbol is lit, then reconnect.');
     }
     const hrChar = await hrService.getCharacteristic(HR_CHAR);
     this._at('subscribing to heart rate');
