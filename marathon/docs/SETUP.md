@@ -65,6 +65,11 @@ rehearsal run end to end — because every device fault so far has lived in the 
 module is correct" and "the page works", and all of them looked identical from the phone: nothing
 happens.
 
+**What you are actually doing is always on screen.** In the timed modes the big number is the
+*target* — a ramp stage's dial setting, or RUN / WALK during intervals — so the measured pace now has
+its own tile that is filled in every mode. Without it there was no measured speed anywhere on screen
+during a ramp or a run/walk, which is indistinguishable from an app that is not measuring at all.
+
 **Sessions are saved on the phone.** The recording is written down every two seconds while it runs,
 not at the end — a page that reloads mid-run, which iOS does by itself to a backgrounded tab with no
 warning, used to take the whole session with it. On the next load an unfinished session is offered

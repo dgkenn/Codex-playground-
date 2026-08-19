@@ -433,6 +433,7 @@
     <div class="tiles" style="margin-top:.5rem">
       <div class="tile"><div class="k">Elapsed</div><div class="v" id="elapsed">0:00</div></div>
       <div class="tile"><div class="k">Distance</div><div class="v" id="dist">0.00</div></div>
+      <div class="tile"><div class="k" id="pacetilek">Pace</div><div class="v" id="pacetile">—</div></div>
       <div class="tile"><div class="k">Heart rate</div><div class="v" id="hrtile">—</div></div>
       <div class="tile"><div class="k">GPS ±</div><div class="v" id="acc">—</div></div>
       <div class="tile"><div class="k">Grade</div><div class="v" id="gradetile">0%</div></div>
@@ -605,6 +606,7 @@ function setReadout(mode) {
   $('r-speed').setAttribute('aria-pressed', String(mode === 'speed'));
   // Not while a ramp is on a treadmill: there the number is the dial setting, not a measurement.
   if (!(S.mode === 'ramp' && !S.rampOutdoor)) $('perlabel').textContent = readoutLabel();
+  $('pacetilek').textContent = mode === 'speed' ? `Speed ${U.speedLabel.toLowerCase()}` : 'Pace';
   refreshBand();
 }
 
@@ -1840,6 +1842,14 @@ function tick() {
   const t = Math.round((Date.now() - S.startedAt) / 1000);
   $('elapsed').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
   $('dist').textContent = U.dist(S.track.distanceM).toFixed(2);
+  // What you are ACTUALLY doing, in every mode, always.
+  //
+  // The big number is taken over by the target in the timed modes — the stage's dial setting during
+  // a ramp, RUN or WALK during intervals — so without this there was no measured speed anywhere on
+  // screen for the whole session. Which is precisely what it looked like from the outside: an app
+  // that was not checking how fast you were running.
+  const measured = S.track.trustedAt(nowSeconds()) ? S.track.paceSecKm : null;
+  $('pacetile').textContent = measured == null ? '—' : readoutText(measured);
   updateSensorUi();
 
   // Every live mode records, labelled with whatever phase it is in. Only the rehearsal does not,

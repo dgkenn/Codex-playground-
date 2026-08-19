@@ -75,6 +75,21 @@ await page.addInitScript(() => {
 
 await page.goto('file://' + APP, { waitUntil: 'load' });
 
+/**
+ * Select the day in the plan strip whose short type matches, e.g. 'ramp' or 'run/walk'.
+ *
+ * By content rather than by position. `nth-child(5)` meant "Friday", which meant "the run/walk" only
+ * for as long as the run/walk happened to be on a Friday — so moving sessions onto the athlete's own
+ * training days broke four tests that were not about scheduling at all.
+ */
+async function pickDay(page, kind) {
+  const buttons = await page.$$('.strip button');
+  for (const b of buttons) {
+    if ((await b.textContent()).includes(kind)) { await b.click(); return true; }
+  }
+  throw new Error(`no day in the strip offers "${kind}"`);
+}
+
 // --- it boots ------------------------------------------------------------------------------------
 
 {
@@ -193,7 +208,7 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
 
 {
   // Loading a planned session must set the band from the plan, not leave the previous numbers.
-  await page.click('.strip button:nth-child(5)');       // Friday of week one: the first run/walk
+  await pickDay(page, 'run/walk');                      // wherever it falls this week
   await page.waitForTimeout(120);
   await page.click('#loadsess');
   await page.waitForTimeout(120);
@@ -264,7 +279,7 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   // one shipped.
   await page.uncheck('#rampoutdoor');
 
-  await page.click('.strip button:nth-child(3)');       // Wednesday of week one
+  await pickDay(page, 'ramp');
   await page.waitForTimeout(120);
   assert.equal(await page.getAttribute('#loadsess', 'disabled'), null,
     'the ramp must be loadable — "coachable" is about the pace band, not about runnability');
@@ -316,7 +331,7 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
   assert.match(note, /\d+ bpm/, 'and state the stop rule in beats');
   assert.ok(await page.isVisible('#gauge'), 'the band gauge is meaningful on an outdoor ramp');
 
-  await page.click('.strip button:nth-child(3)');
+  await pickDay(page, 'ramp');
   await page.waitForTimeout(120);
   await page.click('#loadsess');
   await page.click('#go');
@@ -447,6 +462,37 @@ await page.goto('file://' + APP, { waitUntil: 'load' });
     `the ladder must read as dial settings: "${note}"`);
   assert.doesNotMatch(note, /km\/h/i, 'and must not also give km/h, which is the number to ignore');
   console.log('  ok  the treadmill ramp is prescribed in the numbers on the dial');
+}
+
+// --- what you are actually doing, in every mode ---------------------------------------------------
+
+{
+  // The complaint: "it wasn't checking how fast I was running". In the timed modes the big number is
+  // the TARGET — a stage's dial setting, or RUN / WALK — so there was no measured speed on screen at
+  // all for a whole session. The tile carries it in every mode, which is the difference between an
+  // app that is not measuring and one that is measuring somewhere you can see.
+  for (const [mode, setup] of [
+    ['coach', async () => { await page.click('#m-coach'); await page.fill('#target', '12:00'); }],
+    ['intervals', async () => { await page.click('#m-intervals'); }],
+    ['ramp', async () => {
+      await page.click('#m-ramp');
+      await page.uncheck('#rampoutdoor');                 // the treadmill flow, where it was absent
+      await pickDay(page, 'ramp');
+      await page.waitForTimeout(100);
+      await page.click('#loadsess');
+    }],
+  ]) {
+    await setup();
+    await page.click('#go');
+    await page.waitForTimeout(1600);
+    assert.ok(await page.isVisible('#pacetile'),
+      `${mode}: the measured pace must be on screen`);
+    const label = await page.textContent('#pacetilek');
+    assert.match(label, /Pace|Speed/, `${mode}: the tile must be labelled: "${label}"`);
+    await page.click('#go');
+    await page.waitForTimeout(200);
+  }
+  console.log('  ok  the measured pace is on screen in every mode, not only the pace coach');
 }
 
 // --- a session survives the page going away ------------------------------------------------------

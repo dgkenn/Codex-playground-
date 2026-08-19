@@ -953,16 +953,26 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                               "heart-rate reserve, RPE 15/20, or when speech becomes impossible.",
                     intent="Derive the heart-rate/speed relationship, the talk-test threshold, "
                            "cadence at each speed, and the seed VDOT. Everything else follows."),
-            _rest(3, "Recover from the ramp."),
-            Session(day_offset=4, type=SessionType.RUN_WALK, title="Easy shakeout walk-jog",
+        ]
+        # The rest of the week is placed on the athlete's OWN running days rather than on fixed
+        # offsets. It was hardcoded to Friday with Saturday and Sunday as rest -- for someone whose
+        # declared days are Wednesday, Saturday and Sunday, that is a plan scheduling a run on a day
+        # they cannot run and resting on two days they can. The screening, the strength screen and
+        # the ramp keep their fixed places because the ramp IS the Wednesday session and the other
+        # two are not runs.
+        shakeout_day = next((d for d in cfg.run_days if d > 2), None)
+        for d in range(3, 7):
+            if d == shakeout_day:
+                sessions.append(Session(
+                    day_offset=d, type=SessionType.RUN_WALK, title="Easy shakeout walk-jog",
                     duration_min=25,
                     run_walk=_RUN_WALK_LADDER[
                         run_walk_entry_rung(getattr(profile, "demonstrated_run_min", None))],
                     zones=(1, 2),
                     intent="Confirm the sensor setup and the audio cues work before anything "
-                           "depends on them."),
-            _rest(5), _rest(6),
-        ]
+                           "depends on them."))
+            else:
+                sessions.append(_rest(d, "Recover from the ramp." if d == 3 else ""))
         notes = [
             "No hard running this week, on purpose. A maximal test on untrained tissue measures "
             "discomfort tolerance and buys an injury.",
