@@ -156,4 +156,43 @@ const north = (from, m) => ({ lat: from.lat + m / 111132.92, lon: from.lon });
   console.log('  ok  an empty track degrades cleanly');
 }
 
+{
+  // Two distances, because they disagree and one of them over-reads.
+  //
+  // A session recorded alongside Polar Flow showed the split is not device-specific: position-based
+  // came to 3109 m on Polar and 3064 m here; speed-based to 2430 m on Polar and 2412 m here. The two
+  // devices agree within each method and differ by a quarter across them. The recording settled it
+  // by accident — thirty-three minutes left running on a couch, during which Polar's position-based
+  // distance grew by 670 m of pure drift.
+  const track = new GpsTrack();
+  const t0 = 1000;
+  // Stand still, with the fixes wobbling by a few metres as they do at 14 m accuracy.
+  for (let i = 0; i < 60; i++) {
+    track.add({
+      lat: 42.35 + (i % 3 - 1) * 4e-5, lon: -71.10 + (i % 2 - 0.5) * 4e-5,
+      accuracy: 14, speed: 0, t: t0 + i,
+    });
+  }
+  assert.equal(Math.round(track.distanceFromSpeedM), 0,
+    'a stationary GPS must integrate to no distance at all');
+  console.log(`  ok  standing still adds nothing to the speed-integrated distance `
+            + `(position-based added ${track.distanceM.toFixed(0)} m of wobble)`);
+}
+
+{
+  // And when genuinely moving, it must agree with the ground it covered.
+  const track = new GpsTrack();
+  const t0 = 2000, SPEED = 2.5;
+  let lat = 42.35;
+  for (let i = 0; i < 200; i++) {
+    lat += SPEED / 111320;
+    track.add({ lat, lon: -71.10, accuracy: 5, speed: SPEED, t: t0 + i });
+  }
+  const expected = SPEED * 199;
+  assert.ok(Math.abs(track.distanceFromSpeedM - expected) / expected < 0.05,
+    `200 s at 2.5 m/s is ${expected.toFixed(0)} m, got ${track.distanceFromSpeedM.toFixed(0)}`);
+  console.log(`  ok  and real movement integrates to the ground covered `
+            + `(${track.distanceFromSpeedM.toFixed(0)} m of ${expected.toFixed(0)})`);
+}
+
 console.log('\nAll geo tests passed.');

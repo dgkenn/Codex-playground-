@@ -679,9 +679,11 @@ async function pickDay(page, kind) {
   await page.click('#m-coach');
   await page.fill('#target', '9:00');
   await page.click('#go');
-  await page.waitForTimeout(4000);
+  // Longer than the autosave interval. It is six seconds now, not two, because writing the whole
+  // session every two seconds was costing ten megabytes a minute of serialisation on a phone.
+  await page.waitForTimeout(8000);
   const running = Number((await page.textContent('#elapsed')).split(':')[1]);
-  assert.ok(running >= 2, 'the session must actually have been running');
+  assert.ok(running >= 5, 'the session must actually have been running');
 
   // No stop, no save button, nothing — exactly what iOS reclaiming a backgrounded tab looks like.
   await page.reload();

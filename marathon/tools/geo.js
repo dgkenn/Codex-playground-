@@ -68,6 +68,19 @@ export class GpsTrack {
   constructor(opts = {}) {
     this.cfg = { ...GeoDefaults, ...opts };
     this.distanceM = 0;
+    /// Distance from integrating measured speed, rather than from summing position steps.
+    ///
+    /// Both are kept because they disagree, and a session with Polar Flow recording alongside
+    /// showed which way. Position-based: Polar 3109 m, this app 3064 m. Speed-based: Polar 2430 m,
+    /// this app 2412 m. The two devices agree with each other WITHIN each method and disagree
+    /// across them by a quarter — so the split is not a bug in either device, it is the method.
+    ///
+    /// The recording settled it by accident: the athlete left it running for thirty-three minutes
+    /// while sitting on a couch, and Polar's position-based distance grew by 670 m — twenty metres
+    /// a minute of pure drift. Apply that rate to the run and 532 m of the 3109 m was never
+    /// travelled, which lands close to the speed-based figure. Position-differencing adds length
+    /// for every wobble; at 14 m accuracy there are a lot of wobbles.
+    this.distanceFromSpeedM = 0;
     this.path = [];                 // accepted [lat, lon, t, alt] — the route
     this.lastAccepted = null;
     this.lastAccuracy = null;
@@ -126,6 +139,11 @@ export class GpsTrack {
 
     if (prev && moving) this.distanceM += segment;
     if (!moving) v = 0;
+    // Integrated from the speed that has already been through the movement gate and, below, the
+    // acceleration limit — so a rejected fix contributes nothing rather than a jump.
+    if (prev && moving && v != null && v > 0) {
+      this.distanceFromSpeedM += v * Math.max(0, Math.min(5, t - prev.t));
+    }
 
     // Reject a speed no runner could have reached from the last one. See maxAccelMS2.
     if (v != null && this.speedWindow.length) {

@@ -1628,7 +1628,7 @@ function tickCoach(t, pace, trusted) {
     log(`${ev.earcon.replace('_', ' ')}${ev.reason ? ' — ' + ev.reason : ''}`,
         ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast');
   }
-  const line = S.splits.update(t, S.track.distanceM, pace, S.monitor.state);
+  const line = S.splits.update(t, S.track.distanceFromSpeedM, pace, S.monitor.state);
   if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
 }
 
@@ -1863,7 +1863,7 @@ function tick() {
 
   const t = Math.round((Date.now() - S.startedAt) / 1000);
   $('elapsed').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
-  $('dist').textContent = U.dist(S.track.distanceM).toFixed(2);
+  $('dist').textContent = U.dist(S.track.distanceFromSpeedM).toFixed(2);
   // What you are ACTUALLY doing, in every mode, always.
   //
   // The big number is taken over by the target in the timed modes — the stage's dial setting during
@@ -2109,6 +2109,15 @@ $('go').onclick = () => {
       log('could not save this session to the phone — copy it before reloading', 'stop');
     }
   }, 6000);
+  // One straight away, so a run cut short in its first seconds still leaves something behind. The
+  // interval alone means nothing is written until six seconds in.
+  setTimeout(() => {
+    if (S.running && S.samples.length) {
+      sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}),
+                          { force: true });
+      S.savedAt = Date.now(); S.savedCount = S.samples.length; renderSavedTick();
+    }
+  }, 1500);
   S.tickId = setInterval(tick, 1000);
   if (S.mode !== 'rehearse') keepAwake(true);
 
@@ -2246,7 +2255,7 @@ function finish(msg) {
   const rehearsing = S.mode === 'rehearse';
   const elapsedS = rehearsing ? S.simT
                  : (S.startedAt ? (Date.now() - S.startedAt) / 1000 : S.samples.length);
-  const metres = rehearsing ? S.simDist : S.track.distanceM;
+  const metres = rehearsing ? S.simDist : S.track.distanceFromSpeedM;
   const mins = Math.max(1, elapsedS) / 60;
   const hrSamples = S.samples.filter(x => x.hr_bpm != null).length;
   log(`${msg} ${U.dist(metres).toFixed(2)} ${U.name}, ${S.tones} tones `
