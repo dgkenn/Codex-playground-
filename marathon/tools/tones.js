@@ -19,6 +19,50 @@
 
 export const RATE = 44100;
 
+/**
+ * How the page asks iOS to treat its sound, which decides what happens to the music underneath.
+ *
+ * The complaint: the run/walk transition cue paused Apple Music, while the spoken cues did not. Both
+ * go through the media path, so the difference is not the path — it is the *session category*.
+ * `speechSynthesis` runs on the system's own session, which ducks; an `<audio>` element runs on the
+ * page's, which defaults to something the platform is entitled to treat as exclusive playback, and
+ * exclusive playback stops whatever else was playing.
+ *
+ * `navigator.audioSession.type` is how a page says which it wants (Safari 16.4+). The values that
+ * matter here:
+ *
+ *   transient        short sounds; other audio is DUCKED rather than stopped. What earcons are.
+ *   transient-solo   other audio is interrupted and resumes afterwards. Better than stopping, worse
+ *                    than ducking, and worth having as a fallback to try on the road.
+ *   playback         this page is the media. Interrupts. Effectively what the default was doing.
+ *   auto             the browser decides. The behaviour being complained about.
+ *
+ * Not a silent upgrade, because the risk runs the other way: `ambient` — the obvious "mix with
+ * others" answer — is the one category the hardware silent switch mutes, which is the exact bug this
+ * whole file was written to fix. So the type is a setting, it is reported in the diagnostics, and it
+ * can be changed on the phone without a new build. `ambient` is deliberately not offered.
+ */
+export const AUDIO_SESSION_TYPES = ['transient', 'transient-solo', 'playback', 'auto'];
+export const DEFAULT_AUDIO_SESSION = 'transient';
+
+/**
+ * Ask for an audio session type. Returns what is now in force, or null where the API does not exist.
+ *
+ * Absence is not failure — it is an older iOS, where nothing can be done from a web page and the
+ * honest answer is to say so on the diagnostics screen rather than to pretend.
+ */
+export function setAudioSession(type, nav = typeof navigator === 'undefined' ? null : navigator) {
+  const session = nav && nav.audioSession;
+  if (!session) return null;
+  try {
+    session.type = type;
+    return session.type;
+  } catch {
+    // Some builds expose the object and reject unknown values. The one already in force is the truth.
+    try { return session.type; } catch { return null; }
+  }
+}
+
 /// Pitches sit above most music's vocal range so they are audible without being loud, and far enough
 /// apart that the rise/fall contour survives compression and wind noise.
 export const PITCH = { low: 587.33, mid: 740.0, high: 880.0 };
@@ -110,8 +154,10 @@ export const SILENCE = [[0, 0.05]];
  * does not cut it off mid-envelope — which sounds like a fault rather than a cue.
  */
 export class Tones {
-  constructor({ volume = 0.65 } = {}) {
+  constructor({ volume = 0.65, sessionType = DEFAULT_AUDIO_SESSION } = {}) {
     this.volume = volume;
+    this.sessionType = sessionType;
+    this.sessionInForce = null;
     this.pool = {};
     this.unlocked = false;
     this.unlocking = null;
@@ -149,6 +195,18 @@ export class Tones {
   }
 
   /**
+   * Choose how the page's sound sits against the music underneath.
+   *
+   * Applied immediately as well as at unlock, so the effect can be heard by switching it while a
+   * track is playing rather than inferred from a release note.
+   */
+  setSessionType(type) {
+    this.sessionType = type;
+    this.sessionInForce = setAudioSession(type);
+    return this.sessionInForce;
+  }
+
+  /**
    * Must be called from inside a user gesture, once.
    *
    * iOS refuses to play media that no tap asked for, and the refusal is permanent for that element
@@ -164,6 +222,9 @@ export class Tones {
   unlock() {
     if (this.unlocked) return Promise.resolve(true);
     if (this.unlocking) return this.unlocking;
+    // Before the first play, not after: the category a sound starts on is the one the platform acts
+    // on, and re-categorising a session that is already playing is not guaranteed to move it.
+    this.sessionInForce = setAudioSession(this.sessionType);
     const all = Object.values(this.pool).flat();
     return (this.unlocking = Promise.all(all.map(a => {
       const p = a.play();
@@ -206,6 +267,11 @@ export class Tones {
     return {
       unlocked: this.unlocked,
       volume: this.volume,
+      // Whether the "it paused my music" fix is actually in force on this phone, or whether the API
+      // simply is not there. Those are different problems and used to look identical.
+      sessionWanted: this.sessionType,
+      sessionInForce: this.sessionInForce,
+      sessionSupported: typeof navigator !== 'undefined' && !!(navigator && navigator.audioSession),
       readyState: first ? first.readyState : null,
       paused: first ? first.paused : null,
       duration: first && isFinite(first.duration) ? Math.round(first.duration * 1000) / 1000 : null,
