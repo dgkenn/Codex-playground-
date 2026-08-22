@@ -29,11 +29,17 @@ from marathon_engine.cli import _estimated_profile           # noqa: E402
 
 #: The athlete's profile, as far as it is actually known.
 #:
-#: Age is given. Resting heart rate is NOT — the app still shows it as a placeholder, and the zone
-#: model is anchored on it. Across a plausible 45-60 range the easy-zone edges move by about six
-#: beats, which matters less than the HRmax estimate's own +/-7 but is not nothing.
+#: Age is given. Resting heart rate is the value the athlete entered in the app, which is a stated
+#: number rather than one measured lying down on waking -- so it is his and not a placeholder, but it
+#: is not laboratory-grade either. It is the anchor of the whole zone model: 55 (Polar's untouched
+#: factory default, which is what this said before) against 67 moves every zone edge by four to five
+#: beats, which is the difference between "easy" and "steady" at the top of Z2.
+#:
+#: The one piece of evidence available says the higher number is the likelier: thirty minutes sitting
+#: still after the 22 August run, heart rate fell to 73 and stopped. Post-exercise sitting is above
+#: true rest, so 67 is plausible and 55 is not.
 DEFAULT_AGE = 30.0
-DEFAULT_HR_REST = 55.0
+DEFAULT_HR_REST = 67.0
 
 #: The longest continuous run observed, in minutes, from the baseline session of 2026-08-05:
 #: 24:12 total, 1.81 mi, four run blocks of 2.9 / 4.7 / 3.6 / 1.5 minutes at 9:55-10:30 per mile,
