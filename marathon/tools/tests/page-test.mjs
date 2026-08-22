@@ -571,6 +571,49 @@ async function pickDay(page, kind) {
   console.log('  ok  a finished run reports its statistics and files them with the session');
 }
 
+// --- the export has to be small enough to paste ---------------------------------------------------
+
+{
+  // The reported failure: copying a session and pasting it crashed the chat window, and pasting it
+  // into a notes app produced a screen of punctuation. A 45-minute run exported to 345 kB — three
+  // thousand objects with the same six keys. Both buttons are checked here, because the raw one
+  // still exists and must warn rather than surprise.
+  await page.click('#m-coach');
+  await page.fill('#target', '10:00');
+  await page.click('#go');
+  await page.waitForTimeout(3000);
+  await page.click('#go');
+  await page.waitForTimeout(300);
+
+  await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
+  await page.click('#copy');
+  await page.waitForSelector('#diagtext', { timeout: 5000 });
+  const compactText = await page.inputValue('#diagtext');
+  const parsed = JSON.parse(compactText);
+  assert.equal(parsed.schema_version, 2, 'the default copy must be the compact form');
+  assert.ok(parsed.stats, 'and must carry the statistics, computed at full resolution');
+  assert.ok('t' in parsed && 'hr' in parsed, 'as columns rather than objects per second');
+
+  await page.click('#copyfull');
+  await page.waitForTimeout(300);
+  const rawText = await page.inputValue('#diagtext');
+  const raw = JSON.parse(rawText);
+  assert.equal(raw.schema_version, 1, 'the raw button still yields the per-second recording');
+  assert.ok(rawText.length >= compactText.length,
+    'and it is the larger of the two, which is the entire reason for the split');
+  console.log(`  ok  the default copy is compact (${compactText.length} chars) with raw available `
+            + `(${rawText.length})`);
+}
+
+{
+  // "It is not storing session data" was a report I could not check, because nothing on screen ever
+  // said whether a save had happened. It says so now.
+  const note = await page.textContent('#storagenote');
+  assert.match(note, /session|Nothing stored/i, `storage state must be visible: "${note}"`);
+  assert.match(note, /6 seconds|Saved/i, 'and must say how often the run is written down');
+  console.log(`  ok  storage state is on the page rather than a matter of trust ("${note.trim().slice(0, 60)}…")`);
+}
+
 // --- what you are actually doing, in every mode ---------------------------------------------------
 
 {
@@ -632,14 +675,17 @@ async function pickDay(page, kind) {
   assert.equal(rows.length, 1, `the recovered run must be filed: ${JSON.stringify(rows)}`);
   assert.match(rows[0], /\d+ samples/);
 
-  // And it must be readable, in the shape the importer expects.
+  // And it must be readable, in the shape the importer expects — the COMPACT shape now, because the
+  // per-second one reached 345 kB and crashed the window it was pasted into.
   await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
   await page.click('#savedlist button');
   await page.waitForSelector('#diagtext', { timeout: 5000 });
-  const saved = JSON.parse(await page.inputValue('#diagtext'));
-  assert.equal(saved.schema_version, 1);
-  assert.ok(saved.samples.length >= 2, `only ${saved.samples.length} samples survived`);
+  const savedText = await page.inputValue('#diagtext');
+  const saved = JSON.parse(savedText);
+  assert.equal(saved.schema_version, 2, 'archived sessions are stored compact');
+  assert.ok(Array.isArray(saved.t) && saved.t.length >= 1, `no trace: ${savedText.slice(0, 120)}`);
   assert.ok(saved.started_at);
+  assert.ok(savedText.length < 60_000, `${savedText.length} characters is back to unpasteable`);
 
   // Recovering must not leave the offer standing, or the next load recovers the same run again.
   await page.reload();

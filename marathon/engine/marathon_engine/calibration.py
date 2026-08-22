@@ -113,11 +113,77 @@ class CalibrationRecording:
     schema_version: int = SCHEMA_VERSION
 
 
+#: The compact wire format the app exports. See tools/session-format.js for why it exists: the
+#: per-second form reached 345 kB for a 45-minute session, which is too large to paste anywhere a
+#: person would want to paste it, and too expensive to re-serialise every few seconds on a phone.
+COMPACT_SCHEMA_VERSION = 2
+#: Coarser than the trace, because the route is drawn rather than measured.
+COMPACT_ROUTE_STEP_S = 15
+
+
+def expand_compact(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Turn the compact columnar export back into the per-second form the rest of this module reads.
+
+    Only the transmitted grid points come back. The seconds between them were never sent and are not
+    interpolated here -- an importer that filled them in would be manufacturing heart rates, which is
+    precisely what the sensor-health checks exist to detect.
+    """
+    t = payload.get("t") or []
+    hr = payload.get("hr") or []
+    spd = payload.get("spd") or []
+    grd = payload.get("grd") or []
+    acc = payload.get("acc") or []
+    t0 = int(payload.get("t0", 0))
+    changes = payload.get("labels") or []
+
+    def label_at(k: int) -> str:
+        out = ""
+        for at, lab in changes:
+            if at <= k:
+                out = lab
+            else:
+                break
+        return out
+
+    samples = []
+    for i, k in enumerate(t):
+        samples.append({
+            "t_s": t0 + k,
+            "hr_bpm": hr[i] if i < len(hr) and hr[i] is not None else None,
+            "speed_m_s": spd[i] / 10.0 if i < len(spd) and spd[i] is not None else None,
+            "grade": grd[i] / 10000.0 if i < len(grd) and grd[i] is not None else None,
+            "accel_sd_g": acc[i] / 100.0 if i < len(acc) and acc[i] is not None else None,
+            "label": label_at(k),
+        })
+
+    route = payload.get("route") or []
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "started_at": payload["started_at"],
+        **({"age": payload["age"]} if "age" in payload else {}),
+        **({"hr_rest": payload["hr_rest"]} if "hr_rest" in payload else {}),
+        "samples": samples,
+        "route": [[p[0], p[1], t0 + i * COMPACT_ROUTE_STEP_S, None]
+                  for i, p in enumerate(route)],
+        "resting_ppi_ms": [],
+        "surface": payload.get("surface", "road"),
+        "strap_position": "upper_arm",
+        "notes": payload.get("notes", ""),
+        # Carried through rather than recomputed: the app measured these at one hertz, before any
+        # thinning, and recomputing them from the thinned copy would quietly restate them.
+        "app_stats": payload.get("stats"),
+    }
+
+
 def load_recording(payload: Dict[str, Any]) -> CalibrationRecording:
     """Parse the app's JSON export. Tolerant of missing optional fields, strict about the required."""
     v = int(payload.get("schema_version", 0))
+    if v == COMPACT_SCHEMA_VERSION:
+        payload = expand_compact(payload)
+        v = int(payload["schema_version"])
     if v != SCHEMA_VERSION:
-        raise ValueError(f"unsupported recording schema version {v} (expected {SCHEMA_VERSION})")
+        raise ValueError(f"unsupported recording schema version {v} (expected {SCHEMA_VERSION} "
+                         f"or {COMPACT_SCHEMA_VERSION})")
     for key in ("started_at", "age", "hr_rest", "samples"):
         if key not in payload:
             raise ValueError(f"recording missing required field {key!r}")

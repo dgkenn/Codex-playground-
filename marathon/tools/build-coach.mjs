@@ -55,6 +55,7 @@ const parts = {
   BTPROBE: inline('bt-probe.js'),
   SESSIONSTORE: inline('session-store.js'),
   RUNSTATS: inline('run-stats.js'),
+  SESSIONFORMAT: inline('session-format.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 

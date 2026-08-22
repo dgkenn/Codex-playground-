@@ -488,6 +488,7 @@
       </div>
     </div>
     <div id="savedlist"></div>
+    <p class="note" id="storagenote" style="margin-top:.7rem"></p>
     <p class="note" style="margin-top:.7rem">
       Every session is written to this phone while it runs, not just at the end. A page that reloads
       mid-run — which iOS does by itself to a backgrounded tab, with no warning — used to take the
@@ -499,7 +500,8 @@
     <h2>Session log</h2>
     <div id="log"></div>
     <div class="row" style="margin-top:.65rem">
-      <button id="copy" disabled>Copy session data</button>
+      <button id="copy" disabled>Copy session</button>
+      <button id="copyfull" class="tiny" disabled>Copy raw (large)</button>
       <button id="diag" class="tiny">Copy diagnostics</button>
     </div>
     <div class="row" style="margin-top:.65rem">
@@ -550,6 +552,8 @@
 /*{{SESSIONSTORE}}*/
 
 /*{{RUNSTATS}}*/
+
+/*{{SESSIONFORMAT}}*/
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -683,7 +687,7 @@ const S = {
   governedBy: 'pace',
   watchId: null, tickId: null, autosaveId: null, wakeLock: null,
   ivPhase: null, ivRep: 0, ivUntil: 0,
-  geoError: null,
+  geoError: null, savedAt: 0, savedCount: 0,
   ramp: null, rampNotes: '', rampOutdoor: false, rampTargetSecKm: null, rampStopped: false,
   simT: 0, simDist: 0, plannedSession: null,
   hrZones: null,
@@ -1921,13 +1925,13 @@ async function keepAwake(on) {
 // important line for not losing a session.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && S.running && S.samples.length) {
-    sessions.saveActive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode },
+    sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}),
                         { force: true });
   }
 });
 addEventListener('pagehide', () => {
   if (S.running && S.samples.length) {
-    sessions.saveActive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode },
+    sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}),
                         { force: true });
   }
 });
@@ -2081,13 +2085,28 @@ $('go').onclick = () => {
     },
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
   }
+  // Autosave the COMPACT form, not the full one.
+  //
+  // It was serialising the entire per-second session every two seconds: about 345 kB per write for
+  // a 45-minute run, which is ten megabytes a minute of string building on a phone. That is a
+  // plausible reason iOS killed the tab — and losing the tab is exactly the failure this autosave
+  // exists to survive, so the safeguard was helping cause the thing it guarded against.
+  //
+  // The compact form is 14 kB and covers the same run on a five-second grid. For a session that is
+  // interrupted, five-second resolution is enormously better than nothing; one that finishes
+  // normally still has its full-resolution samples in memory when they are needed.
+  let saveFailed = false;
   S.autosaveId = setInterval(() => {
     if (!S.running || !S.samples.length) return;
-    if (!sessions.saveActive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode })) {
-      // Worth saying once. A silent failure here is the original bug wearing a different hat.
-      log('could not save the session to this phone — copy it before reloading', 'stop');
+    const ok = sessions.saveActive(
+      compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}));
+    if (ok) { S.savedAt = Date.now(); S.savedCount = S.samples.length; renderSavedTick(); }
+    else if (!saveFailed) {
+      // Once, not every six seconds. A silent failure here is the original bug in a new hat.
+      saveFailed = true;
+      log('could not save this session to the phone — copy it before reloading', 'stop');
     }
-  }, 2000);
+  }, 6000);
   S.tickId = setInterval(tick, 1000);
   if (S.mode !== 'rehearse') keepAwake(true);
 
@@ -2199,7 +2218,10 @@ function finish(msg) {
     // afterwards, and a statistic that silently restates itself when the settings move is not a
     // record of anything.
     const prev = (sessions.index().find(e => e.stats && e.stats.efficiencyFactor != null) || {}).stats;
-    const entry = sessions.archive({ ...sessionPayload(), title: sessionTitle(), mode: S.mode, stats });
+    // The compact form is archived, not the raw one: eight full sessions would be nearly three
+    // megabytes and would start evicting each other immediately.
+    const entry = sessions.archive(
+      compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, { stats }));
     if (entry) renderSaved();
     else log('could not save this session to the phone — copy it now', 'stop');
     showStats(stats, prev);
@@ -2209,6 +2231,7 @@ function finish(msg) {
   $('go').textContent = 'Start';
   $('go').classList.remove('stop');
   $('copy').disabled = S.samples.length === 0;
+  $('copyfull').disabled = S.samples.length === 0;
   // Tones per minute is the number that says whether the coach is coaching or nagging, and the
   // rehearsal is the only place it can be judged indoors — so it has to be right there above all.
   // It was computed from the GPS sample count, which the rehearsal never fills: thirty simulated
@@ -2356,6 +2379,24 @@ function fmtWhen(iso) {
     { weekday: 'short', hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' });
 }
 
+/**
+ * Say, on the page, that the run is being written down.
+ *
+ * "It is not storing session data" is a report I could not check and could not disprove, because
+ * nothing on screen ever said whether a save had happened. A number that ticks up is the difference
+ * between trusting the storage and being able to see it — and if it stops ticking, that is a fact
+ * about the phone rather than a suspicion about the app.
+ */
+function renderSavedTick() {
+  if (!S.savedAt) { $('storagenote').textContent = ''; return; }
+  const ago = Math.round((Date.now() - S.savedAt) / 1000);
+  const kb = Math.round(sessions.bytes() / 1024);
+  $('storagenote').textContent =
+    `Saved ${S.savedCount} samples ${ago < 5 ? 'just now' : `${ago}s ago`}. `
+    + `${sessions.index().length} session(s) on this phone, ${kb} kB.`;
+  $('storagenote').style.color = ago > 30 ? 'var(--fast)' : 'var(--on)';
+}
+
 function renderSaved() {
   const idx = sessions.index();
   const list = $('savedlist');
@@ -2468,22 +2509,59 @@ function sessionPayload() {
 // was ever written — which showed as a page with no build stamp and no capabilities line.
 renderSaved();
 offerRecovery();
+// Storage state before a run has started, so "is it storing?" has an answer at any moment.
+(() => {
+  const n = sessions.index().length, kb = Math.round(sessions.bytes() / 1024);
+  $('storagenote').textContent = n
+    ? `${n} session(s) on this phone, ${kb} kB. A run in progress is written down every 6 seconds.`
+    : 'Nothing stored yet. A run in progress is written down every 6 seconds.';
+})();
 
-$('copy').onclick = async () => {
-  // Downloads are inert in this frame, so the session goes to the clipboard in the engine's own
-  // schema.
-  const text = JSON.stringify(sessionPayload());
+/**
+ * Copy the session, in the form that can actually be pasted.
+ *
+ * The old export was the full per-second recording: 345 kB for a forty-five minute run, 340,000
+ * characters of the same six keys repeated three thousand times. Pasting that into a chat crashed
+ * the chat; pasting it into a notes app produced a screen of punctuation with nothing readable in
+ * it. The compact form is about 14 kB, carries the statistics at full resolution, and the engine
+ * reads it directly.
+ *
+ * The raw recording stays available behind a second button that says how big it is. There are
+ * things it is good for; pasting is not one of them.
+ */
+async function copyText(text, what) {
   try {
     await navigator.clipboard.writeText(text);
-    log(`Copied ${S.samples.length} samples. Paste it into the chat.`, 'on');
-    if (!profile.confirmed) {
-      log('Age and resting heart rate are not set, so they are not in the file — the import will '
-          + 'ask rather than assume.', 'fast');
-    }
+    log(`${what} — ${Math.round(text.length / 1024)} kB copied. Paste it into the chat.`, 'on');
+    return true;
   } catch (e) {
-    // Same fallback as the diagnostics. A run that cannot be got off the phone did not happen as far
-    // as the engine is concerned, and no screenshot will reconstruct a thousand samples.
-    showDiagText(text, e.message || e);
+    // A run that cannot be got off the phone did not happen as far as the engine is concerned, so
+    // the text goes onto the page rather than nowhere.
+    showDiagText(text, describeError(e));
+    return false;
   }
+}
+
+$('copy').onclick = async () => {
+  const stats = runStats(S.samples, {
+    zones: statsZones(), hrRest: profile.hrRest, hrMax: hrMaxFor(profile.age),
+    unit, tones: S.tones,
+  });
+  const payload = compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, { stats });
+  await copyText(JSON.stringify(payload), `${S.samples.length} samples`);
+  if (!profile.confirmed) {
+    log('Age and resting heart rate are not set, so they are not in the file — the import will '
+        + 'ask rather than assume.', 'fast');
+  }
+};
+
+$('copyfull').onclick = async () => {
+  const text = JSON.stringify(sessionPayload());
+  const kb = Math.round(text.length / 1024);
+  if (kb > 60) {
+    log(`That is ${kb} kB — too large to paste into a chat window, which is what crashed it last `
+        + 'time. Use "Copy session" unless something specifically needs every second.', 'fast');
+  }
+  await copyText(text, 'Raw recording');
 };
 </script>
