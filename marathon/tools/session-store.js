@@ -40,6 +40,40 @@ export const MAX_BYTES = 2_500_000;
 /// reload, a phone call, and finishing the run before looking at the phone again.
 export const RECOVER_WINDOW_MS = 18 * 3600 * 1000;
 
+/**
+ * How many points a session holds, in either shape.
+ *
+ * Sessions are written compact — columns rather than an object per second — and the compact form has
+ * no `samples` field at all. Everything here that reasoned about `session.samples.length` therefore
+ * saw zero: `recoverable` decided every saved run was empty and refused to offer it back, which
+ * silently disabled the entire recovery feature, and the archive listed every session as 0 samples.
+ */
+export function pointCount(session) {
+  if (!session) return 0;
+  if (Array.isArray(session.samples)) return session.samples.length;
+  if (Array.isArray(session.t)) return session.t.length;
+  return 0;
+}
+
+/** Whether a session carries any heart rate, in either shape. */
+export function hasHeartRate(session) {
+  if (!session) return false;
+  if (Array.isArray(session.samples)) return session.samples.some(x => x.hr_bpm != null);
+  if (Array.isArray(session.hr)) return session.hr.some(x => x != null);
+  return false;
+}
+
+/** Seconds the recording spans, preferring the count it says it really had. */
+function spanSeconds(session) {
+  if (!session) return 0;
+  if (session.n_full) return session.n_full;
+  if (Array.isArray(session.samples)) return session.samples.length;
+  if (Array.isArray(session.t) && session.t.length) {
+    return session.t[session.t.length - 1] - session.t[0] + 1;
+  }
+  return 0;
+}
+
 const isQuotaError = e =>
   e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
 
@@ -145,7 +179,7 @@ export class SessionStore {
   /** The unfinished session, if there is a recent one worth offering back. */
   recoverable({ now = Date.now() } = {}) {
     const s = this._read(ACTIVE_KEY);
-    if (!s || !s.samples || !s.samples.length) return null;
+    if (!pointCount(s)) return null;
     if (s.finished) return null;
     if (now - (s.savedAt || 0) > RECOVER_WINDOW_MS) return null;
     return s;
@@ -171,9 +205,9 @@ export class SessionStore {
       at: session.started_at || new Date(now).toISOString(),
       title: session.title || 'Session',
       mode: session.mode || 'coach',
-      samples: (session.samples || []).length,
-      minutes: Math.round(((session.samples || []).length) / 60),
-      hasHr: (session.samples || []).some(x => x.hr_bpm != null),
+      samples: pointCount(session),
+      minutes: Math.round(spanSeconds(session) / 60),
+      hasHr: hasHeartRate(session),
       // The statistics live in the index as well as in the session, so a trend can be drawn without
       // parsing every archived run — and so they survive the eviction of the samples they came from.
       // They are computed once, at the end of the run, against the profile in force at that moment;

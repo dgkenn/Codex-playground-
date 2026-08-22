@@ -7,7 +7,7 @@
 
 import assert from 'node:assert/strict';
 import { SessionStore, AUTOSAVE_MS, MAX_ARCHIVED, RECOVER_WINDOW_MS,
-         ACTIVE_KEY, INDEX_KEY } from '../session-store.js';
+         ACTIVE_KEY, INDEX_KEY, pointCount, hasHeartRate } from '../session-store.js';
 
 /** localStorage, with an optional ceiling so quota behaviour can be exercised rather than assumed. */
 class FakeStorage {
@@ -208,6 +208,38 @@ const session = (n, { startedAt = '2026-08-19T18:00:00.000Z', hr = true, mode = 
   assert.equal(st.recoverable({ now: 1001 }), null);
   assert.equal(st.bytes(), 0);
   console.log('  ok  storage can be listed and emptied from the app itself');
+}
+
+{
+  // Sessions are written COMPACT — columns, no `samples` field — and everything here used to reason
+  // about `session.samples.length`. It therefore saw zero for every stored run: recovery decided
+  // each one was empty and refused to offer it back, silently disabling the whole feature, and the
+  // archive listed every session as 0 samples and no heart rate.
+  const compactish = {
+    schema_version: 2,
+    started_at: '2026-08-22T16:01:11.216Z',
+    t: [0, 5, 10, 15, 20], hr: [null, 132, 138, 141, null], spd: [12, 25, 26, 24, 0],
+    n_full: 1556, labels: [[0, 'run']],
+  };
+  assert.equal(pointCount(compactish), 5);
+  assert.equal(pointCount({ samples: [1, 2, 3] }), 3, 'and the per-second shape still counts');
+  assert.equal(pointCount(null), 0);
+  assert.equal(hasHeartRate(compactish), true);
+  assert.equal(hasHeartRate({ ...compactish, hr: [null, null] }), false);
+  assert.equal(hasHeartRate({ samples: [{ hr_bpm: 120 }] }), true);
+
+  const st = new SessionStore(new FakeStorage());
+  st.saveActive(compactish, { now: 0, force: true });
+  const found = st.recoverable({ now: 1000 });
+  assert.ok(found, 'a compact session must be offered back — this is the bug that disabled recovery');
+  assert.equal(pointCount(found), 5);
+
+  const e = st.archive(compactish, { now: 2000 });
+  assert.equal(e.samples, 5);
+  assert.equal(e.hasHr, true);
+  // Minutes come from what the recording really spanned, not from how many points travelled.
+  assert.equal(e.minutes, 26, `26 minutes of running, got ${e.minutes}`);
+  console.log('  ok  a compact session is counted, recovered and listed like any other');
 }
 
 console.log('\nAll session-store tests passed.');

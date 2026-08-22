@@ -2473,11 +2473,13 @@ function renderSaved() {
 function offerRecovery() {
   const found = sessions.recoverable();
   if (!found) { $('recover').classList.add('hide'); return; }
-  const mins = Math.round((found.samples || []).length / 60);
-  const hr = (found.samples || []).some(x => x.hr_bpm != null);
+  // Through the store's helpers, which know both shapes. Reading `found.samples` here saw nothing
+  // at all: sessions are stored compact and the compact form has no such field.
+  const mins = Math.round((found.n_full || pointCount(found)) / 60);
+  const hr = hasHeartRate(found);
   $('recovertitle').textContent = 'An unfinished session was found';
   $('recoverdetail').textContent =
-    `${fmtWhen(found.started_at)} · ${mins} min · ${found.samples.length} samples`
+    `${fmtWhen(found.started_at)} · ${mins} min · ${found.n_full || pointCount(found)} samples`
     + (hr ? ' · heart rate' : ' · no heart rate')
     + '. The page reloaded before it was saved.';
   $('recover').classList.remove('hide');
@@ -2489,7 +2491,7 @@ $('recoverbtn').onclick = () => {
   const entry = sessions.archive({ ...found, finished: true, title: found.title || 'Recovered session' });
   $('recover').classList.add('hide');
   renderSaved();
-  log(entry ? `Recovered ${found.samples.length} samples — it is in Saved sessions now.`
+  log(entry ? `Recovered ${found.n_full || pointCount(found)} samples — it is in Saved sessions now.`
             : 'Could not file the recovered session; copy it before reloading.', entry ? 'on' : 'stop');
   if (!entry) showDiagText(JSON.stringify(found), 'could not write it to storage');
 };
