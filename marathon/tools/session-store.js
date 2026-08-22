@@ -75,11 +75,32 @@ export class SessionStore {
       return true;
     } catch (e) {
       if (!isQuotaError(e)) { this.lastError = e; return false; }
+
       // Make room by dropping the oldest finished sessions, never the one in progress.
       for (let i = 0; i < MAX_ARCHIVED + 1; i++) {
         if (!this._evictOldest()) break;
         try { this.storage.setItem(key, text); return true; } catch (e2) {
           if (!isQuotaError(e2)) { this.lastError = e2; return false; }
+        }
+      }
+
+      // Last resort: drop the previous in-progress session.
+      //
+      // This is the failure that actually happened. An earlier build wrote the whole per-second
+      // recording to the active slot, filling storage with a few hundred kilobytes. Nothing had
+      // ever been archived, so there was nothing for the loop above to evict — and every write
+      // afterwards failed, from four seconds into the next run, for the whole session. Storage was
+      // permanently bricked by one oversized leftover that eviction could not reach.
+      //
+      // Safe because the write in hand is REPLACING it: whatever is in the active slot is either
+      // the same session or an abandoned one, and the run happening now matters more than either.
+      if (key === ACTIVE_KEY) {
+        try {
+          this.storage.removeItem(ACTIVE_KEY);
+          this.storage.setItem(key, text);
+          return true;
+        } catch (e3) {
+          if (!isQuotaError(e3)) { this.lastError = e3; return false; }
         }
       }
       this.lastError = e;
@@ -183,6 +204,26 @@ export class SessionStore {
       total += raw ? raw.length : 0;
     }
     return total;
+  }
+
+  /** Every key this store owns, with its size. For the diagnostics report and the export button. */
+  inventory() {
+    const out = [];
+    for (const key of [ACTIVE_KEY, INDEX_KEY, ...this.index().map(e => ITEM_PREFIX + e.id)]) {
+      let raw = null;
+      try { raw = this.storage.getItem(key); } catch { /* unreadable */ }
+      if (raw != null) out.push({ key, bytes: raw.length });
+    }
+    return out;
+  }
+
+  /** Remove everything this store owns. The only way back from a wedged storage, on a phone. */
+  clear() {
+    for (const e of this.index()) {
+      try { this.storage.removeItem(ITEM_PREFIX + e.id); } catch { /* already gone */ }
+    }
+    try { this.storage.removeItem(INDEX_KEY); } catch { /* already gone */ }
+    this.clearActive();
   }
 
   _trimToSize() {

@@ -310,12 +310,19 @@ async function pickDay(page, kind) {
   await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
   await page.click('#copy');
   await page.waitForSelector('#diagtext', { timeout: 5000 });
+  // The compact form: a trace in columns, with labels stored as changes rather than repeated per
+  // second. That is the whole point of the format, so the assertion has to read it that way.
   const payload = JSON.parse(await page.inputValue('#diagtext'));
-  assert.ok(payload.samples.length > 0, 'the ramp must record samples — it recorded none at all');
-  assert.ok(payload.samples.every(x => x.label === 'warmup'),
-    `every sample must carry its stage: ${JSON.stringify(payload.samples.slice(0, 2))}`);
+  assert.equal(payload.schema_version, 2);
+  assert.ok(payload.t.length > 0, 'the ramp must record samples — it recorded none at all');
+  assert.ok(payload.labels.length >= 1,
+    `the trace must carry its stage labels: ${JSON.stringify(payload.labels)}`);
+  assert.equal(payload.labels[0][1], 'warmup',
+    `the first label must be the warm-up: ${JSON.stringify(payload.labels)}`);
+  assert.ok(payload.n_full >= payload.t.length,
+    'and it must say how many samples the recording really had');
   console.log(`  ok  the ramp loads, announces and labels (${loaded.trim().slice(6)}, `
-            + `${payload.samples.length} samples labelled warmup)`);
+            + `${payload.n_full} samples -> ${payload.t.length} points, first label warmup)`);
 }
 
 {
@@ -360,20 +367,29 @@ async function pickDay(page, kind) {
   await page.waitForSelector('#starttoday');
 
   const label = (await page.textContent('#starttoday')).trim();
-  assert.match(label, /street|treadmill/,
-    `the button must state which flow it will run: "${label}"`);
-  assert.ok(await page.isVisible('#today-where'),
-    'and the choice must be reachable from where the session is actually started');
-  assert.equal(await page.getAttribute('#w-street', 'aria-pressed'), 'true',
-    'the street is the default — a treadmill is the exception, and guessing wrong costs a session');
+  const isRampDay = await page.isVisible('#today-where');
 
-  await page.click('#w-mill');
-  assert.match(await page.textContent('#starttoday'), /treadmill/);
-  await page.click('#w-street');
-  assert.match(await page.textContent('#starttoday'), /street/);
-  // The two controls are the same setting and must not disagree.
-  assert.equal(await page.isChecked('#rampoutdoor'), true);
-  console.log(`  ok  the one-tap start names its flow and the choice is where the tap is (${label})`);
+  if (isRampDay) {
+    assert.match(label, /street|treadmill/,
+      `on a ramp day the button must state which flow it will run: "${label}"`);
+    assert.equal(await page.getAttribute('#w-street', 'aria-pressed'), 'true',
+      'the street is the default — a treadmill is the exception, and guessing wrong costs a session');
+    await page.click('#w-mill');
+    assert.match(await page.textContent('#starttoday'), /treadmill/);
+    await page.click('#w-street');
+    assert.match(await page.textContent('#starttoday'), /street/);
+    assert.equal(await page.isChecked('#rampoutdoor'), true,
+      'the two controls are the same setting and must not disagree');
+  } else {
+    // Not a ramp day. The choice is specific to the ramp, so it must be absent rather than offered
+    // for a session it does not apply to — and the button must still say what it will do.
+    assert.match(label, /^Start |Not a session/,
+      `the button must say what it will run: "${label}"`);
+    assert.doesNotMatch(label, /street|treadmill/,
+      'a run/walk is neither, and must not claim to be');
+  }
+  console.log(`  ok  the one-tap start names its flow, and offers the ramp's choice only on a `
+            + `ramp day (${label})`);
 }
 
 // --- a persistent fault does not flood the log ----------------------------------------------------

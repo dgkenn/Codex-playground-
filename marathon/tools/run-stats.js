@@ -36,8 +36,28 @@ export const METRES_PER_MILE = 1609.344;
 /// Below this a sample is standing still, not running slowly. Used for moving time and for the
 /// continuous-block measurement.
 export const MOVING_MS = 0.7;
-/// A block only counts as *running* above this — about 12:00 per mile. Below it, walking.
+/// The default boundary between walking and running — about 12:00 per mile.
+///
+/// A DEFAULT, not a constant, and the difference matters. This athlete's prescribed easy pace is
+/// 12:00-12:30 per mile, which sits exactly on it: a real run/walk session where every interval was
+/// executed correctly came back reading 23 seconds of running out of 26 minutes, because doing what
+/// the plan asked landed just under the line. The statistic that feeds the run-walk ladder was
+/// therefore about to report that he had not run at all.
+///
+/// There is no absolute speed that separates a walk from a jog — the difference is gait, and
+/// without cadence it cannot be observed directly. What IS known is the pace the session asked for,
+/// so `runStats` derives the boundary from that when it has one and falls back to this otherwise.
 export const JOG_MS = 2.24;
+
+/// How far below the prescribed pace still counts as running. A walk break in this plan is roughly
+/// half the running speed, so eight tenths sits clear of both.
+export const JOG_FRACTION_OF_TARGET = 0.8;
+
+/** The walk/run boundary for a session, from its own target pace where there is one. */
+export function jogThreshold(targetPaceSecKm) {
+  if (!targetPaceSecKm || targetPaceSecKm <= 0) return JOG_MS;
+  return Math.min(JOG_MS, (1000 / targetPaceSecKm) * JOG_FRACTION_OF_TARGET);
+}
 /// A gap longer than this breaks a continuous block, even if both sides are running.
 export const BLOCK_GAP_S = 5;
 
@@ -106,10 +126,10 @@ export function splits(samples, everyM) {
  * Measured rather than asked for, because it is what the run-walk ladder is entered on and a
  * self-reported figure would quietly set the whole plan's starting point.
  */
-export function longestRunBlock(samples) {
+export function longestRunBlock(samples, jogMS = JOG_MS) {
   let best = 0, cur = 0, prevT = null;
   for (const s of samples) {
-    const running = s.speed_m_s != null && s.speed_m_s >= JOG_MS;
+    const running = s.speed_m_s != null && s.speed_m_s >= jogMS;
     const gap = prevT == null ? 0 : s.t_s - prevT;
     if (running && gap <= BLOCK_GAP_S) cur += gap || 1;
     else if (running) cur = 1;
@@ -128,7 +148,9 @@ export function longestRunBlock(samples) {
  */
 export function runStats(samples, {
   zones = null, hrRest = null, hrMax = null, unit = 'mi', tones = 0, male = true,
+  targetPaceSecKm = null, trackDistanceM = null,
 } = {}) {
+  const jogMS = jogThreshold(targetPaceSecKm);
   const ss = (samples || []).slice().sort((a, b) => a.t_s - b.t_s);
   if (!ss.length) return null;
 
@@ -165,14 +187,26 @@ export function runStats(samples, {
     distance: distanceM / (unit === 'mi' ? METRES_PER_MILE : 1000),
     avgPaceSecKm,
     splits: splits(ss, unit === 'mi' ? METRES_PER_MILE : 1000),
-    longestRunBlockS: longestRunBlock(ss),
+    longestRunBlockS: longestRunBlock(ss, jogMS),
     // Walking is not failure in this plan — it is prescribed — so the ratio is reported, not judged.
-    runningS: ss.filter(s => s.speed_m_s >= JOG_MS).length,
+    runningS: ss.filter(s => s.speed_m_s >= jogMS).length,
+    jogThresholdMS: jogMS,
     ascentM: Math.round(ascentM),
     descentM: Math.round(descentM),
     tones,
     tonesPerMin: spanS > 0 ? tones / (spanS / 60) : 0,
     hrCoveragePct: Math.round(withHr.length / spanS * 100),
+    // Two distances, when they disagree.
+    //
+    // The track accumulates from position; this sums measured speed over elapsed time. On a clean
+    // fix they agree closely. On a noisy one they do not — a real session at 14 m accuracy came
+    // back 3064 m by position and 2412 m by speed, a 27% spread — and position-differencing is the
+    // one that over-reads, because every wobble adds length it never travelled. Reporting the
+    // disagreement is more honest than silently picking a winner.
+    trackDistanceM,
+    distanceDisagreementPct: trackDistanceM
+      ? Math.round(Math.abs(trackDistanceM - distanceM) / Math.max(1, distanceM) * 100)
+      : null,
     // Pacing evenness. A high spread on a run meant to be steady says the pace was being chased
     // rather than held, which is the habit the tones exist to break.
     paceCv: null,

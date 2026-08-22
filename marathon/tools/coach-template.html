@@ -502,6 +502,8 @@
     <div class="row" style="margin-top:.65rem">
       <button id="copy" disabled>Copy session</button>
       <button id="copyfull" class="tiny" disabled>Copy raw (large)</button>
+      <button id="exportall" class="tiny">Export everything</button>
+      <button id="clearstore" class="tiny">Clear storage</button>
       <button id="diag" class="tiny">Copy diagnostics</button>
     </div>
     <div class="row" style="margin-top:.65rem">
@@ -2213,6 +2215,10 @@ function finish(msg) {
     stats = runStats(S.samples, {
       zones: statsZones(), hrRest: profile.hrRest, hrMax: hrMaxFor(profile.age),
       unit, tones: S.tones,
+      // The session's own target, so the walk/run boundary is calibrated to what was prescribed
+      // rather than to a constant that happens to sit on this athlete's easy pace.
+      targetPaceSecKm: S.rampTargetSecKm || targetSecKm,
+      trackDistanceM: Math.round(S.track.distanceM),
     });
     // Stored WITH the session, not recomputed on demand: the zones and the profile can change
     // afterwards, and a statistic that silently restates itself when the settings move is not a
@@ -2312,6 +2318,15 @@ $('diag').onclick = async () => {
       lastError: S.geoError ? `${S.geoError.code}: ${S.geoError.message}` : null,
     },
     viaLoader: !!window.__viaLoader,
+    storage: {
+      sessions: sessions.index().length,
+      bytes: sessions.bytes(),
+      inventory: sessions.inventory(),
+      // The field that would have answered this in one look: a save that keeps failing says so.
+      lastError: sessions.lastError ? describeError(sessions.lastError) : null,
+      savedCount: S.savedCount || 0,
+      savedAgoS: S.savedAt ? Math.round((Date.now() - S.savedAt) / 1000) : null,
+    },
     profile: { age: profile.age, hrRest: profile.hrRest, confirmed: profile.confirmed },
     session: {
       mode: S.mode, running: S.running,
@@ -2546,6 +2561,8 @@ $('copy').onclick = async () => {
   const stats = runStats(S.samples, {
     zones: statsZones(), hrRest: profile.hrRest, hrMax: hrMaxFor(profile.age),
     unit, tones: S.tones,
+    targetPaceSecKm: S.rampTargetSecKm || targetSecKm,
+    trackDistanceM: Math.round(S.track.distanceM),
   });
   const payload = compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, { stats });
   await copyText(JSON.stringify(payload), `${S.samples.length} samples`);
@@ -2553,6 +2570,65 @@ $('copy').onclick = async () => {
     log('Age and resting heart rate are not set, so they are not in the file — the import will '
         + 'ask rather than assume.', 'fast');
   }
+};
+
+/**
+ * Everything this app has stored, in one paste.
+ *
+ * Asked for directly, and the reason is that there is no other way in: a phone has no developer
+ * console, and the storage that holds the runs is reachable only from code running on the page. So
+ * the page has to be able to hand it over.
+ *
+ * Sessions come out compact and settings come out whole. If the total is still too large for a chat
+ * window it says so and how large, rather than producing something that crashes on paste.
+ */
+$('exportall').onclick = async () => {
+  const dump = {
+    exported_at: new Date().toISOString(),
+    build: BUILD,
+    settings: {},
+    inventory: sessions.inventory(),
+    sessions: [],
+  };
+  for (const k of ['band.unit', 'band.readout', 'band.gain', 'band.profile', 'band.progress',
+                   'band.rampOutdoor']) {
+    try { const v = localStorage.getItem(k); if (v != null) dump.settings[k] = v; } catch { /* blocked */ }
+  }
+  for (const e of sessions.index()) {
+    const full = sessions.get(e.id);
+    if (full) dump.sessions.push(full);
+  }
+  const active = sessions.recoverable();
+  if (active) dump.unfinished = active;
+
+  const text = JSON.stringify(dump);
+  const kb = Math.round(text.length / 1024);
+  if (kb > 60) {
+    log(`Everything comes to ${kb} kB, which is too much for one paste. Copy sessions one at a `
+        + 'time from the list above instead.', 'fast');
+  }
+  await copyText(text, `${dump.sessions.length} session(s) and settings`);
+};
+
+$('clearstore').onclick = () => {
+  const kb = Math.round(sessions.bytes() / 1024);
+  // Two taps, because it is not undoable and the sessions are the only copy.
+  if (!$('clearstore').dataset.armed) {
+    $('clearstore').dataset.armed = '1';
+    $('clearstore').textContent = 'Really clear?';
+    log(`That will delete ${sessions.index().length} saved session(s), ${kb} kB. Copy anything you `
+        + 'want first, then tap again.', 'fast');
+    setTimeout(() => {
+      delete $('clearstore').dataset.armed;
+      $('clearstore').textContent = 'Clear storage';
+    }, 8000);
+    return;
+  }
+  sessions.clear();
+  delete $('clearstore').dataset.armed;
+  $('clearstore').textContent = 'Clear storage';
+  renderSaved();
+  log('storage cleared', 'on');
 };
 
 $('copyfull').onclick = async () => {

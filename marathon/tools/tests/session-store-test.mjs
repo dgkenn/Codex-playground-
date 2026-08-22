@@ -176,4 +176,38 @@ const session = (n, { startedAt = '2026-08-19T18:00:00.000Z', hr = true, mode = 
   console.log('  ok  statistics ride in the index and survive their samples');
 }
 
+{
+  // The failure that actually happened on the phone. An earlier build filled the active slot with a
+  // few hundred kilobytes; nothing had ever been archived, so eviction had nothing to reach; and
+  // every save afterwards failed from four seconds into the next run. Storage was bricked by one
+  // oversized leftover, permanently, with no way out from a phone.
+  const storage = new FakeStorage();
+  const st = new SessionStore(storage);
+  st.saveActive(session(3000), { now: 0, force: true });      // the leftover
+  assert.equal(st.index().length, 0, 'and nothing archived to evict');
+  storage.limit = storage.size + 500;                          // no room for anything new
+
+  const st2 = new SessionStore(storage);
+  const saved = st2.saveActive(session(20), { now: 1000, force: true });
+  assert.equal(saved, true,
+    'a new run must displace the abandoned one rather than failing forever behind it');
+  assert.equal(st2.recoverable({ now: 1001 }).samples.length, 20, 'and it must be the new run');
+  console.log('  ok  an oversized abandoned session is displaced instead of bricking storage');
+}
+
+{
+  // A phone offers no other way in, so the store has to be able to describe and empty itself.
+  const st = new SessionStore(new FakeStorage());
+  st.archive(session(100), { now: 0 });
+  st.saveActive(session(50), { now: 1000, force: true });
+  const inv = st.inventory();
+  assert.ok(inv.length >= 2, `inventory listed ${inv.length} keys`);
+  assert.ok(inv.every(x => x.bytes > 0), 'every listed key must report its size');
+  st.clear();
+  assert.deepEqual(st.index(), []);
+  assert.equal(st.recoverable({ now: 1001 }), null);
+  assert.equal(st.bytes(), 0);
+  console.log('  ok  storage can be listed and emptied from the app itself');
+}
+
 console.log('\nAll session-store tests passed.');

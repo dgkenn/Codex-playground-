@@ -222,4 +222,57 @@ print(json.dumps({
             + `(${p.beatsPerUnit.delta.toFixed(1)} beats/mi)`);
 }
 
+// --- the boundary between walking and running ------------------------------------------------------
+
+{
+  // A real session, and the bug it exposed. The plan prescribes 12:00-12:30 per mile for this
+  // athlete; the fixed threshold was 12:00 per mile. So a run/walk executed exactly as asked came
+  // back reading 23 seconds of running in 26 minutes — and that statistic is what the run-walk
+  // ladder is entered on, so the plan was about to conclude he could not run at all.
+  const target = 12.5 * 60 / 1.609344;             // 12:30 per mile, in seconds per km
+  const runSpeed = 4.4 / 2.23694;                  // 4.4 mph, what he actually ran the intervals at
+  const walkSpeed = 3.0 / 2.23694;                 // and 3.0 mph on the walk breaks
+
+  const samples = [];
+  for (let rep = 0; rep < 4; rep++) {
+    for (let i = 0; i < 120; i++) {
+      samples.push({ t_s: samples.length, speed_m_s: runSpeed, hr_bpm: null, grade: 0, label: 'run' });
+    }
+    for (let i = 0; i < 120; i++) {
+      samples.push({ t_s: samples.length, speed_m_s: walkSpeed, hr_bpm: null, grade: 0, label: 'walk' });
+    }
+  }
+
+  const fixed = runStats(samples, {});
+  assert.ok(fixed.longestRunBlockS < 5,
+    `the fixed threshold should indeed miss this run entirely: ${fixed.longestRunBlockS}s`);
+
+  const aware = runStats(samples, { targetPaceSecKm: target });
+  assert.ok(Math.abs(aware.longestRunBlockS - 120) <= 2,
+    `a two-minute interval at the prescribed pace must read as two minutes: ${aware.longestRunBlockS}s`);
+  assert.ok(aware.runningS >= 470 && aware.runningS <= 490,
+    `four two-minute intervals is eight minutes of running: ${aware.runningS}s`);
+  // The boundary has to separate the two, which means sitting between them — above the walk breaks
+  // so they are not counted as running, and below the running so it is.
+  assert.ok(aware.jogThresholdMS > walkSpeed,
+    `the boundary (${aware.jogThresholdMS.toFixed(2)}) must be above the walk (${walkSpeed.toFixed(2)})`);
+  assert.ok(aware.jogThresholdMS < runSpeed,
+    `and below the running (${runSpeed.toFixed(2)})`);
+  console.log(`  ok  the walk/run boundary comes from the session's own target `
+            + `(${fixed.longestRunBlockS}s -> ${aware.longestRunBlockS}s for the same run)`);
+}
+
+{
+  // Two distances that disagree is a fact about the GPS, not a number to quietly choose between.
+  const samples = Array.from({ length: 600 }, (_, i) => ({
+    t_s: i, speed_m_s: 2.0, hr_bpm: null, grade: 0,
+  }));
+  const st = runStats(samples, { trackDistanceM: 1500 });     // position says 1500, speed says 1200
+  assert.equal(st.trackDistanceM, 1500);
+  assert.equal(st.distanceDisagreementPct, 25);
+  assert.equal(runStats(samples, {}).distanceDisagreementPct, null,
+    'and with only one measurement there is nothing to disagree about');
+  console.log('  ok  a disagreement between the two distances is reported rather than resolved');
+}
+
 console.log('\nAll run-stats tests passed.');
