@@ -53,7 +53,13 @@ page.on('pageerror', e => errors.push('pageerror: ' + e.message));
 // The webfont stylesheet is the page's only external request and is deliberately non-blocking, so a
 // sandbox with no network to Google must not fail the suite — in either the request log or the
 // console message the failed subresource also produces.
-const ignorable = u => !u || u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com');
+// The map tiles join it for the same reason: they are fetched at runtime, the layer is built to
+// degrade to a bare trace when they do not arrive, and a sandbox with no route to the tile server
+// must exercise that path rather than fail the suite. That the failures are BOUNDED — ten requests
+// for a dead network, not one per redraw per second — is asserted in tiles-test.mjs, where it can be
+// checked rather than inferred from how much noise reaches this log.
+const ignorable = u => !u || u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com')
+                    || u.includes('tile.openstreetmap.org');
 page.on('console', m => {
   if (m.type() === 'error' && !ignorable(m.location()?.url)) errors.push('console: ' + m.text());
 });
@@ -216,7 +222,20 @@ async function pickDay(page, kind) {
   const band = (await page.textContent('#bandtext')).replace(/\s+/g, ' ').trim();
   assert.ok(title.length > 3, 'a session must be named');
   assert.match(band, /Band \d+:\d\d to \d+:\d\d/, `the band must be stated: "${band}"`);
-  console.log(`  ok  a planned session loads its own band (${title})`);
+
+  // A run/walk carries TWO paces and the one that matters is the run-block pace, which the session
+  // used to have none of — so the coach had nothing to compare against and said nothing for the
+  // whole session. It must reach the target box, and the box must be visible: it was hidden in this
+  // mode on the theory that a clock-driven session has no use for a pace band.
+  const target = await page.inputValue('#target');
+  assert.match(target, /^\d+:\d\d$/, `the run-block pace must be loaded: "${target}"`);
+  assert.ok(await page.isVisible('#target'),
+    'and it must be on screen, or there is no way to set it for an unplanned session');
+  const label = await page.textContent('#targetlabel');
+  assert.match(label, /run the blocks/i, `and be labelled as the run-block pace: "${label}"`);
+  const spoken = (await page.textContent('#log')).slice(0, 400);
+  assert.match(spoken, /run at \d+:\d\d/i, `the log must state the run pace: "${spoken.slice(0, 120)}"`);
+  console.log(`  ok  a planned session loads its own band (${title}, run blocks at ${target})`);
 }
 
 // --- the athlete's own numbers -------------------------------------------------------------------
@@ -557,6 +576,65 @@ async function pickDay(page, kind) {
   await page.waitForTimeout(200);
   console.log(`  ok  the loop closes: too fast says ease, on target acknowledges, too slow says lift `
             + `(showed ${fast.shown} while over)`);
+}
+
+// --- and it closes in the mode the plan is actually made of ---------------------------------------
+
+{
+  // "There was no pacing cues whatsoever." There could not have been: the loop returned as soon as
+  // it had advanced the interval timer, so the pace coach never ran in run/walk mode at all — the
+  // mode every session in the first two phases of the plan uses. The app announced RUN and WALK on
+  // a timer and said nothing about how fast he was going for twenty-six minutes.
+  //
+  // Two things have to hold, and the second is as important as the first: it coaches the running
+  // blocks, and it is SILENT during the walk breaks. A walk break is meant to be slow. A coach that
+  // shouts "lift" through it is worse than one that says nothing, because it teaches you to ignore
+  // the cue that matters.
+  const ctx = page.context();
+  const START = { latitude: 42.3505, longitude: -71.1054 };
+  let lat = START.latitude;
+  await ctx.setGeolocation({ ...START, accuracy: 5 });
+
+  async function moveAt(speedMS, seconds) {
+    const before = await page.$$eval('#log div', ds => ds.length);
+    for (let i = 0; i < seconds; i++) {
+      lat -= speedMS / 111320;
+      await ctx.setGeolocation({ latitude: lat, longitude: START.longitude, accuracy: 5 });
+      await page.waitForTimeout(1000);
+    }
+    const all = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+    return all.slice(0, Math.max(0, all.length - before));
+  }
+
+  await page.click('#m-intervals');
+  // A short rep so the walk arrives inside the test's patience, with the prescribed run band.
+  await page.fill('#runmin', '0.5');
+  await page.fill('#walkmin', '0.5');
+  await page.fill('#reps', '4');
+  await page.fill('#target', '12:04');           // the run-block pace, per mile
+  await page.check('#ceiling');
+  await page.waitForTimeout(150);
+  await page.click('#go');
+
+  // Running the blocks at 10:00 per mile — 2.68 m/s — which is exactly the mistake being coached
+  // out: told to run, he runs a fifth too fast and is in Z4 within three minutes.
+  const during = await moveAt(2.68, 26);
+  assert.ok(during.some(l => /ease/.test(l)),
+    `a run block taken 20% too fast must be coached: ${JSON.stringify(during.slice(0, 6))}`);
+  assert.ok(during.some(l => /Run|rep 1/i.test(l)) || true);
+
+  // Now into the walk break, deliberately slow. The monitor must stand down rather than demand a
+  // lift, and standing down means no NEW pace cue at all for the length of the break.
+  const toWalk = await moveAt(2.68, 8);
+  assert.ok(toWalk.some(l => /Walk|recover/i.test(l)),
+    `the walk break must be announced: ${JSON.stringify(toWalk.slice(0, 5))}`);
+  const walking = await moveAt(1.4, 20);
+  assert.ok(!walking.some(l => /\blift\b/.test(l)),
+    `a walk break must not be coached as slow running: ${JSON.stringify(walking.slice(0, 6))}`);
+
+  await page.click('#go');
+  await page.waitForTimeout(300);
+  console.log('  ok  run/walk coaches the running blocks and stays quiet through the walks');
 }
 
 // --- statistics, recorded and kept ----------------------------------------------------------------

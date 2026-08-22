@@ -56,6 +56,8 @@ const parts = {
   SESSIONSTORE: inline('session-store.js'),
   RUNSTATS: inline('run-stats.js'),
   SESSIONFORMAT: inline('session-format.js'),
+  TILES: inline('tiles.js'),
+  PROGRESSION: inline('progression.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 
