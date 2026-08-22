@@ -615,10 +615,15 @@ async function pickDay(page, kind) {
   const rawText = await page.inputValue('#diagtext');
   const raw = JSON.parse(rawText);
   assert.equal(raw.schema_version, 1, 'the raw button still yields the per-second recording');
-  assert.ok(rawText.length >= compactText.length,
-    'and it is the larger of the two, which is the entire reason for the split');
-  console.log(`  ok  the default copy is compact (${compactText.length} chars) with raw available `
-            + `(${rawText.length})`);
+  assert.ok(Array.isArray(raw.samples), 'as one object per second');
+
+  // Deliberately NOT asserting that compact is smaller here. Over a three-second test session it is
+  // not: the summary statistics it carries outweigh three samples. The size claim is about real
+  // sessions and is tested where it means something — tests/session-format-test.mjs puts a
+  // 45-minute run through and asserts 345 kB becomes 14 kB. What holds at every length is the
+  // structural difference, which is what this test is for.
+  console.log(`  ok  the default copy is columnar and the raw one is per-second `
+            + `(${compactText.length} vs ${rawText.length} chars over 3 seconds)`);
 }
 
 {
