@@ -685,6 +685,19 @@ async function pickDay(page, kind) {
   const running = Number((await page.textContent('#elapsed')).split(':')[1]);
   assert.ok(running >= 5, 'the session must actually have been running');
 
+  // Nothing is wrong with this storage: it was emptied two seconds ago and the session is a few
+  // hundred bytes. The page said "could not save this session to the phone" anyway, because the
+  // store returned the same `false` for "declined, too soon" as for "the write failed" — and the
+  // six-second timer lands inside the rate limit every time, since the opening write shifts it.
+  // A false alarm here is worse than none: it is the warning that gets ignored on the day it is true.
+  const midLog = await page.textContent('#log');
+  assert.doesNotMatch(midLog, /could not save/i,
+    `a healthy save must not raise the storage alarm: "${midLog.slice(0, 200)}"`);
+  const note = await page.textContent('#storagenote');
+  assert.match(note, /Saved (\d+) samples/, `and the saved count must move: "${note}"`);
+  assert.ok(Number(note.match(/Saved (\d+) samples/)[1]) >= 5,
+    `the autosave must have written more than the opening sample: "${note}"`);
+
   // No stop, no save button, nothing — exactly what iOS reclaiming a backgrounded tab looks like.
   await page.reload();
   await page.waitForSelector('#recover:not(.hide)', { timeout: 8000 });
@@ -714,7 +727,8 @@ async function pickDay(page, kind) {
   await page.reload();
   await page.waitForSelector('#savedlist');
   assert.ok(await page.isHidden('#recover'), 'a recovered session must not be offered twice');
-  console.log(`  ok  a run interrupted by a reload is recovered intact (${saved.samples.length} samples)`);
+  console.log(`  ok  a run interrupted by a reload is recovered intact `
+          + `(${saved.n_full} seconds as ${saved.t.length} points)`);
 }
 
 // --- the whole coach, indoors --------------------------------------------------------------------

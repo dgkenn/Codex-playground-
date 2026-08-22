@@ -40,6 +40,12 @@ export const MAX_BYTES = 2_500_000;
 /// reload, a phone call, and finishing the run before looking at the phone again.
 export const RECOVER_WINDOW_MS = 18 * 3600 * 1000;
 
+/// What `saveActive` did. Three outcomes, not two — see the method for why the difference between
+/// "declined" and "failed" is worth a return value.
+export const WRITTEN = 'written';
+export const SKIPPED = 'skipped';
+export const FAILED = 'failed';
+
 /**
  * How many points a session holds, in either shape.
  *
@@ -165,15 +171,23 @@ export class SessionStore {
    *
    * `force` is for the moments where there may not be another chance: the page being hidden, or the
    * session ending.
+   *
+   * Returns WRITTEN, SKIPPED or FAILED rather than a boolean, and the distinction is the point.
+   * This used to return `false` for both "declined, it is too soon" and "the phone refused the
+   * write", so the page — whose only question is whether anything is going wrong — put
+   * "could not save this session to the phone" on screen the first time the six-second timer landed
+   * a few hundred milliseconds inside the rate limit. On an empty storage, with a 400-byte session,
+   * saving perfectly well. A warning that fires when nothing is wrong is worse than no warning: it
+   * is the one that gets ignored on the day storage really does fail.
    */
   saveActive(session, { now = Date.now(), force = false } = {}) {
     // The first write is never rate-limited. `lastSaveAt` starts at zero, so on a clock measured in
     // milliseconds since 1970 the comparison happens to be true — but on a test clock, or a page
     // opened at the epoch, the opening write of a session would be the one that gets skipped.
     const first = this.lastSaveAt === 0;
-    if (!force && !first && now - this.lastSaveAt < AUTOSAVE_MS) return false;
+    if (!force && !first && now - this.lastSaveAt < AUTOSAVE_MS) return SKIPPED;
     this.lastSaveAt = now;
-    return this._write(ACTIVE_KEY, { ...session, savedAt: now });
+    return this._write(ACTIVE_KEY, { ...session, savedAt: now }) ? WRITTEN : FAILED;
   }
 
   /** The unfinished session, if there is a recent one worth offering back. */

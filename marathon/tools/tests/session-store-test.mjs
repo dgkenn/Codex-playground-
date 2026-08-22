@@ -7,7 +7,8 @@
 
 import assert from 'node:assert/strict';
 import { SessionStore, AUTOSAVE_MS, MAX_ARCHIVED, RECOVER_WINDOW_MS,
-         ACTIVE_KEY, INDEX_KEY, pointCount, hasHeartRate } from '../session-store.js';
+         ACTIVE_KEY, INDEX_KEY, pointCount, hasHeartRate,
+         WRITTEN, SKIPPED } from '../session-store.js';
 
 /** localStorage, with an optional ceiling so quota behaviour can be exercised rather than assumed. */
 class FakeStorage {
@@ -39,12 +40,14 @@ const session = (n, { startedAt = '2026-08-19T18:00:00.000Z', hr = true, mode = 
 
 {
   const st = new SessionStore(new FakeStorage());
-  assert.equal(st.saveActive(session(10), { now: 1000 }), true);
-  // Rate limited: a write per second would be wasteful, and occasionally slow on a phone.
-  assert.equal(st.saveActive(session(11), { now: 1000 + AUTOSAVE_MS - 1 }), false);
-  assert.equal(st.saveActive(session(12), { now: 1000 + AUTOSAVE_MS }), true);
+  assert.equal(st.saveActive(session(10), { now: 1000 }), WRITTEN);
+  // Rate limited: a write per second would be wasteful, and occasionally slow on a phone. Reported
+  // as SKIPPED and not as failure, because the page turns failure into an alarm — and did, on a
+  // storage with nothing whatever wrong with it.
+  assert.equal(st.saveActive(session(11), { now: 1000 + AUTOSAVE_MS - 1 }), SKIPPED);
+  assert.equal(st.saveActive(session(12), { now: 1000 + AUTOSAVE_MS }), WRITTEN);
   // But the moments where there may be no next chance are never skipped.
-  assert.equal(st.saveActive(session(13), { now: 1000 + AUTOSAVE_MS + 1, force: true }), true);
+  assert.equal(st.saveActive(session(13), { now: 1000 + AUTOSAVE_MS + 1, force: true }), WRITTEN);
   assert.equal(st.recoverable({ now: 1000 + AUTOSAVE_MS + 2 }).samples.length, 13);
   console.log('  ok  the run in progress is written periodically, and always when forced');
 }
@@ -130,7 +133,7 @@ const session = (n, { startedAt = '2026-08-19T18:00:00.000Z', hr = true, mode = 
   // write is genuinely too big to fit. A fixture that happens to leave room tests nothing.
   storage.limit = storage.size + 2000;
   const saved = st.saveActive(session(600), { now: 99_000, force: true });
-  assert.equal(saved, true, 'the run in progress must be saved even when storage is full');
+  assert.equal(saved, WRITTEN, 'the run in progress must be saved even when storage is full');
   assert.ok(st.index().length < before, 'and room must be made by evicting finished sessions');
   assert.equal(st.recoverable({ now: 99_001 }).samples.length, 600);
   console.log(`  ok  a full disk evicts old sessions rather than losing the live one `
@@ -189,7 +192,7 @@ const session = (n, { startedAt = '2026-08-19T18:00:00.000Z', hr = true, mode = 
 
   const st2 = new SessionStore(storage);
   const saved = st2.saveActive(session(20), { now: 1000, force: true });
-  assert.equal(saved, true,
+  assert.equal(saved, WRITTEN,
     'a new run must displace the abandoned one rather than failing forever behind it');
   assert.equal(st2.recoverable({ now: 1001 }).samples.length, 20, 'and it must be the new run');
   console.log('  ok  an oversized abandoned session is displaced instead of bricking storage');

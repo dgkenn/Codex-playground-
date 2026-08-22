@@ -2101,9 +2101,9 @@ $('go').onclick = () => {
   S.autosaveId = setInterval(() => {
     if (!S.running || !S.samples.length) return;
     const ok = sessions.saveActive(
-      compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}));
-    if (ok) { S.savedAt = Date.now(); S.savedCount = S.samples.length; renderSavedTick(); }
-    else if (!saveFailed) {
+      compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}), { force: true });
+    if (ok === WRITTEN) { S.savedAt = Date.now(); S.savedCount = S.samples.length; renderSavedTick(); }
+    else if (ok === FAILED && !saveFailed) {
       // Once, not every six seconds. A silent failure here is the original bug in a new hat.
       saveFailed = true;
       log('could not save this session to the phone — copy it before reloading', 'stop');
