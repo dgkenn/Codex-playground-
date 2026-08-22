@@ -53,10 +53,27 @@ export const JOG_MS = 2.24;
 /// half the running speed, so eight tenths sits clear of both.
 export const JOG_FRACTION_OF_TARGET = 0.8;
 
+/// The floor no derived boundary may go below: the walk-run gait transition, about 7 km/h.
+///
+/// Deriving the boundary from the target pace fixed one bug and caused the opposite one. A run/walk
+/// session's target is the average of running and walking, so it is SLOW — around 14:00 per mile
+/// here — and eight tenths of that is 5.5 km/h, which is a brisk walk. The 22 August recording read
+/// back as 8:24 of running against Polar's own speed trace showing 2.6 minutes above 7 km/h and a
+/// longest block of 37 seconds. Three times too generous, in the one number the run-walk ladder
+/// advances on: it would have promoted him to longer intervals on evidence of walking.
+///
+/// Around 2 m/s is where an adult stops walking and starts running, because below it running costs
+/// more energy than walking and nobody does it for long. It is not exact and it is not the same for
+/// everyone, but it is a real boundary in gait rather than an arbitrary fraction — and this athlete's
+/// own trace separates cleanly across it: his walking tops out at 6.5 km/h and his jogs sit at
+/// 7.7-8.3.
+export const GAIT_TRANSITION_MS = 1.95;
+
 /** The walk/run boundary for a session, from its own target pace where there is one. */
 export function jogThreshold(targetPaceSecKm) {
   if (!targetPaceSecKm || targetPaceSecKm <= 0) return JOG_MS;
-  return Math.min(JOG_MS, (1000 / targetPaceSecKm) * JOG_FRACTION_OF_TARGET);
+  return Math.max(GAIT_TRANSITION_MS,
+                  Math.min(JOG_MS, (1000 / targetPaceSecKm) * JOG_FRACTION_OF_TARGET));
 }
 /// A gap longer than this breaks a continuous block, even if both sides are running.
 export const BLOCK_GAP_S = 5;

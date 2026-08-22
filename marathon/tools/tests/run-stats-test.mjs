@@ -14,7 +14,8 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { runStats, efficiencyFactor, decoupling, trimp, splits, longestRunBlock,
-         progress, METRES_PER_MILE, JOG_MS } from '../run-stats.js';
+         progress, METRES_PER_MILE, JOG_MS,
+         jogThreshold, GAIT_TRANSITION_MS } from '../run-stats.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ENGINE = join(here, '..', '..', 'engine');
@@ -229,9 +230,12 @@ print(json.dumps({
   // athlete; the fixed threshold was 12:00 per mile. So a run/walk executed exactly as asked came
   // back reading 23 seconds of running in 26 minutes — and that statistic is what the run-walk
   // ladder is entered on, so the plan was about to conclude he could not run at all.
+  // Both speeds are measured rather than assumed. The Polar trace of 22 August puts his jog blocks
+  // at 7.7-8.3 km/h and his walking below 6.5; the 4.4 mph this fixture used to claim he ran at is
+  // 7.08 km/h, which is not a speed that appears anywhere in his recording.
   const target = 12.5 * 60 / 1.609344;             // 12:30 per mile, in seconds per km
-  const runSpeed = 4.4 / 2.23694;                  // 4.4 mph, what he actually ran the intervals at
-  const walkSpeed = 3.0 / 2.23694;                 // and 3.0 mph on the walk breaks
+  const runSpeed = 8.0 / 3.6;                      // 8.0 km/h, the middle of his measured jog blocks
+  const walkSpeed = 5.5 / 3.6;                     // 5.5 km/h, the middle of his measured walking
 
   const samples = [];
   for (let rep = 0; rep < 4; rep++) {
@@ -260,6 +264,30 @@ print(json.dumps({
     `and below the running (${runSpeed.toFixed(2)})`);
   console.log(`  ok  the walk/run boundary comes from the session's own target `
             + `(${fixed.longestRunBlockS}s -> ${aware.longestRunBlockS}s for the same run)`);
+}
+
+{
+  // ...but deriving it from the target has an opposite failure, and this is it.
+  //
+  // A run/walk session's target pace is the average of running and walking, so it is slow. Eight
+  // tenths of 14:00 per mile is 5.5 km/h, which is a brisk walk — and the 22 August session came
+  // back claiming 8:24 of running against Polar's own trace showing 2.6 minutes above 7 km/h.
+  // Three times too generous, in the number the run-walk ladder is advanced on.
+  const slowTarget = 14 * 60 / 1.609344;           // 14:00 per mile: a walk/jog average
+  assert.ok(jogThreshold(slowTarget) >= GAIT_TRANSITION_MS,
+    `a slow target must not push the boundary below the gait transition: `
+    + `${jogThreshold(slowTarget).toFixed(2)} m/s`);
+
+  const brisk = 5.5 / 3.6;                         // his actual walking speed
+  const samples = Array.from({ length: 600 }, (_, i) =>
+    ({ t_s: i, speed_m_s: brisk, hr_bpm: 120, grade: 0, label: 'walk' }));
+  const stats = runStats(samples, { targetPaceSecKm: slowTarget });
+  assert.equal(stats.longestRunBlockS, 0,
+    `ten minutes of brisk walking is not a run block: ${stats.longestRunBlockS}s`);
+  assert.equal(stats.runningS, 0, `nor any running at all: ${stats.runningS}s`);
+  assert.ok(stats.movingS >= 590, 'though it is certainly moving time');
+  console.log(`  ok  a slow target cannot push the boundary down into walking `
+            + `(${(jogThreshold(slowTarget) * 3.6).toFixed(1)} km/h floor)`);
 }
 
 {
