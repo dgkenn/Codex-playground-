@@ -49,6 +49,12 @@ SHIPPED_PHASES = (
     planmod.Phase.BASE_2,
 )
 
+#: How fast the walk breaks should be, km/h. A brisk walk, not a stroll.
+#:
+#: Measured rather than chosen: this athlete's own walking sat at 5.5-6.0 km/h across the 22 August
+#: session, at 121-130 bpm, which is exactly the "recovering but still aerobic" the break is for.
+_WALK_KMH = 5.6
+
 #: Session types the pace coach can actually run. Everything else is shown but not started.
 COACHABLE = {"easy", "long", "run_walk", "steady", "threshold", "marathon_pace", "recovery"}
 
@@ -112,9 +118,43 @@ def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfi
         out["km"] = round(s.distance_km, 2)
     if s.zones:
         out["zones"] = list(s.zones)
+        # The ceiling in beats, not just the zone number. The phone has the athlete's own zone model
+        # and could derive it, but a session that says "zones 1-2" and a phone that decides what that
+        # means in beats is two definitions of easy, and they drift.
+        if profile is not None and profile.zones is not None:
+            top = max(s.zones)
+            edge = next((z.high_bpm for z in profile.zones.zones if z.index == top), None)
+            if edge:
+                out["hr_ceiling_bpm"] = int(edge)
     if s.run_walk:
         run_min, walk_min, reps = s.run_walk
-        out["run_walk"] = {"run_min": run_min, "walk_min": walk_min, "reps": reps}
+        rw: Dict[str, Any] = {"run_min": run_min, "walk_min": walk_min, "reps": reps}
+        # What to run the RUNNING blocks at, which is not the session's average pace.
+        #
+        # The session carried nothing but a schedule -- run two minutes, walk two minutes -- so the
+        # phone had no target and said nothing for twenty-six minutes. Worse, the only pace on the
+        # session was the easy average, and handing that to a runner as the speed to run at asks for
+        # 14:00 per mile, which is below the walk-run gait transition.
+        #
+        # This is the single instruction that matters most for this athlete. Told to "run", he runs
+        # at 10:00 per mile, which puts him at 155 bpm within three minutes and 180 at peak; at the
+        # observed easy speed he sits at 138. Same session, Z4 or Z1, decided entirely by how fast
+        # the running blocks are taken. It is not something effort can be trusted to find -- the
+        # whole difficulty is that the wrong pace feels like the natural one.
+        if profile is not None and profile.run_block_pace_range:
+            fast, slow = profile.run_block_pace_range
+            mid = (fast + slow) / 2
+            rw["run_pace"] = {
+                "target_sec_km": round(mid, 1),
+                "tolerance": round(abs(slow - fast) / 2 / mid, 4),
+                "fast": fmt_pace(fast), "slow": fmt_pace(slow),
+            }
+        # The walk is prescribed too, and briskly. A stroll drops heart rate so far that the next
+        # block starts from cold and the session becomes a series of hard starts; a brisk walk keeps
+        # it aerobic. Advisory rather than coached -- nobody needs tones while walking.
+        rw["walk_pace"] = {"target_sec_km": round(3600.0 / _WALK_KMH, 1),
+                           "say": fmt_pace(3600.0 / _WALK_KMH)}
+        out["run_walk"] = rw
     if s.pace_range_sec_km:
         fast, slow = s.pace_range_sec_km
         # Midpoint and half-width, because that is the shape the band monitor wants. Converting here

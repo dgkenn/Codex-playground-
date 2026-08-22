@@ -969,6 +969,12 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                     run_walk=_RUN_WALK_LADDER[
                         run_walk_entry_rung(getattr(profile, "demonstrated_run_min", None))],
                     zones=(1, 2),
+                    # The one session in week 1 that is actually run, and it shipped with no pace on
+                    # it at all -- so the coach had nothing to compare against and stayed silent for
+                    # the whole twenty-six minutes. "Shakeout" describes the intent, not the absence
+                    # of a target: the running blocks still have a speed they are meant to be run at,
+                    # and this is the session where finding that out matters most.
+                    pace_range_sec_km=paces.easy_range,
                     intent="Confirm the sensor setup and the audio cues work before anything "
                            "depends on them."))
             else:

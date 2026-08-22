@@ -51,13 +51,35 @@ DEFAULT_HR_REST = 67.0
 #: of running, which is the definition of an athlete who can run and cannot yet run easy.
 DEMONSTRATED_RUN_MIN = 4.7
 
+#: The fastest he was OBSERVED running with heart rate still inside the easy ceiling, km/h.
+#:
+#: From the 22 August recording, the first with heart rate and speed on one clock. Pairing each
+#: heart rate with the speed 25 seconds earlier -- heart rate lags, and without the lag every number
+#: is attributed to the wrong speed -- gives:
+#:
+#:     5.5 km/h   121 bpm     45% HRR
+#:     6.5 km/h   135 bpm     56% HRR
+#:     7.5 km/h   136 bpm     57% HRR
+#:     8.0 km/h   138 bpm     59% HRR
+#:
+#: and from the 5 August baseline, running blocks at 9.7 km/h took him to 155 within three minutes
+#: and 180 at peak. So the ceiling sits between 8 and 9.7, and 8.0 is the fastest speed with evidence
+#: under it rather than around it.
+#:
+#: Deliberately the low end of the plausible range. The cost of prescribing too slow is a slightly
+#: easy session; the cost of prescribing too fast is every run block in Z4, which is the mistake he
+#: is already making unaided. The ramp test replaces this with a real fit across six speeds.
+OBSERVED_EASY_RUN_KMH = 8.0
+
 OUT = Path(__file__).resolve().parent / "app_plan.generated.json"
 
 
 def build(age: float = DEFAULT_AGE, hr_rest: float = DEFAULT_HR_REST,
-          demonstrated_run_min: float = DEMONSTRATED_RUN_MIN) -> str:
+          demonstrated_run_min: float = DEMONSTRATED_RUN_MIN,
+          observed_easy_run_kmh: float = OBSERVED_EASY_RUN_KMH) -> str:
     profile = _estimated_profile(age=age, hr_rest=hr_rest)
     profile.demonstrated_run_min = demonstrated_run_min
+    profile.observed_easy_run_kmh = observed_easy_run_kmh
     plan = build_app_plan(profile)
     # Sorted and compact: the file is inlined into a 170 kB page, and a stable key order means a
     # regeneration that changed nothing produces a byte-identical file rather than a phantom diff.
@@ -72,9 +94,11 @@ def main() -> int:
     ap.add_argument("--hr-rest", type=float, default=DEFAULT_HR_REST)
     ap.add_argument("--demonstrated-run-min", type=float, default=DEMONSTRATED_RUN_MIN,
                     help="longest continuous run actually observed, in minutes")
+    ap.add_argument("--observed-easy-run-kmh", type=float, default=OBSERVED_EASY_RUN_KMH,
+                    help="fastest observed running speed with heart rate inside the easy ceiling")
     args = ap.parse_args()
 
-    fresh = build(args.age, args.hr_rest, args.demonstrated_run_min)
+    fresh = build(args.age, args.hr_rest, args.demonstrated_run_min, args.observed_easy_run_kmh)
     if args.check:
         current = OUT.read_text().strip() if OUT.exists() else ""
         if current != fresh:

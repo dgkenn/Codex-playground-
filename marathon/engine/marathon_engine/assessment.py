@@ -366,6 +366,34 @@ class FitnessProfile:
     #: for such a person is not caution -- it is weeks of sessions that never load the tissue they
     #: exist to load. This is deliberately the *observed* figure, never a self-report.
     demonstrated_run_min: Optional[float] = None
+    #: Fastest speed, km/h, at which measured heart rate stayed inside the easy ceiling. ``None``
+    #: when nothing is known.
+    #:
+    #: Observed, never self-reported, for the same reason as ``demonstrated_run_min``. It exists
+    #: because the easy pace derived from a table is the pace of the WHOLE session -- running and
+    #: walking averaged together -- and prescribing that as the speed to run the running blocks at
+    #: asks for something close to a gait the athlete does not have. For this athlete the table said
+    #: run at 14:00 per mile; 14:00 per mile is 6.9 km/h, which is a speed a person walks at, not
+    #: one they run at. What he was actually observed doing was 8.0 km/h at 138 bpm, comfortably
+    #: inside the easy ceiling -- so 8.0 km/h is the honest answer and the table is not.
+    observed_easy_run_kmh: Optional[float] = None
+
+    @property
+    def run_block_pace_range(self) -> Optional[Tuple[float, float]]:
+        """The band for the RUNNING portions of a run-walk session, in sec/km, or None.
+
+        Distinct from ``easy_pace_range``, which is the average of a session that is part walking.
+        Handing that average to a runner as the speed to run at is how you end up prescribing a pace
+        below the walk-run gait transition.
+
+        The window is +/-4%: wide enough not to nag, narrow enough that the 20% overshoot this
+        athlete makes on every run block -- 10:00 per mile when 12:15 is called for, which is the
+        difference between Z1 and Z4 for him -- is caught within the first twenty seconds.
+        """
+        if not self.observed_easy_run_kmh:
+            return None
+        mid = 3600.0 / self.observed_easy_run_kmh
+        return (mid * 0.96, mid * 1.04)
 
     @property
     def easy_pace_range(self) -> Tuple[float, float]:
@@ -390,6 +418,7 @@ class FitnessProfile:
             "hr_paces": {k: [fmt_pace(v[0]), fmt_pace(v[1])] for k, v in self.hr_paces.items()},
             "easy_pace_range": [fmt_pace(self.easy_pace_range[0]),
                                 fmt_pace(self.easy_pace_range[1])],
+            "observed_easy_run_kmh": self.observed_easy_run_kmh,
             "cadence_by_speed": {str(k): round(v, 1) for k, v in self.cadence_by_speed.items()},
             "ef_baseline": round(self.ef_baseline, 2) if self.ef_baseline else None,
             "strength_findings": self.strength_findings,
