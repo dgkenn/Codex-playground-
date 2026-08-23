@@ -28,6 +28,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from marathon_engine import plan as planmod
+from marathon_engine.plan import Phase, PHASE_MIN_WEEKS
 from marathon_engine.assessment import FitnessProfile
 from marathon_engine.physiology import fmt_pace
 
@@ -184,15 +185,36 @@ def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfi
 
 
 def build_app_plan(profile: FitnessProfile, *,
-                   config: Optional[planmod.PlanConfig] = None) -> Dict[str, Any]:
-    """The schedule the phone carries, phase by phase."""
+                   config: Optional[planmod.PlanConfig] = None,
+                   start_phase: planmod.Phase = planmod.Phase.ASSESS) -> Dict[str, Any]:
+    """The schedule the phone carries, phase by phase.
+
+    ``start_phase`` skips the export past phases already known to be done. It exists for exactly one
+    situation: ASSESS's gates (screening, the ramp test, the structural screen, fourteen nights of
+    HRV) are satisfied by evidence outside the app -- a completed ramp test the athlete reported, a
+    self-attested screening -- and there is no other way to hand that decision to a static export.
+    Advancing FOUNDATION onward stays exactly as gated as the docstring above says; this is a one-time
+    door out of the phase the web app cannot itself verify the athlete has finished.
+    """
     cfg = config or planmod.PlanConfig()
     phases: List[Dict[str, Any]] = []
 
-    for phase in SHIPPED_PHASES:
+    # ASSESS is capped at its own floor rather than the usual six.
+    #
+    # generate_week's ASSESS branch does not read week_in_phase at all -- it always returns the same
+    # screening day, the same structural screen and the same graded ramp test, regardless of which
+    # week is asked for. Shipping six of them is not six weeks of content, it is one week of content
+    # copied six times, and an athlete with no way to leave ASSESS in the app (advancing a phase is
+    # deliberately the engine's call, made against evidence a static export cannot hold -- see the
+    # module docstring) would be invited to redo a near-maximal graded test every week for a month.
+    # PHASE_MIN_WEEKS already says this phase needs exactly one; ship exactly one.
+    started = SHIPPED_PHASES.index(start_phase) if start_phase in SHIPPED_PHASES else 0
+    for phase in SHIPPED_PHASES[started:]:
+        weeks_to_ship = PHASE_MIN_WEEKS.get(phase, WEEKS_PER_PHASE) if phase == Phase.ASSESS \
+            else WEEKS_PER_PHASE
         weeks: List[Dict[str, Any]] = []
         previous_volume: Optional[float] = None
-        for wk in range(1, WEEKS_PER_PHASE + 1):
+        for wk in range(1, weeks_to_ship + 1):
             w = planmod.generate_week(profile, phase, wk, week_index=wk, config=cfg,
                                       previous_week_volume=previous_volume)
             previous_volume = w.volume_target_km
@@ -224,7 +246,19 @@ def build_app_plan(profile: FitnessProfile, *,
             "hr_max": profile.hr_max,
             "hr_max_source": profile.hr_max_source,
             "prescription_basis": profile.prescription_basis,
+            "start_phase": start_phase.value,
         },
+        # Always present, independent of which phases are shipped.
+        #
+        # The graded ramp test is only ever scheduled inside ASSESS -- it is nowhere else in
+        # generate_week -- so an export that starts past ASSESS used to make the ramp permanently
+        # unreachable: the app's ramp mode reads a session's own `.ramp` field, found nothing once
+        # ASSESS stopped shipping, and "Load the ramp test from the plan first" became a dead end
+        # forever, for every athlete who ever gets fast-forwarded past assessment. The protocol
+        # itself is not week-specific -- it is derived from the profile the same way whether it is
+        # week 1 or month 4 -- so it travels with the export on its own, and the app can offer a
+        # recalibration ramp at any time rather than only in the one week that happens to schedule it.
+        "ramp_protocol": _ramp_dict(profile),
         "run_days": list(cfg.run_days),
         "strength_days": list(cfg.strength_days),
         "phases": phases,

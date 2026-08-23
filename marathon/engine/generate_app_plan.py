@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from marathon_engine.app_plan import build_app_plan          # noqa: E402
 from marathon_engine.cli import _estimated_profile           # noqa: E402
+from marathon_engine.plan import Phase                       # noqa: E402
 
 #: The athlete's profile, as far as it is actually known.
 #:
@@ -71,16 +72,37 @@ DEMONSTRATED_RUN_MIN = 4.7
 #: is already making unaided. The ramp test replaces this with a real fit across six speeds.
 OBSERVED_EASY_RUN_KMH = 8.0
 
+#: Which phase this export starts at.
+#:
+#: ASSESS's gates are: medical screening cleared, the graded ramp test done, the structural screen
+#: done, and fourteen nights of HRV. The web app has no way to satisfy the fourth one -- there is no
+#: overnight monitoring anywhere in tools/, only in the never-compiled Swift target -- so a strict
+#: reading of the gates traps every athlete who uses this tool in ASSESS permanently. That is what
+#: was actually happening: the athlete's three declared running days are Wednesday, Saturday and
+#: Sunday, ASSESS only ever schedules a ramp test (Wednesday) and one shakeout (Saturday), and there
+#: is no control in the app to leave the phase -- so Sunday, every week, forever, was blank.
+#:
+#: He reported completing the ramp test outdoors, and the 5 and 22 August recordings are the
+#: structural evidence the rest of this file is built from -- an athlete who cannot run is not the
+#: risk profile of someone who has already run twice and reported no symptoms. Medical screening is
+#: self-attested on that basis. HRV is waived because this tool cannot collect it, not because it
+#: does not matter -- if the Swift app is ever built, that gate should come back.
+#:
+#: FOUNDATION onward stays exactly as gated as it was: this is a one-time door out of the one phase
+#: the web app was structurally incapable of ever passing through.
+START_PHASE = Phase.FOUNDATION
+
 OUT = Path(__file__).resolve().parent / "app_plan.generated.json"
 
 
 def build(age: float = DEFAULT_AGE, hr_rest: float = DEFAULT_HR_REST,
           demonstrated_run_min: float = DEMONSTRATED_RUN_MIN,
-          observed_easy_run_kmh: float = OBSERVED_EASY_RUN_KMH) -> str:
+          observed_easy_run_kmh: float = OBSERVED_EASY_RUN_KMH,
+          start_phase: Phase = START_PHASE) -> str:
     profile = _estimated_profile(age=age, hr_rest=hr_rest)
     profile.demonstrated_run_min = demonstrated_run_min
     profile.observed_easy_run_kmh = observed_easy_run_kmh
-    plan = build_app_plan(profile)
+    plan = build_app_plan(profile, start_phase=start_phase)
     # Sorted and compact: the file is inlined into a 170 kB page, and a stable key order means a
     # regeneration that changed nothing produces a byte-identical file rather than a phantom diff.
     return json.dumps(plan, sort_keys=True, separators=(",", ":"))
@@ -96,9 +118,12 @@ def main() -> int:
                     help="longest continuous run actually observed, in minutes")
     ap.add_argument("--observed-easy-run-kmh", type=float, default=OBSERVED_EASY_RUN_KMH,
                     help="fastest observed running speed with heart rate inside the easy ceiling")
+    ap.add_argument("--start-phase", choices=[p.value for p in Phase], default=START_PHASE.value,
+                    help="phase the export begins at, for an athlete already past assessment")
     args = ap.parse_args()
 
-    fresh = build(args.age, args.hr_rest, args.demonstrated_run_min, args.observed_easy_run_kmh)
+    fresh = build(args.age, args.hr_rest, args.demonstrated_run_min, args.observed_easy_run_kmh,
+                  Phase(args.start_phase))
     if args.check:
         current = OUT.read_text().strip() if OUT.exists() else ""
         if current != fresh:
