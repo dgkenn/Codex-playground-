@@ -770,6 +770,16 @@ const prog = Object.assign(
   { phase: PLAN.phases[0].phase, week: 1, done: {} },
   JSON.parse(localStorage.getItem('band.progress') || '{}'));
 
+// A regenerated plan can start at a later phase than the one saved on the phone -- it did exactly
+// this once already, skipping a phase whose only gate the app itself had no way to satisfy. A saved
+// `phase` the new plan no longer ships is stale, not a request to sit on the plan's first phase at
+// whatever week number happened to be saved; reset the week along with it; a week number of 4 is
+// only meaningful within the phase it was earned in.
+if (!PLAN.phases.some(p => p.phase === prog.phase)) {
+  prog.phase = PLAN.phases[0].phase;
+  prog.week = 1;
+}
+
 const saveProg = () => localStorage.setItem('band.progress', JSON.stringify(prog));
 
 const curPhase = () => PLAN.phases.find(p => p.phase === prog.phase) || PLAN.phases[0];
@@ -1123,7 +1133,18 @@ function setMode(m) {
   $('cfg-intervals').classList.toggle('hide', m !== 'intervals');
   $('cfg-ramp').classList.toggle('hide', m !== 'ramp');
   $('targetlabel').textContent = m === 'intervals' ? 'run the blocks at' : 'target pace';
-  if (m === 'ramp') renderRampNote();
+  // The ramp protocol used to live only inside whatever session the plan strip happened to load,
+  // and the plan only ever schedules one -- inside ASSESS, the phase most athletes using this app
+  // are fast-forwarded past because its own gates need overnight HRV data nothing here collects.
+  // Tapping this button then armed nothing: `S.ramp` stayed null and Start refused with "load the
+  // ramp test from the plan first," pointing at a plan that no longer had one. The protocol itself
+  // does not depend on the week it happens to run in, so it ships once at the top of PLAN and is
+  // always here regardless of which sessions the current week schedules.
+  if (m === 'ramp') {
+    if (!S.ramp && PLAN.ramp_protocol) S.ramp = new RampRunner(PLAN.ramp_protocol.steps);
+    if (!S.rampNotes && PLAN.ramp_protocol) S.rampNotes = PLAN.ramp_protocol.at_each_stage || '';
+    renderRampNote();
+  }
   $('modenote').textContent = MODE_NOTES[m];
   $('perlabel').textContent = m === 'ramp' ? '' : readoutLabel();
   refreshGauge();
@@ -1148,7 +1169,10 @@ function refreshGauge() {
 }
 
 function renderRampNote() {
-  const sess = (curWeek().sessions || []).find(x => x.ramp);
+  // The current week's own session first -- it is the one "mark done" tracks against -- and the
+  // plan-wide protocol otherwise, so this is never actually empty. See setMode for why that matters.
+  const sess = (curWeek().sessions || []).find(x => x.ramp)
+            || (PLAN.ramp_protocol ? { ramp: PLAN.ramp_protocol } : null);
   if (!sess) { $('rampnote').textContent = 'No ramp test in this week.'; return; }
   const stages = sess.ramp.steps.filter(x => x.kind === 'stage');
   const ladder = stages.map(x => U.pace(3600 / x.speed_kmh)).join(', ');

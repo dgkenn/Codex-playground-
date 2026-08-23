@@ -14,13 +14,19 @@ import { RampRunner, RampEvent } from '../ramp.js';
 const here = dirname(fileURLToPath(import.meta.url));
 const plan = JSON.parse(readFileSync(join(here, '..', '..', 'engine', 'app_plan.generated.json'), 'utf8'));
 
+// Shipped at the top of the plan, not inside a session -- it used to live only inside the ASSESS
+// phase's one ramp_test session, and ASSESS is skipped for any athlete fast-forwarded past
+// assessment (which is most of them: its own gates need overnight HRV data nothing in this app
+// collects). Reading it from a session that may not exist is exactly the bug that made ramp mode a
+// dead end once ASSESS stopped shipping, so this reads it the way the app now does: from the top.
+const rampProtocol = plan.ramp_protocol;
 const rampSession = plan.phases
   .flatMap(p => p.weeks).flatMap(w => w.sessions)
   .find(s => s.ramp);
 
 {
-  assert.ok(rampSession, 'the plan must ship a machine-readable ramp protocol');
-  const steps = rampSession.ramp.steps;
+  assert.ok(rampProtocol, 'the plan must ship a machine-readable ramp protocol at the top level');
+  const steps = rampProtocol.steps;
   assert.ok(steps.length >= 6, `only ${steps.length} steps`);
   assert.equal(steps[0].kind, 'warmup', 'a ramp must open with a warm-up, not with a stage');
   const stages = steps.filter(s => s.kind === 'stage');
@@ -49,12 +55,12 @@ function run(steps, { stopAfterS = 100000 } = {}) {
 }
 
 {
-  const { runner, events, labels } = run(rampSession.ramp.steps);
+  const { runner, events, labels } = run(rampProtocol.steps);
   const starts = events.filter(e => e.kind === RampEvent.STEP);
   const finals = events.filter(e => e.kind === RampEvent.FINAL_MINUTE);
   const done = events.filter(e => e.kind === RampEvent.DONE);
 
-  assert.equal(starts.length, rampSession.ramp.steps.length,
+  assert.equal(starts.length, rampProtocol.steps.length,
     'every step must be announced exactly once');
   assert.equal(done.length, 1, 'the protocol must end exactly once');
   assert.ok(runner.done);
@@ -62,13 +68,13 @@ function run(steps, { stopAfterS = 100000 } = {}) {
   // Boundaries must land where the protocol says, not a second early or late — the analysis windows
   // are cut from these timestamps.
   let expected = 0;
-  rampSession.ramp.steps.forEach((step, i) => {
+  rampProtocol.steps.forEach((step, i) => {
     assert.equal(starts[i].t, expected, `${step.label} started at ${starts[i].t}s, expected ${expected}`);
     expected += Math.round(step.minutes * 60);
   });
   console.log(`  ok  all ${starts.length} steps fire once, on the second, in order`);
 
-  const stages = rampSession.ramp.steps.filter(s => s.kind === 'stage');
+  const stages = rampProtocol.steps.filter(s => s.kind === 'stage');
   assert.equal(finals.length, stages.length,
     `${finals.length} final-minute warnings for ${stages.length} stages`);
   for (const f of finals) {
@@ -108,7 +114,7 @@ function run(steps, { stopAfterS = 100000 } = {}) {
 {
   // Before the first tick there is no step, so there is no label — an empty string, not the last
   // one, and not "stage_undefined".
-  const r = new RampRunner(rampSession.ramp.steps);
+  const r = new RampRunner(rampProtocol.steps);
   assert.equal(r.label, '');
   assert.equal(r.step, null);
   assert.equal(r.remaining(0), 0);
@@ -128,12 +134,20 @@ function run(steps, { stopAfterS = 100000 } = {}) {
 {
   // The total has to match the plan's own arithmetic, or the card promises an hour and the session
   // runs for forty minutes.
-  const r = new RampRunner(rampSession.ramp.steps);
-  assert.equal(r.totalS(), Math.round(rampSession.ramp.total_min * 60),
+  const r = new RampRunner(rampProtocol.steps);
+  const totalMin = Math.round(rampProtocol.total_min);
+  assert.equal(r.totalS(), Math.round(rampProtocol.total_min * 60),
     'the runner and the plan must agree on how long this takes');
-  assert.equal(rampSession.minutes, Math.round(rampSession.ramp.total_min),
-    'and so must the session card — it used to say 35 minutes for a 59 minute protocol');
-  console.log(`  ok  runner, protocol and session card agree on ${rampSession.minutes} minutes`);
+  // Where ASSESS is shipped -- a fresh install, before any fast-forward -- its own ramp_test session
+  // card carries the same total, computed the same way. Where it is not (this export), that
+  // cross-check has nothing to check against, and that absence is the whole reason the protocol now
+  // travels separately -- so it is skipped rather than faked.
+  if (rampSession) {
+    assert.equal(rampSession.minutes, totalMin,
+      'and so must the session card — it used to say 35 minutes for a 59 minute protocol');
+  }
+  console.log(`  ok  runner and protocol agree on ${totalMin} minutes`
+            + (rampSession ? ', and so does the session card' : ''));
 }
 
 console.log('\nAll ramp tests passed.');

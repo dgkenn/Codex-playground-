@@ -283,6 +283,46 @@ async function pickDay(page, kind) {
   console.log(`  ok  today is named and offered in one tap (${title} — ${label})`);
 }
 
+{
+  // Root cause of "my Sunday is empty": the shipped plan started at ASSESS, whose only gate the web
+  // app has no way to satisfy -- there is no overnight HRV monitoring anywhere in tools/, only in
+  // the Swift target that has never been compiled -- so nobody using this app could ever leave it.
+  // ASSESS schedules a ramp test on Wednesday and one shakeout on Saturday and nothing else, so an
+  // athlete whose declared days are Wednesday, Saturday and Sunday had a permanently blank Sunday.
+  //
+  // The plan now starts past ASSESS. This checks the migration that matters for a phone that already
+  // has progress saved against the old shape: a saved phase the current plan no longer ships must
+  // not be trusted at whatever week number was saved alongside it -- both reset together, or an
+  // athlete could land on week 4 of a phase they have not set foot in.
+  await page.evaluate(() => {
+    localStorage.setItem('band.progress', JSON.stringify({ phase: 'assess', week: 3, done: {} }));
+  });
+  await page.reload();
+  await page.waitForSelector('#phaselabel');
+  const phase = (await page.textContent('#phaselabel')).trim();
+  assert.doesNotMatch(phase, /assess/i, `a phase the plan no longer ships must not be trusted: "${phase}"`);
+  const week = (await page.textContent('#weeklabel')).trim();
+  assert.match(week, /Week 1 of/, `and the stale week number must not survive with it: "${week}"`);
+  console.log(`  ok  a plan whose saved phase no longer exists resets to a real one (${phase}, ${week})`);
+}
+
+{
+  // The specific day: Sunday is one of the three declared running days (Wed/Sat/Sun), and the plan's
+  // first shipped phase must put a real, runnable session there rather than rest. This is what
+  // "empty" meant -- the app had no control to leave the phase that never scheduled it anything.
+  // The strip always renders one button per DAYS = ['Mon',...,'Sun'] in that fixed order, so
+  // Sunday is always the 7th button regardless of what day it is on the device running this test.
+  const btn = (await page.$$('.strip button'))[6];
+  await btn.click();
+  await page.waitForTimeout(80);
+  const title = (await page.textContent('#sesstitle')).trim();
+  assert.doesNotMatch(title, /^(rest|nothing scheduled)$/i,
+    `Sunday must not be empty in the plan's first phase: "${title}"`);
+  assert.equal(await page.getAttribute('#loadsess', 'disabled'), null,
+    'and it must be a session the app can actually load');
+  console.log(`  ok  Sunday, a declared running day, carries a real session ("${title}")`);
+}
+
 // --- the ramp test -------------------------------------------------------------------------------
 
 {
@@ -291,21 +331,21 @@ async function pickDay(page, kind) {
   // the runner, that starting it announces the first step out loud, and that the samples it records
   // carry the stage label. Without that label the recording is one undifferentiated blob and the
   // hour on the treadmill yields no fit, which is the entire point of the session.
+  // Entering the mode is now what arms the protocol -- it used to come only from the plan strip,
+  // and the plan only ever schedules a ramp inside ASSESS, a phase most exports skip entirely (its
+  // own gates need overnight HRV data nothing in this app collects). The mode button has to work on
+  // its own or the ramp test becomes unreachable the moment ASSESS is not the current phase.
   await page.click('#m-ramp');
   assert.match(await page.textContent('#modenote'), /stage/i, 'the ramp mode must explain itself');
   // Explicitly the treadmill flow; the street flow gets its own block below. The default is street,
   // and a test that silently inherited whichever default happened to be current is how the wrong
   // one shipped.
   await page.uncheck('#rampoutdoor');
-
-  await pickDay(page, 'ramp');
   await page.waitForTimeout(120);
-  assert.equal(await page.getAttribute('#loadsess', 'disabled'), null,
-    'the ramp must be loadable — "coachable" is about the pace band, not about runnability');
-  await page.click('#loadsess');
-  await page.waitForTimeout(120);
-  const loaded = await page.$$eval('#log div', ds => ds[0].textContent);
-  assert.match(loaded, /(\d+) stages/, `loading must state the protocol's shape: "${loaded}"`);
+  const loaded = (await page.textContent('#rampnote')).replace(/\s+/g, ' ');
+  assert.match(loaded, /numbers on the dial/i, `the treadmill framing must be stated: "${loaded}"`);
+  assert.match(loaded, /(\d+(\.\d+)?,\s*){4,}\d+(\.\d+)?\s*(mph|km\/h)/i,
+    `and the ladder itself, as dial numbers in the athlete's own unit: "${loaded}"`);
 
   await page.click('#go');
   await page.waitForTimeout(2500);
@@ -340,8 +380,8 @@ async function pickDay(page, kind) {
     `the first label must be the warm-up: ${JSON.stringify(payload.labels)}`);
   assert.ok(payload.n_full >= payload.t.length,
     'and it must say how many samples the recording really had');
-  console.log(`  ok  the ramp loads, announces and labels (${loaded.trim().slice(6)}, `
-            + `${payload.n_full} samples -> ${payload.t.length} points, first label warmup)`);
+  console.log(`  ok  the ramp loads, announces and labels `
+            + `(${payload.n_full} samples -> ${payload.t.length} points, first label warmup)`);
 }
 
 {
@@ -357,9 +397,6 @@ async function pickDay(page, kind) {
   assert.match(note, /\d+ bpm/, 'and state the stop rule in beats');
   assert.ok(await page.isVisible('#gauge'), 'the band gauge is meaningful on an outdoor ramp');
 
-  await pickDay(page, 'ramp');
-  await page.waitForTimeout(120);
-  await page.click('#loadsess');
   await page.click('#go');
   await page.waitForTimeout(2500);
   const spoken = await page.evaluate(() => window.__spoken);
@@ -726,9 +763,7 @@ async function pickDay(page, kind) {
     ['ramp', async () => {
       await page.click('#m-ramp');
       await page.uncheck('#rampoutdoor');                 // the treadmill flow, where it was absent
-      await pickDay(page, 'ramp');
       await page.waitForTimeout(100);
-      await page.click('#loadsess');
     }],
   ]) {
     await setup();

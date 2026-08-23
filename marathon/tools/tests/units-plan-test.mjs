@@ -5,8 +5,14 @@
 // 14:30 mile, which look nothing alike until one of them is silently used as the other.
 
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { SplitAnnouncer, formatMMSS } from '../pace-monitor.js';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const ENGINE = join(here, '..', '..', 'engine');
 
 const html = readFileSync(new URL('../pace-coach-hosted.html', import.meta.url), 'utf8');
 // The built page ships a classic script now, for WebView compatibility — see build-coach.mjs.
@@ -101,13 +107,45 @@ const PLAN = JSON.parse(js.match(/const PLAN = (\{[\s\S]*?\});\n/)[1]);
 assert.equal(PLAN.app_plan_version, 1);
 assert.ok(PLAN.phases.length >= 3, 'should ship several phases');
 
-const assess = PLAN.phases[0];
-assert.equal(assess.phase, 'assess', 'week 1 must be the diagnostic phase, not training');
+// The shipped plan itself now starts past ASSESS -- see generate_app_plan.py's START_PHASE for why:
+// ASSESS's own gates include fourteen nights of HRV, which nothing in tools/ can ever collect, so a
+// strict reading trapped every athlete who used this app in the diagnostic phase permanently. What
+// still has to be true, and is checked against the engine directly rather than against what happens
+// to be configured for export right now, is the invariant the diagnostic week itself promises: the
+// ramp test is there, and nothing hard is asked of untested tissue.
+const assessJson = execFileSync('python3', ['-c', `
+import sys, json
+sys.path.insert(0, ${JSON.stringify(ENGINE)})
+from marathon_engine.app_plan import build_app_plan
+from marathon_engine.plan import Phase
+from marathon_engine.cli import _estimated_profile
+profile = _estimated_profile(age=30, hr_rest=60)
+plan = build_app_plan(profile, start_phase=Phase.ASSESS)
+print(json.dumps(plan))
+`], { encoding: 'utf8' });
+const assessPlan = JSON.parse(assessJson);
+const assess = assessPlan.phases[0];
+assert.equal(assess.phase, 'assess', 'the engine\'s own first phase must still be the diagnostic one');
+assert.equal(assess.weeks.length, 1,
+  'and it must ship exactly the one week PHASE_MIN_WEEKS asks for, not six copies of it');
 const w1 = assess.weeks[0];
 assert.ok(w1.sessions.some(s => s.type === 'ramp_test'), 'week 1 must contain the ramp test');
 assert.ok(!w1.sessions.some(s => ['threshold', 'intervals'].includes(s.type)),
   'week 1 must contain no hard running');
-console.log('  ok  week 1 is diagnostic, ramp test present, no hard running');
+console.log('  ok  the diagnostic phase is one week, ramp test present, no hard running');
+
+// What actually ships: past ASSESS, and with a real session on every one of the athlete's three
+// declared running days in its first week -- the thing that was reported broken as "my Sunday is
+// empty". run_days in the exported plan is [2, 5, 6] = Wed, Sat, Sun; PLAN's own day 6 is Sunday.
+assert.notEqual(PLAN.phases[0].phase, 'assess',
+  'the export must not hand a fresh athlete a phase the app has no way to ever leave');
+const shippedW1 = PLAN.phases[0].weeks[0];
+for (const day of PLAN.run_days) {
+  const s = shippedW1.sessions.find(x => x.day === day);
+  assert.ok(s && s.type !== 'rest', `day ${day} is a declared running day and must not be rest`);
+}
+console.log(`  ok  the shipped plan starts at ${PLAN.phases[0].phase} `
+          + `with every declared running day covered`);
 
 // Every coachable session must carry enough to actually start it.
 let coachable = 0;
@@ -154,7 +192,14 @@ for (const ph of PLAN.phases) {
   assert.ok(ph.gate_note && /measurement/i.test(ph.gate_note),
     `${ph.phase} does not say that its gate needs evidence`);
 }
-assert.ok(!/advancePhase|prog\.phase\s*=/.test(js.replace(/PLAN\.phases\[0\]\.phase/g, '')),
+// One assignment is allowed, and only this exact one: resetting to the plan's OWN first phase when
+// the saved one no longer exists in it. That is stale-data recovery, not a decision -- it can only
+// ever fall back to the start, never step forward, so it cannot be how someone gets silently
+// promoted. Anything else assigning prog.phase is exactly the thing this test exists to catch.
+const withoutResetToStart = js
+  .replace(/prog\.phase\s*=\s*PLAN\.phases\[0\]\.phase\s*;/g, '')
+  .replace(/PLAN\.phases\[0\]\.phase/g, '');
+assert.ok(!/advancePhase|prog\.phase\s*=/.test(withoutResetToStart),
   'the app must not advance a phase by itself');
 console.log('  ok  the app advances weeks, never phases');
 
