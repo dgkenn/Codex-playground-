@@ -58,7 +58,7 @@
   },
   "KXHIGHTCYYZ": {
    "title": "Daily high temp Toronto",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTDAL": {
@@ -78,7 +78,7 @@
   },
   "KXHIGHTEDDB": {
    "title": "Daily high temp Berlin",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTEDDF": {
@@ -93,7 +93,7 @@
   },
   "KXHIGHTEHAM": {
    "title": "Amsterdam Daily High Temperature",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTHOU": {
@@ -103,7 +103,7 @@
   },
   "KXHIGHTKSAN": {
    "title": "Daily High Temperature San Diego",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTLFPG": {
@@ -118,7 +118,7 @@
   },
   "KXHIGHTLTFM": {
    "title": "Daily high temp Istanbul",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTLV": {
@@ -163,8 +163,13 @@
   },
   "KXHIGHTRKSI": {
    "title": "Daily high temp Seoul",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
+  },
+  "KXHIGHTSAN": {
+   "title": "High Temperature San Diego",
+   "status": "unknown",
+   "first_seen": "2026-08-24"
   },
   "KXHIGHTSATX": {
    "title": "San Antonio Daily Maximum Temperature",
@@ -173,7 +178,7 @@
   },
   "KXHIGHTSBGR": {
    "title": "Daly high temp Sao Paulo",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTSEA": {
@@ -303,7 +308,7 @@
   },
   "KXLOWTEBBR": {
    "title": "Daily low temp Brussels",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTEDDB": {
@@ -348,7 +353,7 @@
   },
   "KXLOWTLSGG": {
    "title": "Daily low temperature Geneva",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTLSSG": {
@@ -418,8 +423,13 @@
   },
   "KXLOWTRKSI": {
    "title": "Daily low temp Seoul",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
+  },
+  "KXLOWTSAN": {
+   "title": "Low Temperature San Diego",
+   "status": "active",
+   "first_seen": "2026-08-24"
   },
   "KXLOWTSATX": {
    "title": "Lowest Temperature SATX",
@@ -463,12 +473,12 @@
   },
   "KXLOWTZBAA": {
    "title": "Beijing Daily Low Temperature",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTZSPD": {
    "title": "Daily low temp Shanghai",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   }
  }
