@@ -76,7 +76,16 @@ await page.addInitScript(() => {
     return play.call(this);
   };
   window.__spoken = [];
-  if (window.speechSynthesis) window.speechSynthesis.speak = u => window.__spoken.push(u.text);
+  window.__cancels = 0;
+  window.__forceStuck = false;     // when true, speechSynthesis.speaking reports true forever
+  if (window.speechSynthesis) {
+    window.speechSynthesis.speak = u => window.__spoken.push(u.text);
+    const realCancel = window.speechSynthesis.cancel.bind(window.speechSynthesis);
+    window.speechSynthesis.cancel = () => { window.__cancels += 1; realCancel(); };
+    Object.defineProperty(window.speechSynthesis, 'speaking', {
+      get: () => window.__forceStuck,
+    });
+  }
 });
 
 await page.goto('file://' + APP, { waitUntil: 'load' });
@@ -713,6 +722,59 @@ async function pickDay(page, kind) {
   assert.ok(coaching.some(l => /Ease up/.test(l)),
     `running well over the target must be named as such: ${JSON.stringify(coaching)}`);
   console.log(`  ok  the pace is spoken in words while running ("${coaching[0]}")`);
+}
+
+// --- a wedged speech engine does not go silent for the rest of the run ----------------------------
+
+{
+  // The report this exists for: two run/walk transitions went unheard, with no gap in the recording
+  // and no backgrounding event to blame for at least one of them. iOS's speech engine has a
+  // documented failure mode behind exactly this -- an utterance queues and never resolves, `speaking`
+  // reports true forever, and every later `.speak()` call queues silently behind a phantom that will
+  // never finish. There is no error, no exception, nothing to catch. The fix is calling `.cancel()`
+  // before speaking, which this checks actually happens rather than assuming it from reading the fix.
+  await page.click('#m-coach');
+  await page.fill('#target', '9:00');
+  await page.waitForTimeout(120);
+  await page.evaluate(() => { window.__cancels = 0; window.__spoken.length = 0; });
+  await page.click('#testvoice');
+  await page.waitForTimeout(100);
+  await page.click('#testvoice');
+  await page.waitForTimeout(100);
+  const cancelsPerSpeak = await page.evaluate(() => window.__cancels / window.__spoken.length);
+  assert.ok(cancelsPerSpeak >= 1,
+    `every line spoken must cancel whatever came before it: `
+    + `${JSON.stringify(await page.evaluate(() => ({ c: window.__cancels, s: window.__spoken })))}`);
+  console.log(`  ok  every spoken line clears the engine first (${await page.evaluate(() => window.__cancels)} `
+            + `cancels for ${await page.evaluate(() => window.__spoken.length)} lines)`);
+}
+
+{
+  // The other half of the same bug: a jam with no trigger this recording can point to. Force
+  // `speaking` to report true forever, as though an utterance from three minutes ago never resolved,
+  // and confirm the watchdog notices and clears it on its own rather than leaving the run silent
+  // until it happens to end.
+  const ctx = page.context();
+  await ctx.setGeolocation({ latitude: 42.3505, longitude: -71.1054, accuracy: 5 });
+  await page.click('#m-coach');
+  await page.fill('#target', '9:00');
+  await page.waitForTimeout(120);
+  await page.click('#go');
+  await page.waitForTimeout(500);
+  await page.evaluate(() => { window.__forceStuck = true; });
+
+  await page.waitForFunction(
+    () => document.getElementById('log').textContent.includes('speech engine looked stuck'),
+    { timeout: 20000 },
+  );
+  const cancelsWhileStuck = await page.evaluate(() => window.__cancels);
+  assert.ok(cancelsWhileStuck > 0, 'the watchdog must actually clear the engine, not only log it');
+
+  await page.evaluate(() => { window.__forceStuck = false; });
+  await page.click('#go');
+  await page.waitForTimeout(200);
+  console.log(`  ok  a wedged speech engine is noticed and cleared without any external trigger `
+            + `(after ${cancelsWhileStuck} cancel calls)`);
 }
 
 // --- statistics, recorded and kept ----------------------------------------------------------------

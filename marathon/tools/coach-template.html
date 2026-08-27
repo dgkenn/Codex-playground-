@@ -693,12 +693,54 @@ function play(earcon, _gain) {
   });
 }
 
+/**
+ * Speak a line, defensively.
+ *
+ * This session is the reason for every defence below: two run-walk transitions before the recorded
+ * backgrounding gap, "Run" was announced (the label is written from the same call) and nothing was
+ * heard. Run blocks 4 and 5 then measured ZERO seconds above jogging speed — not slow running,
+ * no running — which is not a pacing failure, it is someone who did not know the interval had
+ * started, because the one thing that would have told them was silent.
+ *
+ * iOS's speech engine has a well-documented failure mode behind this: an utterance can be queued and
+ * never resolve — no `onend`, no `onerror`, nothing — most often after the tab was backgrounded, an
+ * audio-session interruption, or simply enough consecutive `.speak()` calls. Once that happens,
+ * `speechSynthesis.speaking` reports true forever and EVERY later utterance queues silently behind a
+ * phantom that will never finish. There is no notification of this. The only way out is calling
+ * `.cancel()`, which is safe to call unconditionally: our lines are short, one-shot cues that
+ * supersede each other anyway, so cutting off a stale "12:04, on pace" to speak the current line is
+ * not a loss.
+ *
+ * `resetSpeech`, called from the visibility handler and from the watchdog below, is the same
+ * `.cancel()` applied proactively rather than only right before the next thing there is to say —
+ * belt and braces against exactly the gap this session hit, where the stall predates any
+ * backgrounding event this recording can show.
+ */
 function say(text) {
   if (!('speechSynthesis' in window)) return;
+  try { speechSynthesis.cancel(); } catch { /* nothing queued is not a failure */ }
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 1.08;
-  speechSynthesis.speak(u);
+  S.lastSpeechAt = Date.now();
+  S.speechOk = null;
+  u.onstart = () => { S.speechOk = true; };
+  u.onerror = e => {
+    S.speechOk = false;
+    log(`speech failed: ${e.error} — "${text}"`, 'stop');
+  };
+  try { speechSynthesis.speak(u); } catch (e) { log(`speech failed: ${e.message}`, 'stop'); }
 }
+
+/** Force the speech engine out of a stuck state. Safe to call when nothing is queued. */
+function resetSpeech() {
+  if (!('speechSynthesis' in window)) return;
+  try { speechSynthesis.cancel(); } catch { /* nothing to cancel */ }
+}
+
+/// How long a genuine utterance ever runs. The longest line in this app is a couple of sentences at
+/// rate 1.08 — comfortably under ten seconds. Longer than that is not a long sentence, it is the
+/// engine stuck reporting `speaking: true` on an utterance that already should have ended.
+const SPEECH_STUCK_MS = 10000;
 
 // =================================================================================================
 // State
@@ -2114,7 +2156,35 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && S.running && S.mode !== 'rehearse') {
     log('backgrounded — iOS pauses this', 'stop');
   } else if (!document.hidden && S.running && !S.wakeLock) keepAwake(true);
+  // Coming back from the background is exactly when the speech engine is most likely to have
+  // wedged itself — see `say` for why. Clearing it here, on the way back to foreground, means the
+  // next coaching line has a clean engine to speak into rather than inheriting whatever the
+  // background left behind.
+  if (!document.hidden) resetSpeech();
 });
+
+/**
+ * Notice a wedged speech engine even without a backgrounding event to blame.
+ *
+ * Two run/walk transitions went unheard before anything in this session's own recording explains
+ * why — no gap, no background flag, nothing. The engine can jam on its own, from nothing more than
+ * enough consecutive utterances, and the only symptom is `speaking` staying true past when the
+ * utterance that set it should have finished.
+ */
+let speechWatchdogId = null;
+function startSpeechWatchdog() {
+  if (!('speechSynthesis' in window)) return;
+  speechWatchdogId = setInterval(() => {
+    if (!S.lastSpeechAt) return;
+    const stuck = speechSynthesis.speaking && Date.now() - S.lastSpeechAt > SPEECH_STUCK_MS;
+    if (stuck) {
+      log('speech engine looked stuck — reset', 'stop');
+      resetSpeech();
+      S.lastSpeechAt = 0;
+    }
+  }, 4000);
+}
+function stopSpeechWatchdog() { clearInterval(speechWatchdogId); }
 
 function setUnit(u) {
   if (S.running) return;
@@ -2360,6 +2430,8 @@ $('go').onclick = () => {
   // mode it opens per run block instead, from tickIntervals -- there is nothing to say through a
   // warm-up walk, and the first line of each block has to wait out its own settle.
   if (S.mode === 'coach' && S.voice) S.voice.begin(0);
+  S.lastSpeechAt = 0;
+  startSpeechWatchdog();
   S.tickId = setInterval(tick, 1000);
   // The band went flat halfway through a session and nothing warned. The level was read once at
   // connect and never again, so the number on screen was however full it had been when it was
@@ -2495,6 +2567,7 @@ function finish(msg) {
   clearInterval(S.tickId);
   clearInterval(S.autosaveId);
   clearInterval(S.batteryId);
+  stopSpeechWatchdog();
   // File it before anything else. Everything below is presentation; this is the run.
   let stats = null;
   if (S.samples.length && S.mode !== 'rehearse') {
@@ -2581,6 +2654,13 @@ $('diag').onclick = async () => {
     wakeLock: 'wakeLock' in navigator,
     speech: 'speechSynthesis' in window,
     voices: ('speechSynthesis' in window) ? speechSynthesis.getVoices().length : null,
+    // Whether the engine looks alive right now, which is exactly the thing that was silently wrong
+    // for a stretch of the run this diagnostic was added for: no error, no gap in the recording, the
+    // "Run" line simply never arrived. `speechOk` is set by the last utterance's own onstart/onerror,
+    // so null means one was never actually attempted, false means it was attempted and failed.
+    speechOk: S.speechOk === undefined ? null : S.speechOk,
+    speechSpeakingNow: ('speechSynthesis' in window) ? speechSynthesis.speaking : null,
+    speechLastAttemptS: S.lastSpeechAt ? Math.round((Date.now() - S.lastSpeechAt) / 1000) : null,
     clipboard: !!(navigator.clipboard && navigator.clipboard.writeText),
     // The whole tone subsystem in one object. `readyState` 0 with no `mediaError` means the WAV
     // never loaded; a `mediaError` code says the platform rejected it; unlocked false after tapping
