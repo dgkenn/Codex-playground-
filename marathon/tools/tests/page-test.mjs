@@ -674,6 +674,47 @@ async function pickDay(page, kind) {
   console.log('  ok  run/walk coaches the running blocks and stays quiet through the walks');
 }
 
+// --- the pace is spoken, not only beeped -----------------------------------------------------------
+
+{
+  // "I feel like the pacing tones never really came... I couldn't tell if I was going too fast, too
+  // slow, or just right." Both are addressed by saying it in words, with the number in front.
+  //
+  // The module has its own suite; what this checks is the wiring, which is where every real bug in
+  // this project has actually lived: that the coach reaches speechSynthesis at all during a live
+  // run, and that what comes out names a pace and a direction rather than being a bare chime.
+  const ctx = page.context();
+  const START = { latitude: 42.3505, longitude: -71.1054 };
+  let lat = START.latitude;
+  await ctx.setGeolocation({ ...START, accuracy: 5 });
+
+  await page.click('#m-coach');
+  await page.fill('#target', '12:00');
+  await page.check('#voicecoach');
+  await page.waitForTimeout(150);
+  await page.evaluate(() => { window.__spoken.length = 0; });
+  await page.click('#go');
+
+  // Running a fifth too fast for long enough to clear the settle and land a line or two.
+  for (let i = 0; i < 34; i++) {
+    lat -= 3.6 / 111320;                       // ~3.6 m/s against a 12:00/mi target: well over
+    await ctx.setGeolocation({ latitude: lat, longitude: START.longitude, accuracy: 5 });
+    await page.waitForTimeout(1000);
+  }
+  const spoken = await page.evaluate(() => window.__spoken);
+  await page.click('#go');
+  await page.waitForTimeout(200);
+
+  const coaching = spoken.filter(l => /Ease up|Pick it up|On pace|Easy\./.test(l));
+  assert.ok(coaching.length > 0,
+    `the pace must be spoken during a run: ${JSON.stringify(spoken.slice(0, 6))}`);
+  assert.ok(coaching.some(l => /^\d+:\d\d\./.test(l)),
+    `and must lead with the measured pace: ${JSON.stringify(coaching)}`);
+  assert.ok(coaching.some(l => /Ease up/.test(l)),
+    `running well over the target must be named as such: ${JSON.stringify(coaching)}`);
+  console.log(`  ok  the pace is spoken in words while running ("${coaching[0]}")`);
+}
+
 // --- statistics, recorded and kept ----------------------------------------------------------------
 
 {

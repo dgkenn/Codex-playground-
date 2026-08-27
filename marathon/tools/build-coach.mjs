@@ -58,6 +58,7 @@ const parts = {
   SESSIONFORMAT: inline('session-format.js'),
   TILES: inline('tiles.js'),
   PROGRESSION: inline('progression.js'),
+  PACEVOICE: inline('pace-voice.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
 };
 

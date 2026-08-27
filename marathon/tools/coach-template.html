@@ -273,6 +273,14 @@
         <select id="audiosession" style="width:100%"></select></label>
     </div>
     <p class="note" style="margin-top:.6rem" id="audiosessionnote"></p>
+    <label class="note" style="display:flex;gap:.4rem;align-items:center;margin-top:.7rem">
+      <input id="voicecoach" type="checkbox" checked> say the pace out loud while running
+    </label>
+    <p class="note" style="margin-top:.4rem">
+      Every twenty seconds or so, in words: <em>"12:04. On pace."</em> Run a session correctly and
+      the tones say nothing at all for the whole of it — which sounds exactly like an app that has
+      died. This is the channel that tells you where you are rather than only when you are wrong.
+    </p>
     <p class="note" style="margin-top:.6rem">
       <strong>Start Apple Music first, then press a tone button.</strong> The transition chime used to
       <em>pause</em> the music while the spoken cues did not — same output path, different session
@@ -572,6 +580,7 @@
 /*{{SESSIONFORMAT}}*/
 /*{{TILES}}*/
 /*{{PROGRESSION}}*/
+/*{{PACEVOICE}}*/
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -1417,8 +1426,11 @@ function updateSensorUi() {
   } else {
     const z = (S.hrZones || []).find(x => sn.hr >= x.low && sn.hr < x.high);
     $('hrstate').textContent = `${z ? 'Zone ' + z.index : 'out of range'}`
-      + (sn.battery != null ? ` · battery ${sn.battery}%` : '')
+      + (sn.battery != null
+          ? ` · battery ${sn.battery}%${sn.battery <= BATTERY_LOW_PCT ? ' — CHARGE IT' : ''}` : '')
       + (sn.hasAcc ? '' : ' · no accelerometer');
+    $('hrstate').style.color = sn.battery != null && sn.battery <= BATTERY_LOW_PCT
+      ? 'var(--stop)' : '';
   }
   renderZones(fresh ? sn.hr : null);
 }
@@ -1728,6 +1740,24 @@ function tickCoach(t, pace, trusted, { running = true } = {}) {
   const hrOk = fresh && S.hrMonitor && govern !== 'pace';
   S.governedBy = hrOk ? 'hr' : 'pace';
 
+  // Say it out loud, once, when the armband stops reporting mid-run.
+  //
+  // The battery went flat halfway through a session and the only sign was a dash on a screen in a
+  // pocket. Everything downstream already handles it correctly -- the samples record `null` rather
+  // than a stale number, governance falls back to GPS pace, and the session keeps recording -- but
+  // "handled correctly and silently" is indistinguishable from "still working" to someone running.
+  // Knowing changes what you do: the run continues on pace, and the heart-rate half of the session
+  // is over rather than merely absent from a file you read later.
+  if (sn && !fresh && sn.hrCount > 0 && !S.hrLostAnnounced) {
+    S.hrLostAnnounced = true;
+    log('armband stopped reporting — pacing from GPS for the rest of this run', 'stop');
+    say('Armband lost. Pacing from GPS.');
+  } else if (fresh && S.hrLostAnnounced) {
+    // It came back: a dropout, not a death. Worth saying, and worth re-arming the notice.
+    S.hrLostAnnounced = false;
+    log('armband is reporting again', 'on');
+  }
+
   const paceEv = S.monitor.update(t, pace,
                                   { grade: S.track.grade, paceTrusted: trusted, running });
   const hrEv = S.hrMonitor ? S.hrMonitor.update(t, fresh ? sn.hr : null) : null;
@@ -1740,6 +1770,16 @@ function tickCoach(t, pace, trusted, { running = true } = {}) {
   }
   const line = S.splits.update(t, S.track.distanceFromSpeedM, pace, S.monitor.state);
   if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
+
+  // The spoken channel, on its own clock rather than on a threshold crossing.
+  //
+  // Deliberately after the split, and deliberately skipped in the same second as one: a split is
+  // already a spoken line carrying a pace, and two utterances queued back to back is how iOS drops
+  // the second one. The split is the more informative of the two, so it wins the second.
+  if (voiceCoaching && S.voice && !line) {
+    const v = S.voice.update(t, pace, { running, trusted });
+    if (v) { say(v.text); log(`“${v.text}”`, v.kind === 'in' ? 'on' : 'fast'); }
+  }
 }
 
 // =================================================================================================
@@ -1923,10 +1963,19 @@ function tickIntervals(t) {
     S.ivPhase = 'run'; S.ivRep += 1; S.ivUntil = t + runS;
   }
 
-  const word = S.ivPhase === 'run' ? 'Run' : 'Walk';
+  // The transition, spoken plainly and carrying the target.
+  //
+  // "Run" on its own leaves the one thing that decides whether the block is Z1 or Z4 -- how fast --
+  // to memory and to feel, and feel is exactly what gets this athlete to 10:00 per mile when 12:04
+  // was asked for. Saying the number at the moment the legs change is the cheapest possible place
+  // to put it.
+  const run = S.ivPhase === 'run';
+  const word = run ? 'Run' : 'Walk';
+  if (run) S.voice && S.voice.begin(t); else S.voice && S.voice.standDown();
   play('attend');
-  setTimeout(() => say(`${word}. ${S.ivPhase === 'run' ? `Interval ${S.ivRep} of ${reps}` : ''}`),
-             420);
+  setTimeout(() => say(run
+    ? `Run. Interval ${S.ivRep} of ${reps}. Target ${U.pace(targetSecKm)}.`
+    : 'Walk. Ease right down.'), 420);
   log(`${word} — ${S.ivPhase === 'run' ? `rep ${S.ivRep}/${reps}` : 'recover'}`,
       S.ivPhase === 'run' ? 'fast' : 'on');
   $('pace').textContent = word.toUpperCase();
@@ -2115,6 +2164,17 @@ function applySessionType(t) {
     : got === t ? `In force: ${t}.`
     : `Asked for ${t}; the browser is using ${got || 'its own default'}.`;
 }
+// Spoken pace coaching. On by default — the tone vocabulary has to be learned and, at 160 steps a
+// minute under music, a rising pair and a falling pair are not reliably told apart. Words are.
+let voiceCoaching = localStorage.getItem('band.voicecoach') !== '0';
+$('voicecoach').checked = voiceCoaching;
+$('voicecoach').onchange = e => {
+  voiceCoaching = e.target.checked;
+  localStorage.setItem('band.voicecoach', voiceCoaching ? '1' : '0');
+  if (voiceCoaching) { audio(); say('Pace coaching on. 12:04. On pace.'); }
+  log(`spoken pace coaching ${voiceCoaching ? 'on' : 'off'}`, 'dim');
+};
+
 applySessionType(localStorage.getItem('band.audiosession') || DEFAULT_AUDIO_SESSION);
 $('audiosession').onchange = e => {
   audio();
@@ -2229,8 +2289,18 @@ $('go').onclick = () => {
     formatPace: secKm => U.pace(secKm),
     nameSplit: n => U.splitName(n),
   });
+
+  // The spoken pace channel. See pace-voice.js for why this exists alongside the tones rather than
+  // instead of them: run a session correctly and the tone channel is silent for the whole of it,
+  // which is the same sound as a dead app.
+  S.voice = new PaceVoice({
+    targetSecKm: target || null,
+    tolerance: Number($('tol').value) / 100,
+    ceilingOnly: $('ceiling').checked,
+    formatPace: secKm => U.pace(secKm),
+  });
   Object.assign(S, { running: true, startedAt: Date.now(), samples: [], tones: 0,
-                     governedBy: 'pace',
+                     governedBy: 'pace', batteryWarned: false, hrLostAnnounced: false,
                      track: new GpsTrack(), trackState: [],
                      ivPhase: null, ivRep: 0, ivUntil: 0,
                      // NOT `ramp`: the loaded protocol is a selection the athlete made, like the
@@ -2286,7 +2356,25 @@ $('go').onclick = () => {
       S.savedAt = Date.now(); S.savedCount = S.samples.length; renderSavedTick();
     }
   }, 1500);
+  // A continuous run is one long block, so the spoken channel opens with the session. In intervals
+  // mode it opens per run block instead, from tickIntervals -- there is nothing to say through a
+  // warm-up walk, and the first line of each block has to wait out its own settle.
+  if (S.mode === 'coach' && S.voice) S.voice.begin(0);
   S.tickId = setInterval(tick, 1000);
+  // The band went flat halfway through a session and nothing warned. The level was read once at
+  // connect and never again, so the number on screen was however full it had been when it was
+  // paired. Re-read on a slow clock; the sensor rate-limits this to one GATT read every five
+  // minutes, so the interval here only has to be more often than that.
+  S.batteryId = setInterval(() => {
+    const sn = S.sensor;
+    if (!sn || !sn.connected) return;
+    sn.readBattery().then(pct => {
+      if (pct == null || pct > BATTERY_LOW_PCT || S.batteryWarned) return;
+      S.batteryWarned = true;
+      log(`armband battery ${pct}% — it may not last this session`, 'stop');
+      say(`Armband battery ${pct} percent.`);
+    });
+  }, 60000);
   if (S.mode !== 'rehearse') keepAwake(true);
 
   $('go').textContent = 'Stop';
@@ -2406,6 +2494,7 @@ function finish(msg) {
   S.running = false;
   clearInterval(S.tickId);
   clearInterval(S.autosaveId);
+  clearInterval(S.batteryId);
   // File it before anything else. Everything below is presentation; this is the run.
   let stats = null;
   if (S.samples.length && S.mode !== 'rehearse') {
