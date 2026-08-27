@@ -67,7 +67,26 @@ export class PaceBandMonitor {
   /** Feed one second. Returns an event `{earcon, tS, error, reason}` or null. */
   update(tS, paceSecKm, { grade = 0, paceTrusted = true, running = true } = {}) {
     if (!this.enabled || this.targetPaceSecKm == null || !running) {
+      // Standing down clears the DECISION, not just the window.
+      //
+      // It used to clear only the window and leave `state` behind, and that asymmetry was audible.
+      // Entering a walk break returns here and is silent. Entering a run block does not: the first
+      // tick arrives with the pace still untrusted — normal, the athlete has just changed speed —
+      // and the branch below finds a stale `state` from the previous block, concludes the signal
+      // has just degraded, and fires the low double-thud at the same instant as the chime
+      // announcing the block. Same two audio elements, one masking the other.
+      //
+      // Which is exactly the report: the run-to-walk cue always arrived, the walk-to-run cue almost
+      // never did. Never both — the collision can only happen on the edge that resumes.
+      //
+      // `acquired`, `lastToneT` and `unacquiredNudges` deliberately survive: whether the athlete has
+      // ever found this pace, when they were last spoken to, and how much nagging they have already
+      // had are facts about the session, not about the block. The rest is about a block that is over.
       this.window = [];
+      this.state = 'unknown';
+      this.pendingAck = false;
+      this.slowSince = null;
+      this.consecutiveReminders = 0;
       return null;
     }
     if (!paceTrusted || paceSecKm == null || paceSecKm <= 0) {

@@ -260,7 +260,27 @@ class PaceBandMonitor:
         and beeping at it would teach you to ignore the beeps.
         """
         if not self.enabled or self.target_pace_sec_km is None or not running:
+            # Standing down clears the DECISION, not just the window.
+            #
+            # It used to clear only the window and leave ``state`` behind, and that asymmetry was
+            # audible on the phone. Entering a walk break returns here and is silent. Entering a run
+            # block does not: the first tick arrives with the pace still untrusted -- normal, the
+            # athlete has just changed speed -- and the branch below finds a stale ``state`` from the
+            # previous block, concludes the signal has just degraded, and fires the low double-thud
+            # at the same instant as the chime announcing the block, one masking the other.
+            #
+            # Which is exactly what was reported: the run-to-walk cue always arrived, the walk-to-run
+            # cue almost never did. Never both -- the collision can only happen on the edge that
+            # resumes.
+            #
+            # ``acquired``, ``_last_tone_t`` and ``_unacquired_nudges`` deliberately survive: whether
+            # the athlete has ever found this pace, when they were last spoken to, and how much
+            # nagging they have already had are facts about the session, not about the block.
             self._window.clear()
+            self.state = "unknown"
+            self._pending_ack = False
+            self._slow_since = None
+            self._consecutive_reminders = 0
             return None
 
         if not pace_trusted or pace_sec_km is None or pace_sec_km <= 0:
