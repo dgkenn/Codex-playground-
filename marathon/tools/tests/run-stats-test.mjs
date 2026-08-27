@@ -303,4 +303,28 @@ print(json.dumps({
   console.log('  ok  a disagreement between the two distances is reported rather than resolved');
 }
 
+{
+  // The armband ran flat halfway through a session. What must survive that is everything the run
+  // itself can answer for -- distance, pace, moving time, the continuous block the ladder advances
+  // on -- plus whatever heart rate was recorded before the battery went, reported as covering half
+  // the session rather than quietly averaged as though it covered all of it.
+  //
+  // The failure this guards against is the tempting one: treating a null heart rate as a zero, or
+  // dividing a real sum by the wrong denominator. Either turns a half-recorded session into a
+  // confident wrong number, which is worse than the gap it papers over.
+  const samples = Array.from({ length: 1200 }, (_, i) => ({
+    t_s: i, speed_m_s: 2.3, grade: 0, label: 'run', hr_bpm: i < 600 ? 140 : null,
+  }));
+  const s = runStats(samples, { unit: 'mi', targetPaceSecKm: 450, hrRest: 67, hrMax: 187 });
+
+  assert.ok(s.distance > 1.6 && s.distance < 1.8, `the distance must survive: ${s.distance}`);
+  assert.equal(s.runningS, 1200, 'and every second of running');
+  assert.equal(s.longestRunBlockS, 1200, 'and the block length the ladder is advanced on');
+  assert.equal(s.hrCoveragePct, 50, `coverage must be reported honestly: ${s.hrCoveragePct}%`);
+  assert.equal(s.avgHr, 140, 'the average must come from the half that has a heart rate...');
+  assert.ok(s.efficiencyFactor > 0, '...and the derived numbers must still compute');
+  console.log(`  ok  a band that dies halfway still yields the run `
+            + `(${s.distance.toFixed(2)} mi, ${s.hrCoveragePct}% HR coverage, avg ${s.avgHr})`);
+}
+
 console.log('\nAll run-stats tests passed.');
