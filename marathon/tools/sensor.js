@@ -47,6 +47,22 @@ const COMPRESSED_BIT = 0x80;
 /// five seconds is four missed notifications — comfortably past noise.
 export const STALE_HR_MS = 5000;
 
+/// How often the battery is re-read while connected.
+///
+/// It was read exactly once, at connect, and then never again -- so the number on screen was however
+/// full the band had been when it was paired, and it stayed that way while the band went flat. A
+/// battery died halfway through a session and nothing anywhere said it was going to. A read is one
+/// short GATT operation; five minutes is often enough to catch a fall and rare enough to be free.
+export const BATTERY_POLL_MS = 5 * 60 * 1000;
+
+/// Below this the band should be charged before a session rather than during one.
+///
+/// The Verity Sense runs about 20 hours from full, so 20% is roughly four hours -- comfortably more
+/// than any session in this plan, and little enough that it will not survive the week. It is a
+/// "charge it tonight" line, not a "stop now" one, which is why it warns before a run rather than
+/// interrupting one.
+export const BATTERY_LOW_PCT = 20;
+
 /// How long a connect step may take before it is called a failure.
 ///
 /// Web Bluetooth has no timeout of its own, and third-party WebBLE bridges are the ones most likely
@@ -232,6 +248,8 @@ export class VeritySensor {
     this.hrAt = 0;
     this.rr = [];
     this.battery = null;
+    this.batteryAt = 0;
+    this.batteryChar = null;
     this.accWindow = [];
     this.accSd = null;
     this.connected = false;
@@ -259,6 +277,8 @@ export class VeritySensor {
       gattConnected: !!(this.device && this.device.gatt && this.device.gatt.connected),
       hasAcc: this.hasAcc,
       battery: this.battery,
+      batteryAgeS: this.batteryAt ? Math.round((Date.now() - this.batteryAt) / 1000) : null,
+      batteryLow: this.battery != null && this.battery <= BATTERY_LOW_PCT,
       hr: this.hr,
       hrAgeMs: this.hrAt ? Date.now() - this.hrAt : null,
       hrCount: this.hrCount,
@@ -271,6 +291,26 @@ export class VeritySensor {
 
   hrFresh(now = Date.now()) {
     return this.hr != null && (now - this.hrAt) < STALE_HR_MS;
+  }
+
+  /**
+   * Re-read the battery, at most every `BATTERY_POLL_MS` unless forced.
+   *
+   * Returns the percentage, or null if it could not be read. Never throws: a battery read failing
+   * mid-run is not a reason to take anything else down, and a stale number is better than a crash.
+   */
+  async readBattery({ now = Date.now(), force = false } = {}) {
+    if (!this.batteryChar) return this.battery;
+    if (!force && this.batteryAt && now - this.batteryAt < BATTERY_POLL_MS) return this.battery;
+    try {
+      const v = await this.batteryChar.readValue();
+      this.battery = v.getUint8(0);
+      this.batteryAt = now;
+      this.onChange();
+    } catch (e) {
+      this.lastError = e;
+    }
+    return this.battery;
   }
 
   /** SD of accelerometer magnitude over the last second, or null. Cleared each call. */
@@ -480,8 +520,11 @@ export class VeritySensor {
 
     try {
       const bs = await server.getPrimaryService(BATTERY_SERVICE);
-      const v = await (await bs.getCharacteristic(BATTERY_CHAR)).readValue();
-      this.battery = v.getUint8(0);
+      // Kept, not discarded after the first read. Re-reading needs the characteristic, and going
+      // back through getPrimaryService every five minutes during a run is work the radio does not
+      // need to do.
+      this.batteryChar = await bs.getCharacteristic(BATTERY_CHAR);
+      await this.readBattery();
     } catch { /* optional; its absence is not a failure */ }
 
     // Accelerometer is best-effort. Without it the heart rate still works; what is lost is the
