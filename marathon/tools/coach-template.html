@@ -675,10 +675,37 @@ const tones = new Tones({
 });
 let audioReady = false;
 
+/**
+ * Prime the speech engine, synchronously inside whatever tap called `audio()`.
+ *
+ * Tones needed exactly this — `tones.unlock()`, a few lines above — and speech never got the same
+ * treatment. iOS Safari has the same rule for `speechSynthesis` as it does for the media pool: the
+ * first `.speak()` a page ever makes is honoured reliably only when it happens inside, or immediate
+ * to, a real tap. Every actual coaching line in this app is spoken from a `setInterval`/`setTimeout`
+ * callback — a tick, a transition, a settle timer — never from a click handler directly, so on a
+ * fresh load the very first attempt to speak anything is exactly the one call least likely to be
+ * trusted. The one exception was the "Voice check" preflight button, which speaks directly in its
+ * own `onclick` — so voice worked when that button had been pressed first and otherwise did not,
+ * which reads, from the outside, as "the voice prompts didn't exist."
+ *
+ * A near-silent utterance spoken here does the same job `tones.unlock()` does for the media pool:
+ * it costs one call, made at the moment a tap is already open, so every later call from a timer
+ * inherits activation instead of trying to establish its own.
+ */
+function primeSpeech() {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    speechSynthesis.speak(u);
+  } catch { /* not fatal — later say() calls still try, they just cannot rely on this having worked */ }
+}
+
 /** Must run inside a tap. Safe to call repeatedly; it only does work once. */
 function audio() {
   if (!audioReady) {
     audioReady = true;
+    primeSpeech();
     return tones.unlock().then(ok => {
       if (!ok && tones.lastError) log(`sound blocked: ${tones.lastError.message}`, 'stop');
       return ok;

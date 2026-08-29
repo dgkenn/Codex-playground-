@@ -724,6 +724,51 @@ async function pickDay(page, kind) {
   console.log(`  ok  the pace is spoken in words while running ("${coaching[0]}")`);
 }
 
+// --- sparse GPS must not leave the coach silent -----------------------------------------------
+
+{
+  // "The pacing meter was inaccurate and had a lot of latency... the prompting that I'm going too
+  // fast or slow didn't exist." The test above updates the simulated position once a second, which
+  // is the one cadence real iOS GPS is not guaranteed to hold: watchPosition commonly delivers a fix
+  // every two to five seconds depending on signal and power state. Both the tone monitor and the
+  // spoken channel required a minimum sample COUNT inside their windows before saying anything, which
+  // is really an assumption about fix RATE wearing the clothes of a noise filter -- at a real-world
+  // rate, the minimum was never reached, not late, and neither channel ever spoke for the entire run.
+  //
+  // Same scenario as above, GPS updated once every four real seconds instead of once every one.
+  const ctx = page.context();
+  const START = { latitude: 42.3505, longitude: -71.1054 };
+  let lat = START.latitude;
+  await ctx.setGeolocation({ ...START, accuracy: 5 });
+
+  await page.click('#m-coach');
+  await page.fill('#target', '12:00');
+  await page.check('#voicecoach');
+  await page.waitForTimeout(150);
+  await page.evaluate(() => { window.__spoken.length = 0; });
+  await page.click('#go');
+
+  for (let i = 0; i < 9; i++) {
+    lat -= (3.6 * 4) / 111320;                 // same ~3.6 m/s, one fix per 4s instead of per 1s
+    await ctx.setGeolocation({ latitude: lat, longitude: START.longitude, accuracy: 5 });
+    await page.waitForTimeout(4000);
+  }
+  const spoken = await page.evaluate(() => window.__spoken);
+  const verdict = await page.textContent('#verdict').catch(() => '');
+  await page.click('#go');
+  await page.waitForTimeout(200);
+
+  const coaching = spoken.filter(l => /Ease up|Pick it up|On pace|Easy\./.test(l));
+  assert.ok(coaching.length > 0,
+    `sparse GPS must not leave the coach silent for 36 real seconds: ${JSON.stringify(spoken.slice(0, 6))}`);
+  // 'no pace signal' is what both `state: 'unknown'` and an untrusted fix render as — the one thing
+  // running steadily over target for 36 seconds with good accuracy must not still be showing.
+  assert.doesNotMatch(verdict, /no pace signal/i,
+    `the on-screen verdict must resolve rather than stay stuck: "${verdict}"`);
+  console.log(`  ok  one GPS fix every 4s still produces coaching `
+            + `(${coaching.length} lines, verdict "${verdict}")`);
+}
+
 // --- the coach must not go dark the moment an armband is actually connected ------------------------
 
 {
