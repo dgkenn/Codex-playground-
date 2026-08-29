@@ -236,6 +236,9 @@ class PaceBandMonitor:
     #: built to prevent.
     acquired: bool = False
     _window: Deque[Tuple[float, float]] = field(default_factory=deque, repr=False)
+    #: When the window started accumulating, independent of what the window itself holds -- see the
+    #: MIN_SAMPLES check in update() for why this cannot be derived from the window's own contents.
+    _window_start_t: Optional[float] = None
     _last_tone_t: Optional[float] = None
     _last_tone: Optional[Earcon] = None
     #: True while a reminder has been played that has not yet been resolved by a return to band.
@@ -277,6 +280,7 @@ class PaceBandMonitor:
             # the athlete has ever found this pace, when they were last spoken to, and how much
             # nagging they have already had are facts about the session, not about the block.
             self._window.clear()
+            self._window_start_t = None
             self.state = "unknown"
             self._pending_ack = False
             self._slow_since = None
@@ -287,15 +291,26 @@ class PaceBandMonitor:
             # No trustworthy pace. Announce the degradation once, then go quiet rather than beep
             # about a number that is not real.
             self._window.clear()
+            self._window_start_t = None
             if self.state != "unknown":
                 self.state = "unknown"
                 return self._emit(Earcon.DEGRADED, t_s, 0.0, "pace untrusted")
             return None
 
+        if self._window_start_t is None:
+            self._window_start_t = t_s
         self._window.append((t_s, pace_sec_km))
         while self._window and self._window[0][0] < t_s - SMOOTHING_S:
             self._window.popleft()
-        if len(self._window) < MIN_SAMPLES:
+        # Eight samples is right when GPS delivers roughly one fix a second, which is an assumption
+        # about the RADIO, not a fact about it. iOS commonly delivers watchPosition fixes every two
+        # to five seconds depending on signal and power state, and at that rate eight samples inside
+        # a twenty-second window never arrives -- not late, never. The band monitor would then
+        # produce nothing for the entire run: no tone, ever, on a phone whose GPS was working exactly
+        # as iOS chose to run it that day. MIN_SAMPLES is the guard against deciding off one noisy
+        # fix; SMOOTHING_S of elapsed real time, with whatever samples actually showed up, is the
+        # guard against that protection turning into permanent silence.
+        if len(self._window) < MIN_SAMPLES and t_s - self._window_start_t < SMOOTHING_S:
             return None
 
         mean_pace = sum(p for _, p in self._window) / len(self._window)

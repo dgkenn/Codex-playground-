@@ -57,6 +57,9 @@ export class PaceBandMonitor {
     this.state = 'unknown';       // unknown | in | fast | slow
     this.acquired = false;
     this.window = [];
+    // When the window started accumulating, independent of what the window itself holds — see the
+    // minSamples check below for why this cannot be derived from the window's own contents.
+    this.windowStartT = null;
     this.lastToneT = null;
     this.pendingAck = false;
     this.slowSince = null;
@@ -83,6 +86,7 @@ export class PaceBandMonitor {
       // ever found this pace, when they were last spoken to, and how much nagging they have already
       // had are facts about the session, not about the block. The rest is about a block that is over.
       this.window = [];
+      this.windowStartT = null;
       this.state = 'unknown';
       this.pendingAck = false;
       this.slowSince = null;
@@ -91,6 +95,7 @@ export class PaceBandMonitor {
     }
     if (!paceTrusted || paceSecKm == null || paceSecKm <= 0) {
       this.window = [];
+      this.windowStartT = null;
       if (this.state !== 'unknown') {
         this.state = 'unknown';
         return this._emit(Earcon.DEGRADED, tS, 0, 'pace untrusted');
@@ -98,9 +103,20 @@ export class PaceBandMonitor {
       return null;
     }
 
+    if (this.windowStartT == null) this.windowStartT = tS;
     this.window.push([tS, paceSecKm]);
     this.window = this.window.filter(([t]) => t >= tS - Tuning.smoothingS);
-    if (this.window.length < Tuning.minSamples) return null;
+    // Eight samples is right when GPS delivers roughly one fix a second, which is an assumption
+    // about the RADIO, not a fact about it. iOS commonly delivers watchPosition fixes every two to
+    // five seconds depending on signal and power state, and at that rate eight samples inside a
+    // twenty-second window never arrives — not late, never. The band monitor would then produce
+    // nothing for the entire run: no tone, ever, on a phone whose GPS was working exactly as iOS
+    // chose to run it that day. `minSamples` is the guard against deciding off one noisy fix;
+    // `smoothingS` of elapsed real time, with whatever samples actually showed up, is the guard
+    // against that protection turning into permanent silence.
+    if (this.window.length < Tuning.minSamples && tS - this.windowStartT < Tuning.smoothingS) {
+      return null;
+    }
 
     const mean = this.window.reduce((a, [, p]) => a + p, 0) / this.window.length;
     const adjusted = this.targetPaceSecKm * gradeAdjustedPaceFactor(grade);

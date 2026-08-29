@@ -394,3 +394,20 @@ def test_the_backoff_resets_once_you_comply():
     events = drive(m, [390.0] * 60, start=420)
     assert events, "a fresh excursion was not reported at all"
     assert events[0].t_s - 420 < 30, "the reminder after complying should be prompt again"
+
+
+def test_sparse_gps_still_produces_tones():
+    """"The prompting that I'm going too fast or slow didn't exist."
+
+    MIN_SAMPLES=8 inside a twenty-second SMOOTHING_S window assumes GPS delivers roughly a fix a
+    second, which is a property of the radio, not a guarantee of it. iOS commonly delivers
+    watchPosition fixes every two to five seconds depending on signal and power state -- every other
+    test in this file feeds one fix per simulated second, which is exactly the assumption this one
+    does not make. At one fix every four seconds, eight-in-twenty never arrives: not late, never, for
+    the entire run, with no error anywhere to say why.
+    """
+    m = PaceBandMonitor(target_pace_sec_km=TARGET)
+    events = [m.update(t, TARGET * 0.7) for t in range(0, 300, 4)]     # 1 fix/4s, 30% too fast
+    events = [e for e in events if e]
+    assert events, "a fix every four seconds must still produce tones, not permanent silence"
+    assert all(e.earcon == Earcon.EASE for e in events)
