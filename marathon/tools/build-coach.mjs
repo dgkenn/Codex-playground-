@@ -96,12 +96,45 @@ html = html.replace('/*{{BUILD}}*/', JSON.stringify({ id: stamp, at: built }));
 // Every module here is inlined into ONE scope, so every top-level name in every module shares a
 // namespace with every other. That makes collisions a structural hazard of the design rather than a
 // slip, and a build that cannot detect its own broken output is not a build.
+const body = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 try {
-  const body = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
   new Function(body);
 } catch (e) {
   throw new Error(`the assembled page does not parse: ${e.message}\n`
                 + '  Most likely two inlined modules declare the same top-level name.');
+}
+
+// Does it reference a name nothing ever declared?
+//
+// It did. `tickCoach` read `govern` in a plain boolean expression, and no version of the function's
+// signature after the run/walk governance change actually declared it — a parameter dropped in one
+// edit while the body that reads it survived. `new Function(body)` above does not catch this: parsing
+// a script never evaluates it, and reading an undeclared name is a runtime ReferenceError, not a
+// syntax error. It hid behind `&&` short-circuiting besides — the branch that reaches `govern` is
+// only live once an armband is connected and reporting a fresh heart rate, a condition no test and
+// no manual click-through without real Bluetooth had ever created.
+//
+// This is exactly what a linter's `no-undef` rule is for: it does not need to know what the code
+// means, only that every name it reads was declared somewhere reachable. Soft-fails when eslint is
+// not on the machine, the same way the browser suite skips without playwright-core — the build must
+// not depend on a tool this project has never asked anyone to install permanently.
+try {
+  const { execFileSync } = await import('node:child_process');
+  const out = execFileSync(
+    'eslint',
+    ['--no-config-lookup', '-c', join(here, 'eslint.no-undef.config.mjs'), '--stdin',
+     '--stdin-filename=page.js'],
+    { input: body, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
+  );
+  void out;
+} catch (e) {
+  if (e.code === 'ENOENT') {
+    console.warn('  (skipping the undeclared-name check: eslint is not installed)');
+  } else if (typeof e.status === 'number') {
+    throw new Error(`the assembled page references a name nothing declared:\n${e.stdout}`);
+  } else {
+    throw e;
+  }
 }
 
 // Both docs folders, because they serve different routes and had already drifted apart:
