@@ -76,6 +76,10 @@ export class PaceVoice {
 
     this.window = [];
     this.nextAt = null;         // when the next line is due; null while stood down
+    // When the window started accumulating toward MIN_SAMPLES, independent of the window's own
+    // contents -- see the gate in `update` for why sample COUNT and elapsed TIME are different
+    // questions once real GPS delivery is sparser than the window's own filtering assumes.
+    this.windowStartT = null;
     this.spoken = 0;
     this.lostSignal = false;
   }
@@ -90,12 +94,13 @@ export class PaceVoice {
    */
   begin(tS) {
     this.window = [];
+    this.windowStartT = null;
     this.nextAt = tS + this.settleS;
     this.lostSignal = false;
   }
 
   /** Stop speaking. The next `begin` starts a fresh cadence. */
-  standDown() { this.nextAt = null; this.window = []; }
+  standDown() { this.nextAt = null; this.window = []; this.windowStartT = null; }
 
   /** The band, as [fast, slow] in seconds per km. */
   band() {
@@ -114,6 +119,7 @@ export class PaceVoice {
 
     if (!trusted || !(paceSecKm > 0)) {
       this.window = [];
+      this.windowStartT = null;
       // Said once per outage, not every second. The number cannot be reported, and saying so is the
       // only honest thing -- but a phone repeating "no signal" under trees is its own problem.
       if (!this.lostSignal && tS >= this.nextAt) {
@@ -125,9 +131,19 @@ export class PaceVoice {
     }
     this.lostSignal = false;
 
+    if (this.windowStartT == null) this.windowStartT = tS;
     this.window.push([tS, paceSecKm]);
     this.window = this.window.filter(([t]) => t >= tS - SMOOTHING_S);
-    if (tS < this.nextAt || this.window.length < MIN_SAMPLES) return null;
+    // Four fixes inside ten seconds assumes GPS delivers roughly one a second, which is a property
+    // of the radio, not a guarantee of it. iOS commonly delivers watchPosition fixes every two to
+    // five seconds depending on signal and power state -- at which rate four-in-ten never arrives,
+    // and this channel would never speak again for the rest of the run. This was found by driving a
+    // 30%-too-fast session through it at one fix every four seconds: zero lines in five minutes,
+    // silently, with no error and nothing on screen to say why. MIN_SAMPLES still guards against
+    // speaking off one noisy fix; SMOOTHING_S of elapsed real time, with whatever showed up, guards
+    // against that turning into the channel going dark for a run whose GPS was merely being normal.
+    if (tS < this.nextAt
+        || (this.window.length < MIN_SAMPLES && tS - this.windowStartT < SMOOTHING_S)) return null;
 
     this.nextAt = tS + this.everyS;
     this.spoken += 1;

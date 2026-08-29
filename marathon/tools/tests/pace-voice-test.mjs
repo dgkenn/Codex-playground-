@@ -179,4 +179,25 @@ function session(voice, paceOf, { reps = 7, runS = 120, walkS = 120 } = {}) {
   console.log('  ok  a session with no target says nothing rather than guessing');
 }
 
+{
+  // "The prompting that I'm going too fast or slow didn't exist." Reproduced: MIN_SAMPLES=4 inside a
+  // ten-second window assumes GPS delivers roughly one fix a second. It does not have to. iOS
+  // commonly delivers watchPosition fixes every two to five seconds depending on signal and power
+  // state, and at anything slower than one every 2.5s, four-in-ten never arrives -- not late, never.
+  // Every earlier test in this file fed a fix every simulated second, which is exactly the assumption
+  // this test does not make.
+  const voice = new PaceVoice({ targetSecKm: TARGET, tolerance: 0.06, formatPace: perMile });
+  voice.begin(0);
+  const said = [];
+  for (let t = 0; t < 300; t += 4) {           // one fix every four seconds, five real minutes
+    const ev = voice.update(t, TARGET * 0.7, { running: true, trusted: true });   // 30% too fast
+    if (ev) said.push(ev);
+  }
+  assert.ok(said.length > 0,
+    'a fix every four seconds must still produce spoken lines, not permanent silence');
+  assert.ok(said.every(s => /Ease up\./.test(s.text)),
+    `and the lines must still name the fault: ${JSON.stringify(said.slice(0, 2))}`);
+  console.log(`  ok  sparse GPS (one fix per 4s) still speaks (${said.length} lines in 5 min)`);
+}
+
 console.log('\nAll pace-voice tests passed.');
