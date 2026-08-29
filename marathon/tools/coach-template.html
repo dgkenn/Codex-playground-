@@ -1750,7 +1750,14 @@ function recordSample(t, label = '') {
   });
 }
 
-function tickCoach(t, pace, trusted, { running = true } = {}) {
+function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
+  // `govern` was dropped from this signature in a later edit while the body still read it --
+  // a bare, unguarded identifier reference, so it throws ReferenceError the instant the
+  // condition that reaches it is true: an armband connected and reporting a fresh heart rate.
+  // Everything past that line in this function never ran -- no tone, no split, no spoken
+  // pace, no verdict, no map -- while the elapsed clock above it kept ticking normally,
+  // because it is set before tickCoach is ever called. A clock moving on a screen that
+  // otherwise does nothing is exactly what got reported.
   // Read here rather than inherited from the caller. These moved out with `recordSample` and left
   // two free variables behind — which throws on the first tick of a real run, in the mode that
   // matters most, and in the one place the rehearsal never reaches.
@@ -2094,7 +2101,7 @@ function tick() {
     // stand down — it drops its smoothing window, so the walk does not drag the average out of the
     // band and earn a "lift" tone thirty seconds into a break that is meant to be slow.
     tickCoach(t, S.track.paceSecKm, S.track.trustedAt(nowSeconds()),
-              { running: S.ivPhase === 'run' });
+              { running: S.ivPhase === 'run', govern: 'pace' });
     while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
     drawMap();
     return;

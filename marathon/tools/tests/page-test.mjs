@@ -724,6 +724,73 @@ async function pickDay(page, kind) {
   console.log(`  ok  the pace is spoken in words while running ("${coaching[0]}")`);
 }
 
+// --- the coach must not go dark the moment an armband is actually connected ------------------------
+
+{
+  // The regression this guards against never touched a code path any prior test reached: every test
+  // above runs with no armband, so `fresh` is always false and the branch that crashed was never
+  // evaluated -- short-circuiting hid it completely. It only fires once heart rate is actually
+  // flowing, which is the one condition real use always has and no earlier test ever created.
+  //
+  // A minimal fake GATT chain, so this runs through the real connect() rather than reaching into
+  // page internals: requestDevice -> gatt.connect -> the heart-rate service and characteristic
+  // sensor.js actually asks for, notifying one frame (flags 0x00, HR 138) once notifications start.
+  await page.addInitScript(() => {
+    function fakeCharacteristic(value) {
+      const listeners = [];
+      return {
+        value,
+        async startNotifications() { return this; },
+        addEventListener(type, fn) { if (type === 'characteristicvaluechanged') listeners.push(fn); },
+        _fire() { for (const fn of listeners) fn({ target: { value: this.value } }); },
+      };
+    }
+    const hrChar = fakeCharacteristic(new DataView(new Uint8Array([0x00, 138]).buffer));
+    const hrService = { getCharacteristic: async () => hrChar };
+    const gatt = {
+      connected: false,
+      connect: async function () { this.connected = true; return this; },
+      getPrimaryService: async id => {
+        if (id === '0000180d-0000-1000-8000-00805f9b34fb') return hrService;
+        throw new Error('service not present on this fake device');   // battery, PMD: both optional
+      },
+    };
+    const device = { name: 'Fake Verity Sense', gatt, addEventListener() {} };
+    navigator.bluetooth = {
+      requestDevice: async () => device,
+      // No getDevices: sensor.js treats its absence as a normal outcome and skips straight to the
+      // picker, which this stands in for.
+    };
+    window.__fireHr = () => hrChar._fire();
+  });
+  const errorsBefore = errors.length;
+  await page.reload();
+
+  await page.click('#connect');
+  await page.waitForFunction(() => document.getElementById('connect').textContent === 'Disconnect',
+    { timeout: 5000 });
+  await page.evaluate(() => window.__fireHr());
+  await page.waitForTimeout(200);
+  assert.match(await page.textContent('#hrbig'), /138/, 'the fake heart rate must actually register');
+
+  await page.click('#m-coach');
+  await page.fill('#target', '9:00');
+  await page.waitForTimeout(120);
+  await page.click('#go');
+
+  for (let i = 0; i < 4; i++) {
+    await page.evaluate(() => window.__fireHr());     // keep the reading fresh through every tick
+    await page.waitForTimeout(1000);
+  }
+  assert.equal(errors.length, errorsBefore,
+    `an armband reporting heart rate must not break the coach: ${JSON.stringify(errors.slice(errorsBefore))}`);
+  const elapsed = await page.textContent('#elapsed');
+  assert.match(elapsed, /^0:0[3-6]$/, `the run must actually be live, not stalled: "${elapsed}"`);
+  await page.click('#go');
+  await page.waitForTimeout(200);
+  console.log('  ok  a connected armband reporting heart rate does not break the coach');
+}
+
 // --- a wedged speech engine does not go silent for the rest of the run ----------------------------
 
 {
