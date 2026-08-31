@@ -96,6 +96,11 @@
    "status": "deprecated",
    "first_seen": "2026-08-17"
   },
+  "KXHIGHTEWR": {
+   "title": "Newark, NJ (EWR) Daily Max Temp",
+   "status": "unknown",
+   "first_seen": "2026-08-31"
+  },
   "KXHIGHTHOU": {
    "title": "Daily High Temperature Houston",
    "status": "active",
@@ -133,7 +138,7 @@
   },
   "KXHIGHTMMMX": {
    "title": "Daily high temp Mexico City",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTNOLA": {
@@ -158,7 +163,7 @@
   },
   "KXHIGHTRJTT": {
    "title": "Daily high temp Tokyo",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTRKSI": {
@@ -168,7 +173,7 @@
   },
   "KXHIGHTSAN": {
    "title": "High Temperature San Diego",
-   "status": "unknown",
+   "status": "active",
    "first_seen": "2026-08-24"
   },
   "KXHIGHTSATX": {
@@ -181,6 +186,11 @@
    "status": "deprecated",
    "first_seen": "2026-08-17"
   },
+  "KXHIGHTSDF": {
+   "title": "HIGHEST Temperature SATX",
+   "status": "active",
+   "first_seen": "2026-08-31"
+  },
   "KXHIGHTSEA": {
    "title": "Seattle Maximum Temperature Daily",
    "status": "active",
@@ -191,9 +201,14 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXHIGHTTTN": {
+   "title": "Trenton, NJ Daily Max Temp",
+   "status": "active",
+   "first_seen": "2026-08-31"
+  },
   "KXHIGHTVABB": {
    "title": "Daily high temp Mumbai",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTVHHH": {
@@ -213,7 +228,7 @@
   },
   "KXHIGHTZBAA": {
    "title": "Beijing Daily High Temperature",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTZSPD": {
@@ -313,12 +328,12 @@
   },
   "KXLOWTEDDB": {
    "title": "Daily Low Temp Berlin ",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTEDDF": {
    "title": "Daily low temp Frankfurt",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTEGLL": {
@@ -331,6 +346,11 @@
    "status": "deprecated",
    "first_seen": "2026-08-17"
   },
+  "KXLOWTEWR": {
+   "title": "Newark, NJ (EWR) Daily Low Temp",
+   "status": "unknown",
+   "first_seen": "2026-08-31"
+  },
   "KXLOWTHOU": {
    "title": "Low Temperature Houston",
    "status": "active",
@@ -338,7 +358,7 @@
   },
   "KXLOWTKSAN": {
    "title": "Low Temperature San Diego",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTLAX": {
@@ -358,12 +378,12 @@
   },
   "KXLOWTLSSG": {
    "title": "Daily low temp Geneva",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTLTFM": {
    "title": "Daily low temp Istanbul",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTLV": {
@@ -418,7 +438,7 @@
   },
   "KXLOWTRJTT": {
    "title": "Daily low temp Tokyo",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTRKSI": {
@@ -441,6 +461,11 @@
    "status": "unknown",
    "first_seen": "2026-08-17"
   },
+  "KXLOWTSDF": {
+   "title": "Lowest Temperature SDX",
+   "status": "active",
+   "first_seen": "2026-08-31"
+  },
   "KXLOWTSEA": {
    "title": "Low Temperature Seattle",
    "status": "active",
@@ -451,9 +476,14 @@
    "status": "active",
    "first_seen": "2026-07-19"
   },
+  "KXLOWTTTN": {
+   "title": "Trenton Daily low temp ",
+   "status": "active",
+   "first_seen": "2026-08-31"
+  },
   "KXLOWTVABB": {
    "title": "Daily low temp Mumbai",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTVHHH": {
