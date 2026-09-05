@@ -128,6 +128,37 @@ const north = (from, m) => ({ lat: from.lat + m / 111132.92, lon: from.lon });
 }
 
 {
+  // No Doppler at all, which some fixes and some devices simply do not supply. Pace then has to come
+  // out of the positions, and HOW it comes out of them decides whether the number is usable.
+  //
+  // Differencing consecutive fixes is biased, and only ever one way: haversine returns a magnitude,
+  // so jitter can lengthen an apparent step but never shorten it, and nothing cancels. At one fix a
+  // second a jogger covers 2.2 m while the jitter is +/-4 m, so the noise is the larger term. The old
+  // fallback did exactly that and told a 12:04/mi jogger they were running 9:16 — a number that would
+  // have had the athlete slowing down to hit a pace they were already holding.
+  //
+  // Displacement over the five-second baseline instead. It under-reads slightly on bends, which is
+  // the honest cost and is a couple of percent.
+  const TRUE_MS = 2.222;                    // 8.0 km/h, the prescribed run-block jog
+  const g = new GpsTrack();
+  let lat = BOSTON.lat, seed = 11;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648 - 0.5;
+  for (let t = 0; t <= 180; t++) {
+    lat += TRUE_MS / 111320;
+    g.add({ lat: lat + (rnd() * 8) / 111320, lon: BOSTON.lon,
+            accuracy: 8, speed: null, t });     // speed: null — no Doppler
+  }
+  const truthSecKm = 1000 / TRUE_MS;
+  const errPct = ((g.paceSecKm - truthSecKm) / truthSecKm) * 100;
+  assert.ok(Math.abs(errPct) < 15,
+    `no-Doppler pace is off by ${errPct.toFixed(1)}% (${g.paceSecKm.toFixed(0)} vs ${truthSecKm.toFixed(0)} s/km)`);
+  // Direction matters as much as magnitude: reading fast is the failure that makes an athlete slow
+  // down below their target, so the fallback must never land on the optimistic side by much.
+  assert.ok(errPct > -8, `no-Doppler pace reads ${(-errPct).toFixed(1)}% fast, the old bias`);
+  console.log(`  ok  pace without Doppler is within ${errPct.toFixed(1)}% of truth, not 23% fast`);
+}
+
+{
   const g = new GpsTrack();
   g.add({ ...BOSTON, accuracy: 8, speed: 2.8, t: 0 });
   assert.equal(g.trustedAt(2), true);

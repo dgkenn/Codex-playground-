@@ -36,8 +36,17 @@
 // independent channel over the same measurement, with its own cadence rules, and the page can run
 // either or both.
 
-/** Seconds of pace history the spoken number is averaged over. */
-export const SMOOTHING_S = 10;
+/**
+ * Seconds of pace history the spoken number is averaged over.
+ *
+ * Small on purpose, because this is the SECOND filter in the chain, not the first: what arrives here
+ * is already a trailing mean over GeoDefaults.smoothS (fifteen) seconds of GPS speed. Averaging that
+ * again over ten seconds bought very little noise reduction and cost a great deal of lag -- the two
+ * windows add, so the spoken number was not purely about the current run block until twenty-five
+ * seconds into it, a fifth of a two-minute block. Five keeps the guard against speaking off a single
+ * odd fix (MIN_SAMPLES is the real defence there anyway) without paying for smoothing already done.
+ */
+export const SMOOTHING_S = 5;
 
 /** How often to speak while running. */
 export const EVERY_S = 22;
@@ -45,10 +54,28 @@ export const EVERY_S = 22;
 /**
  * How long after a block starts before the first line.
  *
- * GPS speed lags a change of pace by several seconds, so announcing at the instant a run block opens
- * would report the walk that preceded it -- the most misleading possible moment to be precise.
+ * GPS speed lags a change of pace, so announcing at the instant a run block opens would report the
+ * walk that preceded it -- the most misleading possible moment to be precise.
+ *
+ * This was nine seconds, chosen as "several", and nine is not enough. Driving a full 5 x (40 s run /
+ * 30 s walk) session through the built page with every run block taken 20% too fast, the first line
+ * of four blocks out of five was a number from the walk break:
+ *
+ *     1:11  Run - rep 2/5        1:20  "13:46. Easy."      (he was running 10:05)
+ *     3:31  Run - rep 4/5        3:40  "12:40. On pace."   (he was running 10:05)
+ *     4:41  Run - rep 5/5        4:50  "13:47. Easy."      (he was running 10:05)
+ *
+ * Every later line in every block read 10:05 and said "Ease up", correctly. So the channel worked
+ * and the opening line of each block was worse than saying nothing: it told an athlete who had just
+ * set off too fast -- the single mistake this whole plan exists to coach out -- that he was fine, at
+ * the one moment in the block when the correction is cheapest to make.
+ *
+ * The number is not arbitrary any more. Two windows sit between the legs and the sentence and they
+ * add: GeoDefaults.smoothS (fifteen seconds of GPS speed) and this module's own SMOOTHING_S (five).
+ * Until both have emptied of the walk break, the number is partly about the walk however it is
+ * phrased -- so the settle is their sum, and the first line of a block is the first honest one.
  */
-export const SETTLE_S = 9;
+export const SETTLE_S = 20;
 
 /** Minimum samples before any number is spoken. Below this the average is not one. */
 export const MIN_SAMPLES = 4;

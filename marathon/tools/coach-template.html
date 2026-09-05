@@ -749,6 +749,7 @@ function say(text) {
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 1.08;
   S.lastSpeechAt = Date.now();
+  S.speechFreeAt = Date.now() + spokenMs(text);
   S.speechOk = null;
   u.onstart = () => { S.speechOk = true; };
   u.onerror = e => {
@@ -758,10 +759,51 @@ function say(text) {
   try { speechSynthesis.speak(u); } catch (e) { log(`speech failed: ${e.message}`, 'stop'); }
 }
 
+/**
+ * Roughly how long `text` will take to speak, in milliseconds.
+ *
+ * The cancel-before-speak in `say` is what keeps a stuck iOS queue from swallowing the rest of the
+ * run, and it is worth its cost — but the cost is real: whatever was mid-sentence is cut off. That
+ * is right when the new line supersedes the old one ("Run. Interval 3 of 7." beating a stale pace
+ * reading) and wrong when it does not. A mile split is spoken 420 ms into its second and takes
+ * about two and a half; the spoken pace channel runs on its own 22-second clock and can land in the
+ * very next tick, cutting "1 mile. 14 29. On pace." off after two words. The `!line` guard in
+ * tickCoach only covers a collision inside the SAME second, which is the one case that was easy to
+ * see.
+ *
+ * So: estimate the duration, and let the periodic channel — the only one that repeats, and so the
+ * only one that loses nothing by waiting — yield to anything still being said. Everything else
+ * still cancels, because everything else is news.
+ *
+ * Fourteen characters a second is measured off the app's own lines at rate 1.08; the floor covers
+ * "Walk." and friends, where the estimate matters least and being generous costs nothing.
+ */
+const spokenMs = text => Math.max(1200, Math.round((String(text).length / 14) * 1000));
+
+/** Is something still being spoken that a merely-periodic cue should not interrupt? */
+const speechBusy = () => Date.now() < (S.speechFreeAt || 0);
+
+/**
+ * Speak `text` after the chime that introduces it has had time to clear.
+ *
+ * The delay is the whole reason this needs to reserve the channel up front: between the chime and
+ * the words there is a gap in which nothing is speaking, so `speechBusy` would say the channel is
+ * free and let the periodic pace line take it — and then this fires 420 ms later and cancels the
+ * line that just started. Claiming the slot at scheduling time closes that window.
+ */
+function sayShortly(text, delayMs = 420) {
+  S.speechFreeAt = Date.now() + delayMs + spokenMs(text);
+  setTimeout(() => say(text), delayMs);
+}
+
 /** Force the speech engine out of a stuck state. Safe to call when nothing is queued. */
 function resetSpeech() {
   if (!('speechSynthesis' in window)) return;
   try { speechSynthesis.cancel(); } catch { /* nothing to cancel */ }
+  // Nothing is being spoken any more, so nothing should be deferring to it. Leaving the reservation
+  // standing after a reset would mute the periodic channel for the length of a line that was just
+  // thrown away -- small, but exactly the class of thing that makes the coach quieter than it looks.
+  S.speechFreeAt = 0;
 }
 
 /// How long a genuine utterance ever runs. The longest line in this app is a couple of sentences at
@@ -1845,14 +1887,23 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
         ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast');
   }
   const line = S.splits.update(t, S.track.distanceFromSpeedM, pace, S.monitor.state);
-  if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
+  if (line) { play('attend'); sayShortly(line); log(`“${line}”`); }
 
   // The spoken channel, on its own clock rather than on a threshold crossing.
   //
   // Deliberately after the split, and deliberately skipped in the same second as one: a split is
   // already a spoken line carrying a pace, and two utterances queued back to back is how iOS drops
   // the second one. The split is the more informative of the two, so it wins the second.
-  if (voiceCoaching && S.voice && !line) {
+  //
+  // The `!line` guard covers a split and a pace line landing in the same second. It does not cover
+  // the next second, and that is where the collision actually happens: the split is spoken 420 ms in
+  // and runs for about two and a half seconds, so a pace line one tick later cancels it after two
+  // words. `speechBusy` is the general form of the same idea, and also covers the interval
+  // announcement, the armband-lost notice, and anything else that got there first. This channel is
+  // the one that repeats — deferring a line costs a single reading, and it is due again in 22 s.
+  //
+  // Checked BEFORE `update`, so the module's own clock does not advance on a line nobody hears.
+  if (voiceCoaching && S.voice && !line && !speechBusy()) {
     const v = S.voice.update(t, pace, { running, trusted });
     if (v) { say(v.text); log(`“${v.text}”`, v.kind === 'in' ? 'on' : 'fast'); }
   }
@@ -1951,7 +2002,7 @@ function tickRamp(t) {
   if (sn && sn.hrFresh() && sn.hr >= rampStopHr() && !S.rampStopped) {
     S.rampStopped = true;
     play('ease');
-    setTimeout(() => say('That is your stop point. Ease down to a walk.'), 420);
+    sayShortly('That is your stop point. Ease down to a walk.');
     log(`heart rate ${sn.hr} reached the stop point (${rampStopHr()}) — ending the test`, 'stop');
     return finish('Stopped at the heart-rate ceiling.');
   }
@@ -1978,7 +2029,7 @@ function tickRamp(t) {
     // The only part of the stage the fit uses, and the only moment the talk test can happen. No
     // sensor can recover this observation afterwards, so it has to be asked for out loud.
     play('attend');
-    setTimeout(() => say('Final minute. Say a sentence out loud.'), 420);
+    sayShortly('Final minute. Say a sentence out loud.');
     log(`${ev.step.label} — final minute, talk test`, 'dim');
     return;
   }
@@ -2005,7 +2056,7 @@ function tickRamp(t) {
     spoken = step.say;
   }
   const extra = step.kind === 'stage' && S.rampNotes ? ` ${S.rampNotes}` : '';
-  setTimeout(() => say(spoken + extra), 420);
+  sayShortly(spoken + extra);
 
   if (S.rampOutdoor) armRampStage(step);
 
@@ -2049,9 +2100,9 @@ function tickIntervals(t) {
   const word = run ? 'Run' : 'Walk';
   if (run) S.voice && S.voice.begin(t); else S.voice && S.voice.standDown();
   play('attend');
-  setTimeout(() => say(run
+  sayShortly(run
     ? `Run. Interval ${S.ivRep} of ${reps}. Target ${U.pace(targetSecKm)}.`
-    : 'Walk. Ease right down.'), 420);
+    : 'Walk. Ease right down.');
   log(`${word} — ${S.ivPhase === 'run' ? `rep ${S.ivRep}/${reps}` : 'recover'}`,
       S.ivPhase === 'run' ? 'fast' : 'on');
   $('pace').textContent = word.toUpperCase();
@@ -2083,7 +2134,7 @@ function tickRehearse() {
     // Simulated clock and distance — the rehearsal has no track, and reading the live one here
     // would make a replay indoors depend on whether GPS happened to be running.
     const line = S.splits.update(S.simT, S.simDist, pace, S.monitor.state);
-    if (line) { play('attend'); setTimeout(() => { say(line); log(`“${line}”`); }, 420); }
+    if (line) { play('attend'); sayShortly(line); log(`“${line}”`); }
     $('pace').textContent = readoutText(pace);
     setMarker(pace);
     showVerdict(S.monitor.state, true);
@@ -2213,7 +2264,7 @@ function startSpeechWatchdog() {
     const stuck = speechSynthesis.speaking && Date.now() - S.lastSpeechAt > SPEECH_STUCK_MS;
     if (stuck) {
       log('speech engine looked stuck — reset', 'stop');
-      resetSpeech();
+      resetSpeech();                    // also clears the reservation
       S.lastSpeechAt = 0;
     }
   }, 4000);
@@ -2465,6 +2516,7 @@ $('go').onclick = () => {
   // warm-up walk, and the first line of each block has to wait out its own settle.
   if (S.mode === 'coach' && S.voice) S.voice.begin(0);
   S.lastSpeechAt = 0;
+  S.speechFreeAt = 0;
   startSpeechWatchdog();
   S.tickId = setInterval(tick, 1000);
   // The band went flat halfway through a session and nothing warned. The level was read once at
@@ -2713,6 +2765,10 @@ $('diag').onclick = async () => {
     },
     gps: {
       accepted: S.track.accepted, rejected: S.track.rejected,
+      // Which speed path the pace actually came from. Doppler is exact; without it the pace is
+      // differenced positions, which is good but not that good — so a pacing complaint reads
+      // differently depending on this number.
+      dopplerFixes: S.track.doppler,
       lastAccuracy: S.track.lastAccuracy, distanceM: Math.round(S.track.distanceM),
       permission: geoPermission,
       lastError: S.geoError ? `${S.geoError.code}: ${S.geoError.message}` : null,
@@ -2732,6 +2788,10 @@ $('diag').onclick = async () => {
       mode: S.mode, running: S.running,
       elapsedS: S.startedAt ? Math.round((Date.now() - S.startedAt) / 1000) : 0,
       samples: S.samples.length, tones: S.tones,
+      // "The pacing tones never really came" and "no prompting" are the same sentence from the
+      // outside and completely different bugs underneath: one channel firing and inaudible, versus
+      // neither channel firing at all. Two counters separate them without having to guess.
+      spokenLines: S.voice ? S.voice.spoken : null,
       governedBy: S.governedBy,
       planned: S.plannedSession ? S.plannedSession.title : null,
     },

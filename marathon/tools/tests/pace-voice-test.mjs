@@ -6,7 +6,8 @@
 // exists for a real gap is checked rather than asserted.
 
 import assert from 'node:assert/strict';
-import { PaceVoice, EVERY_S, SETTLE_S } from '../pace-voice.js';
+import { PaceVoice, EVERY_S, SETTLE_S, SMOOTHING_S } from '../pace-voice.js';
+import { GeoDefaults } from '../geo.js';
 import { PaceBandMonitor } from '../pace-monitor.js';
 
 const MI = 1609.344;
@@ -124,6 +125,46 @@ function session(voice, paceOf, { reps = 7, runS = 120, walkS = 120 } = {}) {
       `the cadence must be regular: ${JSON.stringify(said)}`);
   }
   console.log(`  ok  first line at ${said[0]}s, then every ${EVERY_S}s (${said.length} in 5 min)`);
+}
+
+{
+  // The settle has to be long enough for the number to be about THIS block.
+  //
+  // Every assertion above is written against SETTLE_S itself, so they hold at any value and none of
+  // them can catch the value being wrong. This one is written against the physics instead: the pace
+  // handed to this module is a trailing mean over GeoDefaults.smoothS seconds of GPS, so for the
+  // first smoothS seconds of a run block that mean still contains the walk break, by construction.
+  //
+  // At the old nine seconds a full run of the built page opened four blocks out of five with a walk
+  // pace -- "13:46. Easy." to a man running 10:05 -- which is worse than silence, because it says
+  // the too-fast start he has just made is fine at the one moment correcting it is cheap.
+  const WALK = TARGET * 2.4, RUN = TARGET / 1.2;      // a walk break, then the block taken 20% fast
+  const SMOOTH = GeoDefaults.smoothS;
+  const voice = new PaceVoice({ targetSecKm: TARGET, tolerance: 0.06, ceilingOnly: true,
+                                formatPace: perMile });
+  voice.begin(0);
+  let first = null;
+  for (let t = 0; t < 120 && !first; t++) {
+    // What geo.js would be reporting: a trailing mean of the last SMOOTH seconds of true speed,
+    // where everything before t=0 was the walk break.
+    const win = [];
+    for (let k = 0; k < SMOOTH; k++) win.push(t - k <= 0 ? WALK : RUN);
+    const shown = win.reduce((a, b) => a + b, 0) / win.length;
+    const ev = voice.update(t, shown, { running: true, trusted: true });
+    if (ev) first = { t, ev };
+  }
+  assert.ok(first, 'a run block must produce a spoken line');
+  // Both windows, not just the GPS one: this module averages again on top of what geo hands it, and
+  // a spoken number is only about this block once BOTH have emptied of the walk.
+  assert.ok(first.t >= SMOOTH + SMOOTHING_S,
+    `the first line must wait out both smoothing windows (${SMOOTH}+${SMOOTHING_S}s): ${first.t}s`);
+  // The claim that matters, stated as the athlete would hear it: the direction must be the true one.
+  assert.match(first.ev.text, /Ease up/,
+    `the opening line of a block taken 20% too fast must say so, not "${first.ev.text}"`);
+  const errPct = ((first.ev.paceSecKm - RUN) / RUN) * 100;
+  assert.ok(Math.abs(errPct) < 8,
+    `and must name a pace from this block, not the walk before it: ${first.ev.text} (${errPct.toFixed(0)}% off)`);
+  console.log(`  ok  the block's opening line is about the block ("${first.ev.text}" at ${first.t}s)`);
 }
 
 {
