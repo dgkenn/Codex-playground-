@@ -241,4 +241,56 @@ function session(voice, paceOf, { reps = 7, runS = 120, walkS = 120 } = {}) {
   console.log(`  ok  sparse GPS (one fix per 4s) still speaks (${said.length} lines in 5 min)`);
 }
 
+// --- when heart rate governs, heart rate decides the word ------------------------------------------
+
+{
+  // The recorded session: told "on pace" by pace while heart rate climbed 137 -> 162, because pace
+  // never knew. Under HR governance the block ends at a ceiling, so the direction word has to come
+  // from the margin to that ceiling -- and both numbers are spoken, the pace as information.
+  const say = (hr, ceilingBpm) => {
+    const voice = new PaceVoice({ targetSecKm: TARGET, tolerance: 0.06, formatPace: perMile });
+    voice.begin(0);
+    let line = null;
+    for (let t = 0; t < 60 && !line; t++) {
+      line = voice.update(t, TARGET * 0.95, { running: true, trusted: true, hr, ceilingBpm });
+    }
+    return line;
+  };
+  const fine = say(138, 150);
+  assert.match(fine.text, /^\d+:\d\d\. Heart rate 138\. Good\.$/, `both numbers, then the word: "${fine.text}"`);
+  assert.equal(fine.kind, 'in');
+  // 5% faster than target -- the PACE band would have said "ease up". Heart rate says it is fine,
+  // and heart rate is what ends the block, so heart rate wins.
+  const near = say(146, 150);
+  assert.match(near.text, /Ease off\.$/, `five beats from the ceiling must warn: "${near.text}"`);
+  assert.equal(near.kind, 'fast');
+  const at = say(151, 150);
+  assert.match(at.text, /At the ceiling\.$/, `over it must say so: "${at.text}"`);
+  // And without heart rate the old pace-band words are unchanged.
+  const paceOnly = say(null, null);
+  assert.match(paceOnly.text, /On pace\.$/, `no heart rate falls back to the pace band: "${paceOnly.text}"`);
+  console.log(`  ok  with heart rate governing, the word comes from the margin `
+            + `("${fine.text}" / "${near.text}")`);
+}
+
+{
+  // The walk break was the larger fault: 384 s above threshold while walking, because a brisk walk at
+  // this fitness is a second workout. If heart rate has not come down a minute into the walk, say so
+  // -- once. A phone repeating "slow down" to someone already walking is its own problem.
+  const voice = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile });
+  voice.beginWalk(100, 158);
+  assert.equal(voice.walkUpdate(130, 157), null, 'nothing is judged before a minute has passed');
+  const said = voice.walkUpdate(161, 156);                   // a minute in, down only 2 bpm
+  assert.ok(said && /Slow right down/.test(said.text), `a walk that is not working must be named: ${JSON.stringify(said)}`);
+  assert.equal(voice.walkUpdate(170, 156), null, 'and only once per walk');
+  assert.equal(voice.walkUpdate(200, 140), null, 'even after it starts working');
+
+  // A walk that IS working stays quiet.
+  const ok = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile });
+  ok.beginWalk(0, 158);
+  assert.equal(ok.walkUpdate(61, 149), null, 'a 9 bpm drop in a minute is the walk doing its job');
+  assert.equal(ok.walkUpdate(120, 140), null, 'and it is not re-judged later in the same walk');
+  console.log('  ok  a walk that is not bringing heart rate down gets one line, a working one gets none');
+}
+
 console.log('\nAll pace-voice tests passed.');

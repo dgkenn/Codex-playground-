@@ -84,6 +84,22 @@ export const SETTLE_S = 30;
 /** Minimum samples before any number is spoken. Below this the average is not one. */
 export const MIN_SAMPLES = 4;
 
+/**
+ * Within this many beats of the ceiling, the spoken word is "ease off".
+ *
+ * Heart rate lags effort by twenty seconds or so, so a cue AT the ceiling arrives after the block
+ * has already been called. Five beats out, at the rate his heart rate climbs in a run block, is about
+ * the lead time a change of pace needs to show up -- enough to level off short of the ceiling and
+ * keep the block going, which is the skill being taught.
+ */
+export const HR_MARGIN_EASE_BPM = 5;
+
+/** How long into a walk break before judging whether it is working. */
+export const WALK_CHECK_S = 60;
+
+/** How far heart rate must have fallen by then for the walk to count as recovering. */
+export const WALK_DROP_BPM = 5;
+
 /// Named for this module, not `mean`: every module here inlines into one scope in the built page,
 /// so a bare `mean` collides with run-stats.js and the whole page stops parsing. The build checks
 /// for exactly that, which is how this was caught rather than shipped as a blank screen.
@@ -113,6 +129,7 @@ export class PaceVoice {
     this.windowStartT = null;
     this.spoken = 0;
     this.lostSignal = false;
+    this.walk = null;           // the current walk break, when heart rate is being watched through it
   }
 
   /**
@@ -144,7 +161,7 @@ export class PaceVoice {
    *
    * `kind` is for the page's own log colouring and for tests: `fast`, `slow`, `in`, or `lost`.
    */
-  update(tS, paceSecKm, { running = true, trusted = true } = {}) {
+  update(tS, paceSecKm, { running = true, trusted = true, hr = null, ceilingBpm = null } = {}) {
     if (!running || this.targetSecKm == null) { this.standDown(); return null; }
     if (this.nextAt == null) this.begin(tS);
 
@@ -180,12 +197,67 @@ export class PaceVoice {
     this.spoken += 1;
 
     const avg = meanPace(this.window.map(([, p]) => p));
+
+    // When heart rate is governing the block, heart rate decides the direction word.
+    //
+    // The pace band was written for a session where pace was the instruction. Once the block ends
+    // at a heart-rate ceiling, coaching the pace band is coaching the wrong variable: 11:40/mi at
+    // 140 bpm is FINE under this regime and "ease up" is the old advice; 12:30/mi at 148 bpm is
+    // about to end the block and "on pace" is a lie about the thing that matters. The recorded
+    // session that produced this design had the athlete told "on pace" by pace while his heart rate
+    // climbed 137 -> 162 across the session, because pace never knew.
+    //
+    // So both numbers are spoken -- the pace stays, as information, because learning what 12:04
+    // feels like is still part of the point -- and the word is about the margin to the ceiling.
+    // The margin cue is what lets him EXTEND a block: ease off at "five to go" and heart rate
+    // levels out short of the ceiling; carry on and the block ends in twenty seconds. That is the
+    // relationship between the legs and the heart that the whole program is trying to build, and
+    // a cue that names it every twenty seconds is how it gets learned.
+    if (hr != null && ceilingBpm != null) {
+      const margin = ceilingBpm - hr;
+      const kind = margin <= HR_MARGIN_EASE_BPM ? 'fast' : 'in';
+      const word = margin <= 0 ? 'At the ceiling.'
+                 : margin <= HR_MARGIN_EASE_BPM ? 'Ease off.'
+                 : 'Good.';
+      return { text: `${this.formatPace(avg)}. Heart rate ${Math.round(hr)}. ${word}`,
+               kind, paceSecKm: avg, hr, marginBpm: margin };
+    }
+
     const [fast, slow] = this.band();
     // Smaller seconds-per-km is faster. The direction words are the athlete's, not the instrument's:
     // "ease up" and "pick it up" say what to do with the legs, where "fast" and "slow" only name a
     // state and leave the correction to be worked out while running.
     const kind = avg < fast ? 'fast' : avg > slow ? 'slow' : 'in';
     return { text: `${this.formatPace(avg)}. ${this._direction(kind)}`, kind, paceSecKm: avg };
+  }
+
+  /**
+   * Start a walk break: remember where heart rate was, so the walk can be judged by whether it
+   * actually comes down.
+   */
+  beginWalk(tS, hr) {
+    this.walk = { startT: tS, startHr: hr, said: false };
+  }
+
+  /**
+   * One line, at most once per walk break, if the walk is not doing its job.
+   *
+   * The walk breaks were the larger fault in the recorded session, not the run blocks: of 1176
+   * seconds spent walking, 384 were still above threshold, because a "brisk" 5.6 km/h walk at this
+   * fitness is a second workout. Heart rate has to FALL during a walk or the next block starts
+   * hotter than the last -- that is the ratchet that ended at 177 bpm. So after a minute of walking,
+   * if heart rate has not come down by at least WALK_DROP_BPM from where the walk started, say so
+   * once. Once, because a phone repeating "slow down" to someone already walking is its own problem,
+   * and because the block controller will hold the walk until the floor is reached regardless --
+   * this line is the explanation for why it is taking so long.
+   */
+  walkUpdate(tS, hr) {
+    const w = this.walk;
+    if (!w || w.said || hr == null || w.startHr == null) return null;
+    if (tS - w.startT < WALK_CHECK_S) return null;
+    if (w.startHr - hr >= WALK_DROP_BPM) { w.said = true; return null; }   // it is working; stay quiet
+    w.said = true;
+    return { text: 'Slow right down. Let it come down.', kind: 'walk', hr, dropBpm: w.startHr - hr };
   }
 
   _direction(kind) {
