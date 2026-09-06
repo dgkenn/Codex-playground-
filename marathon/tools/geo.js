@@ -36,13 +36,35 @@ export const GeoDefaults = {
   /// Below this, treat movement as GPS wander rather than travel. A stationary phone reports drift
   /// of a metre or two per second; counting it adds a few hundred metres to a standing rest.
   stationaryMS: 0.6,
-  /// Baseline over which movement is *confirmed*, when the platform gives no Doppler speed.
+  /// Shortest baseline over which movement is measured when the platform gives no Doppler speed.
   ///
   /// Consecutive fixes cannot settle this question: wander between two fixes a second apart looks
-  /// exactly like 2 m/s of running. Over five seconds it cannot — random drift stays within a couple
-  /// of metres while real running covers fourteen. The distance itself is still the sum of the
-  /// per-fix segments, which is what keeps corners accurate; this only gates whether to count them.
+  /// exactly like 2 m/s of running. Over five seconds it usually cannot.
   movementBaselineS: 5,
+  /// Slowest an athlete who is moving at all can be going, in m/s. Used only to turn a required
+  /// separation in metres into a required baseline in seconds, so it is deliberately pessimistic:
+  /// assuming a slow walk makes the window longer than it needs to be for a runner, and a window
+  /// that is too long only costs a little corner-cutting.
+  slowWalkMS: 1.2,
+  /// Longest that baseline is allowed to grow. Beyond this the corner-cutting costs more than the
+  /// noise does: net displacement over twenty seconds of a winding route is genuinely short.
+  maxBaselineS: 25,
+  /// How far the athlete must have travelled, in multiples of the fix's own stated accuracy, before
+  /// that travel is taken as a measurement rather than as noise.
+  ///
+  /// This is the number that was missing, and its absence is what a real run exposed. A fixed
+  /// five-second baseline silently assumes the fixes are good: at 4 m accuracy a jogger covers 11 m
+  /// in five seconds and the signal wins comfortably, which is what the bench measured and passed.
+  /// At 12 m accuracy -- ordinary under trees, between buildings, on a cold start -- a WALKER covers
+  /// 4.5 m in three seconds against +/-12 m of wander, and the noise is three times the signal.
+  /// Replaying a real 26-minute session through the pipeline at that accuracy, with no Doppler, the
+  /// speed read **+159%**: a 13:00/mi walk-run shown as a 5:00/mi sprint.
+  ///
+  /// So the baseline is no longer a constant. It is however long it takes a slow walker to travel
+  /// this many times the fix's own stated accuracy -- computed from the accuracy, never from the
+  /// distance it is about to measure -- and when that exceeds maxBaselineS these fixes cannot answer
+  /// the question and no pace is reported.
+  baselineJitterK: 2.0,
   /// Window for the displayed pace.
   ///
   /// Fifteen seconds rather than ten because ten left the number swinging by nearly 50 s/km under
@@ -96,6 +118,39 @@ export class GpsTrack {
   }
 
   /**
+   * Speed from net displacement, over a baseline long enough for the displacement to outrun the noise.
+   *
+   * The window length comes from the fix's stated accuracy and a pessimistic walking speed, so it is
+   * long when the fixes are poor and short when they are good -- and it is decided BEFORE the
+   * distance it will measure is looked at, which is what keeps it unbiased.
+   *
+   * Returns null when no anchor inside maxBaselineS clears the floor. That is not a failure to
+   * report — at 12 m accuracy and a slow walk it is the truthful answer, and the alternative is the
+   * +159% over-read a real session actually produced. Null propagates to `paceSecKm`, the display
+   * shows no pace, and the coach stands down instead of shouting a number it made up.
+   */
+  _baselineSpeed(lat, lon, t, accuracy) {
+    // How long the baseline needs to be is decided by the accuracy and a conservative walking speed,
+    // and by nothing else. The obvious alternative -- walk back until the measured displacement
+    // clears the floor -- is a selection on the noisy quantity itself and is badly biased: it stops
+    // early exactly when noise happens to inflate the displacement, so it keeps the inflated ones.
+    // Tried on the real session it was WORSE than the fixed window at clean accuracy, +42% against
+    // +12%. Choosing the window by time alone, before looking at the distance it will measure,
+    // leaves the noise symmetric.
+    const needS = (this.cfg.baselineJitterK * (accuracy ?? 0)) / this.cfg.slowWalkMS;
+    if (needS > this.cfg.maxBaselineS) return null;      // these fixes cannot answer the question
+    const target = Math.max(this.cfg.movementBaselineS, needS);
+    // The newest anchor that is at least `target` old: closest to the window we asked for, without
+    // ever being shorter than it.
+    let anchor = null;
+    for (let i = this.recent.length - 2; i >= 0; i--) {
+      if (t - this.recent[i].t >= target) { anchor = this.recent[i]; break; }
+    }
+    if (!anchor) return null;                            // not enough history yet
+    return haversine(anchor, { lat, lon }) / (t - anchor.t);
+  }
+
+  /**
    * Feed one fix. Returns `{accepted, reason}` — `reason` names the rejection so a run that
    * collected nothing can say why rather than just showing zeroes.
    */
@@ -123,14 +178,12 @@ export class GpsTrack {
       }
     }
 
-    // Confirm movement before counting any of it.
-    this.recent.push({ lat, lon, t });
-    this.recent = this.recent.filter(f => f.t >= t - this.cfg.movementBaselineS);
-    const anchor = this.recent[0];
-    const anchorDt = t - anchor.t;
-    const netMS = anchorDt >= this.cfg.movementBaselineS * 0.6
-      ? haversine(anchor, { lat, lon }) / anchorDt
-      : null;
+    // Confirm movement before counting any of it, over a baseline long enough for the movement to
+    // be distinguishable from the wander. See baselineJitterK: the length that takes is a property
+    // of how good the fixes are and how fast the athlete is going, so it cannot be a constant.
+    this.recent.push({ lat, lon, t, accuracy });
+    this.recent = this.recent.filter(f => f.t >= t - this.cfg.maxBaselineS);
+    const netMS = this._baselineSpeed(lat, lon, t, accuracy);
 
     // Doppler speed when the platform supplies a valid one — it is measured rather than inferred and
     // is markedly better than differencing two positions. iOS uses -1 for "unknown".
@@ -146,10 +199,15 @@ export class GpsTrack {
     // degrees every thirty seconds reads 1-3% slow. Trading a 3% under-read on bends for a 109%
     // over-read on the straights is not a close call.
     //
-    // `derived` still covers the opening seconds, before the baseline has filled.
+    // And when the baseline cannot clear the noise floor, there is NO number — not `derived` as a
+    // consolation. `derived` is the estimator this replaced; falling back to it whenever the going
+    // gets noisy would reinstate the bug exactly where it does the most damage, since the conditions
+    // that stop the baseline resolving are the same ones that make per-fix differencing worst.
+    // `paceSecKm` then reads null, the tile shows no pace, and the coach stands down. Saying nothing
+    // is a bad outcome; saying 5:00/mi to a man walking is a worse one.
     const hasDoppler = speed != null && speed >= 0 && speed <= this.cfg.maxSpeedMS;
     if (hasDoppler) this.doppler++;
-    let v = hasDoppler ? speed : (netMS != null ? netMS : derived);
+    let v = hasDoppler ? speed : netMS;
 
     // Doppler settles it when the platform supplies one; otherwise net displacement over the
     // baseline does. Falling back to the per-fix speed would reinstate the bug this replaces.

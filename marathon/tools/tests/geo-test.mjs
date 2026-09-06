@@ -159,6 +159,57 @@ const north = (from, m) => ({ lat: from.lat + m / 111132.92, lon: from.lon });
 }
 
 {
+  // The same question at an accuracy a real run actually produces, which is the case that broke.
+  //
+  // The test above uses 8 m fixes one second apart, where a jogger covers 11 m over a five-second
+  // baseline and the signal wins comfortably. That is the easy half. Under trees, between buildings
+  // or on a cold start the fixes come at 12-15 m and every two to five seconds, and then a WALKER
+  // covers 4.5 m against +/-12 m of wander -- the noise is three times the signal, and a baseline
+  // fixed at five seconds is measuring the noise. Replaying a real 26-minute session through the
+  // pipeline under exactly those conditions, the speed read **+159%**: a 13:00/mi walk-run shown as
+  // a 5:00/mi sprint, which is what "the pace was wildly inaccurate" looked like from the inside.
+  //
+  // The window now comes from the accuracy rather than from a constant, so this is the case that
+  // pins it. Walking, because walking is where the ratio is worst.
+  const WALK_MS = 1.35;                     // ~4.9 km/h, a brisk walk break
+  const ACC = 14, FIX_S = 3;
+  const g = new GpsTrack();
+  let lat = BOSTON.lat, seed = 29;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648 - 0.5;
+  for (let t = 0; t <= 300; t += FIX_S) {
+    lat += (WALK_MS * FIX_S) / 111132.92;
+    g.add({ lat: lat + (rnd() * 2 * ACC) / 111132.92, lon: BOSTON.lon,
+            accuracy: ACC, speed: null, t });
+  }
+  const truth = 1000 / WALK_MS;
+  const errPct = ((g.paceSecKm - truth) / truth) * 100;
+  assert.ok(g.paceSecKm != null, 'a walk on 14 m fixes must still produce a pace');
+  assert.ok(Math.abs(errPct) < 20,
+    `14 m fixes every ${FIX_S}s read ${(-errPct).toFixed(0)}% fast: `
+    + `${g.paceSecKm.toFixed(0)} vs ${truth.toFixed(0)} s/km`);
+  console.log(`  ok  a walk on ${ACC} m fixes reads within ${errPct.toFixed(1)}%, not +159%`);
+}
+
+{
+  // And when the fixes are too loose to answer at all, the answer is no answer.
+  //
+  // The temptation is to fall back to differencing consecutive fixes so that SOMETHING is displayed.
+  // That is precisely backwards: the conditions that stop the baseline resolving are the same ones
+  // that make per-fix differencing worst, so the fallback would be at its most confident exactly
+  // where it is most wrong. A blank pace tile is a bad outcome. Telling a walking man he is running
+  // 5:00 miles, and coaching him on it, is a worse one.
+  const g = new GpsTrack({ maxBaselineS: 8 });          // a tight cap, to force the condition
+  let lat = BOSTON.lat;
+  for (let t = 0; t <= 60; t += 2) {
+    lat += 2.7 / 111132.92;
+    g.add({ lat, lon: BOSTON.lon, accuracy: 24, speed: null, t });   // 24 m needs 40 s of baseline
+  }
+  assert.equal(g.paceSecKm, null,
+    `fixes too loose to measure must report no pace, not a guess: ${g.paceSecKm}`);
+  console.log('  ok  fixes too loose to measure report no pace rather than a guess');
+}
+
+{
   const g = new GpsTrack();
   g.add({ ...BOSTON, accuracy: 8, speed: 2.8, t: 0 });
   assert.equal(g.trustedAt(2), true);
