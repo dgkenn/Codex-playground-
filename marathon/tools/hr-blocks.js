@@ -89,7 +89,8 @@ export const BlockPhase = { WARMUP: 'warmup', RUN: 'run', WALK: 'walk', COOLDOWN
  * happened to this athlete: one session lost heart rate halfway through, another had none at all.
  */
 export class HrBlocks {
-  constructor({ ceilingBpm, floorBpm, fallbackRunS, fallbackWalkS, reps = null, ...opts } = {}) {
+  constructor({ ceilingBpm, floorBpm, fallbackRunS, fallbackWalkS, reps = null,
+                targetRunningS = null, ...opts } = {}) {
     this.cfg = { ...HrBlockDefaults, ...opts };
     this.ceilingBpm = ceilingBpm;
     this.floorBpm = floorBpm;
@@ -98,7 +99,17 @@ export class HrBlocks {
     this.fallbackWalkS = fallbackWalkS;
     /// Optional cap on run blocks. Null means "until the athlete stops or stalls", which is what an
     /// HR-governed session naturally is -- the load is bounded by the ceiling, not by a rep count.
+    ///
+    /// Mutually the wrong knob once heart rate is calling the blocks: the rung's `run_min x reps` is
+    /// a target TOTAL of running under the ceiling, not a block structure, because the body decides
+    /// how long each block runs. A `reps` cap under HR governance ends the session on a block COUNT
+    /// instead -- seven 40-second blocks would stop a 14-minute prescription after 4.7 minutes. See
+    /// `targetRunningS` below, which is what an HR-governed session should be constructed with instead.
     this.reps = reps;
+    /// Total seconds of running under the ceiling that satisfies the plan, or null to run until the
+    /// athlete stops or the body stalls. This is what `reps` is FOR once HR is calling the blocks --
+    /// see the note on `reps` above.
+    this.targetRunningS = targetRunningS;
 
     this.phase = BlockPhase.WARMUP;
     this.phaseStartT = null;
@@ -113,10 +124,13 @@ export class HrBlocks {
     this._pending = [];          // recoveries still waiting for their 60-second reading
     this._runUnderCeilingS = 0;  // seconds inside run blocks where HR was at or below the ceiling
     this._runOverCeilingS = 0;   // seconds inside run blocks where HR was above it
-    /// Which of the three real endings this session had. Set once, at the moment it becomes known,
-    /// so `summary()` can tell "the plan asked for this many reps and got them" apart from "the body
-    /// stopped clearing the load" apart from "the athlete ended it" -- three different facts that all
-    /// look identical from the block list alone.
+    /// Which of the four real endings this session had -- 'reps' (the old clock plan's own rep count),
+    /// 'target' (the same idea under HR governance: enough total running under the ceiling), 'stall'
+    /// (the body stopped clearing the load) or 'athlete' (the session was stopped). Set once, at the
+    /// moment it becomes known, so `summary()` can tell "the plan's own end was reached" apart from
+    /// "the body stopped clearing the load" apart from "the athlete ended it" -- facts that all look
+    /// identical from the block list alone. `reps` and `target` read the same to everything downstream
+    /// (see judgeHrSession/judgeSession): both mean the plan got what it asked for.
     this._endedBy = null;
   }
 
@@ -150,6 +164,16 @@ export class HrBlocks {
     if (this.phase === BlockPhase.RUN && hr != null && this.ceilingBpm != null) {
       if (hr <= this.ceilingBpm) this._runUnderCeilingS += 1;
       else this._runOverCeilingS += 1;
+    }
+
+    // The plan's own end, under HR governance: enough total running under the ceiling has happened,
+    // whatever block shape it arrived in. Checked ahead of the ordinary ceiling/floor dispatch below
+    // so it wins over "call a walk break" on the same second the target is met -- the session is done,
+    // not merely due for a break.
+    if (this.phase === BlockPhase.RUN && this.targetRunningS != null
+        && this._runUnderCeilingS >= this.targetRunningS) {
+      this._endedBy = 'target';
+      return this._to(BlockPhase.COOLDOWN, tS, 'target reached', true);
     }
 
     if (this.phase === BlockPhase.COOLDOWN) {

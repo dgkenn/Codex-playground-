@@ -134,6 +134,36 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   console.log('  ok  a session run without heart rate is labelled as clock-governed, not evidence');
 }
 
+{
+  // Under HR governance the rung's run_min x reps is a TOTAL running target, not a block structure --
+  // the body decides the block shape, so a `reps` cap is the wrong knob (seven 40s blocks would end a
+  // 14-minute prescription after 4.7 minutes). `targetRunningS` is what replaces it: once enough
+  // seconds have been spent running under the ceiling, the session moves to cool-down and keeps
+  // recording, exactly like a stall, but for the opposite reason -- the plan's own end, not the body's.
+  const TARGET_S = 600;   // 10 minutes of running under the ceiling
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120,
+                           reps: null, targetRunningS: TARGET_S });
+  let hr = 110;
+  const evs = drive(b, 3600, () => {
+    // Held comfortably under the ceiling and recovering cleanly, so nothing but the target itself
+    // ends this session -- no stall must be able to intervene and steal the reading.
+    const target = b.phase === Phase.RUN ? 145 : 105;
+    hr += (target - hr) / 20;
+    return hr;
+  });
+  const s = b.summary();
+  assert.equal(b.phase, Phase.COOLDOWN, 'the target reached must move to cool-down, not DONE');
+  assert.equal(s.endedBy, 'target', `the summary must say the plan's own target ended it: ${JSON.stringify(s)}`);
+  const hit = evs.find(e => e.reason === 'target reached');
+  assert.ok(hit, `the transition itself must be on the record: ${JSON.stringify(evs.slice(-3))}`);
+  assert.ok(s.runningUnderCeilingS >= TARGET_S,
+    `the target must actually have been met: ${s.runningUnderCeilingS} of ${TARGET_S}`);
+  assert.ok(evs.slice(evs.indexOf(hit) + 1).every(e => e.phase !== Phase.RUN),
+    `a cool-down reached by the target must never call another run block: ${JSON.stringify(evs.slice(evs.indexOf(hit) + 1))}`);
+  console.log(`  ok  a total-running target ends the session at cool-down, endedBy=target `
+            + `(${s.runningUnderCeilingS}s under ceiling against a ${TARGET_S}s target)`);
+}
+
 // --- against the real session ---------------------------------------------------------------------
 
 const POLAR = '/root/.claude/uploads/59977dd4-f843-5237-9878-b2f2ff901059/'

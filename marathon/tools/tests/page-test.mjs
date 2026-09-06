@@ -449,6 +449,42 @@ async function openAll(page) {
   console.log(`  ok  with no rung stored it seeds from the plan (${seeded} min blocks)`);
 }
 
+// --- heart-rate governance defaults on --------------------------------------------------------
+
+{
+  // A program whose governor is an opt-in checkbox is un-governed until someone remembers to tap it.
+  // See hr-blocks.js and coach-template.html `renderHrBlockNote`: his own recording peaked at 177 bpm,
+  // 95% of estimated HRmax, in a session prescribed Z1/Z2 with a 155 ceiling, because the clock was in
+  // charge instead of the body. So an athlete who has never touched the toggle gets governance on.
+  await page.evaluate(() => localStorage.removeItem('band.hrblocks'));
+  await page.reload({ waitUntil: 'load' });
+  await openAll(page);
+  await page.waitForTimeout(150);
+  await page.click('#m-intervals');
+  await page.waitForTimeout(80);
+  assert.equal(await page.isChecked('#hrblocks'), true,
+    'a fresh install with no stored preference must default heart-rate governance ON');
+  console.log('  ok  heart-rate governance defaults on with no stored preference');
+}
+
+{
+  // The default is a starting point, not a standing override -- an athlete who deliberately turns
+  // this off must have that choice stick, not get reset to on behind their back on the next reload.
+  await page.uncheck('#hrblocks');
+  await page.waitForTimeout(80);
+  await page.reload({ waitUntil: 'load' });
+  await openAll(page);
+  await page.waitForTimeout(150);
+  await page.click('#m-intervals');
+  await page.waitForTimeout(80);
+  assert.equal(await page.isChecked('#hrblocks'), false,
+    'an explicit opt-out must survive a reload rather than being defaulted back on');
+  console.log('  ok  an explicit opt-out of heart-rate governance survives a reload');
+  // Leave it back on: every test after this one assumes the shipped default.
+  await page.check('#hrblocks');
+  await page.waitForTimeout(80);
+}
+
 // --- heart rate can call the blocks ---------------------------------------------------------------
 
 {
@@ -1011,6 +1047,28 @@ async function openAll(page) {
   await page.click('#go');
   await page.waitForTimeout(200);
   console.log('  ok  a connected armband reporting heart rate does not break the coach');
+}
+
+// --- starting run/walk under heart-rate governance --------------------------------------------
+
+{
+  // The wiring the whole feature exists for: with a band connected and governance on, Start must
+  // actually construct the HR-governed controller and say so, stating the ceiling it is running to.
+  // Not attempted here: a real-time HR-governed block sequence, which needs minutes of simulated
+  // heart rate to reach a transition and is covered second-by-second in hr-blocks-test.mjs instead.
+  // The fake armband connected two blocks up is still connected -- Start is all this needs to check.
+  await page.click('#m-intervals');
+  await page.waitForTimeout(80);
+  await page.check('#hrblocks');
+  await page.waitForTimeout(80);
+  await page.click('#go');
+  await page.waitForTimeout(300);
+  const lines = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /heart rate calls the blocks — run to \d+/.test(l)),
+    `Start under HR governance must log the ceiling it is running to: ${JSON.stringify(lines.slice(0, 5))}`);
+  await page.click('#go');
+  await page.waitForTimeout(200);
+  console.log('  ok  starting run/walk under heart-rate governance logs the ceiling it is running to');
 }
 
 // --- a wedged speech engine does not go silent for the rest of the run ----------------------------

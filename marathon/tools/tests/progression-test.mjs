@@ -181,6 +181,20 @@ const HR_TARGET = { runningMinTarget: 14 };      // 14 minutes of running under 
 }
 
 {
+  // `endedBy: 'target'` is what a session under HR governance actually reports now -- see
+  // hr-blocks.js: `reps` is retired as the block cap once the body is calling the blocks, replaced by
+  // a total-running target, and reaching it must read exactly like reaching the old rep count did:
+  // "the plan", not "the athlete", ended this, and it advances on the same evidence.
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'hr', endedBy: 'target', runningUnderCeilingS: 800, hrr60Median: 25 },
+    { decouplingPct: 3 }, 20);
+  assert.equal(j.verdict, ADVANCE, j.reason);
+  assert.match(j.reason, /ended by the plan/,
+    `endedBy 'target' must read as the plan's own end, same as 'reps': "${j.reason}"`);
+  console.log(`  ok  endedBy 'target' with the running target met advances the ladder, same as 'reps'`);
+}
+
+{
   // Short of the target but not by a stall -- the athlete ended it, or the target was set a little
   // ahead of what today had. Not a near miss that should be counted as done, and not a body failure
   // that eases back either -- repeat and see.
