@@ -2219,7 +2219,14 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
   //
   // Checked BEFORE `update`, so the module's own clock does not advance on a line nobody hears.
   if (voiceCoaching && S.voice && !line && !speechBusy()) {
-    const v = S.voice.update(t, pace, { running, trusted });
+    // When heart rate is calling the blocks, the spoken word comes from the margin to the ceiling and
+    // the pace is spoken as information -- see pace-voice.js. Without the controller, or without a
+    // fresh reading, the pace-band words are unchanged.
+    const v = S.voice.update(t, pace, {
+      running, trusted,
+      hr: (S.hrBlocks && fresh) ? sn.hr : null,
+      ceilingBpm: S.hrBlocks ? S.hrBlocks.ceilingBpm : null,
+    });
     if (v) { say(v.text); log(`“${v.text}”`, v.kind === 'in' ? 'on' : 'fast'); }
   }
 }
@@ -2577,11 +2584,25 @@ function ceilingRaiseCapBpm() {
   return Math.round(profile.hrRest + 0.80 * (hrMaxFor(profile.age) - profile.hrRest));
 }
 
+/**
+ * The ceiling the last session actually ran under, or the formula's if none has.
+ *
+ * This is what a raise has to be measured against. `ceilingFrom` lifts the ceiling one band when two
+ * consecutive sessions held full efficiency all the way to it -- "it" being whatever was in force,
+ * which after a raise is the raised number. Handing it the formula value instead (as this first did)
+ * meant the second raise never came: the same two readings kept reproducing the first one.
+ */
+function ceilingInForceBpm() {
+  let stored = 0;
+  try { stored = Number(localStorage.getItem('band.ceiling')) || 0; } catch { /* blocked */ }
+  return Math.max(formulaCeilingBpm(), stored);
+}
+
 /** The measured ceiling, or null while the age formula is still the best available answer. */
 function measuredCeiling() {
   try {
     return ceilingFrom(thresholdHistory(),
-      { currentBpm: formulaCeilingBpm(), maxBpm: ceilingRaiseCapBpm() });
+      { currentBpm: ceilingInForceBpm(), maxBpm: ceilingRaiseCapBpm() });
   } catch { return null; }
 }
 
@@ -2646,8 +2667,14 @@ function recoveryFloorBpm() {
  * if the list arrives oldest-first -- `sessions.index()` returns newest-first (see session-store.js
  * `archive()`, which unshifts each new entry), so this reverses it.
  */
-function hrrHistory() {
-  return sessions.index().map(e => e.stats && e.stats.hrBlocks).filter(Boolean).reverse();
+function hrrHistory({ excludeAt = null } = {}) {
+  // `excludeAt` is the session being judged. It has already been archived by the time showStats runs,
+  // so without this the session would sit inside its own baseline -- five readings where one of them
+  // is today, which dilutes exactly the drop the judge is looking for. Matched on the index's `at`,
+  // which is the session's own started_at.
+  return sessions.index()
+    .filter(e => !excludeAt || e.at !== excludeAt)
+    .map(e => e.stats && e.stats.hrBlocks).filter(Boolean).reverse();
 }
 
 function tickIntervals(t) {
@@ -2699,7 +2726,14 @@ function tickIntervals(t) {
   // to put it.
   const run = S.ivPhase === 'run';
   const word = run ? 'Run' : 'Walk';
-  if (run) S.voice && S.voice.begin(t); else S.voice && S.voice.standDown();
+  if (run) {
+    S.voice && S.voice.begin(t);
+  } else if (S.voice) {
+    S.voice.standDown();
+    // Where heart rate was as the walk began, so the walk can be judged by whether it comes down.
+    const sn = S.sensor;
+    S.voice.beginWalk(t, sn && sn.hrFresh() ? sn.hr : null);
+  }
   play('attend');
   // An HR-governed session has no "of N" to announce -- the number of blocks is decided by the body
   // during the session, not by the plan beforehand -- so it says which block this is and stops
@@ -2789,8 +2823,20 @@ function tick() {
     // Only during the running blocks. `running: false` is the monitor's own way of being told to
     // stand down — it drops its smoothing window, so the walk does not drag the average out of the
     // band and earn a "lift" tone thirty seconds into a break that is meant to be slow.
+    // `govern: 'pace'` was "pace leads even with the armband on", and it was right when the clock
+    // called the blocks. Once heart rate calls them it is exactly wrong: the block ends at a heart-rate
+    // ceiling, so the cue that matters in the last thirty seconds of a block is the one that says
+    // the ceiling is near -- which is the HR monitor's, and this flag was keeping it silent.
     tickCoach(t, S.track.paceSecKm, S.track.trustedAt(nowSeconds()),
-              { running: S.ivPhase === 'run', govern: 'pace' });
+              { running: S.ivPhase === 'run', govern: S.hrBlocks ? null : 'pace' });
+    // The walk break has a job -- get heart rate down to the floor -- and the recorded session shows
+    // the job not being done: 384 s above threshold while walking. One line, once per walk, only when a
+    // minute in heart rate has not come down. The controller holds the walk regardless; this says why.
+    if (S.hrBlocks && S.ivPhase === 'walk' && voiceCoaching && S.voice && !speechBusy()) {
+      const sn = S.sensor;
+      const w = S.voice.walkUpdate(t, sn && sn.hrFresh() ? sn.hr : null);
+      if (w) { say(w.text); log(`“${w.text}”`, 'fast'); }
+    }
     while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
     drawMap();
     return;
@@ -3078,8 +3124,14 @@ $('go').onclick = () => {
   // recorded, the athlete's own measured first ventilatory threshold, which is a fact about him
   // rather than about Tanaka's age formula. The floor is where a walk break has done its job.
   S.hrBlocks = null;
+  S.hrBlocksNote = null;
   if (S.mode === 'intervals' && $('hrblocks').checked) {
     const ceil = aerobicCeilingBpm();
+    // Remember the ceiling this session actually ran under. `ceilingFrom` measures a raise against
+    // the ceiling IN FORCE, and without this it was handed the age-formula value every time -- so
+    // two held-to readings could lift the ceiling one band, and then the same two readings would
+    // reproduce that one band forever. The self-lock was half broken: it could rise once.
+    try { localStorage.setItem('band.ceiling', String(ceil.bpm)); } catch { /* storage full */ }
     // `run_min x reps` becomes a TOTAL running target, not a block count, once heart rate is calling
     // the blocks -- the body decides how long each block and each walk runs, so `reps` is the wrong
     // cap here (seven 40s blocks would end a 14-minute prescription after 4.7 minutes; see
@@ -3093,8 +3145,11 @@ $('go').onclick = () => {
       reps: null,
       targetRunningS: Number($('runmin').value) * Number($('reps').value) * 60,
     });
-    log(`heart rate calls the blocks — run to ${ceil.bpm}, walk down to ${recoveryFloorBpm()} `
-        + `(${ceil.source})`, 'on');
+    // Held, not logged here: the log is cleared a few lines further down, and this line was being
+    // written and then wiped in the same tap. It is emitted after the clear, so the athlete actually
+    // sees which ceiling the session is running to.
+    S.hrBlocksNote = `heart rate calls the blocks — run to ${ceil.bpm}, walk down to `
+                   + `${recoveryFloorBpm()} (${ceil.source})`;
   }
 
   S.splits = new SplitAnnouncer({
@@ -3121,6 +3176,7 @@ $('go').onclick = () => {
                      // built. Its per-run position is reset where the runner is created.
                      geoError: null, simT: 0, simDist: 0 });
   $('log').replaceChildren();
+  if (S.hrBlocksNote) log(S.hrBlocksNote, 'on');
   lastLogMsg = null; lastLogRow = null; lastLogCount = 1;
 
   if (S.mode !== 'rehearse' && navigator.geolocation) {
@@ -3312,7 +3368,7 @@ function showStats(stats, prevStats) {
   const rw = S.plannedSession && S.plannedSession.runWalk;
   const judged = (stats.hrBlocks && stats.hrBlocks.governedBy === 'hr' && rw)
     ? judgeHrSession({ runningMinTarget: rw.runMin * rw.reps }, stats.hrBlocks, stats,
-                     hrrBaseline(hrrHistory()))
+                     hrrBaseline(hrrHistory({ excludeAt: new Date(S.startedAt).toISOString() })))
     : (rw ? judgeSession(rw, stats) : null);
   // And it is applied, not merely announced. This is the line that turns a schedule into a
   // controller; everything it needs has existed and been tested for weeks.
