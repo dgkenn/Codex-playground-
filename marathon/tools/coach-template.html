@@ -198,6 +198,24 @@
 
   .hide { display: none !important; }
 
+  /* Collapsed sections. Everything the athlete does not need mid-run or at a glance lives behind
+     one of these — read once, then out of the way. The summary is styled to read exactly like the
+     h2 it replaces, so a closed page still looks like the same app, just shorter. */
+  details > summary {
+    font-size: .6875rem; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--faint); font-weight: 600; margin: 0;
+    cursor: pointer; list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::after {
+    content: '›'; font-size: .95rem; line-height: 1; color: var(--faint);
+    transition: transform .15s ease;
+  }
+  details[open] > summary::after { transform: rotate(90deg); }
+  .details-body { display: flex; flex-direction: column; gap: 1.5rem; margin-top: .8rem; }
+
   /* Heart-rate zones as a bar rather than a number: which zone you are in is the decision, and a
      bar answers it without reading. */
   .zonebar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; height: 26px; }
@@ -247,49 +265,18 @@
     <div class="tagline">Pace in your ears. Silence means you're inside it.</div>
   </header>
 
-  <section>
-    <h2>Before you go</h2>
-    <div class="instrument" style="padding:.35rem 1rem">
-      <div id="checks"></div>
-    </div>
-    <div class="row" style="margin-top:.65rem">
-      <button id="preflight">Run all checks</button>
-    </div>
-    <div class="row" style="margin-top:.5rem">
-      <button class="tiny" data-tone="in_band">Sample tone</button>
-      <button class="tiny" data-tone="ease">Ease off</button>
-      <button class="tiny" data-tone="lift">Lift</button>
-      <button class="tiny" data-tone="attend">Voice chime</button>
-      <button class="tiny" data-tone="degraded">Signal lost</button>
-      <button class="tiny" id="testvoice">Voice</button>
-    </div>
-    <p class="note" style="margin-top:.6rem">
-      Each button plays exactly that one sound, so you can learn them one at a time.
-      <strong>Sample tone</strong> is the single note you hear on coming back on pace — press that
-      first to set the volume against your music.
-    </p>
-    <div class="row" style="margin-top:.75rem">
-      <label style="flex:1">against your music
-        <select id="audiosession" style="width:100%"></select></label>
-    </div>
-    <p class="note" style="margin-top:.6rem" id="audiosessionnote"></p>
-    <label class="note" style="display:flex;gap:.4rem;align-items:center;margin-top:.7rem">
-      <input id="voicecoach" type="checkbox" checked> say the pace out loud while running
-    </label>
-    <p class="note" style="margin-top:.4rem">
-      Every twenty seconds or so, in words: <em>"12:04. On pace."</em> Run a session correctly and
-      the tones say nothing at all for the whole of it — which sounds exactly like an app that has
-      died. This is the channel that tells you where you are rather than only when you are wrong.
-    </p>
-    <p class="note" style="margin-top:.6rem">
-      <strong>Start Apple Music first, then press a tone button.</strong> The transition chime used to
-      <em>pause</em> the music while the spoken cues did not — same output path, different session
-      category, which is the one thing a web page can now ask iOS about.
-      <strong>Duck</strong> is what earcons should be. If a tone goes silent with the ring switch on
-      mute, that category is wrong for this phone and one of the others is the answer; thirty seconds
-      standing still tells you, which beats finding out at minute twelve.
-    </p>
-  </section>
+  <!-- ============================================================================================
+       Layout order, top to bottom, is deliberate: what the athlete needs at a trailhead, then what
+       he watches while running, then everything he sets up once and rarely touches again.
+
+       1. Today — the one-tap Start.
+       2. The live instrument — pace, verdict, gauge, tiles, map. What he looks at mid-run.
+       3. Armband — connect and see heart rate live; the troubleshooting prose is one tap away.
+       4. Everything else, collapsed: it is read once before a first run, or when something is
+          wrong, never during one. A `<details>` costs nothing when closed and loses no copy — the
+          long paragraphs that used to sit between "Today" and Start are still here, just not in
+          the way.
+     ============================================================================================ -->
 
   <section id="today-section">
     <h2>Today</h2>
@@ -311,176 +298,6 @@
       armband first if you want heart rate recorded with it.
     </p>
   </section>
-
-  <section id="pain-section">
-    <h2>Niggles</h2>
-    <p class="note">
-      The one thing the app cannot measure and the one that ends training blocks. Thirty seconds
-      after a run beats a fortnight of guessing later. Focal pain — a single point you can put a
-      finger on — is treated as a stop regardless of how mild it feels.
-    </p>
-    <div class="row" style="margin-top:.7rem">
-      <label>where <input id="painsite" type="text" list="painsites" placeholder="left shin"
-                          style="width:9rem"></label>
-      <label>how bad <input id="painlevel" type="number" min="0" max="10" step="1" value="2"
-                            style="width:3.6rem"> /10</label>
-    </div>
-    <datalist id="painsites">
-      <option>left shin</option><option>right shin</option>
-      <option>left calf</option><option>right calf</option>
-      <option>left knee</option><option>right knee</option>
-      <option>left achilles</option><option>right achilles</option>
-      <option>left foot</option><option>right foot</option>
-      <option>left hip</option><option>right hip</option>
-    </datalist>
-    <div class="row" style="margin-top:.5rem">
-      <label>when
-        <select id="paintiming">
-          <option value="during_run">during the run</option>
-          <option value="after_run">after the run</option>
-          <option value="next_morning">next morning</option>
-          <option value="constant">all the time</option>
-        </select>
-      </label>
-    </div>
-    <label class="check" style="margin-top:.5rem">
-      <input type="checkbox" id="painfocal">
-      <span>One specific point I can press on</span>
-    </label>
-    <label class="check">
-      <input type="checkbox" id="painworse">
-      <span>Got worse as the run went on</span>
-    </label>
-    <button id="painadd" class="tiny" style="margin-top:.7rem">Log it</button>
-    <div id="painout" style="margin-top:.7rem"></div>
-  </section>
-
-  <section id="plan-section">
-    <h2>Your plan</h2>
-    <div class="instrument" style="gap:.8rem">
-      <div class="planhead">
-        <div>
-          <div class="phase" id="phaselabel">—</div>
-          <div class="weeklabel" id="weeklabel">—</div>
-        </div>
-        <button id="advance" class="tiny">Next week</button>
-      </div>
-      <div class="strip" id="strip"></div>
-      <div class="sesscard">
-        <div class="sesstitle" id="sesstitle">—</div>
-        <div class="sessdetail" id="sessdetail"></div>
-      </div>
-      <div class="row">
-        <button id="loadsess">Load this session</button>
-        <button id="donesess" class="tiny">Mark done</button>
-      </div>
-    </div>
-    <p class="note" id="gatenote" style="margin-top:.7rem"></p>
-  </section>
-
-  <section>
-    <h2>Armband</h2>
-    <div class="instrument" style="gap:.7rem">
-      <div class="planhead">
-        <div>
-          <div class="phase" id="hrbig">—</div>
-          <div class="weeklabel" id="hrstate">not connected</div>
-        </div>
-        <button id="connect" class="tiny">Connect</button>
-      </div>
-      <div class="row">
-        <!-- Shown only once the ordinary route has failed, so the normal case stays one button. -->
-        <button id="anydevice" class="tiny hide">Any device</button>
-        <button id="btprobe" class="tiny">Bluetooth probe</button>
-        <button id="forget" class="tiny">Remembered devices</button>
-      </div>
-      <div class="zonebar" id="zonebar"></div>
-      <div class="row">
-        <label>age <input id="age" type="number" min="14" max="90" step="1"
-                          inputmode="numeric" style="width:4.2rem"></label>
-        <label>resting HR <input id="hrrest" type="number" min="30" max="90" step="1"
-                                 inputmode="numeric" style="width:4.2rem"></label>
-      </div>
-    </div>
-    <p class="note" id="profilenote" style="margin-top:.7rem"></p>
-    <p class="note" style="margin-top:.7rem">
-      <strong>If it refuses to connect, run the probe.</strong> It walks the whole connection a step
-      at a time and copies a timestamped report you can paste into the chat — which failures look
-      identical from here are different in the report: refused outright, refused while actually
-      connected, connected then dropped, connected with no heart-rate service, or connected and
-      silent because the band is not against skin. About twenty seconds, band on your arm.
-      <br><br>Worth trying alongside it: press the band's button once so its light is on, and put it
-      on your <em>upper</em> arm rather than your forearm. The Verity Sense holds two Bluetooth
-      connections at once, so Polar Flow being open is not by itself a reason it cannot connect here.
-    </p>
-    <p class="note" id="btnote" style="margin-top:.7rem"></p>
-  </section>
-
-  <section>
-    <h2>Mode</h2>
-    <div class="seg" role="group">
-      <button id="m-coach" aria-pressed="true">Pace coach</button>
-      <button id="m-intervals" aria-pressed="false">Run / walk</button>
-      <button id="m-ramp" aria-pressed="false">Ramp test</button>
-      <button id="m-rehearse" aria-pressed="false">Rehearse</button>
-    </div>
-    <p class="note" id="modenote" style="margin-top:.7rem"></p>
-    <p class="note" id="modeplan" style="margin-top:.5rem"></p>
-  </section>
-
-  <section id="cfg-coach">
-    <h2>Target</h2>
-    <div class="seg" style="margin-bottom:.7rem">
-      <button id="u-mi" aria-pressed="true">miles</button>
-      <button id="u-km" aria-pressed="false">kilometres</button>
-    </div>
-    <div class="seg" role="group" style="margin-top:.5rem">
-      <button id="r-pace" aria-pressed="true">show pace</button>
-      <button id="r-speed" aria-pressed="false">show speed</button>
-    </div>
-    <div class="row">
-      <label><span id="targetlabel">target pace</span> <input id="target" type="text" inputmode="numeric" value="14:30"></label>
-      <label>± <input id="tol" type="number" min="2" max="20" step="1" value="8"
-                      style="width:3.6rem"> %</label>
-    </div>
-    <label style="margin-top:.7rem">
-      <input type="checkbox" id="ceiling" checked>
-      Easy run — never tell me to speed up
-    </label>
-    <p class="note" id="bandtext" style="margin-top:.7rem"></p>
-  </section>
-
-  <section id="cfg-ramp" class="hide">
-    <h2>Ramp test</h2>
-    <label class="check">
-      <input type="checkbox" id="rampoutdoor">
-      <span>On the street, not a treadmill</span>
-    </label>
-    <p class="note" id="rampnote" style="margin-top:.7rem"></p>
-  </section>
-
-  <section id="cfg-intervals" class="hide">
-    <h2>Intervals</h2>
-    <div class="row">
-      <label>run <input id="runmin" type="number" min="0.5" max="20" step="0.5" value="1"
-                       style="width:3.6rem"> min</label>
-      <label>walk <input id="walkmin" type="number" min="0.5" max="20" step="0.5" value="2"
-                        style="width:3.6rem"> min</label>
-      <label>× <input id="reps" type="number" min="1" max="40" step="1" value="8"
-                      style="width:3.6rem"></label>
-    </div>
-    <label class="check" style="margin-top:.7rem">
-      <input type="checkbox" id="hrblocks">
-      <span>Let heart rate call the blocks</span>
-    </label>
-    <p class="note" id="hrblocknote" style="margin-top:.5rem"></p>
-    <p class="note" style="margin-top:.7rem">
-      No GPS needed, so this works even if location is blocked. It's also the session week 1 of your
-      plan actually prescribes.
-    </p>
-  </section>
-
-  <button id="go" class="go">Start</button>
 
   <section>
     <div class="instrument">
@@ -521,76 +338,329 @@
   </section>
 
   <section>
-    <h2>What you'll hear</h2>
-    <div class="legend">
-      <b>Two notes falling</b><span>Ease off — faster than the band</span>
-      <b>Two notes rising</b><span>Lift — slower than the band</span>
-      <b>One note</b><span>Back on pace</span>
-      <b>Three rising</b><span>The voice is about to speak</span>
-      <b>Two low thuds</b><span>Signal lost, guidance degraded</span>
-      <b>Silence</b><span>You're inside the band</span>
-    </div>
-  </section>
-
-  <section id="stats-section" class="hide">
-    <h2>How it went</h2>
-    <div class="instrument" style="gap:.6rem">
-      <div id="statsgrid" class="tiles"></div>
-      <div id="statssplits" class="note" style="margin-top:.2rem"></div>
-      <div id="statsprogress" class="note"></div>
-      <div id="statsverdict" class="note hide"
-           style="border-top:1px solid var(--line);padding-top:.6rem;margin-top:.2rem"></div>
-    </div>
-    <p class="note" style="margin-top:.7rem">
-      Beats per mile and efficiency factor are the two that track fitness: the same pace at a lower
-      heart rate is progress and nothing else. Both need the armband, and both are only comparable
-      between similar sessions.
-    </p>
-  </section>
-
-  <section id="saved-section">
-    <h2>Saved sessions</h2>
-    <div id="recover" class="instrument hide" style="gap:.6rem;border-color:var(--fast)">
-      <div class="phase" id="recovertitle">—</div>
-      <div class="weeklabel" id="recoverdetail"></div>
+    <h2>Armband</h2>
+    <div class="instrument" style="gap:.7rem">
+      <div class="planhead">
+        <div>
+          <div class="phase" id="hrbig">—</div>
+          <div class="weeklabel" id="hrstate">not connected</div>
+        </div>
+        <button id="connect" class="tiny">Connect</button>
+      </div>
       <div class="row">
-        <button id="recoverbtn">Recover it</button>
-        <button id="discardbtn" class="tiny">Discard</button>
+        <!-- Shown only once the ordinary route has failed, so the normal case stays one button. -->
+        <button id="anydevice" class="tiny hide">Any device</button>
+        <button id="btprobe" class="tiny">Bluetooth probe</button>
+        <button id="forget" class="tiny">Remembered devices</button>
+      </div>
+      <div class="zonebar" id="zonebar"></div>
+      <div class="row">
+        <label>age <input id="age" type="number" min="14" max="90" step="1"
+                          inputmode="numeric" style="width:4.2rem"></label>
+        <label>resting HR <input id="hrrest" type="number" min="30" max="90" step="1"
+                                 inputmode="numeric" style="width:4.2rem"></label>
       </div>
     </div>
-    <div id="savedlist"></div>
-    <p class="note" id="storagenote" style="margin-top:.7rem"></p>
-    <p class="note" style="margin-top:.7rem">
-      Every session is written to this phone while it runs, not just at the end. A page that reloads
-      mid-run — which iOS does by itself to a backgrounded tab, with no warning — used to take the
-      whole recording with it.
-    </p>
+    <p class="note" id="profilenote" style="margin-top:.7rem"></p>
+    <p class="note" id="btnote" style="margin-top:.7rem"></p>
+    <details style="margin-top:.7rem">
+      <summary>Connection trouble</summary>
+      <div class="details-body">
+        <p class="note">
+          <strong>If it refuses to connect, run the probe.</strong> It walks the whole connection a step
+          at a time and copies a timestamped report you can paste into the chat — which failures look
+          identical from here are different in the report: refused outright, refused while actually
+          connected, connected then dropped, connected with no heart-rate service, or connected and
+          silent because the band is not against skin. About twenty seconds, band on your arm.
+          <br><br>Worth trying alongside it: press the band's button once so its light is on, and put it
+          on your <em>upper</em> arm rather than your forearm. The Verity Sense holds two Bluetooth
+          connections at once, so Polar Flow being open is not by itself a reason it cannot connect here.
+        </p>
+      </div>
+    </details>
   </section>
 
-  <section>
-    <h2>Session log</h2>
-    <div id="log"></div>
-    <div class="row" style="margin-top:.65rem">
-      <button id="copy" disabled>Copy session</button>
-      <button id="copyfull" class="tiny" disabled>Copy raw (large)</button>
-      <button id="exportall" class="tiny">Export everything</button>
-      <button id="clearstore" class="tiny">Clear storage</button>
-      <button id="diag" class="tiny">Copy diagnostics</button>
+  <details>
+    <summary>Mode &amp; target</summary>
+    <div class="details-body">
+      <section>
+        <h2>Mode</h2>
+        <div class="seg" role="group">
+          <button id="m-coach" aria-pressed="true">Pace coach</button>
+          <button id="m-intervals" aria-pressed="false">Run / walk</button>
+          <button id="m-ramp" aria-pressed="false">Ramp test</button>
+          <button id="m-rehearse" aria-pressed="false">Rehearse</button>
+        </div>
+        <p class="note" id="modenote" style="margin-top:.7rem"></p>
+        <p class="note" id="modeplan" style="margin-top:.5rem"></p>
+      </section>
+
+      <section id="cfg-coach">
+        <h2>Target</h2>
+        <div class="seg" style="margin-bottom:.7rem">
+          <button id="u-mi" aria-pressed="true">miles</button>
+          <button id="u-km" aria-pressed="false">kilometres</button>
+        </div>
+        <div class="seg" role="group" style="margin-top:.5rem">
+          <button id="r-pace" aria-pressed="true">show pace</button>
+          <button id="r-speed" aria-pressed="false">show speed</button>
+        </div>
+        <div class="row">
+          <label><span id="targetlabel">target pace</span> <input id="target" type="text" inputmode="numeric" value="14:30"></label>
+          <label>± <input id="tol" type="number" min="2" max="20" step="1" value="8"
+                          style="width:3.6rem"> %</label>
+        </div>
+        <label style="margin-top:.7rem">
+          <input type="checkbox" id="ceiling" checked>
+          Easy run — never tell me to speed up
+        </label>
+        <p class="note" id="bandtext" style="margin-top:.7rem"></p>
+      </section>
+
+      <section id="cfg-ramp" class="hide">
+        <h2>Ramp test</h2>
+        <label class="check">
+          <input type="checkbox" id="rampoutdoor">
+          <span>On the street, not a treadmill</span>
+        </label>
+        <p class="note" id="rampnote" style="margin-top:.7rem"></p>
+      </section>
+
+      <section id="cfg-intervals" class="hide">
+        <h2>Intervals</h2>
+        <div class="row">
+          <label>run <input id="runmin" type="number" min="0.5" max="20" step="0.5" value="1"
+                           style="width:3.6rem"> min</label>
+          <label>walk <input id="walkmin" type="number" min="0.5" max="20" step="0.5" value="2"
+                            style="width:3.6rem"> min</label>
+          <label>× <input id="reps" type="number" min="1" max="40" step="1" value="8"
+                          style="width:3.6rem"></label>
+        </div>
+        <label class="check" style="margin-top:.7rem">
+          <input type="checkbox" id="hrblocks">
+          <span>Let heart rate call the blocks</span>
+        </label>
+        <p class="note" id="hrblocknote" style="margin-top:.5rem"></p>
+        <p class="note" style="margin-top:.7rem">
+          No GPS needed, so this works even if location is blocked. It's also the session week 1 of your
+          plan actually prescribes.
+        </p>
+      </section>
+
+      <button id="go" class="go">Start</button>
     </div>
-    <div class="row" style="margin-top:.65rem">
-      <label style="flex:1">tone volume
-        <input id="gain" type="range" min="0.2" max="1" step="0.05"
-               style="width:100%;accent-color:var(--on)"></label>
+  </details>
+
+  <details>
+    <summary>Before you go</summary>
+    <div class="details-body">
+      <section>
+        <div class="instrument" style="padding:.35rem 1rem">
+          <div id="checks"></div>
+        </div>
+        <div class="row" style="margin-top:.65rem">
+          <button id="preflight">Run all checks</button>
+        </div>
+        <div class="row" style="margin-top:.5rem">
+          <button class="tiny" data-tone="in_band">Sample tone</button>
+          <button class="tiny" data-tone="ease">Ease off</button>
+          <button class="tiny" data-tone="lift">Lift</button>
+          <button class="tiny" data-tone="attend">Voice chime</button>
+          <button class="tiny" data-tone="degraded">Signal lost</button>
+          <button class="tiny" id="testvoice">Voice</button>
+        </div>
+        <p class="note" style="margin-top:.6rem">
+          Each button plays exactly that one sound, so you can learn them one at a time.
+          <strong>Sample tone</strong> is the single note you hear on coming back on pace — press that
+          first to set the volume against your music.
+        </p>
+        <div class="row" style="margin-top:.75rem">
+          <label style="flex:1">against your music
+            <select id="audiosession" style="width:100%"></select></label>
+        </div>
+        <p class="note" style="margin-top:.6rem" id="audiosessionnote"></p>
+        <label class="note" style="display:flex;gap:.4rem;align-items:center;margin-top:.7rem">
+          <input id="voicecoach" type="checkbox" checked> say the pace out loud while running
+        </label>
+        <p class="note" style="margin-top:.4rem">
+          Every twenty seconds or so, in words: <em>"12:04. On pace."</em> Run a session correctly and
+          the tones say nothing at all for the whole of it — which sounds exactly like an app that has
+          died. This is the channel that tells you where you are rather than only when you are wrong.
+        </p>
+        <p class="note" style="margin-top:.6rem">
+          <strong>Start Apple Music first, then press a tone button.</strong> The transition chime used to
+          <em>pause</em> the music while the spoken cues did not — same output path, different session
+          category, which is the one thing a web page can now ask iOS about.
+          <strong>Duck</strong> is what earcons should be. If a tone goes silent with the ring switch on
+          mute, that category is wrong for this phone and one of the others is the answer; thirty seconds
+          standing still tells you, which beats finding out at minute twelve.
+        </p>
+      </section>
     </div>
-    <p class="note" style="margin-top:.7rem">
-      The session copies to your clipboard rather than downloading — a browser that will not save a
-      file leaves you with a run you cannot get off the phone. Paste it into the chat and it imports
-      with <code>cli import</code>. <strong>Copy diagnostics</strong> does the same for the build id,
-      what this browser can do, and the last forty log lines: that is what to send when something
-      does not work. If the browser has no clipboard, both put the text on the page instead.
-    </p>
-  </section>
-  <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);
+  </details>
+
+  <details>
+    <summary>Niggles</summary>
+    <div class="details-body">
+      <section id="pain-section">
+        <p class="note">
+          The one thing the app cannot measure and the one that ends training blocks. Thirty seconds
+          after a run beats a fortnight of guessing later. Focal pain — a single point you can put a
+          finger on — is treated as a stop regardless of how mild it feels.
+        </p>
+        <div class="row" style="margin-top:.7rem">
+          <label>where <input id="painsite" type="text" list="painsites" placeholder="left shin"
+                              style="width:9rem"></label>
+          <label>how bad <input id="painlevel" type="number" min="0" max="10" step="1" value="2"
+                                style="width:3.6rem"> /10</label>
+        </div>
+        <datalist id="painsites">
+          <option>left shin</option><option>right shin</option>
+          <option>left calf</option><option>right calf</option>
+          <option>left knee</option><option>right knee</option>
+          <option>left achilles</option><option>right achilles</option>
+          <option>left foot</option><option>right foot</option>
+          <option>left hip</option><option>right hip</option>
+        </datalist>
+        <div class="row" style="margin-top:.5rem">
+          <label>when
+            <select id="paintiming">
+              <option value="during_run">during the run</option>
+              <option value="after_run">after the run</option>
+              <option value="next_morning">next morning</option>
+              <option value="constant">all the time</option>
+            </select>
+          </label>
+        </div>
+        <label class="check" style="margin-top:.5rem">
+          <input type="checkbox" id="painfocal">
+          <span>One specific point I can press on</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="painworse">
+          <span>Got worse as the run went on</span>
+        </label>
+        <button id="painadd" class="tiny" style="margin-top:.7rem">Log it</button>
+        <div id="painout" style="margin-top:.7rem"></div>
+      </section>
+    </div>
+  </details>
+
+  <details>
+    <summary>Your plan</summary>
+    <div class="details-body">
+      <section id="plan-section">
+        <div class="instrument" style="gap:.8rem">
+          <div class="planhead">
+            <div>
+              <div class="phase" id="phaselabel">—</div>
+              <div class="weeklabel" id="weeklabel">—</div>
+            </div>
+            <button id="advance" class="tiny">Next week</button>
+          </div>
+          <div class="strip" id="strip"></div>
+          <div class="sesscard">
+            <div class="sesstitle" id="sesstitle">—</div>
+            <div class="sessdetail" id="sessdetail"></div>
+          </div>
+          <div class="row">
+            <button id="loadsess">Load this session</button>
+            <button id="donesess" class="tiny">Mark done</button>
+          </div>
+        </div>
+        <p class="note" id="gatenote" style="margin-top:.7rem"></p>
+      </section>
+    </div>
+  </details>
+
+  <details>
+    <summary>What you'll hear</summary>
+    <div class="details-body">
+      <section>
+        <div class="legend">
+          <b>Two notes falling</b><span>Ease off — faster than the band</span>
+          <b>Two notes rising</b><span>Lift — slower than the band</span>
+          <b>One note</b><span>Back on pace</span>
+          <b>Three rising</b><span>The voice is about to speak</span>
+          <b>Two low thuds</b><span>Signal lost, guidance degraded</span>
+          <b>Silence</b><span>You're inside the band</span>
+        </div>
+      </section>
+    </div>
+  </details>
+
+  <details>
+    <summary>How it went</summary>
+    <div class="details-body">
+      <section id="stats-section" class="hide">
+        <div class="instrument" style="gap:.6rem">
+          <div id="statsgrid" class="tiles"></div>
+          <div id="statssplits" class="note" style="margin-top:.2rem"></div>
+          <div id="statsprogress" class="note"></div>
+          <div id="statsverdict" class="note hide"
+               style="border-top:1px solid var(--line);padding-top:.6rem;margin-top:.2rem"></div>
+        </div>
+        <p class="note" style="margin-top:.7rem">
+          Beats per mile and efficiency factor are the two that track fitness: the same pace at a lower
+          heart rate is progress and nothing else. Both need the armband, and both are only comparable
+          between similar sessions.
+        </p>
+      </section>
+    </div>
+  </details>
+
+  <details>
+    <summary>Saved sessions</summary>
+    <div class="details-body">
+      <section id="saved-section">
+        <div id="recover" class="instrument hide" style="gap:.6rem;border-color:var(--fast)">
+          <div class="phase" id="recovertitle">—</div>
+          <div class="weeklabel" id="recoverdetail"></div>
+          <div class="row">
+            <button id="recoverbtn">Recover it</button>
+            <button id="discardbtn" class="tiny">Discard</button>
+          </div>
+        </div>
+        <div id="savedlist"></div>
+        <p class="note" id="storagenote" style="margin-top:.7rem"></p>
+        <p class="note" style="margin-top:.7rem">
+          Every session is written to this phone while it runs, not just at the end. A page that reloads
+          mid-run — which iOS does by itself to a backgrounded tab, with no warning — used to take the
+          whole recording with it.
+        </p>
+      </section>
+    </div>
+  </details>
+
+  <details>
+    <summary>Session log</summary>
+    <div class="details-body">
+      <section>
+        <div id="log"></div>
+        <div class="row" style="margin-top:.65rem">
+          <button id="copy" disabled>Copy session</button>
+          <button id="copyfull" class="tiny" disabled>Copy raw (large)</button>
+          <button id="exportall" class="tiny">Export everything</button>
+          <button id="clearstore" class="tiny">Clear storage</button>
+          <button id="diag" class="tiny">Copy diagnostics</button>
+        </div>
+        <div class="row" style="margin-top:.65rem">
+          <label style="flex:1">tone volume
+            <input id="gain" type="range" min="0.2" max="1" step="0.05"
+                   style="width:100%;accent-color:var(--on)"></label>
+        </div>
+        <p class="note" style="margin-top:.7rem">
+          The session copies to your clipboard rather than downloading — a browser that will not save a
+          file leaves you with a run you cannot get off the phone. Paste it into the chat and it imports
+          with <code>cli import</code>. <strong>Copy diagnostics</strong> does the same for the build id,
+          what this browser can do, and the last forty log lines: that is what to send when something
+          does not work. If the browser has no clipboard, both put the text on the page instead.
+        </p>
+      </section>
+    </div>
+  </details>
+
+  <footer style="margin-top:.5rem;padding-top:1rem;border-top:1px solid var(--line);
                  font-size:.75rem;color:var(--faint);display:flex;gap:.6rem;flex-wrap:wrap">
     <span>Band</span>
     <span id="buildid">—</span>
@@ -3172,6 +3242,11 @@ function showStats(stats, prevStats) {
   }
 
   $('stats-section').classList.remove('hide');
+  // The section lives inside a collapsed <details> now (see "How it went" in the layout) — removing
+  // `hide` alone would make it present but still invisible behind a closed disclosure triangle. A
+  // session finishing is exactly the moment the athlete wants this open without having to tap for it.
+  const statsDetails = $('stats-section').closest('details');
+  if (statsDetails) statsDetails.open = true;
   $('stats-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
