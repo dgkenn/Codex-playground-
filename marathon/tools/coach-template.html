@@ -1613,9 +1613,15 @@ $('w-mill').onclick = () => setRampWhere(false);
 /**
  * Whether heart rate calls the blocks, and what that will mean today.
  *
- * Off by default and deliberately so: it needs the armband, and this athlete has had one session
- * where the battery died halfway and one with no band at all. A default that silently degrades to
- * the clock is fine; a default that looks like it is governing when it is not is not.
+ * On by default. It used to default off on the reasoning that it needs the armband and this athlete
+ * has had one session where the battery died halfway and one with no band at all -- but the whole
+ * point of this module is that a clock cannot be trusted to govern this athlete's load, and a program
+ * whose governor is an opt-in checkbox is a program that is un-governed until someone remembers to
+ * tap it. His own recording is the reason: prescribed Z1/Z2 with a 155 bpm ceiling, peaked at 177 --
+ * 95% of his estimated HRmax -- because the clock, not the body, was in charge. The controller already
+ * falls back to the clock when no band is connected or its reading goes stale (see hr-blocks.js), so
+ * defaulting to on costs nothing on a session with no armband and prevents exactly the session that
+ * put this module here on every session with one.
  */
 function renderHrBlockNote() {
   const on = $('hrblocks').checked;
@@ -1624,8 +1630,9 @@ function renderHrBlockNote() {
   const connected = !!(sn && sn.state && sn.state().connected);
   if (!on) {
     $('hrblocknote').textContent =
-      'Off: the blocks run on the clock above. On, they run until your heart rate reaches the '
-      + `ceiling (${ceil.bpm} bpm — ${ceil.source}) and walk until it comes back down to `
+      'Off: you have turned off heart-rate governance for this session, so the blocks run on the '
+      + `clock above instead. On (the default), they run until your heart rate reaches the ceiling `
+      + `(${ceil.bpm} bpm — ${ceil.source}) and walk until it comes back down to `
       + `${recoveryFloorBpm()}. That is the same two words to follow, with the load decided by your `
       + 'body instead of by a timer.';
     return;
@@ -1637,7 +1644,9 @@ function renderHrBlockNote() {
                  + 'the session will not count toward progression.');
 }
 
-$('hrblocks').checked = localStorage.getItem('band.hrblocks') === '1';
+// Default ON: only an explicit '0' (the athlete unchecking it themselves) turns it off. See the
+// function doc above for why an opt-in governor is the wrong default for this athlete.
+$('hrblocks').checked = localStorage.getItem('band.hrblocks') !== '0';
 $('hrblocks').onchange = e => {
   localStorage.setItem('band.hrblocks', e.target.checked ? '1' : '0');
   renderHrBlockNote();
@@ -2539,9 +2548,41 @@ function thresholdHistory() {
   try { return JSON.parse(localStorage.getItem(THRESHOLD_KEY) || '[]'); } catch { return []; }
 }
 
+/**
+ * The Z2 ceiling straight off Tanaka's age formula, with no measurement behind it at all.
+ *
+ * Shared by `aerobicCeilingBpm()` (what the ceiling falls back to before enough sessions exist) and
+ * `measuredCeiling()` (the reference `ceilingFrom` raises above, see threshold.js) — both used to
+ * compute this number separately, which is the kind of duplication that drifts the moment one of them
+ * changes and the other does not.
+ */
+function formulaCeilingBpm() {
+  const zs = (S.hrZones || zoneModel(hrMaxFor(profile.age), profile.hrRest))
+    .filter(z => z.index === 2);
+  return zs.length ? Math.round(zs[0].high)
+                   : Math.round(profile.hrRest + 0.70 * (hrMaxFor(profile.age) - profile.hrRest));
+}
+
+/**
+ * How far the measured ceiling is allowed to rise: 80% of heart-rate reserve.
+ *
+ * Above roughly 80% HRR the athlete is unambiguously in Z4 by any zone model in use here. So a
+ * session that "held full efficiency all the way to the ceiling" at that heart rate is more likely the
+ * CAP masking the real roll-off than a genuine threshold that high -- the athlete cannot show the
+ * roll-off exists if training never lets heart rate go far enough past the ceiling to produce one.
+ * The raise this caps (see `ceilingFrom` in threshold.js) stops where the evidence for it stops
+ * meaning what it says, not where the athlete happens to still be improving.
+ */
+function ceilingRaiseCapBpm() {
+  return Math.round(profile.hrRest + 0.80 * (hrMaxFor(profile.age) - profile.hrRest));
+}
+
 /** The measured ceiling, or null while the age formula is still the best available answer. */
 function measuredCeiling() {
-  try { return ceilingFrom(thresholdHistory()); } catch { return null; }
+  try {
+    return ceilingFrom(thresholdHistory(),
+      { currentBpm: formulaCeilingBpm(), maxBpm: ceilingRaiseCapBpm() });
+  } catch { return null; }
 }
 
 /**
@@ -2550,13 +2591,23 @@ function measuredCeiling() {
  * Called once per finished session. Sessions that never approach the threshold return null and are
  * not filed -- an easy run has not measured a ceiling, and letting it lower one would ratchet the
  * athlete downward every time they did exactly what they were told.
+ *
+ * A session that never rolled off files as a `heldTo` reading instead of a `bpm` one (see
+ * `estimateThreshold`'s doc in threshold.js): efficiency holding all the way to some heart rate with
+ * no roll-off in sight is different evidence from a roll-off actually being measured there, and
+ * `ceilingFrom` treats the two differently -- two `heldTo` readings in a row is what is allowed to
+ * raise the ceiling a band, where a `bpm` reading only ever sets it. Filing every `heldTo` as a bare
+ * `bpm: null` (as this used to) threw that evidence away entirely: `ceilingFrom`'s `heldEnough` check
+ * requires `heldTo > 0`, so those sessions were being recorded and then silently ignored forever.
  */
 function recordThreshold(samples) {
   let est = null;
   try { est = estimateThreshold(samples); } catch { return null; }
   if (!est) return null;
   const hist = thresholdHistory();
-  hist.push({ bpm: est.bpm, confidence: est.confidence, at: new Date().toISOString() });
+  hist.push(est.bpm == null && est.heldTo
+    ? { heldTo: est.heldTo, confidence: est.confidence, at: new Date().toISOString() }
+    : { bpm: est.bpm, confidence: est.confidence, at: new Date().toISOString() });
   try { localStorage.setItem(THRESHOLD_KEY, JSON.stringify(hist.slice(-20))); } catch { /* full */ }
   return est;
 }
@@ -2572,10 +2623,7 @@ function recordThreshold(samples) {
 function aerobicCeilingBpm() {
   const measured = measuredCeiling();
   if (measured) return { bpm: measured.bpm, source: measured.source };
-  const zs = (S.hrZones || zoneModel(hrMaxFor(profile.age), profile.hrRest))
-    .filter(z => z.index === 2);
-  const bpm = zs.length ? Math.round(zs[0].high) : Math.round(profile.hrRest + 0.70 * (hrMaxFor(profile.age) - profile.hrRest));
-  return { bpm, source: 'Z2 ceiling from the age formula' };
+  return { bpm: formulaCeilingBpm(), source: 'Z2 ceiling from the age formula' };
 }
 
 /**
@@ -2591,6 +2639,17 @@ function recoveryFloorBpm() {
   return Math.round(profile.hrRest + 0.55 * (hrMaxFor(profile.age) - profile.hrRest));
 }
 
+/**
+ * The controller's own summary from every archived session that had one, oldest first.
+ *
+ * `hrrBaseline()` (progression.js) takes the median of the LAST five, which only means "most recent"
+ * if the list arrives oldest-first -- `sessions.index()` returns newest-first (see session-store.js
+ * `archive()`, which unshifts each new entry), so this reverses it.
+ */
+function hrrHistory() {
+  return sessions.index().map(e => e.stats && e.stats.hrBlocks).filter(Boolean).reverse();
+}
+
 function tickIntervals(t) {
   const runS = Number($('runmin').value) * 60, walkS = Number($('walkmin').value) * 60;
   const reps = Number($('reps').value);
@@ -2599,15 +2658,26 @@ function tickIntervals(t) {
   // line, the big word on the screen -- is shared, because from the athlete's side the session is
   // identical either way. That is the whole point: the instruction stays two words, and only what
   // decides the moment changes.
+  let cooldown = false;
   if (S.hrBlocks) {
     const sn = S.sensor;
     const fresh = sn && sn.hrFresh();
     const ev = S.hrBlocks.update(t, fresh ? sn.hr : null, { hrFresh: !!fresh });
     if (!ev) return;
     if (ev.phase === 'done') { finish('Session complete.'); return; }
-    S.ivPhase = ev.phase === 'run' ? 'run' : 'walk';
-    S.ivRep = ev.rep;
-    S.ivReason = ev.reason;
+    // The body ended the running (`not recovering`) or the plan's own total-running target was met
+    // (`target reached`) -- either way the RUNNING is over but the recording is not: for this athlete
+    // walking IS training (see hr-blocks.js). So this does NOT call finish() -- it keeps ticking, keeps
+    // recording, and waits for the athlete to press Stop themself.
+    if (ev.phase === 'cooldown') {
+      cooldown = true;
+      S.ivPhase = 'walk';
+      S.ivReason = ev.reason;
+    } else {
+      S.ivPhase = ev.phase === 'run' ? 'run' : 'walk';
+      S.ivRep = ev.rep;
+      S.ivReason = ev.reason;
+    }
   } else {
     if (t < S.ivUntil) return;
     if (S.ivPhase === null) {
@@ -2639,13 +2709,15 @@ function tickIntervals(t) {
   sayShortly(run
     ? `Run. ${counted} Target ${U.pace(targetSecKm)}.`
     : (S.ivReason === 'not recovering' ? 'Walk it in. That is the session.'
+     : S.ivReason === 'target reached' ? 'That is the target. Walk it in.'
                                        : 'Walk. Ease right down.'));
-  log(`${word} — ${S.ivPhase === 'run' ? `block ${S.ivRep}` : 'recover'}`
+  log(`${word} — ${cooldown ? 'cool-down' : (S.ivPhase === 'run' ? `block ${S.ivRep}` : 'recover')}`
       + (S.ivReason ? ` (${S.ivReason})` : ''),
       S.ivPhase === 'run' ? 'fast' : 'on');
   $('pace').textContent = word.toUpperCase();
-  $('verdict').textContent = S.ivPhase === 'run'
-    ? (S.hrBlocks ? `block ${S.ivRep}` : `rep ${S.ivRep} of ${reps}`) : 'recover';
+  $('verdict').textContent = cooldown ? 'cool-down'
+    : S.ivPhase === 'run' ? (S.hrBlocks ? `block ${S.ivRep}` : `rep ${S.ivRep} of ${reps}`)
+    : 'recover';
   $('verdict').style.color = `var(--${S.ivPhase === 'run' ? 'fast' : 'on'})`;
 }
 
@@ -3008,12 +3080,18 @@ $('go').onclick = () => {
   S.hrBlocks = null;
   if (S.mode === 'intervals' && $('hrblocks').checked) {
     const ceil = aerobicCeilingBpm();
+    // `run_min x reps` becomes a TOTAL running target, not a block count, once heart rate is calling
+    // the blocks -- the body decides how long each block and each walk runs, so `reps` is the wrong
+    // cap here (seven 40s blocks would end a 14-minute prescription after 4.7 minutes; see
+    // hr-blocks.js). `reps: null` leaves the old rep cap disarmed so it cannot fire underneath the
+    // target by accident.
     S.hrBlocks = new HrBlocks({
       ceilingBpm: ceil.bpm,
       floorBpm: recoveryFloorBpm(),
       fallbackRunS: Number($('runmin').value) * 60,
       fallbackWalkS: Number($('walkmin').value) * 60,
-      reps: Number($('reps').value) || null,
+      reps: null,
+      targetRunningS: Number($('runmin').value) * Number($('reps').value) * 60,
     });
     log(`heart rate calls the blocks — run to ${ceil.bpm}, walk down to ${recoveryFloorBpm()} `
         + `(${ceil.source})`, 'on');
@@ -3161,6 +3239,13 @@ function showStats(stats, prevStats) {
     if (stats.hrr60 != null) tile('Recovery', `-${stats.hrr60}`);
     if (stats.trimp != null) tile('Load', Math.round(stats.trimp));
   }
+  // The controller's own account of the session, when heart rate was calling the blocks. Terse on
+  // purpose — this is a summary tile row, not the place to re-explain what governed by HR means.
+  if (stats.hrBlocks) {
+    tile('Run under ceiling', mmss(stats.hrBlocks.runningUnderCeilingS));
+    tile('Blocks', `${stats.hrBlocks.runBlocks}`);
+    if (stats.hrBlocks.hrr60Median != null) tile('HRR60', `-${Math.round(stats.hrBlocks.hrr60Median)}`);
+  }
   tile('Cues', `${stats.tones} (${stats.tonesPerMin.toFixed(2)}/min)`);
   // Chronic load, from every session on the phone rather than from this one. Shown only once there
   // is enough history to mean anything -- for a new runner the ratio reads alarming for weeks purely
@@ -3218,8 +3303,17 @@ function showStats(stats, prevStats) {
   // not a controller: on 22 August it prescribed seven two-minute blocks, got 2.6 minutes of running
   // and a longest block of 37 seconds, and would have asked for three-minute blocks the following
   // Wednesday. See progression.js for why the check runs on four things and not forty.
+  // Once heart rate is calling the blocks, `judgeSession`'s block-structure reading of the rung stops
+  // meaning anything -- see progression.js `judgeHrSession`: the rung is a total-running TARGET now,
+  // not a run/walk/reps structure the body no longer follows. So an HR-governed session with a
+  // run/walk rung in force is judged by `judgeHrSession` instead, fed the controller's own summary
+  // (archived on `stats.hrBlocks`, see `finish()`) and this athlete's own recent recovery baseline;
+  // everything else still goes through `judgeSession` exactly as before.
   const rw = S.plannedSession && S.plannedSession.runWalk;
-  const judged = rw ? judgeSession(rw, stats) : null;
+  const judged = (stats.hrBlocks && stats.hrBlocks.governedBy === 'hr' && rw)
+    ? judgeHrSession({ runningMinTarget: rw.runMin * rw.reps }, stats.hrBlocks, stats,
+                     hrrBaseline(hrrHistory()))
+    : (rw ? judgeSession(rw, stats) : null);
   // And it is applied, not merely announced. This is the line that turns a schedule into a
   // controller; everything it needs has existed and been tested for weeks.
   const moved = judged ? applyVerdict(judged, stats) : null;
@@ -3230,10 +3324,18 @@ function showStats(stats, prevStats) {
     if (moved && moved.moved) where = ` Ladder: ${say(L[moved.from])} → ${say(L[moved.to])}.`;
     else if (moved && moved.from != null) where = ` Ladder stays at ${say(L[moved.from])}.`;
     else if (moved) where = ` Ladder unchanged — ${moved.why}.`;
+    // Which of the four endings the controller actually recorded -- the plan's target, a stall, or the
+    // athlete stopping it. Stated plainly here rather than relying on the judge's prose to carry it,
+    // since `judgeSession` (no `stats.hrBlocks`, or a session that fell back to the clock) never
+    // mentions an ending at all.
+    const ended = stats.hrBlocks && stats.hrBlocks.endedBy
+      ? ` Ended by ${stats.hrBlocks.endedBy === 'target' ? "the plan's target"
+                   : stats.hrBlocks.endedBy === 'stall' ? 'the body (stalled recovery)'
+                   : stats.hrBlocks.endedBy}.` : '';
     $('statsverdict').textContent =
       `${judged.verdict === ADVANCE ? 'Next one goes up.'
         : judged.verdict === EASE_BACK ? 'Next one steps back.'
-        : 'Next one repeats this.'} ${judged.reason} ${judged.next}${where}`;
+        : 'Next one repeats this.'} ${judged.reason} ${judged.next}${where}${ended}`;
     $('statsverdict').style.color = judged.verdict === ADVANCE ? 'var(--on)'
       : judged.verdict === EASE_BACK ? 'var(--slow)' : 'var(--dim)';
     $('statsverdict').classList.remove('hide');
@@ -3269,6 +3371,15 @@ function finish(msg) {
   // File it before anything else. Everything below is presentation; this is the run.
   let stats = null;
   if (S.samples.length && S.mode !== 'rehearse') {
+    // Close the controller's own open block before asking it to summarise itself. Whatever phase it
+    // is in -- mid-run, mid-walk, or already in a cool-down the body or the plan's target put it in --
+    // this is the "athlete ended it" ending unless one of those two already claimed the session (see
+    // hr-blocks.js `finish()`), and it must happen before `summary()` is read below or the last open
+    // block is missing from the totals entirely.
+    if (S.hrBlocks) {
+      const closeT = Math.round((Date.now() - S.startedAt) / 1000);
+      S.hrBlocks.finish(closeT);
+    }
     stats = runStats(S.samples, {
       zones: statsZones(), hrRest: profile.hrRest, hrMax: hrMaxFor(profile.age),
       unit, tones: S.tones,
@@ -3277,6 +3388,11 @@ function finish(msg) {
       targetPaceSecKm: S.rampTargetSecKm || targetSecKm,
       trackDistanceM: Math.round(S.track.distanceM),
     });
+    // The controller's own account of the session -- run/walk block shape, seconds under and over the
+    // ceiling, the autonomic recovery series, and which of the four endings actually happened -- none
+    // of which `runStats` can derive from the pace-and-HR trace alone. Archived with the session so it
+    // reaches `showStats` on replay and `hrrHistory()` below for every session after this one.
+    stats.hrBlocks = S.hrBlocks ? S.hrBlocks.summary() : null;
     // Stored WITH the session, not recomputed on demand: the zones and the profile can change
     // afterwards, and a statistic that silently restates itself when the settings move is not a
     // record of anything.

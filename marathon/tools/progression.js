@@ -269,8 +269,11 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
       verdict: ADVANCE, evidence,
       next: 'Move up a rung: more total running time under the ceiling.',
       reason: `${mins(underS)} of running under the ceiling against ${mins(targetS)} asked for, `
-            + `ended by ${summary.endedBy === 'reps' ? 'the plan' : 'the athlete'} rather than the `
-            + `body giving out. Done as prescribed, so the next one can ask for more.`,
+            // `target` is the same ending as `reps`: HR governance retires the block count in favour
+            // of a total-running target (see hr-blocks.js), so reaching THAT target is the plan's own
+            // end just as reaching the rep count was before it -- both are "the plan", not "the athlete".
+            + `ended by ${['reps', 'target'].includes(summary.endedBy) ? 'the plan' : 'the athlete'} `
+            + `rather than the body giving out. Done as prescribed, so the next one can ask for more.`,
     };
   }
 
