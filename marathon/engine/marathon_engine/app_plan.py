@@ -31,6 +31,7 @@ from marathon_engine import plan as planmod
 from marathon_engine.plan import Phase, PHASE_MIN_WEEKS
 from marathon_engine.assessment import FitnessProfile
 from marathon_engine.physiology import fmt_pace
+from marathon_engine import safety
 
 __all__ = ["build_app_plan", "APP_PLAN_VERSION"]
 
@@ -200,7 +201,8 @@ def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfi
 
 def build_app_plan(profile: FitnessProfile, *,
                    config: Optional[planmod.PlanConfig] = None,
-                   start_phase: planmod.Phase = planmod.Phase.ASSESS) -> Dict[str, Any]:
+                   start_phase: planmod.Phase = planmod.Phase.ASSESS,
+                   weeks_running_at_start: int = 0) -> Dict[str, Any]:
     """The schedule the phone carries, phase by phase.
 
     ``start_phase`` skips the export past phases already known to be done. It exists for exactly one
@@ -223,6 +225,11 @@ def build_app_plan(profile: FitnessProfile, *,
     # module docstring) would be invited to redo a near-maximal graded test every week for a month.
     # PHASE_MIN_WEEKS already says this phase needs exactly one; ship exactly one.
     started = SHIPPED_PHASES.index(start_phase) if start_phase in SHIPPED_PHASES else 0
+    # Weeks of running elapsed, counted across the whole export rather than per phase, because bone
+    # does not reset at a phase boundary.
+    weeks_running = weeks_running_at_start
+    longest_run_km: Optional[float] = None
+
     for phase in SHIPPED_PHASES[started:]:
         weeks_to_ship = PHASE_MIN_WEEKS.get(phase, WEEKS_PER_PHASE) if phase == Phase.ASSESS \
             else WEEKS_PER_PHASE
@@ -232,6 +239,54 @@ def build_app_plan(profile: FitnessProfile, *,
             w = planmod.generate_week(profile, phase, wk, week_index=wk, config=cfg,
                                       previous_week_volume=previous_volume)
             previous_volume = w.volume_target_km
+
+            # The bone-vulnerable window, applied rather than described.
+            #
+            # Every other governor in this engine -- TRIMP, ACWR, readiness, the heart-rate ceiling
+            # -- is cardiovascular or autonomic. Bone appears in none of them, and its adaptation
+            # lags the fitness that lets you run further by months, so a new runner can pass every
+            # gate, feel excellent, and be well into a tibial stress reaction. safety.py has had the
+            # machinery for this since the beginning and nothing ever called it.
+            #
+            # What the plan asks for unclamped is worth stating, because it is the reason this is
+            # needed: the long run grows 4.9 -> 5.7 -> 6.7 km in BASE_1 (+16%, +18% a week) and then
+            # jumps 6.3 -> 9.1 km across the phase boundary, +44% in one step. The RUNSAFE cohort
+            # (5,205 runners, 588,071 sessions) found injury hazard rising continuously from the
+            # smallest progressions they measured, and the authors use that specifically to argue
+            # there is no safe cut-off. A 44% single-run jump on eight-week-old bones is the shape
+            # of injury this whole phase exists to avoid.
+            #
+            # NOT `clamp_single_run`, and the distinction matters. That function caps a run at
+            # 1.00x the longest of the last thirty days while the window is armed, which is the
+            # right RUNTIME rule -- it is asked "should today's run be this long, given what you
+            # have actually done" and a novice should not exceed their own recent longest on a whim.
+            # Applied to a GENERATOR it deadlocks: this week is capped at last week's figure, which
+            # was capped at the week before's, and the long run is frozen at 4.9 km for the entire
+            # eighteen-week export. Measured, not predicted -- every BASE_2 long run came out at 4.9.
+            #
+            # So generation uses the growth rate the same module already calls acceptable:
+            # BONE_LOAD_SPIKE_RATIO, the boundary below which `single_run_progression` returns "ok".
+            # The plan may grow the long run, at the fastest rate the spike guard does not flag.
+            bone = safety.bone_load([], weeks_running=weeks_running)
+            for sess in w.sessions:
+                if not sess.distance_km:
+                    continue
+                if bone.in_high_risk_window and longest_run_km:
+                    allowed = longest_run_km * safety.BONE_LOAD_SPIKE_RATIO
+                    if sess.distance_km > allowed:
+                        band, _, message = safety.single_run_progression(
+                            sess.distance_km, longest_run_km, in_bone_window=True)
+                        sess.distance_km = round(allowed, 1)
+                        # Said out loud in the text the athlete reads. A run quietly shortened is
+                        # indistinguishable from a plan that never asked for more, and an athlete
+                        # who notices would be right to stop trusting both.
+                        sess.structure = (sess.structure + " " if sess.structure else "") + (
+                            f"Held to {sess.distance_km:.1f} km: bone adapts more slowly than "
+                            f"fitness, and you are inside the first "
+                            f"{safety.NEW_RUNNER_BONE_WINDOW_WEEKS} weeks of running. {message}")
+                longest_run_km = max(longest_run_km or 0.0, sess.distance_km)
+            weeks_running += 1
+
             weeks.append({
                 "week": wk,
                 "focus": w.focus,
@@ -273,6 +328,32 @@ def build_app_plan(profile: FitnessProfile, *,
         # week 1 or month 4 -- so it travels with the export on its own, and the app can offer a
         # recalibration ramp at any time rather than only in the one week that happens to schedule it.
         "ramp_protocol": _ramp_dict(profile),
+        # The run-walk ladder as data, so the phone can move along it on evidence.
+        #
+        # It was baked into the weeks: week 1 got rung 0, week 2 rung 1, and so on, which makes the
+        # calendar the controller. On 22 August this athlete was prescribed seven two-minute blocks,
+        # managed 2.6 minutes of running with a longest block of 37 seconds, and would have been
+        # asked for three-minute blocks the following Wednesday regardless. The app already computes
+        # the verdict that should decide this (progression.judgeSession) and had nowhere to apply it.
+        #
+        # Shipping the ladder itself lets the rung be state the athlete's own sessions move, with the
+        # week's prescription as the entry point rather than the whole story.
+        # The bone window, stated rather than merely applied, so the athlete can see why a long run
+        # was capped and when the cap lifts.
+        "bone_window": {
+            "weeks_running_at_start": weeks_running_at_start,
+            "window_weeks": safety.NEW_RUNNER_BONE_WINDOW_WEEKS,
+            "in_window": weeks_running_at_start < safety.NEW_RUNNER_BONE_WINDOW_WEEKS,
+            "note": ("Bone adapts months behind the fitness that lets you run further, and appears "
+                     "in none of the heart-rate measures. For the first "
+                     f"{safety.NEW_RUNNER_BONE_WINDOW_WEEKS} weeks of running, single runs are "
+                     "capped against your own recent longest: prefer more frequent, shorter runs "
+                     "over one long one, vary the surface, and treat focal bone pain as a stop "
+                     "rather than a niggle."),
+        },
+        "run_walk_ladder": [
+            {"run_min": r, "walk_min": w, "reps": n} for r, w, n in planmod._RUN_WALK_LADDER
+        ],
         "run_days": list(cfg.run_days),
         "strength_days": list(cfg.strength_days),
         "phases": phases,

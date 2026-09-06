@@ -312,6 +312,49 @@
     </p>
   </section>
 
+  <section id="pain-section">
+    <h2>Niggles</h2>
+    <p class="note">
+      The one thing the app cannot measure and the one that ends training blocks. Thirty seconds
+      after a run beats a fortnight of guessing later. Focal pain — a single point you can put a
+      finger on — is treated as a stop regardless of how mild it feels.
+    </p>
+    <div class="row" style="margin-top:.7rem">
+      <label>where <input id="painsite" type="text" list="painsites" placeholder="left shin"
+                          style="width:9rem"></label>
+      <label>how bad <input id="painlevel" type="number" min="0" max="10" step="1" value="2"
+                            style="width:3.6rem"> /10</label>
+    </div>
+    <datalist id="painsites">
+      <option>left shin</option><option>right shin</option>
+      <option>left calf</option><option>right calf</option>
+      <option>left knee</option><option>right knee</option>
+      <option>left achilles</option><option>right achilles</option>
+      <option>left foot</option><option>right foot</option>
+      <option>left hip</option><option>right hip</option>
+    </datalist>
+    <div class="row" style="margin-top:.5rem">
+      <label>when
+        <select id="paintiming">
+          <option value="during_run">during the run</option>
+          <option value="after_run">after the run</option>
+          <option value="next_morning">next morning</option>
+          <option value="constant">all the time</option>
+        </select>
+      </label>
+    </div>
+    <label class="check" style="margin-top:.5rem">
+      <input type="checkbox" id="painfocal">
+      <span>One specific point I can press on</span>
+    </label>
+    <label class="check">
+      <input type="checkbox" id="painworse">
+      <span>Got worse as the run went on</span>
+    </label>
+    <button id="painadd" class="tiny" style="margin-top:.7rem">Log it</button>
+    <div id="painout" style="margin-top:.7rem"></div>
+  </section>
+
   <section id="plan-section">
     <h2>Your plan</h2>
     <div class="instrument" style="gap:.8rem">
@@ -426,6 +469,11 @@
       <label>× <input id="reps" type="number" min="1" max="40" step="1" value="8"
                       style="width:3.6rem"></label>
     </div>
+    <label class="check" style="margin-top:.7rem">
+      <input type="checkbox" id="hrblocks">
+      <span>Let heart rate call the blocks</span>
+    </label>
+    <p class="note" id="hrblocknote" style="margin-top:.5rem"></p>
     <p class="note" style="margin-top:.7rem">
       No GPS needed, so this works even if location is blocked. It's also the session week 1 of your
       plan actually prescribes.
@@ -3875,6 +3923,628 @@ class PaceVoice {
     return 'On pace.';
   }
 }
+// Run and walk decided by heart rate, not by a clock.
+//
+// Why this exists
+// ---------------
+// One session, recorded against Polar and read second by second:
+//
+//   * prescribed Z1/Z2 with a 155 bpm ceiling; peaked at **177**, which is 95% of his estimated
+//     HRmax. The trace is clean -- no implausible beat-to-beat jumps, a smooth 46 bpm fall once he
+//     eased -- so this is a real heart rate and not an optical sensor locking onto step cadence.
+//   * 19% of the session was spent above that ceiling, and the mean pace while above it was
+//     **16:59/mi** against a prescription of 12:04. He was not running too fast. He was running
+//     SLOWER than asked and still over the line.
+//   * heart rate ratcheted 137 -> 142 -> 149 -> 153 -> 160 -> 162 across the session while the pace
+//     fell. Same pace at minute 8 and minute 19: 148 bpm and 177 bpm.
+//
+// Pace is an input the athlete controls. Heart rate is the output that decides what adapts. For a
+// trained runner the two track each other closely enough that prescribing pace works; for this
+// athlete they do not yet track at all, and building that relationship is what the training is FOR.
+// So the plan was governing the one variable that was not controlling the physiology.
+//
+// The walk break turned out to be the larger fault. Of 1176 seconds spent walking, 384 were still
+// above threshold -- more time above the ceiling walking than running. The plan prescribes a brisk
+// 5.6 km/h walk on the reasoning that a stroll lets heart rate fall too far; at this athlete's
+// fitness that walk is a second workout, heart rate never comes down, and every run block starts
+// from a higher floor than the last. That is the ratchet. The one time he did walk slowly for two
+// minutes his heart rate fell from 162 to 121.
+//
+// So both halves are governed here: run until the ceiling, walk until the floor, at whatever speed
+// each of those takes.
+//
+// What it buys beyond not overcooking a session
+// ---------------------------------------------
+// 1. It is SIMPLER to obey. A pace target is a number to hold while tired; this is two words.
+// 2. It auto-regulates. Heat, poor sleep, hills, the start of a cold: blocks shorten and walks
+//    lengthen with no decision required and no honesty required about how you feel.
+// 3. Every run->walk transition becomes a heart-rate recovery measurement. Six to ten a session,
+//    three sessions a week. This athlete cannot collect overnight HRV -- no chest strap in bed, no
+//    sleep tracking, and the engine's readiness module returns "unknown" forever without it -- but
+//    HRR rises with fitness and falls with accumulated fatigue, and it comes free from equipment he
+//    already owns.
+
+/** Seconds without a fresh heart rate after which this controller stops trusting it. */
+const HR_STALE_S = 12;
+
+const HrBlockDefaults = {
+  /// Never call a run block shorter than this even if heart rate is already at the ceiling.
+  ///
+  /// Heart rate lags effort by 20-30 s, so the first half-minute of a block reports the walk that
+  /// preceded it. Without a floor on block length a session that starts with an elevated heart rate
+  /// degenerates into run-two-seconds-walk-two-seconds, which is not a workout and is demoralising.
+  minRunS: 30,
+  /// And never longer, however good the heart rate looks. A block this long is no longer a run/walk
+  /// session; the athlete has graduated and the ladder should say so rather than this silently
+  /// turning into a continuous run.
+  maxRunS: 900,
+  /// A walk shorter than this has not recovered anything regardless of what the number says.
+  minWalkS: 45,
+  /// After this long walking, go again even if the floor was never reached. Standing in the cold
+  /// waiting for a number is worse training than a slightly hot block, and `recovered: false` on the
+  /// block records that it happened so the session can be judged honestly afterwards.
+  maxWalkS: 210,
+  /// Consecutive walk breaks that fail to reach the floor before this many seconds. Two in a row is
+  /// the session telling you it is over.
+  stallWalkS: 180,
+  /// Walk at the start until heart rate settles, so the first block is not started mid-commute.
+  warmupS: 180,
+};
+
+/** Phases this controller can be in. `warmup` is walking too. */
+/// Named for this module rather than `Phase`, which is what it wants to be called: the built page
+/// inlines every module into one scope, and `Phase` is a name the training plan will want too.
+const BlockPhase = { WARMUP: 'warmup', RUN: 'run', WALK: 'walk', DONE: 'done' };
+
+/**
+ * Decides when to run and when to walk, from heart rate.
+ *
+ * `ceilingBpm` is the aerobic ceiling -- the top of Z2, or better, the athlete's own measured first
+ * ventilatory threshold (see threshold.js, which reads it off their sessions). `floorBpm` is where a
+ * walk break has done its job.
+ *
+ * Falls back to the clock when heart rate is missing or stale, because an armband whose battery dies
+ * mid-run must degrade to the session the athlete came out to do rather than to nothing. This has
+ * happened to this athlete: one session lost heart rate halfway through, another had none at all.
+ */
+class HrBlocks {
+  constructor({ ceilingBpm, floorBpm, fallbackRunS, fallbackWalkS, reps = null, ...opts } = {}) {
+    this.cfg = { ...HrBlockDefaults, ...opts };
+    this.ceilingBpm = ceilingBpm;
+    this.floorBpm = floorBpm;
+    /// What to do when there is no heart rate: the prescribed clock session, unchanged.
+    this.fallbackRunS = fallbackRunS;
+    this.fallbackWalkS = fallbackWalkS;
+    /// Optional cap on run blocks. Null means "until the athlete stops or stalls", which is what an
+    /// HR-governed session naturally is -- the load is bounded by the ceiling, not by a rep count.
+    this.reps = reps;
+
+    this.phase = BlockPhase.WARMUP;
+    this.phaseStartT = null;
+    this.rep = 0;
+    /// Completed blocks: {kind, startT, endT, peakHr, endHr, recovered, governedBy}.
+    this.blocks = [];
+    /// One entry per run->walk transition: {atT, peakHr, hr60, hrr60}. The autonomic series.
+    this.recoveries = [];
+    this.stalls = 0;
+    this._peakHr = null;
+    this._lastFreshT = null;
+    this._pending = [];          // recoveries still waiting for their 60-second reading
+  }
+
+  /** True while heart rate is recent enough to govern with. */
+  hrLive(tS) {
+    return this._lastFreshT != null && tS - this._lastFreshT <= HR_STALE_S;
+  }
+
+  /** Seconds spent in the current phase. */
+  elapsed(tS) { return this.phaseStartT == null ? 0 : tS - this.phaseStartT; }
+
+  /**
+   * Feed one second.
+   *
+   * Returns null when nothing changes, or `{phase, previous, reason, rep, block}` at a transition.
+   * `reason` is the athlete-facing explanation and is deliberately short enough to speak.
+   */
+  update(tS, hrBpm, { hrFresh = true } = {}) {
+    if (this.phase === BlockPhase.DONE) return null;
+    if (this.phaseStartT == null) this.phaseStartT = tS;
+
+    const hr = (hrFresh && hrBpm != null && hrBpm > 0) ? hrBpm : null;
+    if (hr != null) this._lastFreshT = tS;
+    if (hr != null && (this._peakHr == null || hr > this._peakHr)) this._peakHr = hr;
+    this._resolveRecoveries(tS, hr);
+
+    const live = this.hrLive(tS) && this.ceilingBpm != null && this.floorBpm != null;
+    const el = this.elapsed(tS);
+
+    if (this.phase === BlockPhase.WARMUP) {
+      // Long enough to have settled, and either at the floor or out of patience. A warm-up that
+      // waits forever for a floor the athlete cannot reach while walking is a session that never
+      // starts, which is the same failure as a coach that never speaks.
+      const ready = live ? (hr <= this.floorBpm || el >= this.cfg.warmupS)
+                         : el >= Math.min(this.cfg.warmupS, this.fallbackWalkS ?? this.cfg.warmupS);
+      if (el >= this.cfg.minWalkS && ready) return this._to(BlockPhase.RUN, tS, 'warm-up done', live);
+      return null;
+    }
+
+    if (this.phase === BlockPhase.RUN) {
+      if (live) {
+        if (el >= this.cfg.minRunS && hr >= this.ceilingBpm) {
+          return this._to(BlockPhase.WALK, tS, 'ceiling', true);
+        }
+        if (el >= this.cfg.maxRunS) return this._to(BlockPhase.WALK, tS, 'long enough', true);
+        return null;
+      }
+      // No heart rate: the clock the athlete was prescribed.
+      if (this.fallbackRunS && el >= this.fallbackRunS) {
+        return this._to(BlockPhase.WALK, tS, 'time', false);
+      }
+      return null;
+    }
+
+    // Walking.
+    if (live) {
+      if (el >= this.cfg.minWalkS && hr <= this.floorBpm) {
+        this.stalls = 0;
+        return this._to(BlockPhase.RUN, tS, 'recovered', true);
+      }
+      if (el >= this.cfg.maxWalkS) {
+        // Went again without recovering. Recorded, counted, and if it keeps happening the session
+        // is over -- that is the auto-regulation, and it is the honest reading of a body that is no
+        // longer clearing the load between blocks.
+        this.stalls += 1;
+        if (this.stalls >= 2) return this._to(BlockPhase.DONE, tS, 'not recovering', true);
+        return this._to(BlockPhase.RUN, tS, 'going again', true);
+      }
+      return null;
+    }
+    if (this.fallbackWalkS && el >= this.fallbackWalkS) return this._to(BlockPhase.RUN, tS, 'time', false);
+    return null;
+  }
+
+  /** End the session wherever it is, closing the open block. */
+  finish(tS) {
+    if (this.phase === BlockPhase.DONE) return;
+    this._close(tS);
+    this.phase = BlockPhase.DONE;
+  }
+
+  _to(next, tS, reason, governedByHr) {
+    const previous = this.phase;
+    const block = this._close(tS, governedByHr, reason);
+    if (previous === BlockPhase.RUN) {
+      // A run block ending is a heart-rate recovery test starting. The reading it needs is 60 s
+      // away, so it is parked and resolved later rather than guessed at now.
+      this._pending.push({ atT: tS, peakHr: block ? block.peakHr : null, dueT: tS + 60 });
+    }
+    this.phase = next;
+    this.phaseStartT = tS;
+    this._peakHr = null;
+    if (next === BlockPhase.RUN) {
+      this.rep += 1;
+      if (this.reps != null && this.rep > this.reps) {
+        this.phase = BlockPhase.DONE;
+        return { phase: BlockPhase.DONE, previous, reason: 'session complete', rep: this.rep - 1, block };
+      }
+    }
+    return { phase: next, previous, reason, rep: this.rep, block };
+  }
+
+  _close(tS, governedByHr = null, reason = null) {
+    if (this.phaseStartT == null || tS <= this.phaseStartT) return null;
+    const block = {
+      kind: this.phase, startT: this.phaseStartT, endT: tS, durationS: tS - this.phaseStartT,
+      peakHr: this._peakHr,
+      // A walk that ended because the clock ran out did not recover; one that reached the floor did.
+      recovered: this.phase === BlockPhase.WALK ? reason === 'recovered' : null,
+      governedBy: governedByHr == null ? null : (governedByHr ? 'hr' : 'clock'),
+    };
+    this.blocks.push(block);
+    return block;
+  }
+
+  _resolveRecoveries(tS, hr) {
+    if (hr == null) return;
+    for (const p of this._pending) {
+      if (p.done || tS < p.dueT) continue;
+      p.done = true;
+      if (p.peakHr != null) {
+        this.recoveries.push({ atT: p.atT, peakHr: p.peakHr, hr60: hr, hrr60: p.peakHr - hr });
+      }
+    }
+    this._pending = this._pending.filter(p => !p.done);
+  }
+
+  /** What the session amounted to, for the progression decision and for the athlete. */
+  summary() {
+    const runs = this.blocks.filter(b => b.kind === BlockPhase.RUN);
+    const walks = this.blocks.filter(b => b.kind === BlockPhase.WALK);
+    const hrr = this.recoveries.map(r => r.hrr60);
+    return {
+      runBlocks: runs.length,
+      runningS: runs.reduce((a, b) => a + b.durationS, 0),
+      longestRunBlockS: runs.reduce((a, b) => Math.max(a, b.durationS), 0),
+      walkS: walks.reduce((a, b) => a + b.durationS, 0),
+      unrecoveredWalks: walks.filter(b => b.recovered === false).length,
+      // The autonomic number. Median rather than mean: one bad optical reading in a walk break
+      // should not move a session-level statistic that gets trended across weeks.
+      hrr60Median: hrr.length ? hrr.slice().sort((a, b) => a - b)[Math.floor(hrr.length / 2)] : null,
+      recoveries: this.recoveries.length,
+      // Whether this session is evidence at all. A session run on the clock because the armband was
+      // flat says nothing about fitness, and must not be allowed to advance or retreat the ladder.
+      governedBy: this.blocks.some(b => b.governedBy === 'hr') ? 'hr' : 'clock',
+      stalls: this.stalls,
+    };
+  }
+}
+// The athlete's aerobic ceiling, read off their own sessions instead of an age formula.
+//
+// Why this exists
+// ---------------
+// Every zone edge in this plan descends from Tanaka's HRmax estimate, which has a between-person
+// standard deviation of about 7 bpm. That is a whole zone width: the difference between prescribing
+// easy and prescribing steady, for the rest of the plan, invisibly.
+//
+// The usual fix is a graded ramp test to exhaustion. That is the wrong instrument here for a reason
+// that is not about willpower: this athlete cannot yet hold Z2 for twenty-six minutes, and a
+// near-maximal test on an unadapted musculoskeletal system inside the bone-vulnerable window is a
+// poor trade for a number that can be obtained another way.
+//
+// It can be obtained another way. The first ventilatory threshold shows up in ordinary training as
+// the heart rate above which the athlete stops getting proportionate speed for their beats. Below
+// it, metres travelled per heartbeat is roughly flat across heart-rate bands; above it, it falls
+// away. On this athlete's 5 September session, first half only:
+//
+//     HR 130-134   0.80 m/beat        HR 145-149   0.82
+//     HR 135-139   0.78               HR 150-154   0.74   <- the roll-off
+//     HR 140-144   0.79
+//
+// which puts his threshold around 150, against the 155 the age formula prescribed.
+//
+// The one trap, and it is the whole reason this module is careful
+// ---------------------------------------------------------------
+// Cardiac drift produces exactly the same signature. Later in a session heart rate is higher AND
+// pace is slower, so a whole-session average shows efficiency falling with heart rate whether or not
+// a threshold exists. Measured over his full session the roll-off appeared at 150 -- and also, much
+// more weakly, at 115, which is nonsense.
+//
+// So only the FIRST HALF is used. Within it, fatigue cannot explain a roll-off, and his data holds
+// 0.78-0.82 flat from 130 to 149 before dropping. The second half of the same session sits at
+// 0.63-0.67 across every band uniformly, which is what drift looks like and is correctly ignored.
+
+/** Heart-rate bands are this wide. Narrow enough to locate a threshold, wide enough to fill. */
+const BAND_BPM = 5;
+
+/** A band with fewer samples than this is not a measurement. */
+const MIN_SAMPLES_PER_BAND = 25;
+
+/** Efficiency must fall by at least this fraction for a band to count as past the threshold. */
+const ROLLOFF_FRACTION = 0.06;
+
+/** Bands below this are walking, not running, and belong to a different relationship. */
+const MIN_SPEED_MS = 1.0;
+
+/**
+ * Heart rate lags effort. Pair each speed with the heart rate it produced, not the one it followed.
+ *
+ * Twenty seconds is the standard first-order lag for a step change in running effort. Getting this
+ * wrong smears every band into its neighbours and flattens the roll-off being looked for.
+ */
+const HR_LAG_S = 20;
+
+/** How many sessions must agree before the measured number is trusted over the age formula. */
+const MIN_SESSIONS = 2;
+
+/// Named for this module: every module inlines into one scope in the built page, so a bare `mean`
+/// collides with run-stats.js and the whole page stops parsing. The build checks for exactly that.
+const meanOf = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/**
+ * Estimate the first ventilatory threshold from one session's samples.
+ *
+ * `samples` are `{t_s, speed_m_s, hr_bpm}` as the app records them. Returns
+ * `{bpm, bands, confidence}` or null when the session cannot answer -- too short, no heart rate, or
+ * not enough running spread across enough bands to see a roll-off at all.
+ *
+ * `bpm` is the TOP of the last band whose efficiency was still holding: the highest heart rate at
+ * which the athlete was still getting full value for their beats.
+ */
+function estimateThreshold(samples, { lagS = HR_LAG_S } = {}) {
+  const ss = (samples || []).filter(s => s && s.t_s != null).slice().sort((a, b) => a.t_s - b.t_s);
+  if (ss.length < 300) return null;
+
+  // First half only. See the module note: drift is indistinguishable from a threshold in a whole
+  // session, and the first half is where fatigue cannot be the explanation.
+  const midT = ss[0].t_s + (ss[ss.length - 1].t_s - ss[0].t_s) / 2;
+  const byT = new Map(ss.map(s => [s.t_s, s]));
+
+  const bands = new Map();
+  for (const s of ss) {
+    if (s.t_s > midT) break;
+    if (!(s.speed_m_s > MIN_SPEED_MS)) continue;
+    const later = byT.get(s.t_s + lagS);
+    const hr = later && later.hr_bpm;
+    if (!hr) continue;
+    const key = Math.floor(hr / BAND_BPM) * BAND_BPM;
+    if (!bands.has(key)) bands.set(key, []);
+    bands.get(key).push(s.speed_m_s);
+  }
+
+  const rows = [...bands.entries()]
+    .filter(([, xs]) => xs.length >= MIN_SAMPLES_PER_BAND)
+    .map(([lo, xs]) => {
+      const v = meanOf(xs);
+      // Metres per beat: the speed bought with those heartbeats. Band midpoint for the rate.
+      return { lo, hi: lo + BAND_BPM - 1, n: xs.length, speedMS: v,
+               mPerBeat: (v * 60) / (lo + BAND_BPM / 2) };
+    })
+    .sort((a, b) => a.lo - b.lo);
+  if (rows.length < 3) return null;
+
+  // Walk up from the best band. The threshold is the top of the last band still holding its value,
+  // and the reference is the best seen so far rather than the immediately preceding band -- a single
+  // noisy band should not be able to redefine "holding" for everything above it.
+  let best = rows[0].mPerBeat;
+  let ceiling = null;
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i].mPerBeat > best) { best = rows[i].mPerBeat; continue; }
+    if (rows[i].mPerBeat < best * (1 - ROLLOFF_FRACTION)) { ceiling = rows[i - 1].hi; break; }
+  }
+  if (ceiling == null) return null;          // never rolled off: he stayed under it the whole time
+
+  return {
+    bpm: ceiling,
+    // How much of the session is behind the number. Two bands either side of the roll-off is a
+    // usable reading; one sparse band on each side is a coincidence.
+    confidence: Math.min(1, rows.reduce((a, r) => a + r.n, 0) / 600),
+    bands: rows,
+  };
+}
+
+/**
+ * Combine per-session estimates into the number the coach should actually use.
+ *
+ * `history` is a list of `{bpm, confidence, at}`, newest last. The median is taken rather than the
+ * mean, and rather than the latest: a single session run in heat, or on tired legs, or with a badly
+ * seated optical sensor, produces a low estimate, and a training ceiling that drops because of one
+ * hot Tuesday would ratchet the athlete downward for no physiological reason.
+ *
+ * Returns null until MIN_SESSIONS agree, so the age formula keeps governing until there is
+ * something better -- an unmeasured ceiling is a worse failure than a slightly wrong one.
+ */
+function ceilingFrom(history, { minSessions = MIN_SESSIONS } = {}) {
+  const usable = (history || []).filter(h => h && h.bpm > 0 && (h.confidence ?? 1) >= 0.5);
+  if (usable.length < minSessions) return null;
+  // The most recent six, so the number follows fitness instead of averaging over a whole block.
+  const recent = usable.slice(-6).map(h => h.bpm).sort((a, b) => a - b);
+  const mid = recent.length % 2
+    ? recent[(recent.length - 1) / 2]
+    : Math.round((recent[recent.length / 2 - 1] + recent[recent.length / 2]) / 2);
+  return { bpm: mid, sessions: usable.length,
+           source: `measured over ${usable.length} session${usable.length === 1 ? '' : 's'}` };
+}
+// Load and pain: the two things that decide whether a plan survives contact with a body.
+//
+// Both of these already exist in the engine -- `load.acwr` and `progress.pain_trend`, written,
+// tested, and with zero production callers between them. They are ported rather than called because
+// the engine is Python on a laptop and the athlete is on a phone in a park: the decision has to be
+// available at the moment the session ends, not the next time someone runs a CLI. The Python stays
+// the reference implementation and this is checked against its constants and its rule order.
+//
+// Why these two and not the rest of the engine's decision surface: they are the only unwired parts
+// whose inputs this athlete can actually produce. `readiness.py` needs fourteen nights of overnight
+// HRV and sleep data he has no way to collect, and returns "unknown" forever without it. These need
+// a heart rate he already records and a form he can fill in.
+
+// =================================================================================================
+// Load
+// =================================================================================================
+
+const ACUTE_DAYS = 7;
+const CHRONIC_DAYS = 28;
+const ACWR_SWEET_LOW = 0.80;
+const ACWR_SWEET_HIGH = 1.30;
+const ACWR_HARD_CAP = 1.50;
+
+/**
+ * Exponentially weighted moving average, lambda = 2/(n+1).
+ *
+ * `loads` must be one entry per CALENDAR day including zeros for rest days. Omitting rest days is
+ * the single most common way to make this number lie, and it lies optimistically: drop the zeros
+ * and a three-run week looks like a seven-run week's worth of chronic load.
+ */
+function ewmaLoad(loads, nDays) {
+  if (!(nDays > 0)) throw new Error('nDays must be positive');
+  if (!loads || !loads.length) return 0;
+  const lam = 2 / (nDays + 1);
+  let e = loads[0];
+  for (let i = 1; i < loads.length; i++) e = loads[i] * lam + e * (1 - lam);
+  return e;
+}
+
+/**
+ * Acute:chronic workload ratio over a gap-filled daily series.
+ *
+ * Reported as a ramp-rate governor, not a risk score -- the evidence for ACWR as a predictor of
+ * individual injury is contested, and it is used here for the thing it is good at: noticing that
+ * this week is a long way out of line with the last month.
+ *
+ * Below CHRONIC_DAYS of history it refuses to answer. For a brand-new runner chronic load starts at
+ * literally zero, which makes the ratio explode on the first easy jog -- a real and well-known
+ * defect of applying this to beginners, and exactly the situation this athlete is in.
+ */
+function acwr(dailyLoads) {
+  const n = (dailyLoads || []).length;
+  const acute = ewmaLoad(n >= ACUTE_DAYS ? dailyLoads.slice(-ACUTE_DAYS) : dailyLoads, ACUTE_DAYS);
+  const chronic = ewmaLoad(dailyLoads || [], CHRONIC_DAYS);
+  if (n < CHRONIC_DAYS) {
+    return { acute, chronic, ratio: chronic > 0 ? acute / chronic : 0, band: 'insufficient_history',
+             days: n,
+             note: `${n} of ${CHRONIC_DAYS} days recorded — the ratio is not meaningful yet, and `
+                 + 'for a new runner it reads high for weeks purely because there is no history '
+                 + 'to compare against.' };
+  }
+  if (chronic <= 0) {
+    return { acute, chronic, ratio: 0, band: 'insufficient_history', days: n,
+             note: 'no chronic load to compare against' };
+  }
+  const ratio = acute / chronic;
+  const band = ratio < ACWR_SWEET_LOW ? 'detraining'
+             : ratio <= ACWR_SWEET_HIGH ? 'optimal'
+             : ratio <= ACWR_HARD_CAP ? 'caution' : 'danger';
+  return { acute, chronic, ratio, band, days: n,
+           note: band === 'danger'
+             ? 'This week is a long way above the last month. Hold or cut rather than adding.'
+             : band === 'caution' ? 'Rising faster than the last month. Worth holding here.'
+             : band === 'detraining' ? 'Well below the last month — fine after a cutback, a '
+                                     + 'problem if it keeps going.'
+             : 'In line with the last month.' };
+}
+
+/**
+ * Turn a session history into the gap-filled daily series `acwr` needs.
+ *
+ * `sessions` are `{at, trimp}`; `at` is anything Date can parse. Days with no session get a zero,
+ * which is the whole point -- see ewmaLoad.
+ */
+function dailyLoadSeries(sessions, { asOf = new Date(), days = CHRONIC_DAYS * 2 } = {}) {
+  const byDay = new Map();
+  for (const s of sessions || []) {
+    if (!s || s.trimp == null) continue;
+    const d = new Date(s.at);
+    if (isNaN(d)) continue;
+    const key = d.toISOString().slice(0, 10);
+    byDay.set(key, (byDay.get(key) || 0) + s.trimp);
+  }
+  const out = [];
+  const end = new Date(asOf);
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(end);
+    d.setDate(d.getDate() - i);
+    out.push(byDay.get(d.toISOString().slice(0, 10)) || 0);
+  }
+  return out;
+}
+
+// =================================================================================================
+// Pain
+// =================================================================================================
+
+/** Times the same site can come up in the window before it stops being a niggle. */
+const PAIN_ESCALATION_DAYS = 3;
+
+const PAIN_WINDOW_DAYS = 14;
+
+/// Named for this module: everything inlines into one scope in the built page, so a bare `mean` --
+/// or, as this file first tried, a `meanOf` already taken by threshold.js -- stops the whole page
+/// parsing. The build checks for exactly that, which is how this was caught rather than shipped.
+const meanLevel = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/**
+ * Group pain reports by site and classify each one's trajectory.
+ *
+ * The two fields carrying the most weight are deliberately not the pain score:
+ *
+ *   * `focal` -- a specific point of bone tenderness is a different problem from a diffuse ache and
+ *     escalates straight to stopping however mild it feels. This matters more than usual here: the
+ *     athlete is 180 lb, inside the first twenty weeks of running, and bone appears in none of the
+ *     heart-rate measures that govern everything else.
+ *   * `timing === 'next_morning'` -- next-day pain is the most informative signal in overuse injury
+ *     and the one most often dismissed, because by the time you run again it has eased off.
+ *
+ * `entries` are `{day, site, level, timing, focal, worsensDuringRun}` with `day` an ISO date.
+ */
+function painTrend(entries, { asOf = null, windowDays = PAIN_WINDOW_DAYS } = {}) {
+  const es = (entries || []).filter(e => e && e.site && e.day);
+  if (!es.length) return [];
+  const day = e => e.day.slice(0, 10);
+  const end = asOf ? asOf.slice(0, 10) : es.map(day).sort().slice(-1)[0];
+  const startD = new Date(end);
+  startD.setDate(startD.getDate() - (windowDays - 1));
+  const start = startD.toISOString().slice(0, 10);
+  const recent = es.filter(e => day(e) >= start && day(e) <= end);
+
+  const bySite = new Map();
+  for (const e of recent) {
+    if (!bySite.has(e.site)) bySite.set(e.site, []);
+    bySite.get(e.site).push(e);
+  }
+
+  const out = [];
+  for (const [site, list] of [...bySite.entries()].sort()) {
+    list.sort((a, b) => day(a).localeCompare(day(b)));
+    const levels = list.map(e => Number(e.level) || 0);
+    const spanDays = Math.round(
+      (new Date(day(list[list.length - 1])) - new Date(day(list[0]))) / 86400000) + 1;
+    let escalating = false;
+    if (levels.length >= 3) {
+      const mid = Math.floor(levels.length / 2);
+      escalating = meanLevel(levels.slice(mid)) > meanLevel(levels.slice(0, mid)) + 0.5;
+    }
+    const focal = list.some(e => e.focal);
+    const nextMorning = list.some(e => e.timing === 'next_morning');
+    const worsening = list.some(e => e.worsensDuringRun);
+    const name = site.replace(/_/g, ' ');
+
+    let verdict = 'watch', message = '', actions = [];
+    if (focal) {
+      verdict = 'urgent';
+      message = `Pain at a single point on the ${name}. Focal bone tenderness that worsens with `
+              + 'loading is how a stress injury presents, and it does not need to be severe to be '
+              + 'serious. Stop running and get it assessed before the next run.';
+      actions = ['Stop running now — do not test it with an easy run.',
+                 'Get it assessed. Caught early it is a few weeks; run through it is a few months.',
+                 'Cross-train without impact meanwhile if that is pain-free.'];
+    } else if (Math.max(...levels) > 5) {
+      verdict = 'stop_and_assess';
+      message = `Pain reached ${Math.max(...levels)}/10 at the ${name}. Above 5/10 the rule is `
+              + 'stop, every time.';
+      actions = ['No running until it is below 3/10 at rest and while walking.',
+                 'Then restart from the run-walk ladder, not from your previous volume.'];
+    } else if (escalating || list.length >= PAIN_ESCALATION_DAYS || nextMorning || worsening) {
+      verdict = 'hold_volume';
+      const why = [];
+      if (escalating) why.push('it is getting worse across the fortnight');
+      if (list.length >= PAIN_ESCALATION_DAYS) {
+        why.push(`it has come up ${list.length} times in ${spanDays} days`);
+      }
+      if (nextMorning) why.push('it is there the morning after, which is the signal that matters most');
+      if (worsening) why.push('it worsens as the run goes on rather than warming up');
+      message = `The ${name} is a pattern rather than a niggle: ${why.join(', and ')}.`;
+      actions = ['Volume holds where it is — no increases until two clean weeks.',
+                 'Easy running only, and only if it is pain-free during AND the next morning.',
+                 'If it has not settled in ten days, get it looked at.'];
+    } else {
+      message = `Occasional mild discomfort at the ${name} (max ${Math.max(...levels)}/10). Within `
+              + 'the acceptable band — keep logging it.';
+      actions = ['Keep logging. The log is what turns this into a pattern you can see.'];
+    }
+    out.push({ site, entries: list.length, maxLevel: Math.max(...levels),
+               meanLevel: meanLevel(levels), spanDays, escalating, verdict, message, actions });
+  }
+  const order = { urgent: 0, stop_and_assess: 1, hold_volume: 2, watch: 3 };
+  return out.sort((a, b) => order[a.verdict] - order[b.verdict]);
+}
+
+/**
+ * Does anything in the pain log say the plan should not go up this week?
+ *
+ * The one line the progression loop needs. Deliberately conservative: a `hold_volume` verdict stops
+ * the ladder advancing but does not step it back, because pain that is a pattern is a reason to
+ * stop adding rather than a reason to detrain.
+ */
+function painHolds(trends) {
+  const worst = (trends || [])[0];
+  if (!worst) return null;
+  if (worst.verdict === 'urgent' || worst.verdict === 'stop_and_assess') {
+    return { stop: true, hold: true, site: worst.site, message: worst.message };
+  }
+  if (worst.verdict === 'hold_volume') {
+    return { stop: false, hold: true, site: worst.site, message: worst.message };
+  }
+  return null;
+}
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -4132,6 +4802,10 @@ const S = {
   ramp: null, rampNotes: '', rampOutdoor: false, rampTargetSecKm: null, rampStopped: false,
   /// The athlete typed a target by hand. Stops a later mode tap from replacing it with the plan's.
   targetEdited: false,
+  /// The HR-governed block controller, when heart rate is calling the blocks. See hr-blocks.js.
+  hrBlocks: null,
+  /// Why the last block changed, for the log and for the announcement.
+  ivReason: null,
   simT: 0, simDist: 0, plannedSession: null,
   hrZones: null,
 };
@@ -4183,8 +4857,8 @@ function log(msg, cls) {
 // what the gate design exists to prevent.
 // =================================================================================================
 
-const PLAN = {"app_plan_version":1,"generated_for":{"age":30.0,"hr_max":187.0,"hr_max_source":"age_formula","hr_rest":67.0,"prescription_basis":"hr_from_ramp","start_phase":"foundation"},"phases":[{"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have.","label":"Foundation","phase":"foundation","weeks":[{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 2 of 8: 2 min running / 2 min walking x 7 (14 min of running per session, 42 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":7,"run_min":2.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 2/2 x 7","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":7,"run_min":2.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 2/2 x 7","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":7,"run_min":2.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 2/2 x 7","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":42,"week":1},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":6,"run_min":3.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 3/2 x 6","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":6,"run_min":3.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 3/2 x 6","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":6,"run_min":3.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 3/2 x 6","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":54,"week":2},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 4 of 8: 5 min running / 2 min walking x 5 (25 min of running per session, 75 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":75,"week":3},{"cutback":true,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 4 of 8: 5 min running / 2 min walking x 5 (25 min of running per session, 75 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.","The ladder holds at the previous rung this week rather than advancing.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":75,"week":4},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 6 of 8: 12 min running / 2 min walking x 2 (24 min of running per session, 72 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":12.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 12/2 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":12.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 12/2 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":12.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 12/2 x 2","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":72,"week":5},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 7 of 8: 15 min running / 1 min walking x 2 (30 min of running per session, 90 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":42,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":15.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":1.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (15 min easy running + 1 min walking), 5 min walk cool-down.","title":"Run-walk 15/1 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":42,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":15.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":1.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (15 min easy running + 1 min walking), 5 min walk cool-down.","title":"Run-walk 15/1 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":42,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":15.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":1.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (15 min easy running + 1 min walking), 5 min walk cool-down.","title":"Run-walk 15/1 x 2","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":90,"week":6}]},{"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have.","label":"Base 1","phase":"base_1","weeks":[{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 35%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":4.9,"minutes":43,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":14.1,"volume_min":null,"week":1},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":43,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":43,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":5.7,"minutes":50,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":15.6,"volume_min":null,"week":2},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 39%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":46,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":46,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":6.7,"minutes":58,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":17.3,"volume_min":null,"week":3},{"cutback":true,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 41%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","Cutback week: long run trimmed 20% as well as weekly volume.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":39,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":39,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":4.4,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":13.4,"volume_min":null,"week":4},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 43%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation.","Time-trial week. Everything downstream -- your zones, every prescribed pace, the controller's targets -- is currently derived from a deliberately conservative submaximal estimate. This is the run that replaces it with a real measurement, so expect your paces to get quicker afterwards."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":false,"day":2,"hr_ceiling_bpm":193,"km":2.0,"minutes":45,"structure":"10 min easy warm-up plus 4 x 30 s strides. Then 2000 m (5 laps of a track, or a measured flat 2 km) as fast as you can hold evenly. 10 min walk/jog cool-down.","title":"2000 m time trial","type":"time_trial","zones":[4,5]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":37,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":6.3,"minutes":55,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":12.5,"volume_min":null,"week":5},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 45%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":34,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":34,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":6.3,"minutes":55,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":14.1,"volume_min":null,"week":6}]},{"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have.","label":"Base 2","phase":"base_2","weeks":[{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 35%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":147,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":9.1,"minutes":79,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":33.2,"volume_min":null,"week":1},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":152,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":10.2,"minutes":89,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":34.8,"volume_min":null,"week":2},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 39%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":156,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":11.5,"minutes":100,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":36.6,"volume_min":null,"week":3},{"cutback":true,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 41%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","Cutback week: long run trimmed 20% as well as weekly volume.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":127,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":7.2,"minutes":62,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":29.0,"volume_min":null,"week":4},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 43%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":60,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 3 x 8 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 3 x 8 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":158,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":13.7,"minutes":120,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":41.2,"volume_min":null,"week":5},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 45%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":60,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 3 x 8 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 3 x 8 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":165,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":15.6,"minutes":136,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":43.9,"volume_min":null,"week":6}]}],"ramp_protocol":{"at_each_stage":"Say a full sentence out loud. Comfortable, effortful, or impossible?","steps":[{"kind":"warmup","label":"Walk warm-up","minutes":5.0,"say":"Five minutes easy walking. Four and a half kilometres an hour.","speed_kmh":4.5},{"index":1,"kind":"stage","label":"Stage 1","measure_last_s":60,"minutes":4.0,"say":"Stage 1. 5 kilometres an hour.","speed_kmh":5.0},{"index":2,"kind":"stage","label":"Stage 2","measure_last_s":60,"minutes":4.0,"say":"Stage 2. 6 kilometres an hour.","speed_kmh":6.0},{"index":3,"kind":"stage","label":"Stage 3","measure_last_s":60,"minutes":4.0,"say":"Stage 3. 7 kilometres an hour.","speed_kmh":7.0},{"index":4,"kind":"stage","label":"Stage 4","measure_last_s":60,"minutes":4.0,"say":"Stage 4. 8 kilometres an hour.","speed_kmh":8.0},{"index":5,"kind":"stage","label":"Stage 5","measure_last_s":60,"minutes":4.0,"say":"Stage 5. 9 kilometres an hour.","speed_kmh":9.0},{"index":6,"kind":"stage","label":"Stage 6","measure_last_s":60,"minutes":4.0,"say":"Stage 6. 10 kilometres an hour.","speed_kmh":10.0},{"kind":"recovery","label":"Walk recovery","minutes":5.0,"say":"Five minutes walking. Recover.","speed_kmh":4.5},{"kind":"steady","label":"Steady block","minutes":20.0,"say":"Twenty minutes at the fastest speed you could still talk comfortably."},{"kind":"cooldown","label":"Cool down","minutes":5.0,"say":"Five minutes walking to cool down.","speed_kmh":4.5}],"stop_when_any":["Heart rate reaches 169 bpm (85% of heart-rate reserve)","Effort reaches 15/20","Speech becomes impossible","Anything feels wrong -- stop immediately"],"total_min":59.0},"run_days":[2,5,6],"strength_days":[0,3]};
-const BUILD = {"id":"41ffadb1","at":"2026-09-06 00:48Z"};
+const PLAN = {"app_plan_version":1,"bone_window":{"in_window":true,"note":"Bone adapts months behind the fitness that lets you run further, and appears in none of the heart-rate measures. For the first 20 weeks of running, single runs are capped against your own recent longest: prefer more frequent, shorter runs over one long one, vary the surface, and treat focal bone pain as a stop rather than a niggle.","weeks_running_at_start":0,"window_weeks":20},"generated_for":{"age":30.0,"hr_max":187.0,"hr_max_source":"age_formula","hr_rest":67.0,"prescription_basis":"hr_from_ramp","start_phase":"foundation"},"phases":[{"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have.","label":"Foundation","phase":"foundation","weeks":[{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 2 of 8: 2 min running / 2 min walking x 7 (14 min of running per session, 42 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":7,"run_min":2.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 2/2 x 7","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":7,"run_min":2.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 2/2 x 7","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":7,"run_min":2.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 7 x (2 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 2/2 x 7","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":42,"week":1},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 3 of 8: 3 min running / 2 min walking x 6 (18 min of running per session, 54 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":6,"run_min":3.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 3/2 x 6","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":6,"run_min":3.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 3/2 x 6","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":6,"run_min":3.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 6 x (3 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 3/2 x 6","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":54,"week":2},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 4 of 8: 5 min running / 2 min walking x 5 (25 min of running per session, 75 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":75,"week":3},{"cutback":true,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 4 of 8: 5 min running / 2 min walking x 5 (25 min of running per session, 75 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline.","The ladder holds at the previous rung this week rather than advancing.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":45,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":5,"run_min":5.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 5 x (5 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 5/2 x 5","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":75,"week":4},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 6 of 8: 12 min running / 2 min walking x 2 (24 min of running per session, 72 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":12.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 12/2 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":12.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 12/2 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":12.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":2.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (12 min easy running + 2 min walking), 5 min walk cool-down.","title":"Run-walk 12/2 x 2","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":72,"week":5},{"cutback":false,"focus":"Run 30 minutes continuously, comfortably, in Z2.","notes":["Run-walk ladder rung 7 of 8: 15 min running / 1 min walking x 2 (30 min of running per session, 90 min across the week).","Repeat a rung rather than advancing if the previous week felt hard, hurt, or was interrupted. There is no deadline."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":42,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":15.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":1.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (15 min easy running + 1 min walking), 5 min walk cool-down.","title":"Run-walk 15/1 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":42,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":15.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":1.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (15 min easy running + 1 min walking), 5 min walk cool-down.","title":"Run-walk 15/1 x 2","type":"run_walk","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"minutes":42,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"run_walk":{"reps":2,"run_min":15.0,"run_pace":{"fast":"7:12","slow":"7:48","target_sec_km":450.0,"tolerance":0.04},"walk_min":1.0,"walk_pace":{"say":"10:43","target_sec_km":642.9}},"structure":"5 min walk warm-up, then 2 x (15 min easy running + 1 min walking), 5 min walk cool-down.","title":"Run-walk 15/1 x 2","type":"run_walk","zones":[1,2]}],"volume_km":null,"volume_min":90,"week":6}]},{"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have.","label":"Base 1","phase":"base_1","weeks":[{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 35%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":40,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":4.9,"minutes":43,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":14.1,"volume_min":null,"week":1},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":43,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":43,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":5.4,"minutes":50,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout. Held to 5.4 km: bone adapts more slowly than fitness, and you are inside the first 20 weeks of running. 16% longer than anything you have run in the last month. That is a real step up. Run it slower than you think you need to, and take walk breaks by choice rather than necessity.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":15.6,"volume_min":null,"week":2},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 39%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":46,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":46,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":5.9,"minutes":58,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout. Held to 5.9 km: bone adapts more slowly than fitness, and you are inside the first 20 weeks of running. 24% longer than anything you have run in the last month. That is a real step up. Run it slower than you think you need to, and take walk breaks by choice rather than necessity.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":17.3,"volume_min":null,"week":3},{"cutback":true,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 41%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","Cutback week: long run trimmed 20% as well as weekly volume.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":39,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":39,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":4.4,"minutes":38,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":13.4,"volume_min":null,"week":4},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 43%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation.","Time-trial week. Everything downstream -- your zones, every prescribed pace, the controller's targets -- is currently derived from a deliberately conservative submaximal estimate. This is the run that replaces it with a real measurement, so expect your paces to get quicker afterwards."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":false,"day":2,"hr_ceiling_bpm":193,"km":2.0,"minutes":45,"structure":"10 min easy warm-up plus 4 x 30 s strides. Then 2000 m (5 laps of a track, or a measured flat 2 km) as fast as you can hold evenly. 10 min walk/jog cool-down.","title":"2000 m time trial","type":"time_trial","zones":[4,5]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":37,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":6.3,"minutes":55,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":12.5,"volume_min":null,"week":5},{"cutback":false,"focus":"Make running a habit and finish a 5K. Volume, not speed.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 45%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","No threshold work yet. Volume and consistency first -- threshold work on a thin base produces fatigue without much adaptation."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":2,"hr_ceiling_bpm":155,"minutes":34,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":34,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Easy running, then 6 x 20 s strides at a relaxed fast pace with full walk-back recovery. Strides are not a workout -- they are form and neuromuscular maintenance.","title":"Easy run + strides","type":"strides","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":6.3,"minutes":55,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":14.1,"volume_min":null,"week":6}]},{"gate_note":"This phase advances on measurements, not on a date. When you reach the end of the weeks here, run `cli status` or send your data \u2014 the gate needs evidence the phone does not have.","label":"Base 2","phase":"base_2","weeks":[{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 35%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":147,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":6.9,"minutes":79,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout. Held to 6.9 km: bone adapts more slowly than fitness, and you are inside the first 20 weeks of running. 44% longer than your longest run in the last month. This is the single-session spike pattern most strongly associated with injury in the RUNSAFE cohort. Split it, or cap it nearer your recent longest, and come back to this distance next week.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":33.2,"volume_min":null,"week":1},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 37%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":152,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":7.6,"minutes":89,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout. Held to 7.6 km: bone adapts more slowly than fitness, and you are inside the first 20 weeks of running. 48% longer than your longest run in the last month. This is the single-session spike pattern most strongly associated with injury in the RUNSAFE cohort. Split it, or cap it nearer your recent longest, and come back to this distance next week.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":34.8,"volume_min":null,"week":2},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 39%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":156,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":8.4,"minutes":100,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout. Held to 8.4 km: bone adapts more slowly than fitness, and you are inside the first 20 weeks of running. 51% longer than your longest run in the last month. This is the single-session spike pattern most strongly associated with injury in the RUNSAFE cohort. Split it, or cap it nearer your recent longest, and come back to this distance next week.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":36.6,"volume_min":null,"week":3},{"cutback":true,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 41%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","Cutback week: long run trimmed 20% as well as weekly volume.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session.","Cutback week: volume x0.70. Every 4th week drops volume so the slow tissues catch up with the fast ones. [Convention rather than trial-tested, but the mechanism is sound and the cost is low.]"],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":46,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 2 x 6 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 2 x 6 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":127,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":7.2,"minutes":62,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":29.0,"volume_min":null,"week":4},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 43%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":60,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 3 x 8 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 3 x 8 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":158,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":9.2,"minutes":120,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout. Held to 9.2 km: bone adapts more slowly than fitness, and you are inside the first 20 weeks of running. 63% longer than your longest run in the last month. This is the single-session spike pattern most strongly associated with injury in the RUNSAFE cohort. Split it, or cap it nearer your recent longest, and come back to this distance next week.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":41.2,"volume_min":null,"week":5},{"cutback":false,"focus":"Add your first real threshold work and race a 10K.","notes":["Daniels would cap the long run at 30% of weekly volume at this level; this one is 45%. Three runs a week leaves no other way to build a marathon long run, so this is a real and accepted trade-off rather than an oversight -- and the time cap is what keeps it bounded.","First threshold block. One quality session a week is the correct dose on three runs a week -- the long run is already a hard session."],"sessions":[{"ceiling_only":false,"coachable":false,"day":0,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":1,"title":"Rest","type":"rest"},{"ceiling_only":false,"coachable":true,"day":2,"hr_ceiling_bpm":175,"minutes":60,"pace":{"fast":"6:01","slow":"6:47","target_sec_km":384.2,"tolerance":0.06},"structure":"20 min easy warm-up, then 3 x 8 min at threshold pace (6:24/km) with 2 min easy jog between, then 10 min easy cool-down.","title":"Threshold 3 x 8 min","type":"threshold","zones":[4]},{"ceiling_only":false,"coachable":false,"day":3,"minutes":45,"structure":"Heavy slow calf raises: 3 x 12 straight-knee + 3 x 12 bent-knee, 3 s down. Add load once 12 reps is easy -- this is the single highest-yield injury-prevention exercise for a runner.; Single-leg work: split squats or step-ups, 3 x 8 per side, loaded.; Hip abduction: side-lying or cable, 3 x 15 per side.; Posterior chain: Romanian deadlift or hip thrust, 3 x 8.; Anti-rotation core: Pallof press or suitcase carry, 3 x 30 s per side.; Low-amplitude plyometrics: 3 x 10 pogo hops, 2 x 10 alternating bounds. Stiffness work -- improves running economy (Blagrove 2018); introduce only once the calf-raise gate is met, and never within 48 h of a long run.","title":"Strength (running-specific)","type":"strength"},{"ceiling_only":false,"coachable":false,"day":4,"title":"Rest","type":"rest"},{"ceiling_only":true,"coachable":true,"day":5,"hr_ceiling_bpm":155,"minutes":165,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"title":"Easy run","type":"easy","zones":[1,2]},{"ceiling_only":true,"coachable":true,"day":6,"hr_ceiling_bpm":155,"km":10.1,"minutes":136,"pace":{"fast":"8:20","slow":"8:56","target_sec_km":518.2,"tolerance":0.0345},"structure":"Steady and easy throughout. Held to 10.1 km: bone adapts more slowly than fitness, and you are inside the first 20 weeks of running. 70% longer than your longest run in the last month. This is the single-session spike pattern most strongly associated with injury in the RUNSAFE cohort. Split it, or cap it nearer your recent longest, and come back to this distance next week.","title":"Long run","type":"long","zones":[1,2]}],"volume_km":43.9,"volume_min":null,"week":6}]}],"ramp_protocol":{"at_each_stage":"Say a full sentence out loud. Comfortable, effortful, or impossible?","steps":[{"kind":"warmup","label":"Walk warm-up","minutes":5.0,"say":"Five minutes easy walking. Four and a half kilometres an hour.","speed_kmh":4.5},{"index":1,"kind":"stage","label":"Stage 1","measure_last_s":60,"minutes":4.0,"say":"Stage 1. 5 kilometres an hour.","speed_kmh":5.0},{"index":2,"kind":"stage","label":"Stage 2","measure_last_s":60,"minutes":4.0,"say":"Stage 2. 6 kilometres an hour.","speed_kmh":6.0},{"index":3,"kind":"stage","label":"Stage 3","measure_last_s":60,"minutes":4.0,"say":"Stage 3. 7 kilometres an hour.","speed_kmh":7.0},{"index":4,"kind":"stage","label":"Stage 4","measure_last_s":60,"minutes":4.0,"say":"Stage 4. 8 kilometres an hour.","speed_kmh":8.0},{"index":5,"kind":"stage","label":"Stage 5","measure_last_s":60,"minutes":4.0,"say":"Stage 5. 9 kilometres an hour.","speed_kmh":9.0},{"index":6,"kind":"stage","label":"Stage 6","measure_last_s":60,"minutes":4.0,"say":"Stage 6. 10 kilometres an hour.","speed_kmh":10.0},{"kind":"recovery","label":"Walk recovery","minutes":5.0,"say":"Five minutes walking. Recover.","speed_kmh":4.5},{"kind":"steady","label":"Steady block","minutes":20.0,"say":"Twenty minutes at the fastest speed you could still talk comfortably."},{"kind":"cooldown","label":"Cool down","minutes":5.0,"say":"Five minutes walking to cool down.","speed_kmh":4.5}],"stop_when_any":["Heart rate reaches 169 bpm (85% of heart-rate reserve)","Effort reaches 15/20","Speech becomes impossible","Anything feels wrong -- stop immediately"],"total_min":59.0},"run_days":[2,5,6],"run_walk_ladder":[{"reps":8,"run_min":1.0,"walk_min":2.0},{"reps":7,"run_min":2.0,"walk_min":2.0},{"reps":6,"run_min":3.0,"walk_min":2.0},{"reps":5,"run_min":5.0,"walk_min":2.0},{"reps":3,"run_min":8.0,"walk_min":2.0},{"reps":2,"run_min":12.0,"walk_min":2.0},{"reps":2,"run_min":15.0,"walk_min":1.0},{"reps":1,"run_min":30.0,"walk_min":0.0}],"strength_days":[0,3]};
+const BUILD = {"id":"229712cc","at":"2026-09-06 22:42Z"};
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
@@ -4339,9 +5013,17 @@ function loadSession(s) {
         + `${Math.round(s.ramp.total_min)} min total`, 'on');
   } else if (s.run_walk) {
     setMode('intervals');
-    $('runmin').value = s.run_walk.run_min;
-    $('walkmin').value = s.run_walk.walk_min;
-    $('reps').value = s.run_walk.reps;
+    // The rung the athlete's own sessions have moved them to, not the one the calendar says. Falls
+    // back to the week's prescription when no ladder shipped or nothing has been judged yet.
+    const rung = rungSession();
+    const use = rung || s.run_walk;
+    $('runmin').value = use.run_min;
+    $('walkmin').value = use.walk_min;
+    $('reps').value = use.reps;
+    if (rung && (rung.run_min !== s.run_walk.run_min || rung.reps !== s.run_walk.reps)) {
+      log(`the plan's week says ${s.run_walk.run_min}/${s.run_walk.walk_min} × ${s.run_walk.reps}; `
+          + `your sessions have you at ${rung.run_min}/${rung.walk_min} × ${rung.reps}`, 'dim');
+    }
     // The band for the RUNNING blocks, which is a different number from the session's average pace
     // and is the whole point of coaching a run/walk at all. Told to "run", this athlete runs at
     // 10:00 per mile and is at 155 bpm in three minutes; at the prescribed 12:04 he sits at 138.
@@ -4374,9 +5056,12 @@ function loadSession(s) {
   S.plannedSession = { phase: prog.phase, week: prog.week, day: selectedDay, title: s.title,
                        // Carried so the finished session can be judged against what it asked for
                        // rather than against the controls, which the athlete may have changed.
+                       // What was actually prescribed, which is the rung when one is in force.
+                       // Judging the run against the week's baked row instead would score it
+                       // against a session the athlete was never asked to do.
                        runWalk: s.run_walk
-                         ? { runMin: s.run_walk.run_min, walkMin: s.run_walk.walk_min,
-                             reps: s.run_walk.reps }
+                         ? (() => { const u = rungSession() || s.run_walk;
+                                    return { runMin: u.run_min, walkMin: u.walk_min, reps: u.reps }; })()
                          : null };
   return true;
 }
@@ -4589,6 +5274,7 @@ function setMode(m) {
     renderRampNote();
   }
   $('modenote').textContent = MODE_NOTES[m];
+  if (m === 'intervals') renderHrBlockNote();
   adoptToday(m);
   renderModePlan();
   $('perlabel').textContent = m === 'ramp' ? '' : readoutLabel();
@@ -4765,6 +5451,39 @@ function setRampWhere(outdoor) {
 $('rampoutdoor').onchange = e => setRampWhere(e.target.checked);
 $('w-street').onclick = () => setRampWhere(true);
 $('w-mill').onclick = () => setRampWhere(false);
+
+/**
+ * Whether heart rate calls the blocks, and what that will mean today.
+ *
+ * Off by default and deliberately so: it needs the armband, and this athlete has had one session
+ * where the battery died halfway and one with no band at all. A default that silently degrades to
+ * the clock is fine; a default that looks like it is governing when it is not is not.
+ */
+function renderHrBlockNote() {
+  const on = $('hrblocks').checked;
+  const ceil = aerobicCeilingBpm();
+  const sn = S.sensor;
+  const connected = !!(sn && sn.state && sn.state().connected);
+  if (!on) {
+    $('hrblocknote').textContent =
+      'Off: the blocks run on the clock above. On, they run until your heart rate reaches the '
+      + `ceiling (${ceil.bpm} bpm — ${ceil.source}) and walk until it comes back down to `
+      + `${recoveryFloorBpm()}. That is the same two words to follow, with the load decided by your `
+      + 'body instead of by a timer.';
+    return;
+  }
+  $('hrblocknote').textContent =
+    `Run to ${ceil.bpm} bpm (${ceil.source}), walk down to ${recoveryFloorBpm()}. `
+    + (connected ? 'Armband connected.'
+                 : 'No armband connected yet — without one this falls back to the clock above, and '
+                 + 'the session will not count toward progression.');
+}
+
+$('hrblocks').checked = localStorage.getItem('band.hrblocks') === '1';
+$('hrblocks').onchange = e => {
+  localStorage.setItem('band.hrblocks', e.target.checked ? '1' : '0');
+  renderHrBlockNote();
+};
 
 ['coach','intervals','ramp','rehearse'].forEach(k => { $(`m-${k}`).onclick = () => setMode(k); });
 setMode('coach');
@@ -5505,18 +6224,243 @@ function tickRamp(t) {
   $('verdict').style.color = `var(--${step.kind === 'stage' ? 'fast' : 'on'})`;
 }
 
+/**
+ * The rung of the run-walk ladder the athlete is actually on.
+ *
+ * The plan ships a ladder and a set of weeks, and the weeks used to be the controller: week 1 got
+ * rung 0, week 2 rung 1, whatever happened in between. On 22 August that meant a prescription of
+ * seven two-minute blocks against 2.6 minutes of running and a longest block of 37 seconds -- and
+ * three-minute blocks scheduled for the following Wednesday.
+ *
+ * So the rung is state now, moved by the sessions. The week's own prescription is the ENTRY point:
+ * the first time a rung is needed it comes from the plan, and from then on it is evidence that moves
+ * it. `nextRung` never moves more than one step in either direction.
+ */
+const RUNG_KEY = 'band.rung';
+
+function ladder() { return (PLAN.run_walk_ladder || []); }
+
+/** The rung index, seeded from whatever the plan prescribes for today the first time it is asked. */
+function currentRung() {
+  const L = ladder();
+  if (!L.length) return null;
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(RUNG_KEY) || 'null'); } catch { /* corrupt */ }
+  if (stored && Number.isInteger(stored.rung)) return Math.max(0, Math.min(L.length - 1, stored.rung));
+  // Seed from the plan: the rung whose prescription matches what today's session asks for.
+  const s = todaySession();
+  const rw = s && s.run_walk;
+  if (rw) {
+    const i = L.findIndex(r => r.run_min === rw.run_min && r.reps === rw.reps);
+    if (i >= 0) return i;
+  }
+  return 0;
+}
+
+/** The run/walk prescription for the rung the athlete is on. */
+function rungSession() {
+  const L = ladder();
+  const i = currentRung();
+  return (i == null || !L[i]) ? null : { ...L[i], rung: i };
+}
+
+/**
+ * Move the ladder on what the session actually showed.
+ *
+ * Refuses to move on a session with no heart rate. `judgeSession` already treats a missing
+ * `pctAtOrBelowEasy` as "not tested" rather than as a failure, which is right for the verdict TEXT,
+ * but a ladder that advances on a clock-only session is advancing on the fact that a timer expired.
+ * This athlete has already run one session with no armband at all and one where the battery died
+ * halfway; both would have moved the rung.
+ */
+function applyVerdict(judged, stats) {
+  const L = ladder();
+  if (!judged || !L.length) return null;
+  if (stats && stats.avgHr == null) {
+    return { moved: false, why: 'no heart rate this session, so the ladder stays where it is' };
+  }
+  // A niggle that has become a pattern stops the ladder going UP, and does not stop it coming down.
+  // Pain that recurs is a reason to stop adding, not a reason to detrain -- and an athlete who is
+  // told to hold while something settles is far more likely to keep logging it than one who is told
+  // their training is being cut.
+  const held = painHolds(painTrend(painLog()));
+  if (held && held.hold && judged.verdict === ADVANCE) {
+    return { moved: false, why: `the ${held.site.replace(/_/g, ' ')} is a pattern — holding here `
+                              + 'until it has two clean weeks' };
+  }
+  const from = currentRung();
+  const to = nextRung(from, judged.verdict, L.length);
+  try {
+    localStorage.setItem(RUNG_KEY, JSON.stringify({
+      rung: to, verdict: judged.verdict, at: new Date().toISOString(),
+    }));
+  } catch { /* storage full; the verdict is still shown, it just will not stick */ }
+  return { moved: to !== from, from, to, why: judged.reason };
+}
+
+// =================================================================================================
+// Niggles and load
+//
+// The pain log is the only input in this whole app that the athlete has to supply by hand, and it
+// earns its place: bone and tendon appear in none of the heart-rate measures that govern everything
+// else, and this is the failure mode that actually ends training blocks. Thirty seconds after a run
+// beats a fortnight of guessing later.
+// =================================================================================================
+
+const PAIN_KEY = 'band.pain';
+
+function painLog() {
+  // The catch is for a corrupt value, and for nothing else. It used to be a bare `catch` around the
+  // whole body, which swallowed a temporal-dead-zone ReferenceError -- PAIN_KEY is a `const` and this
+  // was being called from earlier in the boot sequence than its own declaration -- and returned an
+  // empty log. The page looked like it had simply forgotten every niggle ever entered, silently,
+  // with nothing in the console. Reading the storage and parsing it are now separate statements so
+  // that only the parse is forgiven.
+  let raw = null;
+  try { raw = localStorage.getItem(PAIN_KEY); } catch { return []; }   // storage blocked entirely
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+function addPain(entry) {
+  const log = painLog();
+  log.push(entry);
+  try { localStorage.setItem(PAIN_KEY, JSON.stringify(log.slice(-200))); } catch { /* full */ }
+  renderPain();
+}
+
+function renderPain() {
+  const trends = painTrend(painLog());
+  const box = $('painout');
+  if (!trends.length) {
+    box.replaceChildren(Object.assign(document.createElement('p'),
+      { className: 'note', textContent: 'Nothing logged in the last fortnight.' }));
+    return;
+  }
+  box.replaceChildren(...trends.map(t => {
+    const d = document.createElement('div');
+    d.className = 'instrument';
+    d.style.cssText = 'gap:.4rem;margin-bottom:.6rem;padding:.7rem';
+    const h = document.createElement('div');
+    h.className = 'phase'; h.style.fontSize = '.95rem';
+    h.textContent = `${t.site} — ${t.verdict.replace(/_/g, ' ')}`;
+    h.style.color = `var(--${t.verdict === 'urgent' || t.verdict === 'stop_and_assess' ? 'stop'
+                            : t.verdict === 'hold_volume' ? 'fast' : 'dim'})`;
+    const m = document.createElement('div');
+    m.className = 'note'; m.textContent = t.message;
+    const ul = document.createElement('ul');
+    ul.className = 'note'; ul.style.margin = '.3rem 0 0 1rem';
+    for (const a of t.actions) {
+      const li = document.createElement('li'); li.textContent = a; ul.append(li);
+    }
+    d.append(h, m, ul);
+    return d;
+  }));
+}
+
+/**
+ * Chronic load, from the sessions already on the phone.
+ *
+ * Zero-filled by day, because omitting rest days is the standard way to make this number lie and it
+ * lies optimistically. Refuses to grade anything under four weeks of history: for a new runner
+ * chronic load starts at zero and the ratio explodes on the first easy jog.
+ */
+function loadBand() {
+  const rows = sessions.index()
+    .filter(e => e.stats && e.stats.trimp != null)
+    .map(e => ({ at: e.at, trimp: e.stats.trimp }));
+  if (!rows.length) return null;
+  return acwr(dailyLoadSeries(rows));
+}
+
+/// Where per-session threshold estimates accumulate. See threshold.js for why a single session is
+/// not enough and why the median is taken rather than the latest.
+const THRESHOLD_KEY = 'band.threshold';
+
+function thresholdHistory() {
+  try { return JSON.parse(localStorage.getItem(THRESHOLD_KEY) || '[]'); } catch { return []; }
+}
+
+/** The measured ceiling, or null while the age formula is still the best available answer. */
+function measuredCeiling() {
+  try { return ceilingFrom(thresholdHistory()); } catch { return null; }
+}
+
+/**
+ * Read this session's threshold off it and file the reading.
+ *
+ * Called once per finished session. Sessions that never approach the threshold return null and are
+ * not filed -- an easy run has not measured a ceiling, and letting it lower one would ratchet the
+ * athlete downward every time they did exactly what they were told.
+ */
+function recordThreshold(samples) {
+  let est = null;
+  try { est = estimateThreshold(samples); } catch { return null; }
+  if (!est) return null;
+  const hist = thresholdHistory();
+  hist.push({ bpm: est.bpm, confidence: est.confidence, at: new Date().toISOString() });
+  try { localStorage.setItem(THRESHOLD_KEY, JSON.stringify(hist.slice(-20))); } catch { /* full */ }
+  return est;
+}
+
+/**
+ * The aerobic ceiling this session is run under, and where the number came from.
+ *
+ * Every zone edge in the plan descends from Tanaka's age formula, whose between-person standard
+ * deviation is about 7 bpm -- a whole zone width. A measured threshold beats it, and this athlete's
+ * own sessions contain one: see threshold.js. Until enough of them are recorded, the session's own
+ * prescribed easy band stands in.
+ */
+function aerobicCeilingBpm() {
+  const measured = measuredCeiling();
+  if (measured) return { bpm: measured.bpm, source: measured.source };
+  const zs = (S.hrZones || zoneModel(hrMaxFor(profile.age), profile.hrRest))
+    .filter(z => z.index === 2);
+  const bpm = zs.length ? Math.round(zs[0].high) : Math.round(profile.hrRest + 0.70 * (hrMaxFor(profile.age) - profile.hrRest));
+  return { bpm, source: 'Z2 ceiling from the age formula' };
+}
+
+/**
+ * Where a walk break has done its job.
+ *
+ * As a fraction of heart-rate reserve rather than an absolute, so it moves with the athlete. 55% is
+ * chosen against his own recording: walking at 4-5 km/h his heart rate sat at 128-135, and the one
+ * time he walked slowly for two full minutes it reached 121. A floor he can only hit by genuinely
+ * slowing down is the point -- the brisk 5.6 km/h walk the plan prescribes left him above threshold
+ * for 384 seconds of a 26-minute session, which is why the ceiling kept being breached.
+ */
+function recoveryFloorBpm() {
+  return Math.round(profile.hrRest + 0.55 * (hrMaxFor(profile.age) - profile.hrRest));
+}
+
 function tickIntervals(t) {
-  if (t < S.ivUntil) return;
   const runS = Number($('runmin').value) * 60, walkS = Number($('walkmin').value) * 60;
   const reps = Number($('reps').value);
 
-  if (S.ivPhase === null) {
-    S.ivPhase = 'run'; S.ivRep = 1; S.ivUntil = t + runS;
-  } else if (S.ivPhase === 'run') {
-    if (S.ivRep >= reps) { finish('Session complete.'); return; }
-    S.ivPhase = 'walk'; S.ivUntil = t + walkS;
+  // Heart rate calls the blocks when it can. Everything below the fork -- the announcement, the log
+  // line, the big word on the screen -- is shared, because from the athlete's side the session is
+  // identical either way. That is the whole point: the instruction stays two words, and only what
+  // decides the moment changes.
+  if (S.hrBlocks) {
+    const sn = S.sensor;
+    const fresh = sn && sn.hrFresh();
+    const ev = S.hrBlocks.update(t, fresh ? sn.hr : null, { hrFresh: !!fresh });
+    if (!ev) return;
+    if (ev.phase === 'done') { finish('Session complete.'); return; }
+    S.ivPhase = ev.phase === 'run' ? 'run' : 'walk';
+    S.ivRep = ev.rep;
+    S.ivReason = ev.reason;
   } else {
-    S.ivPhase = 'run'; S.ivRep += 1; S.ivUntil = t + runS;
+    if (t < S.ivUntil) return;
+    if (S.ivPhase === null) {
+      S.ivPhase = 'run'; S.ivRep = 1; S.ivUntil = t + runS;
+    } else if (S.ivPhase === 'run') {
+      if (S.ivRep >= reps) { finish('Session complete.'); return; }
+      S.ivPhase = 'walk'; S.ivUntil = t + walkS;
+    } else {
+      S.ivPhase = 'run'; S.ivRep += 1; S.ivUntil = t + runS;
+    }
+    S.ivReason = null;
   }
 
   // The transition, spoken plainly and carrying the target.
@@ -5529,13 +6473,21 @@ function tickIntervals(t) {
   const word = run ? 'Run' : 'Walk';
   if (run) S.voice && S.voice.begin(t); else S.voice && S.voice.standDown();
   play('attend');
+  // An HR-governed session has no "of N" to announce -- the number of blocks is decided by the body
+  // during the session, not by the plan beforehand -- so it says which block this is and stops
+  // there. Claiming "3 of 7" when the seventh may never be reached would be a promise the session
+  // cannot keep.
+  const counted = S.hrBlocks ? `Block ${S.ivRep}.` : `Interval ${S.ivRep} of ${reps}.`;
   sayShortly(run
-    ? `Run. Interval ${S.ivRep} of ${reps}. Target ${U.pace(targetSecKm)}.`
-    : 'Walk. Ease right down.');
-  log(`${word} — ${S.ivPhase === 'run' ? `rep ${S.ivRep}/${reps}` : 'recover'}`,
+    ? `Run. ${counted} Target ${U.pace(targetSecKm)}.`
+    : (S.ivReason === 'not recovering' ? 'Walk it in. That is the session.'
+                                       : 'Walk. Ease right down.'));
+  log(`${word} — ${S.ivPhase === 'run' ? `block ${S.ivRep}` : 'recover'}`
+      + (S.ivReason ? ` (${S.ivReason})` : ''),
       S.ivPhase === 'run' ? 'fast' : 'on');
   $('pace').textContent = word.toUpperCase();
-  $('verdict').textContent = S.ivPhase === 'run' ? `rep ${S.ivRep} of ${reps}` : 'recover';
+  $('verdict').textContent = S.ivPhase === 'run'
+    ? (S.hrBlocks ? `block ${S.ivRep}` : `rep ${S.ivRep} of ${reps}`) : 'recover';
   $('verdict').style.color = `var(--${S.ivPhase === 'run' ? 'fast' : 'on'})`;
 }
 
@@ -5796,6 +6748,24 @@ for (const [id, key, lo, hi] of [['age', 'age', 14, 90], ['hrrest', 'hrRest', 30
 
 setUnit(unit);
 renderPlan();
+$('painadd').onclick = () => {
+  const site = ($('painsite').value || '').trim().toLowerCase().replace(/\s+/g, '_');
+  if (!site) { log('name the site — "left shin", not just "leg"', 'fast'); return; }
+  addPain({
+    day: new Date().toISOString().slice(0, 10),
+    site,
+    level: Number($('painlevel').value) || 0,
+    timing: $('paintiming').value,
+    focal: $('painfocal').checked,
+    worsensDuringRun: $('painworse').checked,
+  });
+  $('painsite').value = '';
+  $('painfocal').checked = false;
+  $('painworse').checked = false;
+  log(`logged: ${site.replace(/_/g, ' ')}`, 'dim');
+};
+renderPain();
+
 renderToday();
 updateSensorUi();
 renderProfileNote();
@@ -5869,6 +6839,27 @@ $('go').onclick = () => {
     highBpm: Math.max(...zs.map(z => z.high)),
     ceilingOnly: sess ? !!sess.ceiling_only : true,
   });
+
+  // Blocks called by heart rate rather than by the clock. See hr-blocks.js for the session that
+  // produced this: prescribed Z1/Z2 with a 155 ceiling, peaked at 177, and the mean pace while over
+  // the ceiling was SLOWER than the pace prescribed. Pace was not governing the load.
+  //
+  // The ceiling is the top of the session's own easy band -- or, once enough sessions have been
+  // recorded, the athlete's own measured first ventilatory threshold, which is a fact about him
+  // rather than about Tanaka's age formula. The floor is where a walk break has done its job.
+  S.hrBlocks = null;
+  if (S.mode === 'intervals' && $('hrblocks').checked) {
+    const ceil = aerobicCeilingBpm();
+    S.hrBlocks = new HrBlocks({
+      ceilingBpm: ceil.bpm,
+      floorBpm: recoveryFloorBpm(),
+      fallbackRunS: Number($('runmin').value) * 60,
+      fallbackWalkS: Number($('walkmin').value) * 60,
+      reps: Number($('reps').value) || null,
+    });
+    log(`heart rate calls the blocks — run to ${ceil.bpm}, walk down to ${recoveryFloorBpm()} `
+        + `(${ceil.source})`, 'on');
+  }
 
   S.splits = new SplitAnnouncer({
     everyM: U.splitEvery(),
@@ -6013,6 +7004,11 @@ function showStats(stats, prevStats) {
     if (stats.trimp != null) tile('Load', Math.round(stats.trimp));
   }
   tile('Cues', `${stats.tones} (${stats.tonesPerMin.toFixed(2)}/min)`);
+  // Chronic load, from every session on the phone rather than from this one. Shown only once there
+  // is enough history to mean anything -- for a new runner the ratio reads alarming for weeks purely
+  // because there is nothing behind it to compare against.
+  const lb = loadBand();
+  if (lb && lb.band !== 'insufficient_history') tile('Load ratio', lb.ratio.toFixed(2));
 
   $('statsgrid').replaceChildren(...tiles.map(([k, v]) => {
     const d = document.createElement('div');
@@ -6026,6 +7022,19 @@ function showStats(stats, prevStats) {
   $('statssplits').textContent = stats.splits.length
     ? `Splits: ${stats.splits.map(x => readoutText(x.paceSecKm)).join(' · ')}`
     : '';
+
+  // What this session says about where the aerobic ceiling actually sits. Filed rather than acted on
+  // immediately: see threshold.js for why one session is a coincidence and the median of several is
+  // the number worth training under.
+  if (S.samples && S.samples.length) {
+    const est = recordThreshold(S.samples);
+    const nowCeil = measuredCeiling();
+    if (est) {
+      log(`this session put your aerobic ceiling at ${est.bpm} bpm`
+          + (nowCeil ? ` — now using ${nowCeil.bpm} (${nowCeil.source})` : ' — one more session and '
+            + 'that becomes the ceiling the coach uses instead of the age formula'), 'on');
+    }
+  }
 
   // Two sessions is not a trend, and the module refuses to pretend otherwise — but the direction
   // between the last two is the thing anyone actually wants to know.
@@ -6053,11 +7062,20 @@ function showStats(stats, prevStats) {
   // Wednesday. See progression.js for why the check runs on four things and not forty.
   const rw = S.plannedSession && S.plannedSession.runWalk;
   const judged = rw ? judgeSession(rw, stats) : null;
+  // And it is applied, not merely announced. This is the line that turns a schedule into a
+  // controller; everything it needs has existed and been tested for weeks.
+  const moved = judged ? applyVerdict(judged, stats) : null;
   if (judged) {
+    const L = ladder();
+    const say = r => `${r.run_min}/${r.walk_min} × ${r.reps}`;
+    let where = '';
+    if (moved && moved.moved) where = ` Ladder: ${say(L[moved.from])} → ${say(L[moved.to])}.`;
+    else if (moved && moved.from != null) where = ` Ladder stays at ${say(L[moved.from])}.`;
+    else if (moved) where = ` Ladder unchanged — ${moved.why}.`;
     $('statsverdict').textContent =
       `${judged.verdict === ADVANCE ? 'Next one goes up.'
         : judged.verdict === EASE_BACK ? 'Next one steps back.'
-        : 'Next one repeats this.'} ${judged.reason} ${judged.next}`;
+        : 'Next one repeats this.'} ${judged.reason} ${judged.next}${where}`;
     $('statsverdict').style.color = judged.verdict === ADVANCE ? 'var(--on)'
       : judged.verdict === EASE_BACK ? 'var(--slow)' : 'var(--dim)';
     $('statsverdict').classList.remove('hide');

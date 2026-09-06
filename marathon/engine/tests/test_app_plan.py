@@ -19,6 +19,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from marathon_engine.app_plan import COACHABLE, build_app_plan  # noqa: E402
+from marathon_engine import safety  # noqa: E402
 from marathon_engine.cli import _estimated_profile  # noqa: E402
 from marathon_engine.plan import Phase  # noqa: E402
 
@@ -120,3 +121,67 @@ def test_coachable_is_exactly_what_carries_a_band(plan):
                 f"{s['type']} says the app can run it but gives it nothing to run against")
         assert (s["type"] in COACHABLE) == bool(s.get("coachable")), (
             f"{s['type']}: the coachable flag disagrees with COACHABLE")
+
+
+def test_the_bone_window_actually_clamps(plan):
+    """A long run may not jump over the athlete's own recent longest while bone is still adapting.
+
+    Every other governor in this engine is cardiovascular or autonomic -- TRIMP, ACWR, readiness,
+    the heart-rate ceiling. Bone is in none of them, and it adapts months behind the fitness that
+    lets you run further, so a new runner can pass every gate, feel excellent, and be well into a
+    stress reaction. `safety.clamp_single_run` has existed and been tested since the beginning and
+    had no production caller at all.
+    """
+    assert plan["bone_window"]["in_window"] is True, (
+        "an athlete starting at week 0 of running is inside the window by definition")
+
+    longest = None
+    grew = False
+    for s in _sessions(plan):
+        km = s.get("km")
+        if not km:
+            continue
+        if longest is not None:
+            # No single run may exceed the growth rate the spike guard itself calls "ok".
+            assert km <= longest * safety.BONE_LOAD_SPIKE_RATIO + 0.05, (
+                f"a {km} km run follows a longest of {longest} km inside the bone window, "
+                f"a {(km / longest - 1) * 100:.0f}% jump")
+            if km > longest + 0.05:
+                grew = True
+        longest = max(longest or 0.0, km)
+
+    # And it must still PROGRESS. The first attempt at this used `clamp_single_run`, whose in-window
+    # ratio is 1.00 -- correct as a runtime rule, and a deadlock in a generator: every week capped at
+    # the previous week's figure froze the long run at 4.9 km for the whole eighteen-week export.
+    # A safety limit that stops the plan working gets switched off, which protects nobody.
+    assert grew, "the long run must still grow inside the window, just slowly"
+
+
+def test_a_clamped_run_says_so(plan):
+    """A run that was quietly shortened is indistinguishable from a plan that never asked for more.
+
+    If the clamp fires it has to appear in the text the athlete actually reads, or the app is
+    silently overriding the plan and the athlete has no way to know it happened -- which is how you
+    lose trust in both.
+    """
+    held = [s for s in _sessions(plan) if "Held to" in (s.get("structure") or "")]
+    assert held, (
+        "this plan's own long-run progression exceeds 10% a week and jumps 44% at the BASE_1 to "
+        "BASE_2 boundary, so the limit must actually be firing somewhere in this export -- if it "
+        "never fires, nothing here is being tested")
+    for s in held:
+        assert "bone" in s["structure"].lower(), (
+            f"{s['type']} was shortened without saying why: {s['structure']!r}")
+
+
+def test_a_settled_runner_is_not_clamped_like_a_beginner(plan):
+    """The window lifts. A clamp that never releases is a plan that never progresses."""
+    settled = build_app_plan(_estimated_profile(age=30.0, hr_rest=67.0),
+                             start_phase=Phase.FOUNDATION,
+                             weeks_running_at_start=safety.NEW_RUNNER_BONE_WINDOW_WEEKS + 4)
+    assert settled["bone_window"]["in_window"] is False
+    longest_new = max((s.get("km") or 0) for s in _sessions(plan))
+    longest_settled = max((s.get("km") or 0) for s in _sessions(settled))
+    assert longest_settled >= longest_new, (
+        f"an established runner must be allowed at least as far as a novice: "
+        f"{longest_settled} vs {longest_new}")

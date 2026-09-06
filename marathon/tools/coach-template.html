@@ -312,6 +312,49 @@
     </p>
   </section>
 
+  <section id="pain-section">
+    <h2>Niggles</h2>
+    <p class="note">
+      The one thing the app cannot measure and the one that ends training blocks. Thirty seconds
+      after a run beats a fortnight of guessing later. Focal pain — a single point you can put a
+      finger on — is treated as a stop regardless of how mild it feels.
+    </p>
+    <div class="row" style="margin-top:.7rem">
+      <label>where <input id="painsite" type="text" list="painsites" placeholder="left shin"
+                          style="width:9rem"></label>
+      <label>how bad <input id="painlevel" type="number" min="0" max="10" step="1" value="2"
+                            style="width:3.6rem"> /10</label>
+    </div>
+    <datalist id="painsites">
+      <option>left shin</option><option>right shin</option>
+      <option>left calf</option><option>right calf</option>
+      <option>left knee</option><option>right knee</option>
+      <option>left achilles</option><option>right achilles</option>
+      <option>left foot</option><option>right foot</option>
+      <option>left hip</option><option>right hip</option>
+    </datalist>
+    <div class="row" style="margin-top:.5rem">
+      <label>when
+        <select id="paintiming">
+          <option value="during_run">during the run</option>
+          <option value="after_run">after the run</option>
+          <option value="next_morning">next morning</option>
+          <option value="constant">all the time</option>
+        </select>
+      </label>
+    </div>
+    <label class="check" style="margin-top:.5rem">
+      <input type="checkbox" id="painfocal">
+      <span>One specific point I can press on</span>
+    </label>
+    <label class="check">
+      <input type="checkbox" id="painworse">
+      <span>Got worse as the run went on</span>
+    </label>
+    <button id="painadd" class="tiny" style="margin-top:.7rem">Log it</button>
+    <div id="painout" style="margin-top:.7rem"></div>
+  </section>
+
   <section id="plan-section">
     <h2>Your plan</h2>
     <div class="instrument" style="gap:.8rem">
@@ -426,6 +469,11 @@
       <label>× <input id="reps" type="number" min="1" max="40" step="1" value="8"
                       style="width:3.6rem"></label>
     </div>
+    <label class="check" style="margin-top:.7rem">
+      <input type="checkbox" id="hrblocks">
+      <span>Let heart rate call the blocks</span>
+    </label>
+    <p class="note" id="hrblocknote" style="margin-top:.5rem"></p>
     <p class="note" style="margin-top:.7rem">
       No GPS needed, so this works even if location is blocked. It's also the session week 1 of your
       plan actually prescribes.
@@ -582,6 +630,9 @@
 /*{{TILES}}*/
 /*{{PROGRESSION}}*/
 /*{{PACEVOICE}}*/
+/*{{HRBLOCKS}}*/
+/*{{THRESHOLD}}*/
+/*{{LOADWATCH}}*/
 
 // One definition, from pace-monitor.js. A second copy here is exactly the kind of duplicate that
 // drifts silently while both test suites keep passing.
@@ -839,6 +890,10 @@ const S = {
   ramp: null, rampNotes: '', rampOutdoor: false, rampTargetSecKm: null, rampStopped: false,
   /// The athlete typed a target by hand. Stops a later mode tap from replacing it with the plan's.
   targetEdited: false,
+  /// The HR-governed block controller, when heart rate is calling the blocks. See hr-blocks.js.
+  hrBlocks: null,
+  /// Why the last block changed, for the log and for the announcement.
+  ivReason: null,
   simT: 0, simDist: 0, plannedSession: null,
   hrZones: null,
 };
@@ -1046,9 +1101,17 @@ function loadSession(s) {
         + `${Math.round(s.ramp.total_min)} min total`, 'on');
   } else if (s.run_walk) {
     setMode('intervals');
-    $('runmin').value = s.run_walk.run_min;
-    $('walkmin').value = s.run_walk.walk_min;
-    $('reps').value = s.run_walk.reps;
+    // The rung the athlete's own sessions have moved them to, not the one the calendar says. Falls
+    // back to the week's prescription when no ladder shipped or nothing has been judged yet.
+    const rung = rungSession();
+    const use = rung || s.run_walk;
+    $('runmin').value = use.run_min;
+    $('walkmin').value = use.walk_min;
+    $('reps').value = use.reps;
+    if (rung && (rung.run_min !== s.run_walk.run_min || rung.reps !== s.run_walk.reps)) {
+      log(`the plan's week says ${s.run_walk.run_min}/${s.run_walk.walk_min} × ${s.run_walk.reps}; `
+          + `your sessions have you at ${rung.run_min}/${rung.walk_min} × ${rung.reps}`, 'dim');
+    }
     // The band for the RUNNING blocks, which is a different number from the session's average pace
     // and is the whole point of coaching a run/walk at all. Told to "run", this athlete runs at
     // 10:00 per mile and is at 155 bpm in three minutes; at the prescribed 12:04 he sits at 138.
@@ -1081,9 +1144,12 @@ function loadSession(s) {
   S.plannedSession = { phase: prog.phase, week: prog.week, day: selectedDay, title: s.title,
                        // Carried so the finished session can be judged against what it asked for
                        // rather than against the controls, which the athlete may have changed.
+                       // What was actually prescribed, which is the rung when one is in force.
+                       // Judging the run against the week's baked row instead would score it
+                       // against a session the athlete was never asked to do.
                        runWalk: s.run_walk
-                         ? { runMin: s.run_walk.run_min, walkMin: s.run_walk.walk_min,
-                             reps: s.run_walk.reps }
+                         ? (() => { const u = rungSession() || s.run_walk;
+                                    return { runMin: u.run_min, walkMin: u.walk_min, reps: u.reps }; })()
                          : null };
   return true;
 }
@@ -1296,6 +1362,7 @@ function setMode(m) {
     renderRampNote();
   }
   $('modenote').textContent = MODE_NOTES[m];
+  if (m === 'intervals') renderHrBlockNote();
   adoptToday(m);
   renderModePlan();
   $('perlabel').textContent = m === 'ramp' ? '' : readoutLabel();
@@ -1472,6 +1539,39 @@ function setRampWhere(outdoor) {
 $('rampoutdoor').onchange = e => setRampWhere(e.target.checked);
 $('w-street').onclick = () => setRampWhere(true);
 $('w-mill').onclick = () => setRampWhere(false);
+
+/**
+ * Whether heart rate calls the blocks, and what that will mean today.
+ *
+ * Off by default and deliberately so: it needs the armband, and this athlete has had one session
+ * where the battery died halfway and one with no band at all. A default that silently degrades to
+ * the clock is fine; a default that looks like it is governing when it is not is not.
+ */
+function renderHrBlockNote() {
+  const on = $('hrblocks').checked;
+  const ceil = aerobicCeilingBpm();
+  const sn = S.sensor;
+  const connected = !!(sn && sn.state && sn.state().connected);
+  if (!on) {
+    $('hrblocknote').textContent =
+      'Off: the blocks run on the clock above. On, they run until your heart rate reaches the '
+      + `ceiling (${ceil.bpm} bpm — ${ceil.source}) and walk until it comes back down to `
+      + `${recoveryFloorBpm()}. That is the same two words to follow, with the load decided by your `
+      + 'body instead of by a timer.';
+    return;
+  }
+  $('hrblocknote').textContent =
+    `Run to ${ceil.bpm} bpm (${ceil.source}), walk down to ${recoveryFloorBpm()}. `
+    + (connected ? 'Armband connected.'
+                 : 'No armband connected yet — without one this falls back to the clock above, and '
+                 + 'the session will not count toward progression.');
+}
+
+$('hrblocks').checked = localStorage.getItem('band.hrblocks') === '1';
+$('hrblocks').onchange = e => {
+  localStorage.setItem('band.hrblocks', e.target.checked ? '1' : '0');
+  renderHrBlockNote();
+};
 
 ['coach','intervals','ramp','rehearse'].forEach(k => { $(`m-${k}`).onclick = () => setMode(k); });
 setMode('coach');
@@ -2212,18 +2312,243 @@ function tickRamp(t) {
   $('verdict').style.color = `var(--${step.kind === 'stage' ? 'fast' : 'on'})`;
 }
 
+/**
+ * The rung of the run-walk ladder the athlete is actually on.
+ *
+ * The plan ships a ladder and a set of weeks, and the weeks used to be the controller: week 1 got
+ * rung 0, week 2 rung 1, whatever happened in between. On 22 August that meant a prescription of
+ * seven two-minute blocks against 2.6 minutes of running and a longest block of 37 seconds -- and
+ * three-minute blocks scheduled for the following Wednesday.
+ *
+ * So the rung is state now, moved by the sessions. The week's own prescription is the ENTRY point:
+ * the first time a rung is needed it comes from the plan, and from then on it is evidence that moves
+ * it. `nextRung` never moves more than one step in either direction.
+ */
+const RUNG_KEY = 'band.rung';
+
+function ladder() { return (PLAN.run_walk_ladder || []); }
+
+/** The rung index, seeded from whatever the plan prescribes for today the first time it is asked. */
+function currentRung() {
+  const L = ladder();
+  if (!L.length) return null;
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(RUNG_KEY) || 'null'); } catch { /* corrupt */ }
+  if (stored && Number.isInteger(stored.rung)) return Math.max(0, Math.min(L.length - 1, stored.rung));
+  // Seed from the plan: the rung whose prescription matches what today's session asks for.
+  const s = todaySession();
+  const rw = s && s.run_walk;
+  if (rw) {
+    const i = L.findIndex(r => r.run_min === rw.run_min && r.reps === rw.reps);
+    if (i >= 0) return i;
+  }
+  return 0;
+}
+
+/** The run/walk prescription for the rung the athlete is on. */
+function rungSession() {
+  const L = ladder();
+  const i = currentRung();
+  return (i == null || !L[i]) ? null : { ...L[i], rung: i };
+}
+
+/**
+ * Move the ladder on what the session actually showed.
+ *
+ * Refuses to move on a session with no heart rate. `judgeSession` already treats a missing
+ * `pctAtOrBelowEasy` as "not tested" rather than as a failure, which is right for the verdict TEXT,
+ * but a ladder that advances on a clock-only session is advancing on the fact that a timer expired.
+ * This athlete has already run one session with no armband at all and one where the battery died
+ * halfway; both would have moved the rung.
+ */
+function applyVerdict(judged, stats) {
+  const L = ladder();
+  if (!judged || !L.length) return null;
+  if (stats && stats.avgHr == null) {
+    return { moved: false, why: 'no heart rate this session, so the ladder stays where it is' };
+  }
+  // A niggle that has become a pattern stops the ladder going UP, and does not stop it coming down.
+  // Pain that recurs is a reason to stop adding, not a reason to detrain -- and an athlete who is
+  // told to hold while something settles is far more likely to keep logging it than one who is told
+  // their training is being cut.
+  const held = painHolds(painTrend(painLog()));
+  if (held && held.hold && judged.verdict === ADVANCE) {
+    return { moved: false, why: `the ${held.site.replace(/_/g, ' ')} is a pattern — holding here `
+                              + 'until it has two clean weeks' };
+  }
+  const from = currentRung();
+  const to = nextRung(from, judged.verdict, L.length);
+  try {
+    localStorage.setItem(RUNG_KEY, JSON.stringify({
+      rung: to, verdict: judged.verdict, at: new Date().toISOString(),
+    }));
+  } catch { /* storage full; the verdict is still shown, it just will not stick */ }
+  return { moved: to !== from, from, to, why: judged.reason };
+}
+
+// =================================================================================================
+// Niggles and load
+//
+// The pain log is the only input in this whole app that the athlete has to supply by hand, and it
+// earns its place: bone and tendon appear in none of the heart-rate measures that govern everything
+// else, and this is the failure mode that actually ends training blocks. Thirty seconds after a run
+// beats a fortnight of guessing later.
+// =================================================================================================
+
+const PAIN_KEY = 'band.pain';
+
+function painLog() {
+  // The catch is for a corrupt value, and for nothing else. It used to be a bare `catch` around the
+  // whole body, which swallowed a temporal-dead-zone ReferenceError -- PAIN_KEY is a `const` and this
+  // was being called from earlier in the boot sequence than its own declaration -- and returned an
+  // empty log. The page looked like it had simply forgotten every niggle ever entered, silently,
+  // with nothing in the console. Reading the storage and parsing it are now separate statements so
+  // that only the parse is forgiven.
+  let raw = null;
+  try { raw = localStorage.getItem(PAIN_KEY); } catch { return []; }   // storage blocked entirely
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+function addPain(entry) {
+  const log = painLog();
+  log.push(entry);
+  try { localStorage.setItem(PAIN_KEY, JSON.stringify(log.slice(-200))); } catch { /* full */ }
+  renderPain();
+}
+
+function renderPain() {
+  const trends = painTrend(painLog());
+  const box = $('painout');
+  if (!trends.length) {
+    box.replaceChildren(Object.assign(document.createElement('p'),
+      { className: 'note', textContent: 'Nothing logged in the last fortnight.' }));
+    return;
+  }
+  box.replaceChildren(...trends.map(t => {
+    const d = document.createElement('div');
+    d.className = 'instrument';
+    d.style.cssText = 'gap:.4rem;margin-bottom:.6rem;padding:.7rem';
+    const h = document.createElement('div');
+    h.className = 'phase'; h.style.fontSize = '.95rem';
+    h.textContent = `${t.site} — ${t.verdict.replace(/_/g, ' ')}`;
+    h.style.color = `var(--${t.verdict === 'urgent' || t.verdict === 'stop_and_assess' ? 'stop'
+                            : t.verdict === 'hold_volume' ? 'fast' : 'dim'})`;
+    const m = document.createElement('div');
+    m.className = 'note'; m.textContent = t.message;
+    const ul = document.createElement('ul');
+    ul.className = 'note'; ul.style.margin = '.3rem 0 0 1rem';
+    for (const a of t.actions) {
+      const li = document.createElement('li'); li.textContent = a; ul.append(li);
+    }
+    d.append(h, m, ul);
+    return d;
+  }));
+}
+
+/**
+ * Chronic load, from the sessions already on the phone.
+ *
+ * Zero-filled by day, because omitting rest days is the standard way to make this number lie and it
+ * lies optimistically. Refuses to grade anything under four weeks of history: for a new runner
+ * chronic load starts at zero and the ratio explodes on the first easy jog.
+ */
+function loadBand() {
+  const rows = sessions.index()
+    .filter(e => e.stats && e.stats.trimp != null)
+    .map(e => ({ at: e.at, trimp: e.stats.trimp }));
+  if (!rows.length) return null;
+  return acwr(dailyLoadSeries(rows));
+}
+
+/// Where per-session threshold estimates accumulate. See threshold.js for why a single session is
+/// not enough and why the median is taken rather than the latest.
+const THRESHOLD_KEY = 'band.threshold';
+
+function thresholdHistory() {
+  try { return JSON.parse(localStorage.getItem(THRESHOLD_KEY) || '[]'); } catch { return []; }
+}
+
+/** The measured ceiling, or null while the age formula is still the best available answer. */
+function measuredCeiling() {
+  try { return ceilingFrom(thresholdHistory()); } catch { return null; }
+}
+
+/**
+ * Read this session's threshold off it and file the reading.
+ *
+ * Called once per finished session. Sessions that never approach the threshold return null and are
+ * not filed -- an easy run has not measured a ceiling, and letting it lower one would ratchet the
+ * athlete downward every time they did exactly what they were told.
+ */
+function recordThreshold(samples) {
+  let est = null;
+  try { est = estimateThreshold(samples); } catch { return null; }
+  if (!est) return null;
+  const hist = thresholdHistory();
+  hist.push({ bpm: est.bpm, confidence: est.confidence, at: new Date().toISOString() });
+  try { localStorage.setItem(THRESHOLD_KEY, JSON.stringify(hist.slice(-20))); } catch { /* full */ }
+  return est;
+}
+
+/**
+ * The aerobic ceiling this session is run under, and where the number came from.
+ *
+ * Every zone edge in the plan descends from Tanaka's age formula, whose between-person standard
+ * deviation is about 7 bpm -- a whole zone width. A measured threshold beats it, and this athlete's
+ * own sessions contain one: see threshold.js. Until enough of them are recorded, the session's own
+ * prescribed easy band stands in.
+ */
+function aerobicCeilingBpm() {
+  const measured = measuredCeiling();
+  if (measured) return { bpm: measured.bpm, source: measured.source };
+  const zs = (S.hrZones || zoneModel(hrMaxFor(profile.age), profile.hrRest))
+    .filter(z => z.index === 2);
+  const bpm = zs.length ? Math.round(zs[0].high) : Math.round(profile.hrRest + 0.70 * (hrMaxFor(profile.age) - profile.hrRest));
+  return { bpm, source: 'Z2 ceiling from the age formula' };
+}
+
+/**
+ * Where a walk break has done its job.
+ *
+ * As a fraction of heart-rate reserve rather than an absolute, so it moves with the athlete. 55% is
+ * chosen against his own recording: walking at 4-5 km/h his heart rate sat at 128-135, and the one
+ * time he walked slowly for two full minutes it reached 121. A floor he can only hit by genuinely
+ * slowing down is the point -- the brisk 5.6 km/h walk the plan prescribes left him above threshold
+ * for 384 seconds of a 26-minute session, which is why the ceiling kept being breached.
+ */
+function recoveryFloorBpm() {
+  return Math.round(profile.hrRest + 0.55 * (hrMaxFor(profile.age) - profile.hrRest));
+}
+
 function tickIntervals(t) {
-  if (t < S.ivUntil) return;
   const runS = Number($('runmin').value) * 60, walkS = Number($('walkmin').value) * 60;
   const reps = Number($('reps').value);
 
-  if (S.ivPhase === null) {
-    S.ivPhase = 'run'; S.ivRep = 1; S.ivUntil = t + runS;
-  } else if (S.ivPhase === 'run') {
-    if (S.ivRep >= reps) { finish('Session complete.'); return; }
-    S.ivPhase = 'walk'; S.ivUntil = t + walkS;
+  // Heart rate calls the blocks when it can. Everything below the fork -- the announcement, the log
+  // line, the big word on the screen -- is shared, because from the athlete's side the session is
+  // identical either way. That is the whole point: the instruction stays two words, and only what
+  // decides the moment changes.
+  if (S.hrBlocks) {
+    const sn = S.sensor;
+    const fresh = sn && sn.hrFresh();
+    const ev = S.hrBlocks.update(t, fresh ? sn.hr : null, { hrFresh: !!fresh });
+    if (!ev) return;
+    if (ev.phase === 'done') { finish('Session complete.'); return; }
+    S.ivPhase = ev.phase === 'run' ? 'run' : 'walk';
+    S.ivRep = ev.rep;
+    S.ivReason = ev.reason;
   } else {
-    S.ivPhase = 'run'; S.ivRep += 1; S.ivUntil = t + runS;
+    if (t < S.ivUntil) return;
+    if (S.ivPhase === null) {
+      S.ivPhase = 'run'; S.ivRep = 1; S.ivUntil = t + runS;
+    } else if (S.ivPhase === 'run') {
+      if (S.ivRep >= reps) { finish('Session complete.'); return; }
+      S.ivPhase = 'walk'; S.ivUntil = t + walkS;
+    } else {
+      S.ivPhase = 'run'; S.ivRep += 1; S.ivUntil = t + runS;
+    }
+    S.ivReason = null;
   }
 
   // The transition, spoken plainly and carrying the target.
@@ -2236,13 +2561,21 @@ function tickIntervals(t) {
   const word = run ? 'Run' : 'Walk';
   if (run) S.voice && S.voice.begin(t); else S.voice && S.voice.standDown();
   play('attend');
+  // An HR-governed session has no "of N" to announce -- the number of blocks is decided by the body
+  // during the session, not by the plan beforehand -- so it says which block this is and stops
+  // there. Claiming "3 of 7" when the seventh may never be reached would be a promise the session
+  // cannot keep.
+  const counted = S.hrBlocks ? `Block ${S.ivRep}.` : `Interval ${S.ivRep} of ${reps}.`;
   sayShortly(run
-    ? `Run. Interval ${S.ivRep} of ${reps}. Target ${U.pace(targetSecKm)}.`
-    : 'Walk. Ease right down.');
-  log(`${word} — ${S.ivPhase === 'run' ? `rep ${S.ivRep}/${reps}` : 'recover'}`,
+    ? `Run. ${counted} Target ${U.pace(targetSecKm)}.`
+    : (S.ivReason === 'not recovering' ? 'Walk it in. That is the session.'
+                                       : 'Walk. Ease right down.'));
+  log(`${word} — ${S.ivPhase === 'run' ? `block ${S.ivRep}` : 'recover'}`
+      + (S.ivReason ? ` (${S.ivReason})` : ''),
       S.ivPhase === 'run' ? 'fast' : 'on');
   $('pace').textContent = word.toUpperCase();
-  $('verdict').textContent = S.ivPhase === 'run' ? `rep ${S.ivRep} of ${reps}` : 'recover';
+  $('verdict').textContent = S.ivPhase === 'run'
+    ? (S.hrBlocks ? `block ${S.ivRep}` : `rep ${S.ivRep} of ${reps}`) : 'recover';
   $('verdict').style.color = `var(--${S.ivPhase === 'run' ? 'fast' : 'on'})`;
 }
 
@@ -2503,6 +2836,24 @@ for (const [id, key, lo, hi] of [['age', 'age', 14, 90], ['hrrest', 'hrRest', 30
 
 setUnit(unit);
 renderPlan();
+$('painadd').onclick = () => {
+  const site = ($('painsite').value || '').trim().toLowerCase().replace(/\s+/g, '_');
+  if (!site) { log('name the site — "left shin", not just "leg"', 'fast'); return; }
+  addPain({
+    day: new Date().toISOString().slice(0, 10),
+    site,
+    level: Number($('painlevel').value) || 0,
+    timing: $('paintiming').value,
+    focal: $('painfocal').checked,
+    worsensDuringRun: $('painworse').checked,
+  });
+  $('painsite').value = '';
+  $('painfocal').checked = false;
+  $('painworse').checked = false;
+  log(`logged: ${site.replace(/_/g, ' ')}`, 'dim');
+};
+renderPain();
+
 renderToday();
 updateSensorUi();
 renderProfileNote();
@@ -2576,6 +2927,27 @@ $('go').onclick = () => {
     highBpm: Math.max(...zs.map(z => z.high)),
     ceilingOnly: sess ? !!sess.ceiling_only : true,
   });
+
+  // Blocks called by heart rate rather than by the clock. See hr-blocks.js for the session that
+  // produced this: prescribed Z1/Z2 with a 155 ceiling, peaked at 177, and the mean pace while over
+  // the ceiling was SLOWER than the pace prescribed. Pace was not governing the load.
+  //
+  // The ceiling is the top of the session's own easy band -- or, once enough sessions have been
+  // recorded, the athlete's own measured first ventilatory threshold, which is a fact about him
+  // rather than about Tanaka's age formula. The floor is where a walk break has done its job.
+  S.hrBlocks = null;
+  if (S.mode === 'intervals' && $('hrblocks').checked) {
+    const ceil = aerobicCeilingBpm();
+    S.hrBlocks = new HrBlocks({
+      ceilingBpm: ceil.bpm,
+      floorBpm: recoveryFloorBpm(),
+      fallbackRunS: Number($('runmin').value) * 60,
+      fallbackWalkS: Number($('walkmin').value) * 60,
+      reps: Number($('reps').value) || null,
+    });
+    log(`heart rate calls the blocks — run to ${ceil.bpm}, walk down to ${recoveryFloorBpm()} `
+        + `(${ceil.source})`, 'on');
+  }
 
   S.splits = new SplitAnnouncer({
     everyM: U.splitEvery(),
@@ -2720,6 +3092,11 @@ function showStats(stats, prevStats) {
     if (stats.trimp != null) tile('Load', Math.round(stats.trimp));
   }
   tile('Cues', `${stats.tones} (${stats.tonesPerMin.toFixed(2)}/min)`);
+  // Chronic load, from every session on the phone rather than from this one. Shown only once there
+  // is enough history to mean anything -- for a new runner the ratio reads alarming for weeks purely
+  // because there is nothing behind it to compare against.
+  const lb = loadBand();
+  if (lb && lb.band !== 'insufficient_history') tile('Load ratio', lb.ratio.toFixed(2));
 
   $('statsgrid').replaceChildren(...tiles.map(([k, v]) => {
     const d = document.createElement('div');
@@ -2733,6 +3110,19 @@ function showStats(stats, prevStats) {
   $('statssplits').textContent = stats.splits.length
     ? `Splits: ${stats.splits.map(x => readoutText(x.paceSecKm)).join(' · ')}`
     : '';
+
+  // What this session says about where the aerobic ceiling actually sits. Filed rather than acted on
+  // immediately: see threshold.js for why one session is a coincidence and the median of several is
+  // the number worth training under.
+  if (S.samples && S.samples.length) {
+    const est = recordThreshold(S.samples);
+    const nowCeil = measuredCeiling();
+    if (est) {
+      log(`this session put your aerobic ceiling at ${est.bpm} bpm`
+          + (nowCeil ? ` — now using ${nowCeil.bpm} (${nowCeil.source})` : ' — one more session and '
+            + 'that becomes the ceiling the coach uses instead of the age formula'), 'on');
+    }
+  }
 
   // Two sessions is not a trend, and the module refuses to pretend otherwise — but the direction
   // between the last two is the thing anyone actually wants to know.
@@ -2760,11 +3150,20 @@ function showStats(stats, prevStats) {
   // Wednesday. See progression.js for why the check runs on four things and not forty.
   const rw = S.plannedSession && S.plannedSession.runWalk;
   const judged = rw ? judgeSession(rw, stats) : null;
+  // And it is applied, not merely announced. This is the line that turns a schedule into a
+  // controller; everything it needs has existed and been tested for weeks.
+  const moved = judged ? applyVerdict(judged, stats) : null;
   if (judged) {
+    const L = ladder();
+    const say = r => `${r.run_min}/${r.walk_min} × ${r.reps}`;
+    let where = '';
+    if (moved && moved.moved) where = ` Ladder: ${say(L[moved.from])} → ${say(L[moved.to])}.`;
+    else if (moved && moved.from != null) where = ` Ladder stays at ${say(L[moved.from])}.`;
+    else if (moved) where = ` Ladder unchanged — ${moved.why}.`;
     $('statsverdict').textContent =
       `${judged.verdict === ADVANCE ? 'Next one goes up.'
         : judged.verdict === EASE_BACK ? 'Next one steps back.'
-        : 'Next one repeats this.'} ${judged.reason} ${judged.next}`;
+        : 'Next one repeats this.'} ${judged.reason} ${judged.next}${where}`;
     $('statsverdict').style.color = judged.verdict === ADVANCE ? 'var(--on)'
       : judged.verdict === EASE_BACK ? 'var(--slow)' : 'var(--dim)';
     $('statsverdict').classList.remove('hide');

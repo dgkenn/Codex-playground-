@@ -394,6 +394,104 @@ async function pickDay(page, kind) {
   console.log('  ok  a hand-typed target outranks the plan on a mode tap');
 }
 
+// --- the ladder is moved by sessions, not by the calendar -----------------------------------------
+
+{
+  // "The ladder advances one rung per calendar week regardless of what happened. That is a schedule,
+  // not a controller." It has been a schedule for the whole life of this app: judgeSession was
+  // computed and printed, nextRung was written and tested and never called, and the next session
+  // came out of a pre-baked JSON week either way.
+  //
+  // Driven through the page rather than through the modules, because the modules were already
+  // right -- the defect was entirely in the wiring, which is exactly the class of bug that passes
+  // every module suite.
+  const L = await page.evaluate(() => (window.__PLAN_LADDER__ || null));
+  const rung = await page.evaluate(() => {
+    localStorage.setItem('band.rung', JSON.stringify({ rung: 3 }));
+    return JSON.parse(localStorage.getItem('band.rung')).rung;
+  });
+  assert.equal(rung, 3, 'the rung must be storable');
+
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  await pickDay(page, 'run/walk');
+  await page.waitForTimeout(80);
+  await page.click('#loadsess');
+  await page.waitForTimeout(150);
+  // Rung 3 of the shipped ladder is 5 min run / 2 min walk x 5. Loading a plan session must take
+  // the athlete's rung, not the week's baked row.
+  assert.equal(await page.inputValue('#runmin'), '5',
+    'a loaded session must use the rung the athlete is on, not the calendar week');
+  assert.equal(await page.inputValue('#reps'), '5');
+  console.log('  ok  a loaded session comes from the stored rung, not from the calendar week');
+
+  // And the rung must be reachable from a fresh install without one stored: seeded from the plan.
+  await page.evaluate(() => localStorage.removeItem('band.rung'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  await pickDay(page, 'run/walk');
+  await page.click('#loadsess');
+  await page.waitForTimeout(150);
+  const seeded = await page.inputValue('#runmin');
+  assert.match(seeded, /^\d+(\.\d+)?$/, `a fresh install must still load a session: "${seeded}"`);
+  console.log(`  ok  with no rung stored it seeds from the plan (${seeded} min blocks)`);
+}
+
+// --- heart rate can call the blocks ---------------------------------------------------------------
+
+{
+  // The central change. See hr-blocks.js: his prescribed-easy session peaked at 177 bpm, 95% of
+  // estimated HRmax, and the mean pace while over the ceiling was SLOWER than the pace prescribed.
+  // Pace was not governing the load, so the blocks are governed by heart rate instead.
+  await page.click('#m-intervals');
+  await page.waitForTimeout(150);
+  const note = (await page.textContent('#hrblocknote')).replace(/\s+/g, ' ');
+  assert.match(note, /\d+ bpm/, `the toggle must state the ceiling it would use: "${note}"`);
+  assert.match(note, /walk until it comes back down to \d+|walk down to \d+/,
+    `and the floor, which is the half that was actually broken: "${note}"`);
+  await page.check('#hrblocks');
+  await page.waitForTimeout(120);
+  const on = (await page.textContent('#hrblocknote')).replace(/\s+/g, ' ');
+  // Without an armband it must say so rather than looking like it is governing.
+  assert.match(on, /No armband connected/,
+    `with no band it must own up rather than appear to govern: "${on}"`);
+  await page.uncheck('#hrblocks');
+  await page.waitForTimeout(80);
+  console.log(`  ok  heart-rate blocks state their ceiling, floor, and whether a band is present`);
+}
+
+// --- niggles hold the ladder ----------------------------------------------------------------------
+
+{
+  // The only input in this app the athlete has to supply by hand, and it earns its place: bone and
+  // tendon appear in none of the heart-rate measures that govern everything else, and this is the
+  // failure mode that actually ends training blocks.
+  await page.evaluate(() => localStorage.removeItem('band.pain'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  assert.match(await page.textContent('#painout'), /Nothing logged/,
+    'an empty log must say so rather than showing an empty box');
+
+  await page.fill('#painsite', 'left shin');
+  await page.fill('#painlevel', '1');
+  await page.check('#painfocal');
+  await page.click('#painadd');
+  await page.waitForTimeout(150);
+  const out = (await page.textContent('#painout')).replace(/\s+/g, ' ');
+  // A 1/10 focal pain is urgent. That is the rule that matters most here -- 180 lb, inside the
+  // first twenty weeks of running, and a stress reaction does not have to hurt much to be one.
+  assert.match(out, /urgent/i, `focal pain at 1/10 must read urgent: "${out.slice(0, 160)}"`);
+  assert.match(out, /stress injury/i, 'and must say why');
+  console.log('  ok  a 1/10 focal niggle is logged and reads urgent');
+
+  // It survives a reload, because a log that forgets is worse than no log.
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  assert.match(await page.textContent('#painout'), /urgent/i, 'the log must persist');
+  await page.evaluate(() => localStorage.removeItem('band.pain'));
+  console.log('  ok  and it survives a reload');
+}
+
 // --- the ramp test -------------------------------------------------------------------------------
 
 {
