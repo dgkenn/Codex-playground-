@@ -210,6 +210,34 @@ const north = (from, m) => ({ lat: from.lat + m / 111132.92, lon: from.lon });
 }
 
 {
+  // The same protection at the fix rate a phone actually delivers, which is where it had stopped
+  // working.
+  //
+  // The test above feeds a wild sample one second after the last good one. Written as
+  // `accel x elapsed`, the allowance grows without limit as fixes get sparser: at one fix every four
+  // seconds it came to 6 m/s, which is larger than the whole plausible speed range, so the gate
+  // waved everything through exactly when GPS was at its worst. Silent, and invisible to every test
+  // here, because every test here ran at 1 Hz.
+  //
+  // It was found by sweeping the constant over a real recorded session and watching nothing happen:
+  // tightening it sixfold, from 1.5 to 0.25, moved the displayed pace's steadiness by one second per
+  // mile. A knob that does nothing at any setting is not tuned, it is disconnected.
+  const g = new GpsTrack();
+  let lat = BOSTON.lat;
+  for (let t = 0; t <= 40; t += 4) {              // one fix every four seconds, steady 2.8 m/s
+    lat += (2.8 * 4) / 111132.92;
+    g.add({ lat, lon: BOSTON.lon, accuracy: 8, speed: 2.8, t });
+  }
+  const before = g.paceSecKm;
+  lat += (2.8 * 4) / 111132.92;
+  g.add({ lat, lon: BOSTON.lon, accuracy: 8, speed: 7.9, t: 44 });   // a wild Doppler reading
+  const moved = Math.abs(g.paceSecKm - before);
+  assert.ok(moved < 30,
+    `a wild sample four seconds after a good one moved the pace by ${moved.toFixed(0)} s/km`);
+  console.log(`  ok  the slew gate still binds at one fix per 4s (moved ${moved.toFixed(0)} s/km)`);
+}
+
+{
   const g = new GpsTrack();
   g.add({ ...BOSTON, accuracy: 8, speed: 2.8, t: 0 });
   assert.equal(g.trustedAt(2), true);

@@ -40,7 +40,7 @@
  * Seconds of pace history the spoken number is averaged over.
  *
  * Small on purpose, because this is the SECOND filter in the chain, not the first: what arrives here
- * is already a trailing mean over GeoDefaults.smoothS (fifteen) seconds of GPS speed. Averaging that
+ * is already a trailing mean over GeoDefaults.smoothS seconds of GPS speed. Averaging that
  * again over ten seconds bought very little noise reduction and cost a great deal of lag -- the two
  * windows add, so the spoken number was not purely about the current run block until twenty-five
  * seconds into it, a fifth of a two-minute block. Five keeps the guard against speaking off a single
@@ -71,11 +71,15 @@ export const EVERY_S = 22;
  * the one moment in the block when the correction is cheapest to make.
  *
  * The number is not arbitrary any more. Two windows sit between the legs and the sentence and they
- * add: GeoDefaults.smoothS (fifteen seconds of GPS speed) and this module's own SMOOTHING_S (five).
- * Until both have emptied of the walk break, the number is partly about the walk however it is
- * phrased -- so the settle is their sum, and the first line of a block is the first honest one.
+ * add: GeoDefaults.smoothS (twenty-five seconds of GPS speed) and this module's own SMOOTHING_S
+ * (five). Until both have emptied of the walk break, the number is partly about the walk however it
+ * is phrased -- so the settle is their sum, and the first line of a block is the first honest one.
+ *
+ * It tracks smoothS, which grew from fifteen after a real session showed the tile swinging from
+ * 11:40 to 16:46 while the athlete held one pace. In a two-minute run block this still leaves five
+ * spoken lines -- at 30 s, then every 22 -- so the cost of the steadier number is one line.
  */
-export const SETTLE_S = 20;
+export const SETTLE_S = 30;
 
 /** Minimum samples before any number is spoken. Below this the average is not one. */
 export const MIN_SAMPLES = 4;

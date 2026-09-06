@@ -67,11 +67,25 @@ export const GeoDefaults = {
   baselineJitterK: 2.0,
   /// Window for the displayed pace.
   ///
-  /// Fifteen seconds rather than ten because ten left the number swinging by nearly 50 s/km under
-  /// pessimistic Doppler jitter — the gap between 5:57 and 6:46, which is not a number anyone can
-  /// act on. Still shorter than the band monitor's own twenty-second window, so the display never
-  /// lags the coaching.
-  smoothS: 15,
+  /// Was fifteen, and fifteen is a duration where what matters is a COUNT. A window smooths by
+  /// averaging independent readings, and how many it holds depends on the fix rate: Polar, sampling
+  /// at 1 Hz, averages fifteen of them; a phone delivering a fix every four seconds averages four.
+  /// Same nominal window, half the noise reduction.
+  ///
+  /// Measured on a real session recorded against Polar. Over the one block Polar says the athlete
+  /// held a steady 12:29/mi, Polar's own trace smoothed over the same fifteen seconds had a spread
+  /// of 28 s/mi. This app's tile had 62 s/mi, and ranged from 11:40 to 16:46 while he ran one pace.
+  /// The MEAN was right -- 12:44 against Polar's 12:29 -- so nothing was miscalculated; the number
+  /// was simply too noisy to act on, which from the outside is indistinguishable from being wrong.
+  ///
+  /// Twenty-five seconds is where the trade stops paying. Simulated on that same session at its
+  /// measured noise: 15s gives 59 s/mi of spread, 20s gives 50, 25s gives 46, 30s gives 43 -- while
+  /// the error during the twenty seconds after a real change of pace climbs 1.42 -> 1.67 km/h. A
+  /// steadier number costs responsiveness at transitions, and transitions are not when this number
+  /// gets acted on.
+  smoothS: 25,
+  /// Longest gap the acceleration gate will price in. See where `room` is computed.
+  maxSlewGapS: 2,
   /// Horizontal distance the grade is measured over. Barometric and GPS altitude are both noisy
   /// enough that a grade from consecutive fixes routinely reads +/-40%.
   gradeRunM: 40,
@@ -79,11 +93,17 @@ export const GeoDefaults = {
   maxGrade: 0.30,
   /// A runner cannot change speed faster than this, so a sample that claims otherwise is a bad fix.
   ///
+  /// 0.8 rather than 1.5: one and a half metres per second per second is sprint-start acceleration,
+  /// which no session in this plan contains. The gate is only as tight as the least plausible thing
+  /// it still allows, and at a fix every four seconds -- with the elapsed term capped at two seconds
+  /// -- 1.5 let a single bad Doppler reading pull the displayed pace by 47 s/km. 0.8 covers a walk
+  /// breaking into a jog (about 1 m/s over three seconds) with room to spare.
+  ///
   /// The same idea as the heart-rate slew gate in the engine, and it belongs here for the same
   /// reason: a physical impossibility is a cleaner filter than any statistical one. Trimming the
   /// window was tried first and made things worse — under symmetric jitter it throws away
   /// information, and it only ever helped against the spikes this catches directly.
-  maxAccelMS2: 1.5,
+  maxAccelMS2: 0.8,
 };
 
 export class GpsTrack {
@@ -225,7 +245,16 @@ export class GpsTrack {
     // Reject a speed no runner could have reached from the last one. See maxAccelMS2.
     if (v != null && this.speedWindow.length) {
       const [lastT, lastV] = this.speedWindow[this.speedWindow.length - 1];
-      const room = this.cfg.maxAccelMS2 * Math.max(0.5, t - lastT);
+      // The elapsed term is CAPPED, and the cap is the whole point. Written as accel x elapsed it
+      // grows without limit as fixes get sparser: at one fix every four seconds -- ordinary on a
+      // phone -- it allows a 6 m/s step between readings, which is larger than the rejection
+      // threshold, so the gate stops existing exactly where it is needed. Sweeping it over this
+      // athlete's own recorded session confirmed it: tightening the constant from 1.5 to 0.25
+      // changed the displayed pace's steadiness by one second per mile. It was not doing anything.
+      //
+      // Two seconds of acceleration is a real athlete's worst case -- a standing start into a
+      // sprint -- so beyond that the gap is the radio being slow, not the legs being fast.
+      const room = this.cfg.maxAccelMS2 * Math.min(this.cfg.maxSlewGapS, Math.max(0.5, t - lastT));
       if (Math.abs(v - lastV) > room) v = lastV + Math.sign(v - lastV) * room;
     }
     if (v != null) {
