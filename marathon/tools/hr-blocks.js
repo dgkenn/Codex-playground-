@@ -69,7 +69,13 @@ export const HrBlockDefaults = {
 /** Phases this controller can be in. `warmup` is walking too. */
 /// Named for this module rather than `Phase`, which is what it wants to be called: the built page
 /// inlines every module into one scope, and `Phase` is a name the training plan will want too.
-export const BlockPhase = { WARMUP: 'warmup', RUN: 'run', WALK: 'walk', DONE: 'done' };
+///
+/// `cooldown` exists because two unrecovered walks used to mean `done`, and that was wrong: for this
+/// athlete walking IS training. A body that stops clearing the load between run blocks is telling you
+/// the RUNNING is over, not that the recording should stop -- it should keep walking, and keep
+/// recording, until the athlete ends the session. `done` is reserved for the two real endings: the
+/// plan's own rep count being satisfied, or the athlete stopping the app.
+export const BlockPhase = { WARMUP: 'warmup', RUN: 'run', WALK: 'walk', COOLDOWN: 'cooldown', DONE: 'done' };
 
 /**
  * Decides when to run and when to walk, from heart rate.
@@ -105,6 +111,13 @@ export class HrBlocks {
     this._peakHr = null;
     this._lastFreshT = null;
     this._pending = [];          // recoveries still waiting for their 60-second reading
+    this._runUnderCeilingS = 0;  // seconds inside run blocks where HR was at or below the ceiling
+    this._runOverCeilingS = 0;   // seconds inside run blocks where HR was above it
+    /// Which of the three real endings this session had. Set once, at the moment it becomes known,
+    /// so `summary()` can tell "the plan asked for this many reps and got them" apart from "the body
+    /// stopped clearing the load" apart from "the athlete ended it" -- three different facts that all
+    /// look identical from the block list alone.
+    this._endedBy = null;
   }
 
   /** True while heart rate is recent enough to govern with. */
@@ -129,6 +142,22 @@ export class HrBlocks {
     if (hr != null) this._lastFreshT = tS;
     if (hr != null && (this._peakHr == null || hr > this._peakHr)) this._peakHr = hr;
     this._resolveRecoveries(tS, hr);
+
+    // What the judge needs: not just how much running happened, but how much of it was actually
+    // under the ceiling it was governed by. A block that ends AT the ceiling can still have spent
+    // most of its seconds comfortably below it, or almost none -- the two sessions look identical in
+    // `runningS` and are not identical at all.
+    if (this.phase === BlockPhase.RUN && hr != null && this.ceilingBpm != null) {
+      if (hr <= this.ceilingBpm) this._runUnderCeilingS += 1;
+      else this._runOverCeilingS += 1;
+    }
+
+    if (this.phase === BlockPhase.COOLDOWN) {
+      // Walking is training for this athlete, so a cool-down keeps recording -- it just never calls
+      // another run block. Pending recoveries (the walk-to-run transition that led here) still
+      // resolve above, so the session's last HRR60 reading is not lost.
+      return null;
+    }
 
     const live = this.hrLive(tS) && this.ceilingBpm != null && this.floorBpm != null;
     const el = this.elapsed(tS);
@@ -169,7 +198,13 @@ export class HrBlocks {
         // is over -- that is the auto-regulation, and it is the honest reading of a body that is no
         // longer clearing the load between blocks.
         this.stalls += 1;
-        if (this.stalls >= 2) return this._to(BlockPhase.DONE, tS, 'not recovering', true);
+        if (this.stalls >= 2) {
+          // Not the end of the recording -- the end of the RUNNING. Walking is training for this
+          // athlete, so what a clock-governed session would call "done" here becomes a cool-down:
+          // still walking, still recording, no more run blocks called.
+          this._endedBy = 'stall';
+          return this._to(BlockPhase.COOLDOWN, tS, 'not recovering', true);
+        }
         return this._to(BlockPhase.RUN, tS, 'going again', true);
       }
       return null;
@@ -181,6 +216,11 @@ export class HrBlocks {
   /** End the session wherever it is, closing the open block. */
   finish(tS) {
     if (this.phase === BlockPhase.DONE) return;
+    // If nothing set this already (a stall, or the plan's own rep count), then this call is the
+    // reason: the athlete ended it. Closing the still-open block reads `this.phase`, which is
+    // `cooldown` when a stall got here first -- so a session that stalled and was then stopped is
+    // still recorded as `kind: 'cooldown'`, correctly, with no special-casing needed here.
+    if (this._endedBy == null) this._endedBy = 'athlete';
     this._close(tS);
     this.phase = BlockPhase.DONE;
   }
@@ -200,6 +240,7 @@ export class HrBlocks {
       this.rep += 1;
       if (this.reps != null && this.rep > this.reps) {
         this.phase = BlockPhase.DONE;
+        this._endedBy = 'reps';   // the plan's own end, not the body's and not the athlete's
         return { phase: BlockPhase.DONE, previous, reason: 'session complete', rep: this.rep - 1, block };
       }
     }
@@ -235,12 +276,14 @@ export class HrBlocks {
   summary() {
     const runs = this.blocks.filter(b => b.kind === BlockPhase.RUN);
     const walks = this.blocks.filter(b => b.kind === BlockPhase.WALK);
+    const cooldowns = this.blocks.filter(b => b.kind === BlockPhase.COOLDOWN);
     const hrr = this.recoveries.map(r => r.hrr60);
     return {
       runBlocks: runs.length,
       runningS: runs.reduce((a, b) => a + b.durationS, 0),
       longestRunBlockS: runs.reduce((a, b) => Math.max(a, b.durationS), 0),
       walkS: walks.reduce((a, b) => a + b.durationS, 0),
+      cooldownS: cooldowns.reduce((a, b) => a + b.durationS, 0),
       unrecoveredWalks: walks.filter(b => b.recovered === false).length,
       // The autonomic number. Median rather than mean: one bad optical reading in a walk break
       // should not move a session-level statistic that gets trended across weeks.
@@ -250,6 +293,14 @@ export class HrBlocks {
       // flat says nothing about fitness, and must not be allowed to advance or retreat the ladder.
       governedBy: this.blocks.some(b => b.governedBy === 'hr') ? 'hr' : 'clock',
       stalls: this.stalls,
+      // What the judge needs to tell "the body ended this" from "the plan's own end" from "the
+      // athlete stopped" -- three different verdicts, identical block lists.
+      endedBy: this._endedBy,
+      // Seconds actually spent under governance inside run blocks, split by which side of the
+      // ceiling they were on. `runningS` alone cannot tell a block that grazed the ceiling once from
+      // one that spent half its length over it.
+      runningUnderCeilingS: this._runUnderCeilingS,
+      runningOverCeilingS: this._runOverCeilingS,
     };
   }
 }

@@ -6,7 +6,7 @@
 
 import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
-         DECOUPLING_LIMIT_PCT } from '../progression.js';
+         DECOUPLING_LIMIT_PCT, judgeHrSession, hrrBaseline, HRR_DROP_FRACTION } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -105,6 +105,106 @@ const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of run
   assert.equal(nextRung(7, ADVANCE, 8), 7, 'and the top is the top');
   assert.equal(nextRung(-4, REPEAT, 8), 0);
   console.log('  ok  the ladder moves one rung at a time and stays on itself');
+}
+
+// --- judgeHrSession: the gate for sessions where the body called the blocks, not the clock ---------
+
+const HR_TARGET = { runningMinTarget: 14 };      // 14 minutes of running under the ceiling, total
+
+{
+  // A clock-governed session -- the armband died, or it was never worn -- is a timer expiring, not a
+  // body responding to load. No ceiling crossings happened at all; there is nothing here to move the
+  // ladder on, in either direction.
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'clock', runningUnderCeilingS: 900, endedBy: 'athlete', hrr60Median: null },
+    null, null);
+  assert.equal(j, null, 'a clock-governed summary must not move the ladder');
+  console.log('  ok  a clock-governed HR summary returns nothing, not a guess');
+}
+
+{
+  // Two stalled recoveries ended the running well short of the target -- the body ended this session,
+  // and the plan should say so rather than pretend the target was met.
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'hr', endedBy: 'stall', runningUnderCeilingS: 240, hrr60Median: 20 }, null, null);
+  assert.equal(j.verdict, EASE_BACK, j.reason);
+  assert.match(j.reason, /stopped clearing the load/);
+  console.log(`  ok  a stall well short of the target eases the ladder back ("${j.reason.slice(0, 50)}…")`);
+}
+
+{
+  // HRR60 down more than a fifth against his own recent baseline: accumulated fatigue, checked before
+  // decoupling and before completion, because it is the more direct explanation for either.
+  const baseline = 20, droppedHrr = baseline * HRR_DROP_FRACTION - 1;
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'hr', endedBy: 'reps', runningUnderCeilingS: 800, hrr60Median: droppedHrr },
+    { decouplingPct: 3 }, baseline);
+  assert.equal(j.verdict, REPEAT, j.reason);
+  assert.match(j.reason, /fatigue/);
+  console.log('  ok  HRR60 down more than a fifth from baseline holds the ladder, despite completion');
+}
+
+{
+  // Recovery is fine, but heart rate drifted against pace between the halves: the ceiling did its
+  // job on intensity, the duration is what is at the edge.
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'hr', endedBy: 'reps', runningUnderCeilingS: 800, hrr60Median: 25 },
+    { decouplingPct: DECOUPLING_LIMIT_PCT + 5 }, 20);
+  assert.equal(j.verdict, REPEAT, j.reason);
+  assert.match(j.reason, /drift/i);
+  console.log('  ok  heart-rate drift holds the ladder even with the target reached and recovery fine');
+}
+
+{
+  // Reached the target, ended by the plan's own rep count, recovery holding, no drift: this is what
+  // earns the next rung.
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'hr', endedBy: 'reps', runningUnderCeilingS: 800, hrr60Median: 25 },
+    { decouplingPct: 3 }, 20);
+  assert.equal(j.verdict, ADVANCE, j.reason);
+  assert.match(j.next, /rung/);
+  console.log(`  ok  a target reached with recovery and decoupling both clean moves the ladder up `
+            + `("${j.reason.slice(0, 46)}…")`);
+}
+
+{
+  // Short of the target but not by a stall -- the athlete ended it, or the target was set a little
+  // ahead of what today had. Not a near miss that should be counted as done, and not a body failure
+  // that eases back either -- repeat and see.
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'hr', endedBy: 'athlete', runningUnderCeilingS: 600, hrr60Median: null }, null, null);
+  assert.equal(j.verdict, REPEAT, j.reason);
+  console.log('  ok  short of the target without a stall or fatigue signal is a repeat, not a verdict either way');
+}
+
+{
+  // No target, no summary: a real answer, not a guess.
+  assert.equal(judgeHrSession(null, { governedBy: 'hr' }, null, null), null);
+  assert.equal(judgeHrSession(HR_TARGET, null, null, null), null);
+  console.log('  ok  an unjudgeable HR session returns nothing rather than a guess');
+}
+
+// --- hrrBaseline: this athlete's own recent autonomic baseline, in place of overnight HRV -----------
+
+{
+  assert.equal(hrrBaseline([]), null);
+  assert.equal(hrrBaseline([{ hrr60Median: 20 }, { hrr60Median: 22 }]), null,
+    'two sessions is a guess wearing a number, not a baseline');
+  const three = hrrBaseline([{ hrr60Median: 18 }, { hrr60Median: 20 }, { hrr60Median: 22 }]);
+  assert.equal(three, 20);
+  console.log(`  ok  a baseline needs at least three sessions and is their median (${three})`);
+}
+
+{
+  // Nulls (sessions with no recovery reading at all) are dropped rather than counted as zero, and
+  // only the most recent five count -- the baseline follows fitness, it does not average a career.
+  const withNulls = hrrBaseline([{ hrr60Median: 10 }, { hrr60Median: null }, { hrr60Median: 12 },
+                                  { hrr60Median: 14 }, { hrr60Median: 16 }, { hrr60Median: 18 }]);
+  assert.equal(withNulls, 14);
+  const longHistory = hrrBaseline([1, 2, 3, 4, 5, 6, 7].map(hrr60Median => ({ hrr60Median })));
+  assert.equal(longHistory, 5, 'only the last five sessions count toward the baseline');
+  console.log(`  ok  a missing recovery reading is dropped, not counted as zero, `
+            + `and the baseline follows the last five sessions (${withNulls}, ${longHistory})`);
 }
 
 console.log('\nAll progression tests passed.');

@@ -64,11 +64,19 @@ const meanOf = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
  * Estimate the first ventilatory threshold from one session's samples.
  *
  * `samples` are `{t_s, speed_m_s, hr_bpm}` as the app records them. Returns
- * `{bpm, bands, confidence}` or null when the session cannot answer -- too short, no heart rate, or
- * not enough running spread across enough bands to see a roll-off at all.
+ * `{bpm, bands, confidence}`, `{bpm: null, heldTo, bands, confidence}`, or null.
  *
  * `bpm` is the TOP of the last band whose efficiency was still holding: the highest heart rate at
  * which the athlete was still getting full value for their beats.
+ *
+ * Null means the session cannot answer at all -- too short, no heart rate, or not enough running
+ * spread across enough bands to fill three of them. That is different from a session that answers
+ * "efficiency never rolled off": once training happens under a measured ceiling, sessions stop
+ * crossing it, so they stop rolling off, so a fixed null return would make the estimate lock at its
+ * first value forever -- the ceiling could fall (a session that rolls off lower) but never rise. So
+ * when there ARE at least three qualifying bands and none of them rolled off, that is reported as
+ * `heldTo`: the highest heart rate efficiency was measured to hold to, with no evidence either way
+ * about what happens above it. `ceilingFrom` is where that evidence is allowed to raise the ceiling.
  */
 export function estimateThreshold(samples, { lagS = HR_LAG_S } = {}) {
   const ss = (samples || []).filter(s => s && s.t_s != null).slice().sort((a, b) => a.t_s - b.t_s);
@@ -111,36 +119,71 @@ export function estimateThreshold(samples, { lagS = HR_LAG_S } = {}) {
     if (rows[i].mPerBeat > best) { best = rows[i].mPerBeat; continue; }
     if (rows[i].mPerBeat < best * (1 - ROLLOFF_FRACTION)) { ceiling = rows[i - 1].hi; break; }
   }
-  if (ceiling == null) return null;          // never rolled off: he stayed under it the whole time
 
-  return {
-    bpm: ceiling,
-    // How much of the session is behind the number. Two bands either side of the roll-off is a
-    // usable reading; one sparse band on each side is a coincidence.
-    confidence: Math.min(1, rows.reduce((a, r) => a + r.n, 0) / 600),
-    bands: rows,
-  };
+  // How much of the session is behind the number. Two bands either side of the roll-off is a usable
+  // reading; one sparse band on each side is a coincidence.
+  const confidence = Math.min(1, rows.reduce((a, r) => a + r.n, 0) / 600);
+
+  if (ceiling == null) {
+    // Never rolled off: he stayed under the threshold the whole time. Not nothing -- "efficiency held
+    // all the way to here" is itself a measurement, just not the same one. See the function doc.
+    return { bpm: null, heldTo: rows[rows.length - 1].hi, confidence, bands: rows };
+  }
+
+  return { bpm: ceiling, confidence, bands: rows };
 }
 
 /**
  * Combine per-session estimates into the number the coach should actually use.
  *
- * `history` is a list of `{bpm, confidence, at}`, newest last. The median is taken rather than the
- * mean, and rather than the latest: a single session run in heat, or on tired legs, or with a badly
- * seated optical sensor, produces a low estimate, and a training ceiling that drops because of one
- * hot Tuesday would ratchet the athlete downward for no physiological reason.
+ * `history` is a list of `{bpm, confidence, at}` (a measured roll-off) OR `{heldTo, confidence, at}`
+ * (efficiency held with no roll-off), newest last. The median of the MEASURED `bpm` values is taken
+ * rather than the mean, and rather than the latest: a single session run in heat, or on tired legs,
+ * or with a badly seated optical sensor, produces a low estimate, and a training ceiling that drops
+ * because of one hot Tuesday would ratchet the athlete downward for no physiological reason.
  *
- * Returns null until MIN_SESSIONS agree, so the age formula keeps governing until there is
- * something better -- an unmeasured ceiling is a worse failure than a slightly wrong one.
+ * Returns null until MIN_SESSIONS measured sessions agree, so the age formula keeps governing until
+ * there is something better -- an unmeasured ceiling is a worse failure than a slightly wrong one.
+ *
+ * The self-lock this exists to break: once training happens under a measured ceiling, sessions stop
+ * crossing it, so `estimateThreshold` stops seeing a roll-off, so the ceiling can only ever fall. Two
+ * CONSECUTIVE sessions that both held full efficiency all the way to the ceiling -- both `heldTo` at
+ * or above it -- is itself evidence the true threshold is above that ceiling, and is allowed to raise
+ * it by one band (`BAND_BPM`): the smallest step that is still honest about how little is known past
+ * a number that has never been crossed. `maxBpm` caps how far a raise can go, because "held to the
+ * ceiling" at a very high heart rate could also mean the ceiling is already above threshold and the
+ * real roll-off is being masked by the cap itself -- the evidence for "held" and the evidence for
+ * "safe to go higher" run out at different points, and the cap is where the caller says that is.
  */
-export function ceilingFrom(history, { minSessions = MIN_SESSIONS } = {}) {
-  const usable = (history || []).filter(h => h && h.bpm > 0 && (h.confidence ?? 1) >= 0.5);
-  if (usable.length < minSessions) return null;
-  // The most recent six, so the number follows fitness instead of averaging over a whole block.
-  const recent = usable.slice(-6).map(h => h.bpm).sort((a, b) => a - b);
-  const mid = recent.length % 2
-    ? recent[(recent.length - 1) / 2]
-    : Math.round((recent[recent.length / 2 - 1] + recent[recent.length / 2]) / 2);
-  return { bpm: mid, sessions: usable.length,
-           source: `measured over ${usable.length} session${usable.length === 1 ? '' : 's'}` };
+export function ceilingFrom(history, { minSessions = MIN_SESSIONS, currentBpm = null, maxBpm = Infinity } = {}) {
+  const all = history || [];
+  const measured = all.filter(h => h && h.bpm > 0 && (h.confidence ?? 1) >= 0.5);
+  const heldEnough = h => h && h.bpm == null && h.heldTo > 0 && (h.confidence ?? 1) >= 0.5;
+
+  let median = null;
+  if (measured.length >= minSessions) {
+    // The most recent six, so the number follows fitness instead of averaging over a whole block.
+    const recent = measured.slice(-6).map(h => h.bpm).sort((a, b) => a - b);
+    median = recent.length % 2
+      ? recent[(recent.length - 1) / 2]
+      : Math.round((recent[recent.length / 2 - 1] + recent[recent.length / 2]) / 2);
+  }
+
+  // The reference the raise is measured against: what training actually knows right now, whichever
+  // of the measured median or the ceiling in force is higher.
+  const base = median != null && currentBpm != null ? Math.max(median, currentBpm)
+             : median != null ? median : currentBpm;
+
+  const lastTwo = all.slice(-2);
+  const heldFullTwice = base != null && lastTwo.length === 2
+    && lastTwo.every(h => heldEnough(h) && h.heldTo >= base);
+
+  if (heldFullTwice) {
+    return { bpm: Math.min(maxBpm, base + BAND_BPM), sessions: measured.length,
+             source: 'raised one band: held full efficiency to the ceiling in the last 2 sessions' };
+  }
+
+  if (median == null) return null;
+  return { bpm: median, sessions: measured.length,
+           source: `measured over ${measured.length} session${measured.length === 1 ? '' : 's'}` };
 }

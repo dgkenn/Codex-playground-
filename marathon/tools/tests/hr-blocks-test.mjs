@@ -84,22 +84,44 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
 }
 
 {
-  // Two walk breaks in a row that never reach the floor is the session saying it is finished. That
-  // is the auto-regulation the whole design is for: no decision required from the athlete, and no
-  // honesty required about how they feel.
+  // Two walk breaks in a row that never reach the floor is the body saying the RUNNING is over. It
+  // is not saying the recording is over: for this athlete walking IS training, so this must move to
+  // a cool-down that keeps recording -- never DONE, and never another run block -- until the athlete
+  // ends the session themself.
   const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
   // A heart rate that recovers at first and then stops coming down -- the ratchet, in miniature.
   let hr = 110;
-  drive(b, 3000, t => {
+  const evs = drive(b, 3000, t => {
     const target = b.phase === Phase.RUN ? 175 : (t < 900 ? 105 : 145);
     hr += (target - hr) / 30;
     return hr;
   });
-  assert.equal(b.phase, Phase.DONE, 'a body that stops clearing the load must end the session');
+  assert.equal(b.phase, Phase.COOLDOWN,
+    'a body that stops clearing the load keeps recording, walking, as a cool-down -- not DONE');
+  const stallIdx = evs.findIndex(e => e.reason === 'not recovering');
+  assert.ok(stallIdx >= 0, 'the stall that caused the cool-down must be on the record');
+  assert.ok(evs.slice(stallIdx + 1).every(e => e.phase !== Phase.RUN),
+    `a cool-down must never call another run block: ${JSON.stringify(evs.slice(stallIdx + 1))}`);
   const s = b.summary();
   assert.ok(s.unrecoveredWalks >= 2, `and it must be recorded why: ${JSON.stringify(s)}`);
-  console.log(`  ok  a heart rate that stops recovering ends the session `
-            + `(${s.runBlocks} blocks done, ${s.unrecoveredWalks} walks unrecovered)`);
+  assert.equal(s.endedBy, 'stall',
+    'the summary must say the body ended the running, not the plan or the athlete');
+  console.log(`  ok  a heart rate that stops recovering moves to cool-down, not DONE `
+            + `(${s.runBlocks} blocks done, ${s.unrecoveredWalks} walks unrecovered, endedBy=${s.endedBy})`);
+}
+
+{
+  // What the progression judge needs beyond `runningS`: how much of the running was actually inside
+  // the ceiling it was governed by. Pin heart rate at 200, far above any plausible ceiling -- the
+  // worst case -- and every second of every run block must land on the "over" side, none on "under".
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  drive(b, 900, () => 200);
+  const s = b.summary();
+  assert.equal(s.runningUnderCeilingS, 0, `pinned above the ceiling must count 0 seconds under it: ${JSON.stringify(s)}`);
+  assert.equal(s.runningOverCeilingS, s.runningS,
+    `every running second must be over the ceiling when HR never drops below it: ${JSON.stringify(s)}`);
+  console.log(`  ok  a heart rate pinned above the ceiling counts every running second as over it `
+            + `(${s.runningOverCeilingS}s of ${s.runningS}s running)`);
 }
 
 {

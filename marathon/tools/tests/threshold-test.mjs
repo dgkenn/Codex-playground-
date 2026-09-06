@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { estimateThreshold, ceilingFrom } from '../threshold.js';
+import { estimateThreshold, ceilingFrom, BAND_BPM } from '../threshold.js';
 
 /**
  * An athlete with a known threshold.
@@ -67,13 +67,19 @@ function synth({ vt1 = 150, driftFrac = 0, seconds = 1800, seed = 5,
 }
 
 {
-  // An easy session that never approaches the threshold has not measured it. Inventing a number
-  // from the top of whatever range happened to be run would ratchet the ceiling downward every time
-  // the athlete did what they were told.
+  // An easy session that never approaches the threshold has not measured a roll-off, but it HAS
+  // measured that efficiency holds all the way to the top of what was run. Reporting that as a flat
+  // null -- rather than as `heldTo` -- is the self-lock this module exists to break: once training
+  // happens under a measured ceiling, sessions stop crossing it, so they never roll off, so a fixed
+  // null would leave the ceiling only able to fall, never rise, forever.
   const easy = synth({ vt1: 200, topHr: 145 });   // never gets near the threshold
-  assert.equal(estimateThreshold(easy), null,
-    'a session that never crosses the threshold must report nothing, not a guess');
-  console.log('  ok  a session run entirely below the threshold measures nothing, and says so');
+  const est = estimateThreshold(easy);
+  assert.ok(est, 'a session that holds efficiency throughout is still a measurement, not nothing');
+  assert.equal(est.bpm, null, 'no roll-off was seen, so there is no measured threshold bpm');
+  assert.ok(Math.abs(est.heldTo - 145) <= 6,
+    `held full efficiency to ~145 bpm (the top heart rate run), got ${est.heldTo}`);
+  console.log(`  ok  a session run entirely below the threshold reports heldTo=${est.heldTo} `
+            + `instead of inventing a threshold or reporting nothing`);
 }
 
 {
@@ -103,6 +109,64 @@ function synth({ vt1 = 150, driftFrac = 0, seconds = 1800, seed = 5,
   // Low-confidence readings are dropped rather than averaged in.
   assert.equal(ceilingFrom([{ bpm: 150, confidence: 0.2 }, { bpm: 151, confidence: 0.1 }]), null);
   console.log('  ok  thin sessions do not count toward the ceiling');
+}
+
+{
+  // The self-lock broken: a measured median of 150, then two sessions in a row that held full
+  // efficiency all the way to the ceiling -- both AT or ABOVE that median. That is evidence the real
+  // threshold is above 150, and the smallest honest step is one band.
+  const history = [
+    { bpm: 150, confidence: 1, at: 1 }, { bpm: 152, confidence: 1, at: 2 },
+    { heldTo: 151, confidence: 1, at: 3 }, { heldTo: 153, confidence: 1, at: 4 },
+  ];
+  const r = ceilingFrom(history);
+  assert.ok(r, 'two consecutive full holds at the ceiling must produce a result');
+  assert.equal(r.bpm, 151 + BAND_BPM, `must raise by exactly one band above the median: ${JSON.stringify(r)}`);
+  assert.match(r.source, /raised one band/);
+  console.log(`  ok  two consecutive sessions holding full efficiency to the ceiling raise it by `
+            + `one band (${r.bpm} bpm, "${r.source}")`);
+}
+
+{
+  // Only ONE session held to the ceiling; the one before it rolled off normally. One session proves
+  // nothing about what happens above the ceiling that a single hot Tuesday couldn't also produce.
+  const history = [
+    { bpm: 150, confidence: 1, at: 1 }, { bpm: 152, confidence: 1, at: 2 },
+    { bpm: 149, confidence: 1, at: 3 }, { heldTo: 152, confidence: 1, at: 4 },
+  ];
+  const r = ceilingFrom(history);
+  assert.ok(r && r.bpm !== 151 + BAND_BPM, `a single held session must not raise the ceiling: ${JSON.stringify(r)}`);
+  assert.match(r.source, /measured over/);
+  console.log('  ok  a single held-to-the-ceiling session does not raise it');
+}
+
+{
+  // Two held sessions, but BELOW the measured median -- the athlete stayed conservative on those two
+  // days, which says nothing about the ceiling itself and must not be read as evidence for it.
+  const history = [
+    { bpm: 150, confidence: 1, at: 1 }, { bpm: 152, confidence: 1, at: 2 },
+    { heldTo: 140, confidence: 1, at: 3 }, { heldTo: 138, confidence: 1, at: 4 },
+  ];
+  const r = ceilingFrom(history);
+  assert.equal(r.bpm, 151, `holding below the median is not evidence for raising it: ${JSON.stringify(r)}`);
+  assert.match(r.source, /measured over/);
+  console.log('  ok  holding full efficiency below the median does not raise the ceiling');
+}
+
+{
+  // The cap binds: without it, a ceiling that is itself already at or past the true threshold would
+  // always read as "held", because the drift that would prove otherwise is invisible above a ceiling
+  // that training never crosses. One band above a currentBpm right at the cap must not exceed it.
+  const history = [
+    { bpm: 195, confidence: 1, at: 1 }, { bpm: 197, confidence: 1, at: 2 },
+    { heldTo: 200, confidence: 1, at: 3 }, { heldTo: 201, confidence: 1, at: 4 },
+  ];
+  const uncapped = ceilingFrom(history);
+  assert.ok(uncapped.bpm > 198, 'without a cap this would raise past a sane physiological ceiling');
+  const capped = ceilingFrom(history, { maxBpm: 198 });
+  assert.equal(capped.bpm, 198, `the cap must bind rather than be a suggestion: ${JSON.stringify(capped)}`);
+  console.log(`  ok  a raise is capped at maxBpm rather than compounding past it `
+            + `(uncapped ${uncapped.bpm}, capped ${capped.bpm})`);
 }
 
 // --- the real recording -----------------------------------------------------------------------
