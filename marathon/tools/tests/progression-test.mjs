@@ -133,6 +133,19 @@ const HR_TARGET = { runningMinTarget: 14 };      // 14 minutes of running under 
 }
 
 {
+  // The gap the reviewer found in the first version: a stall that had nonetheless reached the target
+  // fell through to ADVANCE, while the ADVANCE reason text claimed the session was "ended by the plan
+  // or the athlete rather than the body giving out". Reached-and-stalled is the load to sit at.
+  const j = judgeHrSession(HR_TARGET,
+    { governedBy: 'hr', endedBy: 'stall', runningUnderCeilingS: HR_TARGET.runningMinTarget * 60 * 0.95,
+      hrr60Median: 20 }, { decouplingPct: 3 }, null);
+  assert.equal(j.verdict, REPEAT,
+    `a session the body ended must not advance the rung however close it got: ${j.verdict}`);
+  assert.match(j.reason, /the body said that was enough/);
+  console.log('  ok  reaching the target and then stalling holds the rung rather than raising it');
+}
+
+{
   // HRR60 down more than a fifth against his own recent baseline: accumulated fatigue, checked before
   // decoupling and before completion, because it is the more direct explanation for either.
   const baseline = 20, droppedHrr = baseline * HRR_DROP_FRACTION - 1;

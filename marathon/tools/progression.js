@@ -249,6 +249,21 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
     };
   }
 
+  // A stall that nonetheless reached the target is not a reason to ask for more. The ADVANCE branch
+  // below says "ended by the plan or the athlete rather than the body giving out", and without this
+  // guard the code did not enforce it: two unrecovered walks in a row after 13 of 14 minutes would
+  // have advanced the rung, on the strength of a session whose ending was the body declining to go
+  // on. Reached-and-stalled is exactly the load to sit at, not to add to.
+  if (summary.endedBy === 'stall') {
+    return {
+      verdict: REPEAT, evidence,
+      next: 'Repeat this target. The body ended the running; let it get comfortable here first.',
+      reason: `${mins(underS)} of running under the ceiling against ${mins(targetS)} asked for -- `
+            + `reached, and then two walks in a row that never came back down to the floor. The `
+            + `target was met and the body said that was enough. Both are true; the second decides.`,
+    };
+  }
+
   if (underS >= targetS * DONE_FRACTION) {
     return {
       verdict: ADVANCE, evidence,
