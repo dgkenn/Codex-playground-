@@ -333,6 +333,12 @@ def seed_vdot_from_ramp(ramp: RampTest) -> Tuple[float, str]:
     return vdot, method
 
 
+#: Below this pace a person is walking, not running slowly: the walk-run gait transition sits at
+#: about 1.95 m/s (7.02 km/h), and it is a property of human legs rather than of training. Used as
+#: the floor for a run-block prescription when nothing has been observed yet.
+GAIT_TRANSITION_SEC_KM = 3600.0 / 7.02
+
+
 @dataclass
 class FitnessProfile:
     """Everything the planner needs to prescribe. Produced by assessment, updated by every test."""
@@ -390,9 +396,22 @@ class FitnessProfile:
         athlete makes on every run block -- 10:00 per mile when 12:15 is called for, which is the
         difference between Z1 and Z4 for him -- is caught within the first twenty seconds.
         """
-        if not self.observed_easy_run_kmh:
-            return None
-        mid = 3600.0 / self.observed_easy_run_kmh
+        if self.observed_easy_run_kmh:
+            mid = 3600.0 / self.observed_easy_run_kmh
+        else:
+            # No observed running yet, which is the state every athlete starts in -- and returning
+            # None here meant the phone got a run/walk session carrying a schedule and no pace. That
+            # is the mode the entire first phase is built from, so "no target" is not a small gap:
+            # it is the coach having no opinion about the only instruction that decides whether the
+            # session is Z1 or Z4.
+            #
+            # A run block has a floor that owes nothing to fitness. Below the walk-run gait
+            # transition you are not running slowly, you are walking, and prescribing a pace under
+            # it asks for something the session cannot contain. So: the athlete's own easy pace when
+            # that is genuinely a running pace, and the transition when it is not. `min` on sec/km
+            # picks the FASTER of the two.
+            easy_fast, easy_slow = self.easy_pace_range
+            mid = min((easy_fast + easy_slow) / 2, GAIT_TRANSITION_SEC_KM)
         return (mid * 0.96, mid * 1.04)
 
     @property

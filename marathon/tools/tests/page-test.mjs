@@ -207,6 +207,10 @@ async function pickDay(page, kind) {
 // --- units and the plan --------------------------------------------------------------------------
 
 {
+  // Whatever is in the box when this runs -- which is now today's prescribed pace rather than a
+  // placeholder, since the mode adopts the plan's number on load. The claim here was never about
+  // the specific value: it is that the conversion is reversible.
+  const start = await page.inputValue('#target');
   await page.click('#u-km');
   const km = await page.inputValue('#target');
   await page.click('#u-mi');
@@ -215,9 +219,9 @@ async function pickDay(page, kind) {
   assert.equal(await page.textContent('#perlabel'), '/ MI');
   // And a round trip must land back where it started. The box holds a rounded mm:ss, so re-parsing
   // it on each switch loses up to half a second every time and the error compounds with toggling.
-  assert.equal(mi, '14:30', `a mile -> km -> mile round trip drifted to ${mi}`);
+  assert.equal(mi, start, `a mile -> km -> mile round trip drifted from ${start} to ${mi}`);
   for (let i = 0; i < 6; i++) { await page.click('#u-km'); await page.click('#u-mi'); }
-  assert.equal(await page.inputValue('#target'), '14:30', 'and it must not drift with repetition');
+  assert.equal(await page.inputValue('#target'), start, 'and it must not drift with repetition');
   console.log(`  ok  the target converts with the unit (${km} per km = ${mi} per mile)`);
 }
 
@@ -330,6 +334,64 @@ async function pickDay(page, kind) {
   assert.equal(await page.getAttribute('#loadsess', 'disabled'), null,
     'and it must be a session the app can actually load');
   console.log(`  ok  Sunday, a declared running day, carries a real session ("${title}")`);
+}
+
+// --- every mode says what it will do with today's session -----------------------------------------
+
+{
+  // "When I'm in pacing coach mode it doesn't give me any sort of running plan or workout for the
+  // day?" It did not. The modes are named for their machinery, and the naming misleads in exactly
+  // one direction: "Pace coach" sounds like the mode that coaches your pace, so it is the one an
+  // athlete reaches for, while "Run / walk" sounds like a timer. A real session was run that way --
+  // the exported file carries the title "Run-walk 2/2 x 7" and `mode: "coach"`, 280 s of running in
+  // 24 minutes. The app knew what had been prescribed and said nothing about the mismatch.
+  //
+  // The plan's first phase is entirely run/walk, so on any day the plan schedules a run this is the
+  // case that matters. Two claims: Pace coach NAMES today, and it says plainly what it will not do.
+  await page.click('#m-coach');
+  await page.waitForTimeout(120);
+  const line = (await page.textContent('#modeplan')).replace(/\s+/g, ' ').trim();
+  assert.ok(line.length > 0, 'every mode must say what it will do with today');
+
+  const scheduled = !/nothing scheduled/i.test(line);
+  if (scheduled) {
+    assert.match(line, /(Mon|Tue|Wed|Thu|Fri|Sat|Sun):/,
+      `it must name the day and the session: "${line}"`);
+    // On a run/walk day — every running day of phase 1 — Pace coach must own up to the half of the
+    // prescription it cannot deliver. Silence here is what produced the session above.
+    if (/run-?walk/i.test(line)) {
+      assert.match(line, /will NOT tell you when to run/,
+        `Pace coach must say it does not call the blocks: "${line}"`);
+      assert.match(line, /Tap Run \/ walk/, `and point at the mode that does: "${line}"`);
+      // And the target must be the day's own number rather than whatever was last in the box.
+      const target = await page.inputValue('#target');
+      assert.match(target, /^\d+:\d\d$/, `the target must be a real pace: "${target}"`);
+      await page.click('#m-intervals');
+      await page.waitForTimeout(120);
+      const iv = (await page.textContent('#modeplan')).replace(/\s+/g, ' ').trim();
+      assert.match(iv, /as prescribed/, `Run / walk must claim the session: "${iv}"`);
+      assert.match(iv, /\d+ × [\d.]+\/[\d.]+ min/, `with its actual structure: "${iv}"`);
+      // The blocks themselves must have arrived in the controls, not just in the sentence.
+      assert.ok(Number(await page.inputValue('#reps')) > 1, 'reps must come from the plan');
+      await page.click('#m-coach');
+      await page.waitForTimeout(80);
+    }
+  }
+  console.log(`  ok  the mode says what it will do with today ("${line.slice(0, 96)}…")`);
+}
+
+{
+  // A target the athlete typed outranks the plan. Changing mode must not argue with someone who has
+  // just said what they want.
+  await page.click('#m-coach');
+  await page.fill('#target', '9:59');
+  await page.waitForTimeout(120);
+  await page.click('#m-intervals');
+  await page.click('#m-coach');
+  await page.waitForTimeout(120);
+  assert.equal(await page.inputValue('#target'), '9:59',
+    'a hand-typed target must survive a mode change');
+  console.log('  ok  a hand-typed target outranks the plan on a mode tap');
 }
 
 // --- the ramp test -------------------------------------------------------------------------------

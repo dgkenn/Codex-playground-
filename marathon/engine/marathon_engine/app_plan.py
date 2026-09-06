@@ -57,7 +57,15 @@ SHIPPED_PHASES = (
 _WALK_KMH = 5.6
 
 #: Session types the pace coach can actually run. Everything else is shown but not started.
-COACHABLE = {"easy", "long", "run_walk", "steady", "threshold", "marathon_pace", "recovery"}
+#:
+#: ``strides`` belongs here even though it has structure the app cannot time. It is an easy run --
+#: same duration, same zones, same pace band as the ``easy`` session it is derived from -- with six
+#: twenty-second efforts somewhere inside it. Excluding it made a scheduled RUNNING day report
+#: "Not a session the app can run", which is both false and unhelpful: the athlete still has to go
+#: out and do it, and the band still applies to the running that makes up almost all of it. The app
+#: says which part the band is for rather than refusing the day.
+COACHABLE = {"easy", "long", "run_walk", "steady", "threshold", "marathon_pace", "recovery",
+             "strides"}
 
 
 def _ramp_dict(profile: FitnessProfile) -> Dict[str, Any]:
@@ -172,7 +180,13 @@ def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfi
                        "slow": fmt_pace(s.pace_target_sec_km * 1.06)}
     # Ceiling-only is a property of the session kind, and getting it wrong means telling someone to
     # speed up on a recovery run. Taken from the engine's own list rather than re-derived.
-    out["ceiling_only"] = s.type.value in ("easy", "long", "run_walk", "recovery")
+    #
+    # ``strides`` is ceiling-only for a reason that is not obvious: the alternative nags MORE. With
+    # both edges enforced the coach calls "pick it up" through every walk-back recovery, which is
+    # most of the stride portion; with only the fast edge it calls "ease up" during a twenty-second
+    # effort the athlete already knows is fast. One is wrong about the session's own prescription,
+    # the other is wrong about twenty seconds.
+    out["ceiling_only"] = s.type.value in ("easy", "long", "run_walk", "recovery", "strides")
     if s.structure:
         out["structure"] = s.structure
     if s.type.value == "ramp_test" and profile is not None:
