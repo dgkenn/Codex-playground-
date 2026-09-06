@@ -89,6 +89,7 @@ await page.addInitScript(() => {
 });
 
 await page.goto('file://' + APP, { waitUntil: 'load' });
+await openAll(page);
 
 /**
  * Select the day in the plan strip whose short type matches, e.g. 'ramp' or 'run/walk'.
@@ -103,6 +104,11 @@ async function pickDay(page, kind) {
     if ((await b.textContent()).includes(kind)) { await b.click(); return true; }
   }
   throw new Error(`no day in the strip offers "${kind}"`);
+}
+
+/** Open every collapsed section. The page ships them closed so a runner sees Start first. */
+async function openAll(page) {
+  await page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; }));
 }
 
 // --- it boots ------------------------------------------------------------------------------------
@@ -146,6 +152,7 @@ async function pickDay(page, kind) {
   page2.on('console', m => { if (m.type() === 'error') console.log('      loader console:', m.text()); });
   page2.on('pageerror', e => console.log('      loader error:', e.message));
   await page2.goto(origin + '/');
+  await openAll(page2);
   await page2.waitForSelector('#buildid', { timeout: 15000 });
   assert.equal(fetched, 1, 'the loader must fetch the app exactly once');
   assert.equal(await page2.evaluate(() => location.origin), origin,
@@ -166,6 +173,7 @@ async function pickDay(page, kind) {
   const page3 = await browser.newPage();
   await page3.route('**raw.githubusercontent.com/**', route => route.abort('connectionfailed'));
   await page3.goto(origin + '/');
+  await openAll(page3);
   await page3.waitForSelector('button', { timeout: 15000 });
   assert.match(await page3.textContent('h1'), /Could not load/);
   assert.equal((await page3.textContent('button')).trim(), 'Retry');
@@ -274,6 +282,7 @@ async function pickDay(page, kind) {
 
   // It has to survive a reload, or it is a setting the athlete re-enters at every trailhead.
   await page.reload();
+  await openAll(page);
   await page.waitForSelector('#hrrest');
   assert.equal(await page.inputValue('#hrrest'), '48', 'the profile must persist');
   console.log('  ok  the profile is editable, moves the zones, and persists');
@@ -311,6 +320,7 @@ async function pickDay(page, kind) {
     localStorage.setItem('band.progress', JSON.stringify({ phase: 'assess', week: 3, done: {} }));
   });
   await page.reload();
+  await openAll(page);
   await page.waitForSelector('#phaselabel');
   const phase = (await page.textContent('#phaselabel')).trim();
   assert.doesNotMatch(phase, /assess/i, `a phase the plan no longer ships must not be trusted: "${phase}"`);
@@ -413,6 +423,7 @@ async function pickDay(page, kind) {
   assert.equal(rung, 3, 'the rung must be storable');
 
   await page.reload({ waitUntil: 'load' });
+  await openAll(page);
   await page.waitForTimeout(200);
   await pickDay(page, 'run/walk');
   await page.waitForTimeout(80);
@@ -428,6 +439,7 @@ async function pickDay(page, kind) {
   // And the rung must be reachable from a fresh install without one stored: seeded from the plan.
   await page.evaluate(() => localStorage.removeItem('band.rung'));
   await page.reload({ waitUntil: 'load' });
+  await openAll(page);
   await page.waitForTimeout(200);
   await pickDay(page, 'run/walk');
   await page.click('#loadsess');
@@ -468,6 +480,7 @@ async function pickDay(page, kind) {
   // failure mode that actually ends training blocks.
   await page.evaluate(() => localStorage.removeItem('band.pain'));
   await page.reload({ waitUntil: 'load' });
+  await openAll(page);
   await page.waitForTimeout(200);
   assert.match(await page.textContent('#painout'), /Nothing logged/,
     'an empty log must say so rather than showing an empty box');
@@ -486,6 +499,7 @@ async function pickDay(page, kind) {
 
   // It survives a reload, because a log that forgets is worse than no log.
   await page.reload({ waitUntil: 'load' });
+  await openAll(page);
   await page.waitForTimeout(200);
   assert.match(await page.textContent('#painout'), /urgent/i, 'the log must persist');
   await page.evaluate(() => localStorage.removeItem('band.pain'));
@@ -589,6 +603,7 @@ async function pickDay(page, kind) {
   // is really "whatever the last test left behind" tests nothing.
   await page.evaluate(() => localStorage.removeItem('band.rampOutdoor'));
   await page.reload();
+  await openAll(page);
   await page.waitForSelector('#starttoday');
 
   const label = (await page.textContent('#starttoday')).trim();
@@ -686,6 +701,7 @@ async function pickDay(page, kind) {
 
   // The choice must survive a reload; it is a preference, not a mode.
   await page.reload();
+  await openAll(page);
   await page.waitForSelector('#r-speed');
   assert.equal(await page.getAttribute('#r-speed', 'aria-pressed'), 'true');
   await page.click('#r-pace');
@@ -970,6 +986,7 @@ async function pickDay(page, kind) {
   });
   const errorsBefore = errors.length;
   await page.reload();
+  await openAll(page);
 
   await page.click('#connect');
   await page.waitForFunction(() => document.getElementById('connect').textContent === 'Disconnect',
@@ -1188,6 +1205,7 @@ async function pickDay(page, kind) {
 
   // No stop, no save button, nothing — exactly what iOS reclaiming a backgrounded tab looks like.
   await page.reload();
+  await openAll(page);
   await page.waitForSelector('#recover:not(.hide)', { timeout: 8000 });
   const detail = await page.textContent('#recoverdetail');
   assert.match(detail, /samples/, `the recovery must say what it found: "${detail}"`);
@@ -1213,6 +1231,7 @@ async function pickDay(page, kind) {
 
   // Recovering must not leave the offer standing, or the next load recovers the same run again.
   await page.reload();
+  await openAll(page);
   await page.waitForSelector('#savedlist');
   assert.ok(await page.isHidden('#recover'), 'a recovered session must not be offered twice');
   console.log(`  ok  a run interrupted by a reload is recovered intact `
