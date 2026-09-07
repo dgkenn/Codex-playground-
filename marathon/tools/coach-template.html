@@ -1526,8 +1526,17 @@ function setMode(m) {
  */
 function adoptToday(m) {
   if (S.plannedSession || S.targetEdited) return;
-  const s = todaySession();
-  if (!runnable(s) || m === 'ramp' || m === 'rehearse') return;
+  if (m === 'ramp' || m === 'rehearse') return;
+  // Today's session when today is a running day; otherwise the week's next runnable one. The
+  // alternative is what actually happened on a Monday: strength day, nothing to adopt, and the
+  // target box kept the 14:30 placeholder -- so an unscheduled run started that day would have been
+  // coached to a pace nobody prescribed. The athlete's number is the plan's number whatever the day.
+  let s = todaySession();
+  if (!runnable(s)) {
+    const wk = curWeek();
+    s = (wk && wk.sessions || []).find(x => runnable(x)) || null;
+  }
+  if (!runnable(s)) return;
   if (m === 'intervals' && s.run_walk) {
     $('runmin').value = s.run_walk.run_min;
     $('walkmin').value = s.run_walk.walk_min;

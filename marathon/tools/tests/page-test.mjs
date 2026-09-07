@@ -564,6 +564,29 @@ async function openAll(page) {
   console.log('  ok  the plan shows the whole arc to a marathon, outlined phases and their gates');
 }
 
+// --- the target is the plan's number on any day of the week ---------------------------------------
+
+{
+  // Found in an end-to-end run on a Monday -- a strength day. adoptToday found nothing runnable, so
+  // the target box kept the 14:30 placeholder and the first announcement was "Target 14:30", a pace
+  // nobody prescribed. On a non-running day the week's next runnable session supplies the number.
+  // Asserted on whatever day this suite happens to run: the target must be a plan pace, never the
+  // placeholder.
+  await page.evaluate(() => { localStorage.removeItem('band.rung'); });
+  await page.reload({ waitUntil: 'load' });
+  await openAll(page);
+  await page.waitForTimeout(150);
+  await page.click('#m-coach');
+  await page.waitForTimeout(120);
+  const target = await page.inputValue('#target');
+  assert.notEqual(target, '14:30', 'the target must never be left at the placeholder');
+  // The first phase is run/walk throughout, so on every day the adopted number is the run-block
+  // pace of the week's run/walk session -- 12:04 per mile for this athlete.
+  assert.equal(target, '12:04', `on a ${new Date().toDateString().slice(0, 3)} the target must still be `
+    + `the week's run-block pace: got ${target}`);
+  console.log(`  ok  the target is the plan's number on a non-running day too (${target})`);
+}
+
 // --- the ramp test -------------------------------------------------------------------------------
 
 {
