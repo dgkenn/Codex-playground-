@@ -52,8 +52,11 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // block length a session that opens with an elevated heart rate collapses into run-two-seconds,
   // walk-two-seconds -- not a workout, and the kind of thing that makes an athlete stop trusting
   // the app entirely.
+  // Pinned just AT the ceiling, which is the case the floor is for: a block that drifts up to the
+  // line, where the first seconds are still reporting the walk that preceded it. (Pinned far OVER
+  // the line is a different question and is the next case.)
   const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
-  const evs = drive(b, 900, () => 200);         // pinned far above the ceiling: worst case
+  const evs = drive(b, 900, () => CEIL + 2);
   const runs = [];
   let last = null;
   for (const e of evs) {
@@ -61,8 +64,40 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
     if (e.phase === Phase.RUN) last = e.t;
   }
   assert.ok(runs.every(d => d >= 30), `no block may be shorter than minRunS: ${JSON.stringify(runs)}`);
-  console.log(`  ok  a pinned-high heart rate still yields real blocks, not a stutter `
+  console.log(`  ok  a heart rate sitting at the ceiling still yields real blocks, not a stutter `
             + `(${runs.length} blocks, shortest ${Math.min(...runs, Infinity)}s)`);
+}
+
+{
+  // Far over the ceiling is not a lag artefact and must not be waited out. At fifteen beats over,
+  // thirty seconds of grace is another ten beats -- and this athlete's recorded session reached 177
+  // against a 155 ceiling, which is the number this exists to cut short.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const evs = drive(b, 600, () => 200);         // 50 over: unambiguous
+  const first = evs.find(e => e.previous === Phase.RUN);
+  assert.ok(first, 'a run block must have been ended');
+  assert.equal(first.reason, 'well over the ceiling',
+    `far over the ceiling must cut the block on its own reason, not wait out minRunS: ${first.reason}`);
+  const started = evs.find(e => e.phase === Phase.RUN);
+  assert.ok(first.t - started.t < 30,
+    `and it must not have waited the full floor: ${first.t - started.t}s`);
+  console.log(`  ok  a heart rate far over the ceiling ends the block immediately `
+            + `(${first.t - started.t}s, "${first.reason}")`);
+}
+
+{
+  // The cap must not block the gate the whole phase exists to reach. FOUNDATION's exit is "run 30
+  // minutes continuously, comfortably, in Z2", and the ladder's top rung is 30 min x 1 -- so a cap
+  // that forced a walk at fifteen minutes made that gate unreachable under heart-rate governance
+  // however easy the running felt.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  drive(b, 2100, () => CEIL - 20);              // comfortably under the ceiling throughout
+  b.finish(2100);                               // the block is still open; summary counts closed ones
+  const s = b.summary();
+  assert.ok(s.longestRunBlockS >= 1800,
+    `30 continuous minutes under the ceiling must be possible: longest was ${s.longestRunBlockS}s`);
+  console.log(`  ok  a comfortable 30-minute block is not cut short by the cap `
+            + `(${Math.round(s.longestRunBlockS / 60)} min continuous)`);
 }
 
 {

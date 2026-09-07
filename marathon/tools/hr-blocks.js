@@ -49,10 +49,26 @@ export const HrBlockDefaults = {
   /// preceded it. Without a floor on block length a session that starts with an elevated heart rate
   /// degenerates into run-two-seconds-walk-two-seconds, which is not a workout and is demoralising.
   minRunS: 30,
-  /// And never longer, however good the heart rate looks. A block this long is no longer a run/walk
-  /// session; the athlete has graduated and the ladder should say so rather than this silently
-  /// turning into a continuous run.
-  maxRunS: 900,
+  /// ...unless heart rate is not merely at the ceiling but far past it.
+  ///
+  /// The floor above exists so lag does not produce a stutter, and it is right for a block that
+  /// drifts up to the ceiling. It is wrong for one that overshoots: at fifteen beats over, the
+  /// question is no longer "has heart rate settled" but "why is it climbing this fast", and thirty
+  /// seconds of grace at that rate is another ten beats. This athlete's recorded session reached 177
+  /// against a 155 ceiling -- 22 over -- and the whole point of governance is that such a number
+  /// ends the block rather than being waited out.
+  hardOverBpm: 15,
+  /// And never longer, however good the heart rate looks -- a bound against a session that silently
+  /// becomes a continuous run, not a training decision.
+  ///
+  /// Was 900, and 900 was in direct conflict with the plan it serves: FOUNDATION's exit gate is
+  /// "run 30 minutes continuously, comfortably, in Z2", and a cap that forces a walk at fifteen
+  /// minutes means an athlete governed by heart rate could never demonstrate the one thing the gate
+  /// asks for, however easy it felt. The top rung of the run-walk ladder is 30 min x 1 for exactly
+  /// that reason. So the cap sits above the ladder's own top rung with room to spare: at forty
+  /// minutes it still catches a runaway, and it no longer blocks the graduation it was written to
+  /// notice. `summary().longestRunBlockS` is what actually reports that graduation.
+  maxRunS: 2400,
   /// A walk shorter than this has not recovered anything regardless of what the number says.
   minWalkS: 45,
   /// After this long walking, go again even if the floor was never reached. Standing in the cold
@@ -198,6 +214,11 @@ export class HrBlocks {
 
     if (this.phase === BlockPhase.RUN) {
       if (live) {
+        // Far over the ceiling ends the block immediately; at or just over it waits out minRunS so
+        // heart-rate lag cannot produce a stutter. See hardOverBpm.
+        if (hr >= this.ceilingBpm + this.cfg.hardOverBpm) {
+          return this._to(BlockPhase.WALK, tS, 'well over the ceiling', true);
+        }
         if (el >= this.cfg.minRunS && hr >= this.ceilingBpm) {
           return this._to(BlockPhase.WALK, tS, 'ceiling', true);
         }
