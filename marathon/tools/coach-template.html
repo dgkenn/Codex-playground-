@@ -1096,6 +1096,16 @@ function renderArc() {
     g.className = 'weeklabel';
     g.textContent = o.goal + (o.volume_km ? ` · ${o.volume_km.from}–${o.volume_km.to} km/week` : '');
     d.append(t, g);
+    // The races, named. They are the one concrete, date-shaped thing an outlined phase can still
+    // promise, and two of the three gates out of Half Build ARE races -- so listing the gates
+    // without them would state a requirement and hide the session that satisfies it.
+    if (o.races && o.races.length) {
+      const r = document.createElement('div');
+      r.className = 'weeklabel';
+      r.style.color = 'var(--fast)';
+      r.textContent = o.races.map(x => `${x.title} (week ${x.week})`).join(' · ');
+      d.append(r);
+    }
     // The gates, because they are what actually ends the phase -- a phase whose length is stated in
     // weeks and whose exit is a measurement invites reading the weeks as the plan.
     if (o.gates && o.gates.length) {

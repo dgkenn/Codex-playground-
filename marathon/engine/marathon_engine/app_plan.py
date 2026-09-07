@@ -87,7 +87,7 @@ _WALK_KMH = 5.6
 #: out and do it, and the band still applies to the running that makes up almost all of it. The app
 #: says which part the band is for rather than refusing the day.
 COACHABLE = {"easy", "long", "run_walk", "steady", "threshold", "marathon_pace", "recovery",
-             "strides"}
+             "strides", "race"}
 
 
 def _ramp_dict(profile: FitnessProfile) -> Dict[str, Any]:
@@ -141,7 +141,13 @@ def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfi
         "day": s.day_offset,
         "type": s.type.value,
         "title": s.title,
-        "coachable": s.type.value in COACHABLE,
+        # Coachable means the app can RUN it, which needs both a type it understands and a number
+        # to run against. "race" is the type that forced the distinction: the half marathon is
+        # scheduled as a paced rehearsal and carries a real target, while the 5K and 10K are raced
+        # flat out and deliberately carry none -- prescribing a pace for something you are racing
+        # defeats the point of racing it. Same type, opposite answers, so the band decides.
+        "coachable": s.type.value in COACHABLE
+                     and bool(s.pace_range_sec_km or s.pace_target_sec_km or s.run_walk),
     }
     if s.duration_min:
         out["minutes"] = round(s.duration_min)
@@ -229,12 +235,26 @@ def _phase_outline(phase: planmod.Phase, profile: FitnessProfile) -> Dict[str, A
     to know what their threshold pace will be in eight months.
     """
     lo, hi = planmod._PHASE_VOLUME_KM.get(phase, (None, None))
+    # The races this phase contains, taken from the phase itself rather than restated here. They are
+    # the concrete thing an outlined phase can still promise -- a date-shaped commitment in a stretch
+    # of plan that is otherwise a corridor -- and two of the three gates out of HALF_BUILD are races,
+    # so listing the gates without them would name a requirement and hide what satisfies it.
+    races: List[Dict[str, Any]] = []
+    for wk in range(1, PHASE_MIN_WEEKS.get(phase, 0) + 1):
+        try:
+            w = planmod.generate_week(profile, phase, wk, week_index=wk)
+        except Exception:      # a phase this profile cannot generate is still outlinable
+            break
+        for sess in w.sessions:
+            if sess.type == planmod.SessionType.RACE:
+                races.append({"week": wk, "title": sess.title, "km": sess.distance_km})
     out: Dict[str, Any] = {
         "phase": phase.value,
         "label": phase.value.replace("_", " ").title(),
         "goal": planmod.PHASE_GOALS.get(phase, ""),
         "min_weeks": PHASE_MIN_WEEKS.get(phase, 0),
         "gates": [g.to_dict() for g in planmod.PHASE_GATES.get(phase, ())],
+        "races": races,
     }
     if lo is not None:
         out["volume_km"] = {"from": lo, "to": hi}

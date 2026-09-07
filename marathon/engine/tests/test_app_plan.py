@@ -56,9 +56,11 @@ def test_every_running_day_is_runnable(plan):
     refused = sorted({s["type"] for s in _sessions(plan)
                       if s["type"] not in NOT_A_RUN
                       and not s.get("coachable") and not s.get("ramp")})
-    assert refused == ["time_trial"], (
-        f"these running days are refused by the app: {refused}. A time trial is the one honest "
-        "refusal -- it is raced, not paced, and a band would be actively wrong.")
+    assert refused == ["race", "time_trial"], (
+        f"these running days are refused by the app: {refused}. Both are honest refusals and for "
+        "the same reason -- they are raced, not paced, and a band would be actively wrong. Note "
+        "'race' appears here because of the 5K and 10K; the half marathon is scheduled as a PACED "
+        "rehearsal, carries a real target, and IS coachable. Same type, opposite answers.")
 
 
 def test_a_banded_session_says_which_minutes_the_band_covers(plan):
@@ -119,8 +121,13 @@ def test_coachable_is_exactly_what_carries_a_band(plan):
         if s.get("coachable"):
             assert s.get("pace") or s.get("run_walk"), (
                 f"{s['type']} says the app can run it but gives it nothing to run against")
-        assert (s["type"] in COACHABLE) == bool(s.get("coachable")), (
-            f"{s['type']}: the coachable flag disagrees with COACHABLE")
+        # Type alone stopped deciding this when races arrived: a 5K and a half marathon are both
+        # "race", and only one of them has a number to run against. So the rule is now type AND a
+        # band, and the flag must agree with exactly that.
+        has_band = bool(s.get("pace") or s.get("run_walk"))
+        assert (s["type"] in COACHABLE and has_band) == bool(s.get("coachable")), (
+            f"{s['type']}: coachable={s.get('coachable')} but type-in-COACHABLE="
+            f"{s['type'] in COACHABLE} and has_band={has_band}")
 
 
 def test_the_bone_window_actually_clamps(plan):
@@ -209,3 +216,34 @@ def test_a_settled_runner_is_not_clamped_like_a_beginner(plan):
     assert longest_settled >= longest_new, (
         f"an established runner must be allowed at least as far as a novice: "
         f"{longest_settled} vs {longest_new}")
+
+
+def test_a_raced_race_carries_no_band_and_a_paced_one_does(plan):
+    """The distinction that made `coachable` stop being a property of the session type.
+
+    The 5K and 10K are raced flat out -- prescribing a target pace for something you are racing
+    defeats the point of racing it -- while the half marathon is scheduled as a paced REHEARSAL of
+    marathon day, at a controlled effort, and carries a real target. Both are SessionType.RACE.
+    """
+    import marathon_engine.plan as pm
+    from marathon_engine.app_plan import _session_dict
+    profile = _estimated_profile(age=30.0, hr_rest=67.0)
+
+    seen = {}
+    for phase in (Phase.BASE_2, Phase.HALF_BUILD):
+        for wk in range(1, safety.NEW_RUNNER_BONE_WINDOW_WEEKS):
+            try:
+                w = pm.generate_week(profile, phase, wk, week_index=wk)
+            except Exception:
+                break
+            for s in w.sessions:
+                if s.type == pm.SessionType.RACE:
+                    seen[s.title] = _session_dict(s, profile.paces, profile)
+
+    assert "5K" in seen and "Half marathon" in seen, (
+        f"both a raced and a paced race must be schedulable: {sorted(seen)}")
+    assert not seen["5K"].get("pace"), "a 5K is raced; a prescribed pace would contradict that"
+    assert seen["5K"]["coachable"] is False, "and with no band the app must not claim to run it"
+    assert seen["Half marathon"].get("pace"), (
+        "the half is a paced rehearsal and must carry the target that makes it one")
+    assert seen["Half marathon"]["coachable"] is True, "and the app can run that"
