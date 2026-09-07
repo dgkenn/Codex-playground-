@@ -83,7 +83,7 @@
   },
   "KXHIGHTEDDF": {
    "title": "Daily high temp Frankfurt",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTEGLL": {
@@ -98,7 +98,7 @@
   },
   "KXHIGHTEWR": {
    "title": "Newark, NJ (EWR) Daily Max Temp",
-   "status": "unknown",
+   "status": "active",
    "first_seen": "2026-08-31"
   },
   "KXHIGHTHOU": {
@@ -403,7 +403,7 @@
   },
   "KXLOWTMMMX": {
    "title": "Daily low temp Mexico City",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTNOLA": {
@@ -493,7 +493,7 @@
   },
   "KXLOWTWSSS": {
    "title": "Daily low temp Singapore",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTYSSY": {
