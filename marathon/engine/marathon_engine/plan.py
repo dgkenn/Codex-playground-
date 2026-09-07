@@ -30,9 +30,15 @@ hard cross-training maintained or improved performance versus higher-frequency p
 2. The user already lifts twice a week, so strength is *integrated* rather than added -- and the
    two lifting days double as the FIRST-style cross-training slots for aerobic volume the runs
    cannot supply.
-3. From :data:`Phase.MARATHON_BASE` onward the plan **offers an optional fourth easy run**, flagged
-   as the single highest-yield change if a time goal ever replaces "finish strong". It is offered,
-   never required, and the gates never depend on it.
+3. From :data:`Phase.BASE_1` onward the plan schedules a **fourth, short easy run** on Tuesday
+   whenever :attr:`PlanConfig.offer_fourth_run` is set (the default). Peak volume on three days is
+   52-62 km/week, which forces ~20 km midweek sessions and a long run at half the week; novice
+   injury risk tracks single-session length and per-session jumps far more than the weekly total,
+   so spreading the same load over four shorter sessions is the lower-risk way to carry it. The
+   fourth run's distance comes OUT of the existing easy allocation rather than adding to the
+   weekly total -- it changes shape, not size. It is switched off by the config flag, not skipped
+   week to week, and no gate ever depends on it. ``FOUNDATION`` is the one exception: the run-walk
+   ladder is already three sessions and a fourth adds impact to the tissue least ready for it.
 
 Other sources behind the arithmetic
 -----------------------------------
@@ -75,6 +81,7 @@ __all__ = [
     "PHASE_ORDER", "PHASE_MIN_WEEKS", "PHASE_STALL_WEEKS", "PHASE_GATES", "PHASE_GOALS",
     "LONG_RUN_MAX_MIN", "LONG_RUN_MAX_SHARE", "CUTBACK_EVERY", "CUTBACK_FACTOR",
     "TAPER_VOLUME_CUT", "TAPER_WEEKS", "LONG_RUN_PEAK_MAX_MIN", "LONG_RUN_MAX_KM",
+    "RACE_WEEK_VOLUME_FACTOR",
     "generate_week", "evaluate_gates", "taper_weeks",
     "long_run_progression", "weekly_volume_target", "phase_overview",
 ]
@@ -174,8 +181,45 @@ LONG_RUN_MAX_SHARE = 0.50
 #: maximal effort is reasonable once the tissue has adapted to running at all, and not before.
 _TIME_TRIAL_WEEK = 5
 
+#: Which week of BASE_2 carries the 5K that gate needs (:data:`PHASE_GATES`'s
+#: ``five_k_completed``). Week 7 of an 8-week floor: enough of the phase's volume and threshold
+#: work has landed by then for the result to mean something, and it leaves the phase's last week
+#: clear rather than ending BASE_2 on a race.
+_FIVE_K_WEEK = 7
+
+#: Which week of HALF_BUILD carries the 10K (``ten_k_completed``) -- mid-phase, so there is real
+#: half-marathon-specific volume both behind it (to make the result meaningful) and ahead of it
+#: (to turn a 10K result into half-marathon readiness rather than ending the block on it).
+_TEN_K_WEEK = 5
+
+#: The half marathon (``half_completed``) lands on HALF_BUILD's final week. PHASE_MIN_WEEKS agrees:
+#: 10 weeks is the earliest this phase is allowed to end, so it is also the earliest legitimate
+#: week for the checkpoint race that ends it.
+_HALF_WEEK = 10
+
 CUTBACK_EVERY = 4           # every 4th week is a cutback [convention, not trial-tested]
 CUTBACK_FACTOR = 0.70       # volume x0.70 on a cutback week
+
+#: A tune-up race is not a normal training week that happens to finish hard -- it needs its own,
+#: one-week mini-taper. There is no dedicated trial behind this number the way there is for the
+#: 2-week marathon taper (:data:`TAPER_VOLUME_CUT`); it is chosen in the same spirit -- enough cut
+#: that the two days beforehand are genuinely easy and the race is run on fresh-ish legs -- scaled
+#: down from a 2-week taper to one week because these are sub-marathon distances raced from a base
+#: that is still being built, not the final sharpening before the goal race.
+RACE_WEEK_VOLUME_FACTOR = 0.60
+
+#: Share of the week's easy-running budget the optional fourth run takes when offered. It must
+#: come in shorter than the other easy runs -- Tuesday is a shakeout slot, not a fourth
+#: medium-length session -- but not so small it stops mattering; 20% keeps it in a genuinely
+#: useful range across the phases where it appears rather than a token ten minutes.
+_FOURTH_RUN_SHARE = 0.20
+
+#: Ceiling on the fourth run regardless of how large 20% of the easy budget works out to be. Peak
+#: MARATHON_PEAK weeks push 50+ km through only two other easy slots, and a flat percentage share
+#: would let the fourth run grow into a second medium session at exactly the volume where the
+#: "shortest run of the week" promise matters most. Any share above this returns to the other easy
+#: run(s) instead of being dropped, so the week's total volume is unaffected by the cap.
+_FOURTH_RUN_MAX_MIN = 30.0
 
 #: Bosquet 2007: 41-60% volume reduction over 2 weeks, intensity and frequency maintained.
 TAPER_VOLUME_CUT = (0.50, 0.30)   # week -2 runs 50% of peak, race week 30%
@@ -630,9 +674,15 @@ def long_run_progression(phase: Phase, week_in_phase: int, weekly_km: Optional[f
         notes.append(f"Capped at {LONG_RUN_MAX_KM:.0f} km -- there is no evidence a first-timer "
                      "gains from going further, and plenty that the recovery cost is not worth it.")
     if share >= LONG_RUN_MAX_SHARE:
-        notes.append(f"The long run is {share*100:.0f}% of your week. That is high, and it is the "
-                     "unavoidable cost of a 3-run week -- the textbook figure is 30-35%. Adding a "
-                     "short fourth easy run is the cleanest way to bring it down.")
+        if cfg.offer_fourth_run:
+            notes.append(f"The long run is {share*100:.0f}% of your week. That is high, and it is "
+                         "the unavoidable cost of a 3-run week -- the textbook figure is 30-35%. "
+                         "The fourth easy run already in this week's schedule is what keeps it "
+                         "from being higher still; turning it off would push this further up.")
+        else:
+            notes.append(f"The long run is {share*100:.0f}% of your week. That is high, and it is "
+                         "the unavoidable cost of a 3-run week -- the textbook figure is 30-35%. "
+                         "Adding a short fourth easy run is the cleanest way to bring it down.")
     return round(km, 1), round(minutes, 1), notes
 
 
@@ -888,6 +938,141 @@ def _rest(day: int, note: str = "") -> Session:
                    intent=note or "Adaptation happens now, not during the session.")
 
 
+def _split_with_fourth(easy_km: float, core_legs: int, offer_fourth: bool,
+                       paces: TrainingPaces) -> Tuple[List[float], Optional[float]]:
+    """Split a week's easy-running budget across ``core_legs`` sessions, carving a smaller share
+    off the top for the optional fourth run when it is offered.
+
+    The fourth run's distance comes FROM this budget, not on top of it -- the week's stated volume
+    is still the sum of its sessions (see the coherence check at the end of :func:`generate_week`),
+    so growing a fourth session without shrinking the others would silently inflate the week. Equal
+    splitting across all legs was rejected because it makes the fourth run indistinguishable from
+    the other easy runs rather than the short shakeout it is meant to be -- see
+    :data:`_FOURTH_RUN_SHARE`. The share is additionally capped at :data:`_FOURTH_RUN_MAX_MIN`:
+    a flat percentage alone grows without bound as weekly volume does, and at MARATHON_PEAK's 50+
+    km weeks that stops being a shakeout and starts being a second medium run.
+    """
+    if core_legs <= 0:
+        return [], (easy_km if offer_fourth and easy_km > 0 else None)
+    if not offer_fourth or easy_km <= 0:
+        each = easy_km / core_legs
+        return [each] * core_legs, None
+    cap_km = _FOURTH_RUN_MAX_MIN * 60.0 / paces.easy
+    fourth_km = min(easy_km * _FOURTH_RUN_SHARE, cap_km)
+    each = (easy_km - fourth_km) / core_legs
+    return [each] * core_legs, fourth_km
+
+
+def _fourth_run_day(used: set, long_run_day: int) -> int:
+    """Where the fourth run goes: Tuesday (day 1), unless that day is already spoken for.
+
+    Tuesday sits after Monday strength and before Wednesday quality -- a slot for a short
+    shakeout, not a session competing with either. Friday was considered and rejected: with this
+    athlete's Wed/Sat/Sun pattern, Fri/Sat/Sun would make three consecutive running days ending in
+    the long run, and the Sat/Sun pair is already deliberately back-to-back (see
+    :class:`PlanConfig`). The fallback below only matters for a schedule other than this athlete's.
+    """
+    day_before_long = (long_run_day - 1) % 7
+    if 1 not in used and 1 != day_before_long:
+        return 1
+    free = [d for d in range(7) if d not in used and d != day_before_long]
+    return free[0] if free else 1
+
+
+def _fourth_run(day: int, km: float, paces: TrainingPaces) -> Session:
+    """The fourth, shortest easy run of the week -- see :data:`_FOURTH_RUN_SHARE` and
+    :func:`_fourth_run_day`."""
+    minutes = max(15.0, km * paces.easy / 60.0)
+    s = _easy_run(day, minutes, paces, title="Easy run (shakeout)")
+    s.intent = ("A fourth, short run that spreads the week's volume across more, shorter sessions "
+               "instead of concentrating it in two midweek runs plus a very long one. Novice "
+               "injury risk tracks single-session length and per-session jumps more than the "
+               "weekly total, so this is a lower-risk way to carry the same load, not extra load "
+               "on top of it -- its distance came out of the other easy runs' share.")
+    s.cues = ["Shortest run of the week on purpose. If the week is tight, this is the one to trim "
+              "or skip -- the long run and the quality session are not."]
+    return s
+
+
+def _race(day: int, distance_km: float, title: str, paces: TrainingPaces, phase: Phase) -> Session:
+    """A scheduled tune-up race.
+
+    This closes a real hole: :data:`PHASE_GATES` requires ``five_k_completed``, ``ten_k_completed``
+    and ``half_completed`` to leave BASE_2 and HALF_BUILD, but nothing used to put a race on the
+    calendar -- an athlete could follow every session in this plan exactly and never be able to
+    clear those gates. See :func:`generate_week` for where each distance is scheduled and for the
+    mini-taper the week around it gets.
+
+    The 5K and 10K are RACED, in the same spirit as :func:`_time_trial_2000m`: maximal even effort,
+    no pace band for the app to enforce, because prescribing a target pace for something you are
+    racing defeats the point of racing it. The half is different -- it is scheduled as a REHEARSAL,
+    not a maximal effort, so it gets a real, PACED target off ``paces`` (threshold-ish, not
+    marathon-maximal) instead of "race it": a maximal half buys three weeks of recovery this block
+    does not have room for and teaches nothing about marathon pacing, while a controlled one
+    rehearses fuelling, kit and pacing at a distance where a mistake is still survivable.
+    """
+    is_half = distance_km >= 15.0
+    warm_cool = 25.0   # 15 min warm-up + 10 min cool-down, the same shape as the 2000 m trial
+    if is_half:
+        lo, hi = sorted((paces.threshold, paces.marathon))
+        pace_target: Optional[float] = paces.threshold
+        pace_range: Optional[Tuple[float, float]] = (lo, hi)
+        duration_min = warm_cool + distance_km * pace_target / 60.0
+        zones: Tuple[int, ...] = (3, 4)
+        intent = ("The best single predictor of marathon readiness available before the marathon "
+                  "itself, and a rehearsal of fuelling, pacing and kit at a distance where mistakes "
+                  "are survivable. This one is PACED, not maximal: run it at a threshold-ish "
+                  "effort, the way an honest early-marathon pace should feel, rather than racing it "
+                  "flat out.")
+        structure = (f"15 min easy warm-up, then the half at {fmt_pace(pace_target)}/km "
+                    f"({fmt_pace(lo)}-{fmt_pace(hi)}/km) -- controlled, not maximal -- then a "
+                    "10 min walk/jog cool-down.")
+        cues = ["This is a rehearsal, not a time trial. If you are racing it, you are running it "
+                "too fast for what it is for.",
+                "Practise exactly what you will do on marathon day: same breakfast, same shoes, "
+                "same gels, same start-line routine.",
+                "Negative-split it if you can -- arriving under control and finishing strong is "
+                "the skill the marathon actually needs from you, not the raw time."]
+        fuelling = ("Take 30-60 g of carbohydrate per hour after the first hour, exactly as you "
+                    "intend to fuel the marathon -- this is the rehearsal for that, not just a "
+                    "race in its own right.")
+    else:
+        pace_target = None
+        pace_range = None
+        # Duration here is display only -- the coherence check at the end of generate_week sums
+        # distance_km directly for RACE sessions, so this estimate cannot skew the week's stated
+        # volume. Threshold pace is the closest published anchor to a raced effort at these
+        # distances; a 5K is raced faster than that, so borrow interval pace where it is
+        # prescribable and fall back to threshold where it is not.
+        est_pace = paces.interval if (distance_km <= 6.0 and paces.ir_prescribable) else paces.threshold
+        duration_min = warm_cool + distance_km * est_pace / 60.0
+        zones = (4, 5)
+        if distance_km <= 6.0:
+            intent = ("Recalibrates VDOT over a duration where aerobic endurance, not just raw "
+                      "speed, starts to show. Everything so far has been derived from the 2000 m "
+                      "trial, a deliberately short proxy; this replaces it with a real result at a "
+                      "distance that actually matters for marathon prediction.")
+        else:
+            intent = ("The first legitimate Riegel input for a marathon time prediction. Below 10K "
+                      "the extrapolation to marathon distance spans too large a ratio to mean much "
+                      "-- no marathon prediction appears before this race.")
+        structure = (f"15 min easy warm-up with 4 x 20 s strides, then race the {title} at an "
+                    "even, maximal effort -- go out controlled, not fast. 10 min walk/jog "
+                    "cool-down.")
+        cues = ["Even effort beats a fast start. A positive split (second half slower) means the "
+                "result underestimates you and you will want to repeat it before trusting it.",
+                "This is a race, not a workout -- the days beforehand were eased for exactly this, "
+                "so treat today's result as real data.",
+                "Stop for chest discomfort, light-headedness, or anything that feels wrong. A "
+                "tune-up race is never worth that."]
+        fuelling = ""
+    return Session(
+        day_offset=day, type=SessionType.RACE, title=title, duration_min=round(duration_min),
+        distance_km=distance_km, zones=zones, pace_target_sec_km=pace_target,
+        pace_range_sec_km=pace_range, structure=structure, intent=intent, fuelling=fuelling,
+        cues=cues)
+
+
 def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                   week_index: int = 1, config: Optional[PlanConfig] = None,
                   previous_week_volume: Optional[float] = None,
@@ -900,17 +1085,37 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
 
     * ``FOUNDATION``  -- three run-walk sessions off :data:`_RUN_WALK_LADDER`, no quality at all.
     * ``BASE_1``      -- easy, easy + strides, long. Still no threshold: volume first.
-    * ``BASE_2``      -- easy + strides, threshold, long.
-    * ``HALF_BUILD``  -- threshold or intervals alternating, easy, long.
+    * ``BASE_2``      -- easy + strides, threshold, long. Week :data:`_FIVE_K_WEEK` races a 5K
+      instead, on a mini-tapered week, because ``five_k_completed`` gates leaving this phase and
+      nothing else in the plan ever schedules one.
+    * ``HALF_BUILD``  -- threshold or intervals alternating, easy, long. Weeks :data:`_TEN_K_WEEK`
+      and :data:`_HALF_WEEK` are the same kind of mini-tapered race week, for the 10K and half the
+      phase's gates require.
     * ``MARATHON_BASE``/``MARATHON_PEAK`` -- one quality session, one easy, and a long run that
       periodically carries marathon-pace segments.
+
+    From ``BASE_1`` onward, every phase above also gets a fourth, short easy run on Tuesday when
+    :attr:`PlanConfig.offer_fourth_run` is set (see the module docstring's third point) -- taken out
+    of the existing easy allocation, not added on top of it.
     """
     cfg = config or PlanConfig()
-    is_cutback = (week_in_phase % CUTBACK_EVERY == 0) and phase not in (
+    # A checkpoint race is its own kind of week, not a cutback that happens to land on a hard
+    # session. Stacking CUTBACK_FACTOR on top of RACE_WEEK_VOLUME_FACTOR would cut volume twice for
+    # a reason that only applies once, so a race week is explicitly exempted from CUTBACK_EVERY.
+    is_five_k_week = phase == Phase.BASE_2 and week_in_phase == _FIVE_K_WEEK
+    is_ten_k_week = phase == Phase.HALF_BUILD and week_in_phase == _TEN_K_WEEK
+    is_half_week = phase == Phase.HALF_BUILD and week_in_phase == _HALF_WEEK
+    is_race_week = is_five_k_week or is_ten_k_week or is_half_week
+    is_cutback = (not is_race_week) and (week_in_phase % CUTBACK_EVERY == 0) and phase not in (
         Phase.ASSESS, Phase.TAPER, Phase.RACE, Phase.RECOVERY)
     km, minutes = weekly_volume_target(phase, week_in_phase, phase_length_est=phase_length_est,
                                        previous_week_volume=previous_week_volume, config=cfg,
                                        is_cutback=is_cutback)
+    if is_race_week and km:
+        # Mini-taper: cut volume, then let the phase branch below put the race on cfg.long_run_day
+        # in place of the long run and ease the two days before it. A race on the long-run day with
+        # a normal week in front of it is not a race, it is a hard week with a hard finish.
+        km = round(km * RACE_WEEK_VOLUME_FACTOR, 1)
     paces = profile.paces
     d_long = cfg.long_run_day
     d_a, d_b = [d for d in cfg.run_days if d != d_long][:2] or [1, 3]
@@ -1033,7 +1238,8 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,
                                                        config=cfg, is_cutback=is_cutback)
         easy_km = max(0.0, (km or 0.0) - (lr_km or 0.0))
-        per_easy_min = easy_km / 2.0 * paces.easy / 60.0 if easy_km else 30.0
+        core_km, fourth_km = _split_with_fourth(easy_km, 2, cfg.offer_fourth_run, paces)
+        per_easy_min = core_km[0] * paces.easy / 60.0 if core_km[0] else 30.0
         # The 2000 m trial replaces the first easy run once there is enough base to make a maximal
         # effort reasonable. Week 5 rather than week 1: four weeks of continuous running is the
         # minimum before asking for a maximal effort on tissue that has only just stopped walking.
@@ -1058,96 +1264,167 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                 "controller's targets -- is currently derived from a deliberately conservative "
                 "submaximal estimate. This is the run that replaces it with a real measurement, so "
                 "expect your paces to get quicker afterwards.")
+        if cfg.offer_fourth_run and fourth_km:
+            used = {s.day_offset for s in sessions} | set(cfg.strength_days) | {d_long}
+            sessions.append(_fourth_run(_fourth_run_day(used, d_long), fourth_km, paces))
+            notes.append("A fourth, short easy run is scheduled on Tuesday -- its distance comes "
+                        "out of the other two easy runs' share, not on top of it. Turn "
+                        "PlanConfig.offer_fourth_run off to go back to three runs a week; no gate "
+                        "depends on it.")
 
     elif phase == Phase.BASE_2:
-        lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,
-                                                       config=cfg, is_cutback=is_cutback)
-        reps = 2 + min(2, (week_in_phase - 1) // 3)
-        rep_min = 6.0 if week_in_phase < 5 else 8.0
-        thr = _threshold(d_a, paces, reps, rep_min, 2.0)
-        if is_cutback:
-            thr = _threshold(d_a, paces, max(2, reps - 1), rep_min, 2.0)
-        sessions.append(thr)
-        easy_km = max(0.0, (km or 0.0) - (lr_km or 0.0) - (thr.duration_min or 0) * 60.0 / paces.easy / 1000.0)
-        sessions.append(_easy_run(d_b, max(30.0, easy_km * paces.easy / 60.0), paces))
-        sessions.append(_long_run(d_long, lr_km, lr_min, paces, phase, lr_notes))
-        notes = lr_notes + ["First threshold block. One quality session a week is the correct dose "
-                            "on three runs a week -- the long run is already a hard session."]
+        if is_five_k_week:
+            # Race week: the 5K IS the week's hard session, so no threshold block goes in front of
+            # it. Stacking one on would make this a hard week with a hard finish, not a race.
+            race = _race(d_long, 5.0, "5K", paces, phase)
+            quality = _easy_run(d_a, 30.0, paces, title="Easy + strides (race week)")
+            sessions.append(quality)
+            spent = race.distance_km + (quality.duration_min or 0.0) * 60.0 / paces.easy
+            core_km, fourth_km = _split_with_fourth(max(0.0, (km or 0.0) - spent), 1,
+                                                     cfg.offer_fourth_run, paces)
+            sessions.append(_easy_run(d_b, max(20.0, core_km[0] * paces.easy / 60.0), paces,
+                                      title="Easy (day before the 5K)"))
+            sessions.append(race)
+            notes = ["Race week: volume cut to about 60% of the phase corridor and the threshold "
+                     "session dropped, so the 5K is the only hard effort this week. A race on the "
+                     "long-run day with a normal week in front of it is not a race, it is a hard "
+                     "week with a hard finish.",
+                     "This 5K is what the BASE_2 gate (`five_k_completed`) actually asks for -- run "
+                     "it close to your current fitness, not conservatively. The whole point is an "
+                     "honest number to recalibrate VDOT from."]
+            if cfg.offer_fourth_run and fourth_km:
+                used = {s.day_offset for s in sessions} | set(cfg.strength_days) | {d_long}
+                sessions.append(_fourth_run(_fourth_run_day(used, d_long), fourth_km, paces))
+        else:
+            lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,
+                                                           config=cfg, is_cutback=is_cutback)
+            reps = 2 + min(2, (week_in_phase - 1) // 3)
+            rep_min = 6.0 if week_in_phase < 5 else 8.0
+            thr = _threshold(d_a, paces, reps, rep_min, 2.0)
+            if is_cutback:
+                thr = _threshold(d_a, paces, max(2, reps - 1), rep_min, 2.0)
+            sessions.append(thr)
+            # Quality's cost is charged against the easy budget at easy pace, matching the
+            # convention used below for HALF_BUILD/MARATHON_BASE/MARATHON_PEAK. An earlier version
+            # divided this by a stray extra 1000, which zeroed the subtraction out in practice and
+            # let the single easy run quietly absorb the threshold session's volume on top of its
+            # own -- the week's real total then ran well over its stated corridor target rather
+            # than under it, which the coherence check at the bottom only ever caught in the
+            # opposite direction.
+            quality_km = (thr.duration_min or 0.0) * 60.0 / paces.easy
+            easy_km = max(0.0, (km or 0.0) - (lr_km or 0.0) - quality_km)
+            core_km, fourth_km = _split_with_fourth(easy_km, 1, cfg.offer_fourth_run, paces)
+            sessions.append(_easy_run(d_b, max(30.0, core_km[0] * paces.easy / 60.0), paces))
+            sessions.append(_long_run(d_long, lr_km, lr_min, paces, phase, lr_notes))
+            notes = lr_notes + ["First threshold block. One quality session a week is the correct "
+                                "dose on three runs a week -- the long run is already a hard "
+                                "session."]
+            if cfg.offer_fourth_run and fourth_km:
+                used = {s.day_offset for s in sessions} | set(cfg.strength_days) | {d_long}
+                sessions.append(_fourth_run(_fourth_run_day(used, d_long), fourth_km, paces))
+                notes.append("A fourth, short easy run is scheduled on Tuesday -- its distance "
+                            "comes out of the easy allocation, not on top of it. Turn "
+                            "PlanConfig.offer_fourth_run off to go back to three runs a week; no "
+                            "gate depends on it.")
 
     elif phase in (Phase.HALF_BUILD, Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
-        substitution_note: Optional[str] = None
-        lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,
-                                                       config=cfg, is_cutback=is_cutback)
-        # Alternate threshold and VO2max work; threshold dominates because it is the more
-        # marathon-specific adaptation and the cheaper one to recover from.
-        # Never schedule VO2max intervals when the athlete's VDOT is below the floor where Daniels
-        # publishes an Interval pace. There is no defensible target to run them at, and an
-        # extrapolated one is both unachievable and an injury risk for someone whose aerobic base
-        # cannot yet support the work. Threshold substitutes, which is the right session anyway.
-        do_intervals = ((week_in_phase % 3 == 0) and phase != Phase.MARATHON_PEAK
-                        and paces.ir_prescribable)
-        if do_intervals:
-            sessions.append(_intervals(d_a, paces, reps=5, rep_m=800))
+        if is_ten_k_week or is_half_week:
+            # Race week: the same mini-taper shape as BASE_2's 5K week above -- no threshold or
+            # interval block, the day before the race stays easy, and the race replaces the long
+            # run on cfg.long_run_day.
+            race_km = 10.0 if is_ten_k_week else 21.0975
+            race_title = "10K" if is_ten_k_week else "Half marathon"
+            race = _race(d_long, race_km, race_title, paces, phase)
+            easy_before = _easy_run(d_b, 25.0, paces,
+                                    title=f"Easy (day before the {race_title.lower()})")
+            sessions.append(easy_before)
+            spent = race.distance_km + (easy_before.duration_min or 0.0) * 60.0 / paces.easy
+            core_km, fourth_km = _split_with_fourth(max(0.0, (km or 0.0) - spent), 1,
+                                                     cfg.offer_fourth_run, paces)
+            sessions.append(_easy_run(d_a, max(25.0, core_km[0] * paces.easy / 60.0), paces,
+                                      title="Easy run (race week)"))
+            sessions.append(race)
+            notes = [f"Race week: volume cut to about 60% of the phase corridor and no "
+                     f"threshold/interval work, so the {race_title.lower()} is the only hard "
+                     "effort this week. A race on the long-run day with a normal week in front of "
+                     "it is not a race, it is a hard week with a hard finish.",
+                     ("This 10K is the first legitimate Riegel input for a marathon prediction -- "
+                      "run it close to your current fitness, not conservatively."
+                      if is_ten_k_week else
+                      "This half is PACED, not maximal -- see the session for why. It is the best "
+                      "available predictor of marathon readiness and a rehearsal of fuelling, "
+                      "pacing and kit at a distance where mistakes are survivable.")]
+            if cfg.offer_fourth_run and fourth_km:
+                used = {s.day_offset for s in sessions} | set(cfg.strength_days) | {d_long}
+                sessions.append(_fourth_run(_fourth_run_day(used, d_long), fourth_km, paces))
         else:
-            reps = 3 + min(2, (week_in_phase - 1) // 4)
-            sessions.append(_threshold(d_a, paces, reps, 8.0 if phase == Phase.HALF_BUILD else 10.0, 2.0))
-            if (week_in_phase % 3 == 0) and phase != Phase.MARATHON_PEAK and not paces.ir_prescribable:
-                substitution_note = (
-                    f"This week would normally be VO2max intervals, but your VDOT ({paces.vdot:.0f}) "
-                    f"is below {int(VDOT_IR_FLOOR)}, where Daniels stops publishing an Interval pace. "
-                    "There is no honest target to run them at, so threshold work substitutes. "
-                    "Intervals appear automatically once a race result lifts VDOT past the floor -- "
-                    "and threshold is the more useful session for you until then anyway.")
-        # Distribute the volume the long run and quality session do not cover across the remaining
-        # easy run(s), instead of hardcoding a duration. A fixed 40 min made the session list
-        # silently inconsistent with the week's stated volume target -- the plan said 50 km and the
-        # sessions added up to 30.
-        quality_km = ((sessions[-1].duration_min or 0.0) * 60.0 / paces.easy) if sessions else 0.0
-        remaining = max(0.0, (km or 0.0) - (lr_km or 0.0) - quality_km)
-        easy_min = remaining * paces.easy / 60.0
-        # Bounded: a midweek run below 30 min is not worth changing for, and above 80 min it stops
-        # being a midweek run for someone working shifts.
-        easy_min = max(30.0, min(80.0, easy_min))
-        if is_cutback:
-            easy_min = max(25.0, easy_min * 0.75)
-        sat_before_long = (d_b + 1) % 7 == d_long
-        easy = _easy_run(d_b, easy_min, paces)
-        if sat_before_long:
-            easy.cues = list(easy.cues) + [
-                "This one sits the day before your long run, which is deliberate -- it makes tomorrow "
-                "start on slightly tired legs, and that is a marathon-specific stimulus. It only "
-                "works if today stays genuinely easy. If you push this, tomorrow stops being a long "
-                "run and becomes the second half of a two-day hard block."]
-        sessions.append(easy)
-        # Marathon-pace long runs every third week in MARATHON_BASE, every other week in PEAK.
-        mp_week = (phase == Phase.MARATHON_BASE and week_in_phase % 3 == 0) or \
-                  (phase == Phase.MARATHON_PEAK and week_in_phase % 2 == 1)
-        if mp_week and not is_cutback and lr_min:
-            mp_min = min(50.0, 15.0 + 5.0 * week_in_phase)
-            sessions.append(_mp_long(d_long, lr_km, lr_min, paces, mp_min))
-        else:
-            sessions.append(_long_run(d_long, lr_km, lr_min, paces, phase, lr_notes))
-        notes = list(lr_notes)
-        if substitution_note:
-            notes.append(substitution_note)
-        if cfg.offer_fourth_run and phase in (Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
-            # Put it on a day that has nothing else on it. Landing it on a strength day (which the
-            # old `(d_b + 1) % 7` did) produces a schedule that reads as two sessions stacked on one
-            # day, which is the opposite of what an optional easy run is for.
-            busy = {x.day_offset for x in sessions} | set(cfg.strength_days) | {d_long}
-            free = [x for x in range(7) if x not in busy
-                    and x != (d_long - 1) % 7]          # not the day before the long run either
-            optional_day = free[0] if free else (d_b + 1) % 7
-            sessions.append(Session(
-                day_offset=optional_day, type=SessionType.EASY,
-                title="Optional 4th easy run (30 min)", duration_min=30, zones=(1, 2),
-                pace_target_sec_km=paces.easy, optional=True,
-                intent="Purely optional aerobic volume. If a time goal ever replaces 'finish "
-                       "strong', adding this run is the single highest-yield change available -- "
-                       "and it brings the long run's share of the week back toward the textbook "
-                       "30-35%. No gate depends on it.",
-                cues=["Skip it without guilt on a bad week. It exists to be skipped."]))
-            notes.append("A fourth easy run is offered this phase. Optional, and no gate needs it.")
+            substitution_note: Optional[str] = None
+            lr_km, lr_min, lr_notes = long_run_progression(phase, week_in_phase, km, paces,
+                                                           config=cfg, is_cutback=is_cutback)
+            # Alternate threshold and VO2max work; threshold dominates because it is the more
+            # marathon-specific adaptation and the cheaper one to recover from.
+            # Never schedule VO2max intervals when the athlete's VDOT is below the floor where
+            # Daniels publishes an Interval pace. There is no defensible target to run them at, and
+            # an extrapolated one is both unachievable and an injury risk for someone whose aerobic
+            # base cannot yet support the work. Threshold substitutes, which is the right session
+            # anyway.
+            do_intervals = ((week_in_phase % 3 == 0) and phase != Phase.MARATHON_PEAK
+                            and paces.ir_prescribable)
+            if do_intervals:
+                sessions.append(_intervals(d_a, paces, reps=5, rep_m=800))
+            else:
+                reps = 3 + min(2, (week_in_phase - 1) // 4)
+                sessions.append(_threshold(d_a, paces, reps,
+                                           8.0 if phase == Phase.HALF_BUILD else 10.0, 2.0))
+                if (week_in_phase % 3 == 0) and phase != Phase.MARATHON_PEAK and not paces.ir_prescribable:
+                    substitution_note = (
+                        f"This week would normally be VO2max intervals, but your VDOT "
+                        f"({paces.vdot:.0f}) is below {int(VDOT_IR_FLOOR)}, where Daniels stops "
+                        "publishing an Interval pace. There is no honest target to run them at, so "
+                        "threshold work substitutes. Intervals appear automatically once a race "
+                        "result lifts VDOT past the floor -- and threshold is the more useful "
+                        "session for you until then anyway.")
+            # Distribute the volume the long run and quality session do not cover across the
+            # remaining easy run(s), instead of hardcoding a duration. A fixed 40 min made the
+            # session list silently inconsistent with the week's stated volume target -- the plan
+            # said 50 km and the sessions added up to 30.
+            quality_km = ((sessions[-1].duration_min or 0.0) * 60.0 / paces.easy) if sessions else 0.0
+            remaining = max(0.0, (km or 0.0) - (lr_km or 0.0) - quality_km)
+            core_km, fourth_km = _split_with_fourth(remaining, 1, cfg.offer_fourth_run, paces)
+            easy_min = core_km[0] * paces.easy / 60.0
+            # Bounded: a midweek run below 30 min is not worth changing for, and above 80 min it
+            # stops being a midweek run for someone working shifts.
+            easy_min = max(30.0, min(80.0, easy_min))
+            if is_cutback:
+                easy_min = max(25.0, easy_min * 0.75)
+            sat_before_long = (d_b + 1) % 7 == d_long
+            easy = _easy_run(d_b, easy_min, paces)
+            if sat_before_long:
+                easy.cues = list(easy.cues) + [
+                    "This one sits the day before your long run, which is deliberate -- it makes "
+                    "tomorrow start on slightly tired legs, and that is a marathon-specific "
+                    "stimulus. It only works if today stays genuinely easy. If you push this, "
+                    "tomorrow stops being a long run and becomes the second half of a two-day hard "
+                    "block."]
+            sessions.append(easy)
+            # Marathon-pace long runs every third week in MARATHON_BASE, every other week in PEAK.
+            mp_week = (phase == Phase.MARATHON_BASE and week_in_phase % 3 == 0) or \
+                      (phase == Phase.MARATHON_PEAK and week_in_phase % 2 == 1)
+            if mp_week and not is_cutback and lr_min:
+                mp_min = min(50.0, 15.0 + 5.0 * week_in_phase)
+                sessions.append(_mp_long(d_long, lr_km, lr_min, paces, mp_min))
+            else:
+                sessions.append(_long_run(d_long, lr_km, lr_min, paces, phase, lr_notes))
+            notes = list(lr_notes)
+            if substitution_note:
+                notes.append(substitution_note)
+            if cfg.offer_fourth_run and fourth_km:
+                used = {x.day_offset for x in sessions} | set(cfg.strength_days) | {d_long}
+                sessions.append(_fourth_run(_fourth_run_day(used, d_long), fourth_km, paces))
+                notes.append("A fourth, short easy run is scheduled on Tuesday -- its distance "
+                            "comes out of this week's easy allocation, not on top of it. Turn "
+                            "PlanConfig.offer_fourth_run off to go back to three runs a week; no "
+                            "gate depends on it.")
 
     elif phase == Phase.TAPER:
         peak = previous_week_volume or (km or 50.0)
