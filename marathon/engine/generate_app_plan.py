@@ -92,17 +92,39 @@ OBSERVED_EASY_RUN_KMH = 8.0
 #: the web app was structurally incapable of ever passing through.
 START_PHASE = Phase.FOUNDATION
 
+#: Weeks of running already behind him when this plan starts.
+#:
+#: Load-bearing, and it was zero. The bone-vulnerable window is the first twenty weeks of running --
+#: it does not restart when a plan does, and it is the one governor in this engine that no
+#: heart-rate measure can see. Declaring a returning-to-running athlete as week zero armed the
+#: single-run clamp two weeks longer than his tissue actually warranted. Two: he has been running
+#: since about 22 August 2026.
+WEEKS_RUNNING_AT_START = 2
+
+#: A target race date, or None.
+#:
+#: None on purpose, and it is not an omission. This athlete has no fixed race, and the plan is built
+#: to exploit that -- every phase advances on a measurement rather than a date, so there is no
+#: deadline pulling him past a gate he has not passed. The field exists because the app should be
+#: able to say how far out a chosen date is against the arc's own minimum, not because the plan
+#: needs one. Setting it does not change a single session.
+RACE_DATE = None
+
 OUT = Path(__file__).resolve().parent / "app_plan.generated.json"
 
 
 def build(age: float = DEFAULT_AGE, hr_rest: float = DEFAULT_HR_REST,
           demonstrated_run_min: float = DEMONSTRATED_RUN_MIN,
           observed_easy_run_kmh: float = OBSERVED_EASY_RUN_KMH,
-          start_phase: Phase = START_PHASE) -> str:
+          start_phase: Phase = START_PHASE,
+          weeks_running_at_start: int = WEEKS_RUNNING_AT_START,
+          race_date=RACE_DATE) -> str:
     profile = _estimated_profile(age=age, hr_rest=hr_rest)
     profile.demonstrated_run_min = demonstrated_run_min
     profile.observed_easy_run_kmh = observed_easy_run_kmh
-    plan = build_app_plan(profile, start_phase=start_phase)
+    plan = build_app_plan(profile, start_phase=start_phase,
+                          weeks_running_at_start=weeks_running_at_start,
+                          race_date=race_date)
     # Sorted and compact: the file is inlined into a 170 kB page, and a stable key order means a
     # regeneration that changed nothing produces a byte-identical file rather than a phantom diff.
     return json.dumps(plan, sort_keys=True, separators=(",", ":"))

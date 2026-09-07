@@ -150,6 +150,26 @@ def test_the_bone_window_actually_clamps(plan):
                 grew = True
         longest = max(longest or 0.0, km)
 
+    # The tier that was missing entirely. The clamp used to apply only while the window was armed,
+    # so the week it expired the plan caught up all at once: an 11.6 -> 17.1 km long run, a 47%
+    # single-run jump, on week 21 of running. Nothing about week 21 makes that safe, and the RUNSAFE
+    # cohort found risk rising continuously from the smallest progressions with no free threshold.
+    # So the outer cap has no expiry -- this walks the WHOLE export, including the weeks past the
+    # window, and the window's own effect is the tighter rate inside it.
+    settled = build_app_plan(_estimated_profile(age=30.0, hr_rest=67.0),
+                             start_phase=Phase.FOUNDATION,
+                             weeks_running_at_start=safety.NEW_RUNNER_BONE_WINDOW_WEEKS + 4)
+    prev = None
+    for s in _sessions(settled):
+        km = s.get("km")
+        if not km:
+            continue
+        if prev is not None:
+            assert km <= prev * safety.BONE_LOAD_SPIKE_RATIO + 0.05, (
+                f"outside the bone window a {km} km run still follows a longest of {prev} km, "
+                f"a {(km / prev - 1) * 100:.0f}% jump -- the cap must not expire with the window")
+        prev = max(prev or 0.0, km)
+
     # And it must still PROGRESS. The first attempt at this used `clamp_single_run`, whose in-window
     # ratio is 1.00 -- correct as a runtime rule, and a deadlock in a generator: every week capped at
     # the previous week's figure froze the long run at 4.9 km for the whole eighteen-week export.
@@ -170,7 +190,11 @@ def test_a_clamped_run_says_so(plan):
         "BASE_2 boundary, so the limit must actually be firing somewhere in this export -- if it "
         "never fires, nothing here is being tested")
     for s in held:
-        assert "bone" in s["structure"].lower(), (
+        # It must say WHY, not necessarily "bone". The clamp now has two tiers and only the inner one
+        # is about bone -- a run held outside the window is held because a single run should not jump
+        # far past your recent longest at any stage, which is a different true sentence.
+        why = s["structure"].lower()
+        assert "bone" in why or "recent longest" in why, (
             f"{s['type']} was shortened without saying why: {s['structure']!r}")
 
 

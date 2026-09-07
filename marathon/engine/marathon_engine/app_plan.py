@@ -42,13 +42,34 @@ APP_PLAN_VERSION = 1
 #: re-imported a session anyway, which regenerates it.
 WEEKS_PER_PHASE = 6
 
-#: The phases worth shipping to a beginner's phone. Later phases are months away and their content
-#: depends on measurements that do not exist yet, so shipping them would be inventing detail.
-SHIPPED_PHASES = (
+#: The phases shipped as concrete, session-by-session weeks.
+#:
+#: Later phases are months away and their content genuinely depends on measurements that do not
+#: exist yet -- a threshold pace derived from a 5K that has not been run, a long-run progression
+#: anchored to a half marathon that has not happened. Expanding them week by week would be inventing
+#: that detail and dressing it as a plan.
+#:
+#: But shipping NOTHING for them was its own failure: the athlete could see eighteen weeks and no
+#: destination, which makes a year-long arc look like a treadmill. So the phases past this point are
+#: shipped as an OUTLINE instead -- goal, minimum weeks, volume corridor, the races in them, and the
+#: gates that end them. Everything there is already decided and none of it is invented.
+DETAILED_PHASES = (
     planmod.Phase.ASSESS,
     planmod.Phase.FOUNDATION,
     planmod.Phase.BASE_1,
     planmod.Phase.BASE_2,
+)
+
+#: Kept as the old name for the detailed set, since that is what every caller means by it.
+SHIPPED_PHASES = DETAILED_PHASES
+
+#: The rest of the road to the start line, outlined rather than expanded. See DETAILED_PHASES.
+OUTLINED_PHASES = (
+    planmod.Phase.HALF_BUILD,
+    planmod.Phase.MARATHON_BASE,
+    planmod.Phase.MARATHON_PEAK,
+    planmod.Phase.TAPER,
+    planmod.Phase.RACE,
 )
 
 #: How fast the walk breaks should be, km/h. A brisk walk, not a stroll.
@@ -199,10 +220,32 @@ def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfi
     return out
 
 
+def _phase_outline(phase: planmod.Phase, profile: FitnessProfile) -> Dict[str, Any]:
+    """One outlined phase: where it goes, what ends it, and what it costs.
+
+    Everything here is already decided by the engine -- the goal, the minimum weeks, the volume
+    corridor, the gates. None of it is the week-by-week detail that would have to be invented. The
+    point is that the athlete can see the whole road to the start line without the plan pretending
+    to know what their threshold pace will be in eight months.
+    """
+    lo, hi = planmod._PHASE_VOLUME_KM.get(phase, (None, None))
+    out: Dict[str, Any] = {
+        "phase": phase.value,
+        "label": phase.value.replace("_", " ").title(),
+        "goal": planmod.PHASE_GOALS.get(phase, ""),
+        "min_weeks": PHASE_MIN_WEEKS.get(phase, 0),
+        "gates": [g.to_dict() for g in planmod.PHASE_GATES.get(phase, ())],
+    }
+    if lo is not None:
+        out["volume_km"] = {"from": lo, "to": hi}
+    return out
+
+
 def build_app_plan(profile: FitnessProfile, *,
                    config: Optional[planmod.PlanConfig] = None,
                    start_phase: planmod.Phase = planmod.Phase.ASSESS,
-                   weeks_running_at_start: int = 0) -> Dict[str, Any]:
+                   weeks_running_at_start: int = 0,
+                   race_date: Optional[str] = None) -> Dict[str, Any]:
     """The schedule the phone carries, phase by phase.
 
     ``start_phase`` skips the export past phases already known to be done. It exists for exactly one
@@ -231,8 +274,11 @@ def build_app_plan(profile: FitnessProfile, *,
     longest_run_km: Optional[float] = None
 
     for phase in SHIPPED_PHASES[started:]:
-        weeks_to_ship = PHASE_MIN_WEEKS.get(phase, WEEKS_PER_PHASE) if phase == Phase.ASSESS \
-            else WEEKS_PER_PHASE
+        # The phase's own minimum, not a flat six. BASE_1 and BASE_2 each need eight weeks to pass
+        # their gates, and shipping six of them meant the export ran out two weeks before the phase
+        # could possibly end -- the athlete would reach the last week the phone knew about and find
+        # the plan simply stopped, mid-phase, with the gate still unmet.
+        weeks_to_ship = PHASE_MIN_WEEKS.get(phase, WEEKS_PER_PHASE)
         weeks: List[Dict[str, Any]] = []
         previous_volume: Optional[float] = None
         for wk in range(1, weeks_to_ship + 1):
@@ -271,19 +317,37 @@ def build_app_plan(profile: FitnessProfile, *,
             for sess in w.sessions:
                 if not sess.distance_km:
                     continue
-                if bone.in_high_risk_window and longest_run_km:
-                    allowed = longest_run_km * safety.BONE_LOAD_SPIKE_RATIO
+                if longest_run_km:
+                    # Two tiers, and the OUTER one is the fix for a real defect: the clamp used to
+                    # apply only inside the bone window, so the week the window expired the plan was
+                    # free to catch up all at once -- an unclamped 11.6 -> 17.1 km long run, a 47%
+                    # single-run jump, on week 21. Nothing about week 21 makes that safe. The RUNSAFE
+                    # cohort found injury hazard rising continuously from the smallest progressions
+                    # measured, with no threshold below which a jump is free, so the spike guard's own
+                    # "ok" boundary applies for the life of the plan.
+                    #
+                    # Inside the window it is halved on top of that, which is what
+                    # `bone_window_increment_factor` is for: bone adapts on a months-long clock that
+                    # no heart-rate measure can see, so the first twenty weeks of running get the
+                    # gentler rate and everything after gets the ordinary one.
+                    ratio = 1.0 + (safety.BONE_LOAD_SPIKE_RATIO - 1.0) \
+                        * safety.bone_window_increment_factor(bone)
+                    allowed = longest_run_km * ratio
                     if sess.distance_km > allowed:
                         band, _, message = safety.single_run_progression(
-                            sess.distance_km, longest_run_km, in_bone_window=True)
+                            sess.distance_km, longest_run_km,
+                            in_bone_window=bone.in_high_risk_window)
                         sess.distance_km = round(allowed, 1)
                         # Said out loud in the text the athlete reads. A run quietly shortened is
                         # indistinguishable from a plan that never asked for more, and an athlete
                         # who notices would be right to stop trusting both.
+                        why = (f"bone adapts more slowly than fitness, and you are inside the "
+                               f"first {safety.NEW_RUNNER_BONE_WINDOW_WEEKS} weeks of running"
+                               if bone.in_high_risk_window
+                               else "a single run should not jump far past your recent longest, at "
+                                    "any stage")
                         sess.structure = (sess.structure + " " if sess.structure else "") + (
-                            f"Held to {sess.distance_km:.1f} km: bone adapts more slowly than "
-                            f"fitness, and you are inside the first "
-                            f"{safety.NEW_RUNNER_BONE_WINDOW_WEEKS} weeks of running. {message}")
+                            f"Held to {sess.distance_km:.1f} km: {why}. {message}")
                 longest_run_km = max(longest_run_km or 0.0, sess.distance_km)
             weeks_running += 1
 
@@ -307,8 +371,31 @@ def build_app_plan(profile: FitnessProfile, *,
                           "needs evidence the phone does not have."),
         })
 
+    # The rest of the road, outlined. See DETAILED_PHASES for why these are not expanded.
+    outline = [_phase_outline(p, profile) for p in OUTLINED_PHASES]
+    detailed_weeks = sum(len(ph["weeks"]) for ph in phases)
+    outlined_weeks = sum(o["min_weeks"] for o in outline)
+
     return {
         "app_plan_version": APP_PLAN_VERSION,
+        # What the whole thing costs, stated once rather than left to be counted.
+        #
+        # The honest headline for this athlete: the gated path from here to a marathon start line is
+        # about a year, and that is the FASTEST it can go -- every phase minimum assumes each gate is
+        # passed at the first attempt, which is not what usually happens. A first-marathon plan that
+        # promises less than this is either skipping a gate or expecting the athlete to absorb the
+        # difference, and the athlete absorbs it as an injury. Shown so the size of the commitment is
+        # visible on day one instead of arriving as a surprise in month four.
+        "arc": {
+            "detailed_weeks": detailed_weeks,
+            "outlined_weeks": outlined_weeks,
+            "min_weeks_to_start_line": detailed_weeks + outlined_weeks,
+            "race_date": race_date,
+            "note": ("Minimum weeks, assuming every gate passes first time. Phases advance on "
+                     "measurements, not dates, so the real number is longer -- a repeated rung or a "
+                     "held gate costs weeks, and that is the plan working rather than failing."),
+        },
+        "outline": outline,
         "generated_for": {
             "age": profile.age,
             "hr_rest": profile.hr_rest,
