@@ -324,10 +324,15 @@ def test_base_2_introduces_threshold(profile):
 
 
 def test_three_running_sessions_per_week(profile):
+    """Obsolete as a blanket claim once the fourth run ships (see the fourth-run tests below): with
+    PlanConfig.offer_fourth_run off, BASE_1/BASE_2/HALF_BUILD must still fall back to exactly the
+    original three-run shape -- the flag has to actually turn the feature off, not just add to it.
+    """
+    cfg = PlanConfig(offer_fourth_run=False)
     for phase in (Phase.BASE_1, Phase.BASE_2, Phase.HALF_BUILD):
-        w = generate_week(profile, phase, 2)
+        w = generate_week(profile, phase, 2, config=cfg)
         runs = [s for s in w.running_sessions if not s.optional]
-        assert len(runs) == 3, f"{phase} has {len(runs)} runs, expected 3"
+        assert len(runs) == 3, f"{phase} has {len(runs)} runs, expected 3 with offer_fourth_run=False"
 
 
 def test_two_strength_sessions_per_week(profile):
@@ -349,11 +354,15 @@ def test_plyometrics_absent_in_foundation(profile):
     assert "plyometric" not in s.structure.lower()
 
 
-def test_optional_fourth_run_offered_in_marathon_phases(profile):
+def test_fourth_run_offered_in_marathon_phases(profile):
+    """The fourth run is no longer purely additive/optional (see PlanConfig.offer_fourth_run's
+    redesign): it is a standard, budgeted session on Tuesday whenever the flag is set, so it must
+    NOT be marked .optional -- an optional session is excluded from the coherence check at the
+    bottom of generate_week, and this one's distance is supposed to count."""
     w = generate_week(profile, Phase.MARATHON_BASE, 2)
-    optional = [s for s in w.sessions if s.optional and s.type == SessionType.EASY]
-    assert optional
-    assert "optional" in optional[0].intent.lower()
+    fourth = [s for s in w.sessions if s.type == SessionType.EASY and s.day_offset == 1]
+    assert fourth, "no fourth run scheduled on Tuesday (day_offset 1)"
+    assert not fourth[0].optional, "the fourth run must count toward the week's stated volume"
 
 
 def test_no_gate_depends_on_the_optional_run():
@@ -421,19 +430,20 @@ def test_phase_overview_is_complete_and_serialisable():
         assert o["goal"]
 
 
-def test_optional_run_does_not_collide_with_another_session(profile):
-    """Regression guard: the optional 4th run used to land on a strength day, which reads as two
-    sessions stacked on one day -- the opposite of what an optional easy run is for."""
-    for phase in (Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
-        for wk in range(1, 7):
+def test_fourth_run_does_not_collide_with_another_session(profile):
+    """Regression guard: the fourth run used to land on a strength day, which reads as two
+    sessions stacked on one day -- the opposite of what a standalone shakeout run is for."""
+    for phase in (Phase.BASE_1, Phase.BASE_2, Phase.HALF_BUILD,
+                  Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
+        for wk in range(1, 11):
             w = generate_week(profile, phase, wk)
-            opt = [s for s in w.sessions if s.optional]
-            for o in opt:
+            fourth = [s for s in w.sessions if s.title == "Easy run (shakeout)"]
+            for o in fourth:
                 same_day = [s for s in w.sessions
                             if s.day_offset == o.day_offset and s is not o
                             and s.type != SessionType.REST]
                 assert not same_day, (
-                    f"{phase} wk{wk}: optional run collides with "
+                    f"{phase} wk{wk}: fourth run collides with "
                     f"{[s.title for s in same_day]}")
 
 
@@ -592,3 +602,130 @@ def test_demonstrated_capacity_changes_the_prescription_but_not_the_intensity():
     # minutes. Longer blocks at the same easy intensity is the point; harder blocks is the failure.
     assert b.zones == a.zones, "capacity changes duration, never intensity"
     assert b.pace_range_sec_km == a.pace_range_sec_km
+
+
+# ---- races the gates actually require -------------------------------------------------------
+#
+# PHASE_GATES demands five_k_completed (to leave BASE_2), and ten_k_completed + half_completed
+# (to leave HALF_BUILD), but until this feature nothing in generate_week ever scheduled any of
+# them -- an athlete could follow the plan exactly and never be able to clear those gates. These
+# tests protect the fix structurally (a session actually exists) rather than just checking the
+# gate definitions, which is what let the original hole go unnoticed.
+
+def test_five_k_10k_half_are_all_scheduled(profile):
+    from marathon_engine.plan import _FIVE_K_WEEK, _HALF_WEEK, _TEN_K_WEEK
+
+    five_k_weeks = [wk for wk in range(1, 9)
+                    if any(s.type == SessionType.RACE and s.distance_km == pytest.approx(5.0)
+                           for s in generate_week(profile, Phase.BASE_2, wk).sessions)]
+    ten_k_weeks = [wk for wk in range(1, 11)
+                   if any(s.type == SessionType.RACE and s.distance_km == pytest.approx(10.0)
+                          for s in generate_week(profile, Phase.HALF_BUILD, wk).sessions)]
+    half_weeks = [wk for wk in range(1, 11)
+                  if any(s.type == SessionType.RACE and s.distance_km == pytest.approx(21.0975)
+                         for s in generate_week(profile, Phase.HALF_BUILD, wk).sessions)]
+    assert five_k_weeks, "no 5K scheduled anywhere in BASE_2 -- five_k_completed can never be met"
+    assert ten_k_weeks, "no 10K scheduled anywhere in HALF_BUILD -- ten_k_completed can never be met"
+    assert half_weeks, ("no half marathon scheduled anywhere in HALF_BUILD -- half_completed can "
+                        "never be met")
+    assert five_k_weeks == [_FIVE_K_WEEK]
+    assert ten_k_weeks == [_TEN_K_WEEK]
+    assert half_weeks == [_HALF_WEEK]
+
+
+def test_race_week_volume_is_meaningfully_lower_than_its_own_uncut_target(profile):
+    """A mini-taper that doesn't actually cut volume is not a taper -- see RACE_WEEK_VOLUME_FACTOR.
+    A race on the long-run day with a normal week in front of it is a hard week with a hard finish,
+    not a race.
+
+    Compared against ``weekly_volume_target``'s own output for the same phase/week rather than an
+    adjacent week's ``generate_week`` total: BASE_2 and HALF_BUILD's actual weekly totals already
+    run well under their nominal corridor even in a normal week (the long-run time cap binds before
+    the corridor's ceiling does -- see the "Honest note" mechanism at the end of generate_week), so
+    comparing two already-suppressed neighbours can understate the cut. Comparing a week to its own
+    uncut target isolates exactly what RACE_WEEK_VOLUME_FACTOR is responsible for.
+    """
+    from marathon_engine.plan import (
+        RACE_WEEK_VOLUME_FACTOR, _FIVE_K_WEEK, _HALF_WEEK, _TEN_K_WEEK, weekly_volume_target,
+    )
+
+    for phase, wk in ((Phase.BASE_2, _FIVE_K_WEEK), (Phase.HALF_BUILD, _TEN_K_WEEK),
+                      (Phase.HALF_BUILD, _HALF_WEEK)):
+        uncut_km, _ = weekly_volume_target(phase, wk, phase_length_est=8)
+        actual_km = generate_week(profile, phase, wk).volume_target_km
+        assert actual_km < uncut_km * (RACE_WEEK_VOLUME_FACTOR + 0.15), (
+            f"{phase} wk{wk}: actual {actual_km} km is not meaningfully below the uncut corridor "
+            f"target of {uncut_km} km -- the mini-taper is not actually cutting volume")
+
+
+def test_race_sits_on_long_run_day_and_replaces_it(profile):
+    """The race must BE the long-run-day session, not an addition alongside a normal long run --
+    otherwise race week is the hardest week in the phase instead of the lightest."""
+    from marathon_engine.plan import _FIVE_K_WEEK, _HALF_WEEK, _TEN_K_WEEK
+
+    cfg = PlanConfig()
+    for phase, wk in ((Phase.BASE_2, _FIVE_K_WEEK), (Phase.HALF_BUILD, _TEN_K_WEEK),
+                      (Phase.HALF_BUILD, _HALF_WEEK)):
+        w = generate_week(profile, phase, wk)
+        races = [s for s in w.sessions if s.type == SessionType.RACE]
+        assert len(races) == 1, f"{phase} wk{wk}: expected exactly one race session, got {len(races)}"
+        assert races[0].day_offset == cfg.long_run_day, (
+            f"{phase} wk{wk}: the race must sit on cfg.long_run_day")
+        assert not any(s.type == SessionType.LONG for s in w.sessions), (
+            f"{phase} wk{wk}: a long run is scheduled the same week as the race")
+
+
+def test_half_is_paced_5k_and_10k_are_raced(profile):
+    """5K/10K are RACED (maximal, no pace band to enforce, like the 2000 m trial). The half is a
+    PACED rehearsal, not a maximal effort, so only it should carry a pace target off `paces`."""
+    from marathon_engine.plan import _FIVE_K_WEEK, _HALF_WEEK, _TEN_K_WEEK
+
+    five_k = next(s for s in generate_week(profile, Phase.BASE_2, _FIVE_K_WEEK).sessions
+                  if s.type == SessionType.RACE)
+    ten_k = next(s for s in generate_week(profile, Phase.HALF_BUILD, _TEN_K_WEEK).sessions
+                 if s.type == SessionType.RACE)
+    half = next(s for s in generate_week(profile, Phase.HALF_BUILD, _HALF_WEEK).sessions
+                if s.type == SessionType.RACE)
+    assert five_k.pace_target_sec_km is None, "the 5K is raced -- no pace target should be enforced"
+    assert ten_k.pace_target_sec_km is None, "the 10K is raced -- no pace target should be enforced"
+    assert half.pace_target_sec_km is not None, "the half is a paced rehearsal, not a maximal effort"
+    assert half.pace_range_sec_km is not None, "the half needs a pace band, not just a point target"
+
+
+# ---- the fourth run (BASE_1 onward) ----------------------------------------------------------
+
+def test_fourth_run_from_base_1_onward_foundation_stays_at_three(profile):
+    """PlanConfig.offer_fourth_run defaults True from BASE_1 onward -- FOUNDATION is the deliberate
+    exception, because the run-walk ladder is already three sessions and a fourth adds impact to
+    the tissue least ready for it."""
+    for phase in (Phase.BASE_1, Phase.BASE_2, Phase.HALF_BUILD,
+                  Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
+        w = generate_week(profile, phase, 2)   # week 2: never a race week for any of these phases
+        assert len(w.running_sessions) == 4, (
+            f"{phase} should have 4 running sessions with offer_fourth_run on, got "
+            f"{len(w.running_sessions)}")
+
+    wf = generate_week(profile, Phase.FOUNDATION, 2)
+    assert len(wf.running_sessions) == 3, (
+        "FOUNDATION must stay at three runs -- adding a fourth loads tissue that has not adapted "
+        "to running at all yet")
+
+
+def test_four_run_week_sessions_sum_to_the_stated_volume(profile):
+    """The fourth run's distance must come OUT of the existing easy allocation, not add to it --
+    otherwise the week's stated volume and its actual sessions silently disagree, the same failure
+    mode test_week_sessions_are_coherent_with_the_stated_volume guards for the three-run case."""
+    for phase in (Phase.BASE_1, Phase.BASE_2, Phase.HALF_BUILD,
+                  Phase.MARATHON_BASE, Phase.MARATHON_PEAK):
+        w = generate_week(profile, phase, 2)
+        if not w.volume_target_km:
+            continue
+        total = 0.0
+        for s in w.running_sessions:
+            if s.distance_km:
+                total += s.distance_km
+            elif s.duration_min:
+                total += s.duration_min * 60.0 / (s.pace_target_sec_km or profile.paces.easy)
+        assert total == pytest.approx(w.volume_target_km, rel=0.16), (
+            f"{phase}: four-run week sessions total {total:.1f} km vs stated "
+            f"{w.volume_target_km:.1f} km")
