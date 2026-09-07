@@ -569,6 +569,7 @@
           </div>
         </div>
         <p class="note" id="gatenote" style="margin-top:.7rem"></p>
+        <div id="arc" style="margin-top:.9rem"></div>
       </section>
     </div>
   </details>
@@ -1053,8 +1054,69 @@ function sessionFor(day) {
   return curWeek().sessions.find(s => s.day === day) || null;
 }
 
+/**
+ * The whole road to the start line, including the part that is not written out yet.
+ *
+ * The export used to carry three phases and stop, so the plan looked like four months of run/walk
+ * with no destination -- which is exactly how a year-long arc reads as a treadmill. The later phases
+ * genuinely cannot be expanded into weeks: their sessions depend on a threshold pace from a 5K that
+ * has not been run and a long run anchored to a half marathon that has not happened, and inventing
+ * that detail would be worse than omitting it. So they arrive as an outline, and this renders it.
+ *
+ * The headline number is deliberately the uncomfortable one. Fifty-one weeks is the MINIMUM, with
+ * every gate passing first time, and saying so on day one is kinder than letting it arrive as a
+ * surprise in month four -- the plans that promise less are skipping a gate, and the athlete pays
+ * for that skip with an injury rather than a delay.
+ */
+function renderArc() {
+  const arc = PLAN.arc, outline = PLAN.outline || [];
+  const box = $('arc');
+  if (!arc && !outline.length) { box.replaceChildren(); return; }
+  const kids = [];
+
+  if (arc) {
+    const h = document.createElement('div');
+    h.className = 'note';
+    const weeks = arc.min_weeks_to_start_line;
+    h.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = `${weeks} weeks to a marathon, at the very least.`;
+    h.append(strong, document.createTextNode(' ' + (arc.note || '')));
+    kids.push(h);
+  }
+
+  for (const o of outline) {
+    const d = document.createElement('div');
+    d.className = 'instrument';
+    d.style.cssText = 'gap:.3rem;margin-top:.5rem;padding:.6rem .7rem';
+    const t = document.createElement('div');
+    t.className = 'phase'; t.style.fontSize = '.9rem';
+    t.textContent = `${o.label} — ${o.min_weeks} weeks minimum`;
+    const g = document.createElement('div');
+    g.className = 'weeklabel';
+    g.textContent = o.goal + (o.volume_km ? ` · ${o.volume_km.from}–${o.volume_km.to} km/week` : '');
+    d.append(t, g);
+    // The gates, because they are what actually ends the phase -- a phase whose length is stated in
+    // weeks and whose exit is a measurement invites reading the weeks as the plan.
+    if (o.gates && o.gates.length) {
+      const ul = document.createElement('ul');
+      ul.className = 'note';
+      ul.style.cssText = 'margin:.35rem 0 0 1rem;border:0;padding-left:1rem';
+      for (const gate of o.gates) {
+        const li = document.createElement('li');
+        li.textContent = gate.label || gate.key;
+        ul.append(li);
+      }
+      d.append(ul);
+    }
+    kids.push(d);
+  }
+  box.replaceChildren(...kids);
+}
+
 function renderPlan() {
   const ph = curPhase(), wk = curWeek();
+  renderArc();
   $('phaselabel').textContent = ph.label;
   $('weeklabel').textContent =
     `Week ${wk.week} of ${ph.weeks.length}` + (wk.cutback ? ' · cutback' : '')

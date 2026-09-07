@@ -542,6 +542,28 @@ async function openAll(page) {
   console.log('  ok  and it survives a reload');
 }
 
+// --- the whole arc, including the part not written out yet -----------------------------------------
+
+{
+  // The export used to carry three phases and stop, so a year-long plan read as four months of
+  // run/walk with no destination. The later phases cannot honestly be expanded into weeks -- their
+  // sessions depend on a threshold pace from a 5K not yet run -- so they arrive as an outline, and
+  // the athlete gets to see where this is going.
+  const arc = (await page.textContent('#arc')).replace(/\s+/g, ' ');
+  assert.match(arc, /\d+ weeks to a marathon, at the very least/,
+    `the arc must state the minimum honestly: "${arc.slice(0, 120)}"`);
+  // The uncomfortable half of that number: it assumes every gate passes first time.
+  assert.match(arc, /assuming every gate passes first time/,
+    'and must say the minimum is a minimum');
+  // Every outlined phase, with the gate that actually ends it rather than only a week count.
+  for (const label of ['Half Build', 'Marathon Base', 'Marathon Peak']) {
+    assert.ok(arc.includes(label), `the outline must name ${label}: "${arc.slice(0, 200)}"`);
+  }
+  assert.match(arc, /Half marathon completed/,
+    'and must show the gates, since a measurement is what ends a phase, not the weeks');
+  console.log('  ok  the plan shows the whole arc to a marathon, outlined phases and their gates');
+}
+
 // --- the ramp test -------------------------------------------------------------------------------
 
 {
