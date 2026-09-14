@@ -118,7 +118,7 @@
   },
   "KXHIGHTLSGG": {
    "title": "Daily high temp Geneva",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXHIGHTLTFM": {
@@ -458,7 +458,7 @@
   },
   "KXLOWTSBGR": {
    "title": "Daily low temp Sao Paulo ",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTSDF": {
@@ -488,7 +488,7 @@
   },
   "KXLOWTVHHH": {
    "title": "Daily low temp Hong Kong",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTWSSS": {
@@ -498,7 +498,7 @@
   },
   "KXLOWTYSSY": {
    "title": "Daily low temp Sydney",
-   "status": "unknown",
+   "status": "deprecated",
    "first_seen": "2026-08-17"
   },
   "KXLOWTZBAA": {
