@@ -1,0 +1,343 @@
+{
+ "snapshots": 4396,
+ "distinct_days": 15,
+ "day_range": [
+  "2026-09-15",
+  "2026-09-29"
+ ],
+ "gate_met": true,
+ "stations_evaluated": 40,
+ "stations_swinging_ge_2x": 40,
+ "fraction_swinging": 1.0,
+ "median_swing_ratio": 38.94,
+ "max_swing_ratio": 804.0,
+ "verdict": "DO_NOT_ADOPT_keep_fixed_DEPTH_CAP_25",
+ "depth_at_or_below_98c": {
+  "median": 506.0,
+  "p25": 208.0,
+  "p75": 1421.25,
+  "max": 15049.0
+ },
+ "per_station": [
+  {
+   "station": "KXHIGHAUS",
+   "days": 15,
+   "min_median": 52.0,
+   "max_median": 5070.5,
+   "swing_ratio": 97.51,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHCHI",
+   "days": 12,
+   "min_median": 25.0,
+   "max_median": 3617.5,
+   "swing_ratio": 144.7,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHDEN",
+   "days": 14,
+   "min_median": 465.0,
+   "max_median": 4142.5,
+   "swing_ratio": 8.91,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHLAX",
+   "days": 13,
+   "min_median": 175.0,
+   "max_median": 7704.0,
+   "swing_ratio": 44.02,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHMIA",
+   "days": 12,
+   "min_median": 339.0,
+   "max_median": 4592.0,
+   "swing_ratio": 13.55,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHNY",
+   "days": 14,
+   "min_median": 44.0,
+   "max_median": 5490.5,
+   "swing_ratio": 124.78,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHPHIL",
+   "days": 12,
+   "min_median": 54.0,
+   "max_median": 5184.0,
+   "swing_ratio": 96.0,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTATL",
+   "days": 15,
+   "min_median": 291.0,
+   "max_median": 2625.0,
+   "swing_ratio": 9.02,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTBOS",
+   "days": 12,
+   "min_median": 41.0,
+   "max_median": 2472.5,
+   "swing_ratio": 60.3,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTDAL",
+   "days": 14,
+   "min_median": 82.0,
+   "max_median": 2592.0,
+   "swing_ratio": 31.61,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTDC",
+   "days": 13,
+   "min_median": 42.0,
+   "max_median": 2176.0,
+   "swing_ratio": 51.81,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTHOU",
+   "days": 13,
+   "min_median": 253.5,
+   "max_median": 2551.0,
+   "swing_ratio": 10.06,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTLV",
+   "days": 14,
+   "min_median": 110.5,
+   "max_median": 3899.0,
+   "swing_ratio": 35.29,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTMIN",
+   "days": 14,
+   "min_median": 376.5,
+   "max_median": 1782.0,
+   "swing_ratio": 4.73,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTNOLA",
+   "days": 15,
+   "min_median": 848.0,
+   "max_median": 2348.5,
+   "swing_ratio": 2.77,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTOKC",
+   "days": 14,
+   "min_median": 165.0,
+   "max_median": 2554.0,
+   "swing_ratio": 15.48,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTPHX",
+   "days": 12,
+   "min_median": 336.0,
+   "max_median": 2991.5,
+   "swing_ratio": 8.9,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTSATX",
+   "days": 15,
+   "min_median": 326.0,
+   "max_median": 2667.5,
+   "swing_ratio": 8.18,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTSEA",
+   "days": 15,
+   "min_median": 107.0,
+   "max_median": 3188.0,
+   "swing_ratio": 29.79,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXHIGHTSFO",
+   "days": 15,
+   "min_median": 182.0,
+   "max_median": 2793.0,
+   "swing_ratio": 15.35,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTATL",
+   "days": 15,
+   "min_median": 52.0,
+   "max_median": 2653.0,
+   "swing_ratio": 51.02,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTAUS",
+   "days": 13,
+   "min_median": 318.0,
+   "max_median": 2421.0,
+   "swing_ratio": 7.61,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTBOS",
+   "days": 14,
+   "min_median": 131.5,
+   "max_median": 2462.5,
+   "swing_ratio": 18.73,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTCHI",
+   "days": 14,
+   "min_median": 50.0,
+   "max_median": 2503.0,
+   "swing_ratio": 50.06,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTDAL",
+   "days": 14,
+   "min_median": 50.0,
+   "max_median": 2692.5,
+   "swing_ratio": 53.85,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTDC",
+   "days": 14,
+   "min_median": 82.0,
+   "max_median": 2367.0,
+   "swing_ratio": 28.87,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTDEN",
+   "days": 14,
+   "min_median": 57.0,
+   "max_median": 593.0,
+   "swing_ratio": 10.4,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTHOU",
+   "days": 15,
+   "min_median": 56.0,
+   "max_median": 2558.0,
+   "swing_ratio": 45.68,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTLAX",
+   "days": 12,
+   "min_median": 9.5,
+   "max_median": 610.5,
+   "swing_ratio": 64.26,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTLV",
+   "days": 6,
+   "min_median": 1.0,
+   "max_median": 804.0,
+   "swing_ratio": 804.0,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTMIA",
+   "days": 15,
+   "min_median": 61.0,
+   "max_median": 618.5,
+   "swing_ratio": 10.14,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTMIN",
+   "days": 15,
+   "min_median": 49.5,
+   "max_median": 2401.0,
+   "swing_ratio": 48.51,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTNOLA",
+   "days": 14,
+   "min_median": 17.0,
+   "max_median": 2577.0,
+   "swing_ratio": 151.59,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTNYC",
+   "days": 14,
+   "min_median": 206.5,
+   "max_median": 8796.0,
+   "swing_ratio": 42.6,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTOKC",
+   "days": 11,
+   "min_median": 50.0,
+   "max_median": 2621.0,
+   "swing_ratio": 52.42,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTPHIL",
+   "days": 14,
+   "min_median": 88.0,
+   "max_median": 2368.0,
+   "swing_ratio": 26.91,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTPHX",
+   "days": 9,
+   "min_median": 13.0,
+   "max_median": 2290.0,
+   "swing_ratio": 176.15,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTSATX",
+   "days": 14,
+   "min_median": 84.0,
+   "max_median": 2701.0,
+   "swing_ratio": 32.15,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTSEA",
+   "days": 9,
+   "min_median": 1.0,
+   "max_median": 581.0,
+   "swing_ratio": 581.0,
+   "swings_ge_2x": true
+  },
+  {
+   "station": "KXLOWTSFO",
+   "days": 12,
+   "min_median": 10.0,
+   "max_median": 577.0,
+   "swing_ratio": 57.7,
+   "swings_ge_2x": true
+  }
+ ]
+}
