@@ -113,3 +113,79 @@ Both of these have had their questions answered today and are still on cron:
 Disabling them on main would leave only `kwx-live` (inert tripwire) and `kwx-watchdog` running.
 Flagged rather than done: turning off two more workflows on the default branch is the operator's
 call, and unlike the forecast sleeve I was not previously asked to.
+
+---
+
+# CORRECTION (same day, after the n=2,914 analysis completed)
+
+The forecast re-analysis finished after the above was written, and it **falsifies two statements I
+made earlier in this program.** Both corrections weaken kills I had called firm. Recording them
+prominently because the whole value of this record is that it does not round in its own favour.
+
+## The numbers
+
+Scored 2,695 of 2,914 rows against Kalshi's **official** settlement at executable prices (219 not yet
+settled). Split at 2026-08-06, when the corrected `bracket_prob` went live:
+
+| arm | n | days | win | EV/contract | day-clustered t |
+|---|---:|---:|---:|---:|---:|
+| Pre-fix (buggy model) | 620 | 14 | 39.7% | **−0.0407** | **−4.32** |
+| **Post-fix (corrected, forward)** | **2,075** | **51** | 36.3% | **−0.0054** | **+0.10** |
+| All | 2,695 | 65 | 37.1% | −0.0135 | −0.51 |
+
+Post-fix arm, day-clustered: mean **+0.0019/ct**, se 0.0188, **95% CI [−0.0351, +0.0388]** — straddles
+zero.
+
+## Correction 1 — the corrected model is NOT significantly negative
+
+On 2026-08-10, from a 3-day post-fix arm (n=161, EV −0.0416, t=−1.27), I wrote that the forward data
+*"confirmed the counterfactual"* and that fixing the model *"does not rescue the sleeve."*
+
+With 13× more post-fix data the point estimate moved from **−0.0416 to −0.0054** and the t from −1.27
+to **+0.10**. The corrected sleeve is **indistinguishable from zero**, not measurably losing. My
+earlier claim rested on 3 days of data and did not survive 51. I should not have called an
+underpowered arm a confirmation — that is precisely the error this program has documented in others.
+
+## Correction 2 — the bracket bug WAS costing real money
+
+On 2026-08-06 I wrote: *"The bracket bug was a real accounting defect worth fixing — it was never the
+reason the sleeve lost money."*
+
+Pre-fix −0.0407 (t=−4.32, significant) versus post-fix −0.0054 (flat) says the opposite: **removing
+the bug removed roughly 3.5c/contract of loss.** That is most of it.
+
+**The honest caveat, which matters:** these are different calendar periods, not a randomised A/B. The
+improvement could be regime (different season, different market conditions) rather than the fix. What
+argues for the fix being causal is that the post-hoc counterfactual I ran *on the pre-fix data itself*
+predicted −0.0363 for a corrected model and the realised forward value is −0.0054 — so the
+counterfactual was simply wrong, which is itself evidence that re-scoring historical rows under a new
+rule does not reliably predict live behaviour under it. Either way, one of my two statements has to
+give, and both point to my having been too confident.
+
+## What does NOT change: this is still not a winning strategy
+
+- **EV is still negative** (−0.0054/ct point estimate). Break-even-minus-fees is not an edge.
+- **The model still has no skill.** Post-fix Brier: model **0.2719** vs market **0.1578**, against a
+  constant base-rate predictor at **0.2131**. The model remains *worse than a constant*. A no-skill
+  model trading at fair executable prices should earn approximately zero minus fees — which is
+  exactly what −0.0054 looks like. Flat is the signature of no edge, not of a latent one.
+- **No exploratory subset rescues it** (uncorrected, not pre-registered, reported for completeness):
+  |edge| 0.15–0.25 → −0.0187 (t=−0.32); 0.25–0.40 → +0.0077 (t=+0.80); 0.40–0.60 → −0.0018 (t=−1.53);
+  0.60+ → −0.0052 (t=+0.26); side=yes → −0.0087 (t=+0.26); side=no → −0.0024 (t=−0.10). Nothing
+  approaches significance in either direction.
+
+## Does the cron disable still stand?
+
+Yes, but **the reason I put in the commit message is now stale and wrong.** I justified it as
+"corrected EV about −0.04/contract at t about −4.9" — that was the all-sample figure at n=1,000, and
+at n=2,695 the all-sample figure is −0.0135 at t=−0.51. The defensible justification is different and
+weaker:
+
+> The sleeve has **no measurable edge and no mechanism to expect one** — its model is worse than a
+> constant base-rate predictor, so break-even-minus-fees is the best it should be expected to do.
+> Disabling stops indefinite accrual on a sleeve with a negative point estimate and no skill; it is
+> not justified by a statistically significant loss, because at n=2,695 there no longer is one.
+
+A defender of the sleeve could reasonably ask for it to keep running to resolve whether the true
+value is slightly positive or slightly negative. I would decline on the Brier evidence, not on the
+EV — but that is a judgement call, not a measurement, and the operator should know it is one.
