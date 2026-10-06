@@ -291,6 +291,9 @@ def test_run_walk_text_names_both_limits_and_the_clock_fallback(plan):
         assert "80%" in text and "71%" in text, f"both limits in percent of max: {text!r}"
         assert "no armband" in text, f"the fallback must be stated: {text!r}"
         assert "7 x (" not in text, "the old clock-only wording must be gone"
+        # Foundation sits wholly inside the bone window, where the app walks steep descents (heart
+        # rate falls downhill while impact rises, so neither rail would end the block). Say so.
+        assert "steep downhills" in text, f"the downhill rule must be stated: {text!r}"
 
 
 def test_the_ceiling_of_a_run_walk_is_not_the_top_of_z2(plan):

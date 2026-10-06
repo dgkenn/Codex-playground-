@@ -110,6 +110,16 @@ export const HrBlockDefaults = {
   /// seconds -- a cold start, the steepest rise of the session. Five minutes of walking first, then
   /// the floor check (bounded by walkExtraS) for the case where getting there raised it.
   warmupS: 300,
+  /// A block the ceiling ends on a climb at least this steep (mean grade over its last minute) is a
+  /// HILL block: the heart rate did its job, but the block says nothing about whether the rung is
+  /// comfortable on the flat, so the judge does not count it either way. See terrain.js for why
+  /// nothing below 4% is trusted to be a hill at all.
+  hillGrade: 0.04,
+  /// Walk descents at least this steep, during the bone window. Heart rate falls on a downhill, so
+  /// neither rail would ever end a block there, while the impact load on the shin rises with the
+  /// gradient -- the one case where the heart-rate machinery is blind to exactly the tissue the first
+  /// twenty weeks are protecting. Null turns it off (after the bone window).
+  steepDownGrade: -0.07,
 };
 
 /** Phases this controller can be in. `warmup` is walking too. */
@@ -167,6 +177,8 @@ export class HrBlocks {
     /// One entry per run->walk (or run->cool-down) transition: {atT, peakHr, toFloorS, hrr60}.
     this.recoveries = [];
     this._trace = null;          // [secondsIntoWalk, hr] for the walk in progress
+    this._runGrades = [];        // [t, grade] for the run block in progress
+    this._heldS = 0;             // seconds of the current walk held on a steep descent
     this.stalls = 0;
     this._peakHr = null;
     this._lastFreshT = null;
@@ -194,7 +206,7 @@ export class HrBlocks {
    * Returns null when nothing changes, or `{phase, previous, reason, rep, block}` at a transition.
    * `reason` is the athlete-facing explanation and is deliberately short enough to speak.
    */
-  update(tS, hrBpm, { hrFresh = true } = {}) {
+  update(tS, hrBpm, { hrFresh = true, grade = null } = {}) {
     if (this.phase === BlockPhase.DONE) return null;
     if (this.phaseStartT == null) this.phaseStartT = tS;
 
@@ -202,6 +214,8 @@ export class HrBlocks {
     if (hr != null) this._lastFreshT = tS;
     if (hr != null && (this._peakHr == null || hr > this._peakHr)) this._peakHr = hr;
     if (this._trace && hr != null) this._trace.push([tS - this._trace.startT, hr]);
+    if (this.phase === BlockPhase.RUN && grade != null) this._runGrades.push([tS, grade]);
+    const steepDown = this.cfg.steepDownGrade != null && grade != null && grade <= this.cfg.steepDownGrade;
 
     // What the judge needs: not just how much running happened, but how much of it was actually
     // under the ceiling it was governed by. A block that ends AT the ceiling can still have spent
@@ -226,12 +240,15 @@ export class HrBlocks {
       // Long enough to have settled, and either at the floor or out of patience. A warm-up that
       // waits forever for a floor the athlete cannot reach while walking is a session that never
       // starts, which is the same failure as a coach that never speaks.
-      if (el < this.cfg.warmupS) return null;
+      if (el < this.cfg.warmupS || steepDown) return null;
       const ready = !live || hr <= this.floorBpm || el >= this.cfg.warmupS + this.cfg.walkExtraS;
       return ready ? this._to(BlockPhase.RUN, tS, 'warm-up done', live) : null;
     }
 
     if (this.phase === BlockPhase.RUN) {
+      // A steep descent ends the block whatever the heart rate says -- it will be saying "fine".
+      // Not counted as a cut by the ceiling, and not counted against the rung (see hillGrade).
+      if (steepDown) return this._endRun(tS, 'steep downhill', live);
       if (live) {
         // The rung's own length first: a block that has run its full length is done however the
         // heart rate looks, and it counts as FULL even if it touches the ceiling on the last second --
@@ -256,7 +273,11 @@ export class HrBlocks {
       return null;
     }
 
-    // Walking.
+    // Walking. Held while the descent is still steep -- the next block does not start halfway down
+    // the hill that ended the last one -- and the held seconds do not count toward the walk cap, so a
+    // long descent cannot turn into an "unrecovered" walk and a stall.
+    if (steepDown) { this._heldS += 1; return null; }
+    const walkEl = el - this._heldS;
     if (live) {
       if (el >= this.cfg.minWalkS && hr <= this.floorBpm) {
         this.stalls = 0;
@@ -265,7 +286,7 @@ export class HrBlocks {
       // The cap follows the plan's own walk: expected length plus a bounded extension, not a fixed
       // number that happens to agree with a two-minute walk.
       const walkCap = this.walkS != null ? this.walkS + this.cfg.walkExtraS : this.cfg.maxWalkS;
-      if (el >= walkCap) {
+      if (walkEl >= walkCap) {
         // Went again without recovering. Recorded, counted, and if it keeps happening the session
         // is over -- that is the auto-regulation, and it is the honest reading of a body that is no
         // longer clearing the load between blocks.
@@ -281,7 +302,7 @@ export class HrBlocks {
       }
       return null;
     }
-    if (this.fallbackWalkS && el >= this.fallbackWalkS) return this._to(BlockPhase.RUN, tS, 'time', false);
+    if (this.fallbackWalkS && walkEl >= this.fallbackWalkS) return this._to(BlockPhase.RUN, tS, 'time', false);
     return null;
   }
 
@@ -325,6 +346,8 @@ export class HrBlocks {
     this.phase = next;
     this.phaseStartT = tS;
     this._peakHr = null;
+    this._runGrades = [];
+    this._heldS = 0;
     if (next === BlockPhase.RUN) this.rep += 1;
     return { phase: next, previous, reason, rep: this.rep, block };
   }
@@ -339,12 +362,20 @@ export class HrBlocks {
       reason,
       // A run block that reached the rung's full length: the unit progression is counted in.
       full: this.phase === BlockPhase.RUN ? reason === 'full' : null,
+      // Mean grade over the block's last minute, from the terrain model; null with no terrain. A
+      // block the ceiling ended on a climb is a hill block, which the judge sets aside.
+      climb: this.phase === BlockPhase.RUN ? this._climb(tS) : null,
       // A walk that ended because the clock ran out did not recover; one that reached the floor did.
       recovered: this.phase === BlockPhase.WALK ? reason === 'recovered' : null,
       governedBy: governedByHr == null ? null : (governedByHr ? 'hr' : 'clock'),
     };
     this.blocks.push(block);
     return block;
+  }
+
+  _climb(tS) {
+    const last = this._runGrades.filter(([t]) => t > tS - 60).map(([, g]) => g);
+    return last.length ? last.reduce((a, b) => a + b, 0) / last.length : null;
   }
 
   /**
@@ -385,6 +416,8 @@ export class HrBlocks {
     const runs = this.blocks.filter(b => b.kind === BlockPhase.RUN);
     const walks = this.blocks.filter(b => b.kind === BlockPhase.WALK);
     const cooldowns = this.blocks.filter(b => b.kind === BlockPhase.COOLDOWN);
+    const isCut = b => b.reason === 'ceiling' || b.reason === 'well over the ceiling';
+    const isHill = b => isCut(b) && b.climb != null && b.climb >= this.cfg.hillGrade;
     const med = xs => (xs.length ? xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)] : null);
     const hrr = this.recoveries.map(r => r.hrr60).filter(v => v != null);
     const toFloor = this.recoveries.map(r => r.toFloorS).filter(v => v != null);
@@ -400,8 +433,12 @@ export class HrBlocks {
       // How long running took to reach the ceiling, median over the blocks the ceiling cut. While the
       // heart rate rather than the rung is what ends the blocks this IS the fitness number: the same
       // effort, from the same floor to the same ceiling, taking longer is the aerobic base growing.
-      toCeilingMedianS: med(runs.filter(b => b.reason === 'ceiling' || b.reason === 'well over the ceiling')
-                               .map(b => b.durationS)),
+      // Hill blocks are left out: a block that met the ceiling on a climb measures the climb.
+      toCeilingMedianS: med(runs.filter(b => isCut(b) && !isHill(b)).map(b => b.durationS)),
+      // Blocks the terrain decided rather than the athlete: cut by the ceiling on a climb, or ended at
+      // the top of a steep descent. The judge sets both aside.
+      blocksHill: runs.filter(isHill).length,
+      blocksSteepDown: runs.filter(b => b.reason === 'steep downhill').length,
       runningS: runs.reduce((a, b) => a + b.durationS, 0),
       longestRunBlockS: runs.reduce((a, b) => Math.max(a, b.durationS), 0),
       walkS: walks.reduce((a, b) => a + b.durationS, 0),

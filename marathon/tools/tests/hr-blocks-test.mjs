@@ -11,10 +11,10 @@ import { HrBlocks, BlockPhase as Phase } from '../hr-blocks.js';
 const CEIL = 150, FLOOR = 125;
 
 /** Drive the controller for `seconds`, where `hrAt(t, phase)` supplies the heart rate. */
-function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
+function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0, gradeAt = () => null } = {}) {
   const events = [];
   for (let t = from; t < from + seconds; t++) {
-    const ev = b.update(t, hrAt(t, b.phase), { hrFresh: hrFresh(t) });
+    const ev = b.update(t, hrAt(t, b.phase), { hrFresh: hrFresh(t), grade: gradeAt(t, b.phase) });
     if (ev) events.push({ t, ...ev });
   }
   return events;
@@ -297,6 +297,60 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   assert.ok(Math.abs(last.hrr60 - 30) <= 1, `HRR60 from the walk's own peak: ${JSON.stringify(last)}`);
   assert.ok(Math.abs(b.summary().toFloorMedianS - 66) <= 2);
   console.log(`  ok  recovery is ceiling-to-floor time, and HRR60 only when the walk lasted (${JSON.stringify(last)})`);
+}
+
+{
+  // Hills. A block the ceiling cuts on a 6% climb is a hill block: the heart did its job, but the
+  // block is not evidence about the rung on the flat, so it is counted apart -- and left out of the
+  // time-to-ceiling fitness number, which would otherwise measure the route.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 2 });
+  let hr = 110, runs = 0, prev = Phase.WARMUP;
+  drive(b, 1500, () => {
+    if (b.phase === Phase.RUN && prev !== Phase.RUN) runs += 1;
+    prev = b.phase;
+    const target = b.phase === Phase.RUN ? (runs === 1 ? 175 : 175) : 100;
+    hr += (target - hr) / 30;
+    return hr;
+  }, { gradeAt: () => (runs === 1 ? 0.06 : 0) });
+  const s = b.summary();
+  assert.equal(s.blocksCut, 2, `both blocks met the ceiling: ${JSON.stringify(s)}`);
+  assert.equal(s.blocksHill, 1, `the one on the climb is a hill block: ${JSON.stringify(s)}`);
+  const flat = b.blocks.filter(x => x.kind === Phase.RUN)[1];
+  assert.equal(s.toCeilingMedianS, flat.durationS, 'time-to-ceiling is read off the flat block only');
+  console.log(`  ok  a block the ceiling cuts on a climb is set apart as a hill block (${s.blocksHill} of ${s.blocksCut})`);
+}
+
+{
+  // A steep descent ends the block -- heart rate is falling, so neither rail would -- and the walk
+  // holds until the road levels, without the held seconds counting toward a stall.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 60, reps: 3 });
+  // Flat until 340 s, then 7.5% down for 400 s (longer than walk + extension), then flat.
+  const g = t => (t >= 340 && t < 740 ? -0.075 : 0);
+  const evs = drive(b, 1400, () => 120, { gradeAt: g });
+  const end = evs.find(e => e.previous === Phase.RUN);
+  assert.equal(end.reason, 'steep downhill', `the descent ends the block: ${JSON.stringify(end)}`);
+  assert.equal(end.t, 340);
+  const resume = evs.find(e => e.phase === Phase.RUN && e.t > end.t);
+  assert.ok(resume.t >= 740, `no block starts on the descent: ${resume.t}`);
+  assert.equal(resume.reason, 'recovered', `and the held walk is not an unrecovered one: ${resume.reason}`);
+  assert.equal(b.stalls, 0);
+  assert.equal(b.summary().blocksSteepDown, 1);
+  // Off after the bone window.
+  const after = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 60, reps: 3,
+                               steepDownGrade: null });
+  const ev2 = drive(after, 600, () => 120, { gradeAt: g });
+  assert.equal(ev2.find(e => e.previous === Phase.RUN).reason, 'full');
+  console.log('  ok  a steep descent is walked in the bone window, held until it levels, and not a stall');
+}
+
+{
+  // Without terrain (grade null) nothing about hills changes anything.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 2 });
+  drive(b, 900, () => 140);
+  const s = b.summary();
+  assert.equal(s.blocksHill, 0); assert.equal(s.blocksSteepDown, 0);
+  assert.ok(b.blocks.filter(x => x.kind === Phase.RUN).every(x => x.climb === null));
+  console.log('  ok  with no terrain, grade changes nothing');
 }
 
 // --- against the real session ---------------------------------------------------------------------

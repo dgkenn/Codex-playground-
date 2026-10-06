@@ -211,13 +211,20 @@ export function judgeHrSession(target, summary, recoveryBaseline) {
   const full = summary.blocksFull || 0;
   const started = summary.runBlocks || 0;
   const cut = summary.blocksCut || 0;
-  const fraction = full / planned;
+  // Blocks the TERRAIN decided are set aside, not scored: cut by the ceiling on a climb, or ended at
+  // the top of a steep descent. A hilly route should neither hold the rung (every climb cut short) nor
+  // be a reason to avoid the hills; it simply tests fewer blocks.
+  const terrain = (summary.blocksHill || 0) + (summary.blocksSteepDown || 0);
+  const tested = Math.max(0, planned - terrain);
+  const fraction = tested > 0 ? full / tested : 0;
   const blockS = target.blockS || summary.runBlockTargetS || null;
   const evidence = {
     blocksPlanned: planned,
     blocksStarted: started,
     blocksFull: full,
     blocksCut: cut,
+    blocksTerrain: terrain,
+    blocksTested: tested,
     blockS,
     completedFraction: fraction,
     runningOverCeilingS: Math.round(summary.runningOverCeilingS || 0),
@@ -225,8 +232,10 @@ export function judgeHrSession(target, summary, recoveryBaseline) {
     toFloorMedianS: summary.toFloorMedianS,
     recoveryBaseline,
   };
-  const of = `${full} of ${planned} blocks ran their full length`
-           + (cut ? ` (${cut} cut short by the heart-rate ceiling)` : '');
+  const of = `${full} of ${tested} blocks ran their full length`
+           + (cut - (summary.blocksHill || 0) > 0
+              ? ` (${cut - (summary.blocksHill || 0)} cut short by the heart-rate ceiling)` : '')
+           + (terrain ? `; ${terrain} on hills set aside` : '');
 
   if (summary.endedBy === 'stall' && started < planned * ABANDONED_FRACTION) {
     return {
@@ -263,6 +272,17 @@ export function judgeHrSession(target, summary, recoveryBaseline) {
       next: 'Repeat this rung. The body ended the running; let it get comfortable here first.',
       reason: `${of}, and then two walks in a row never came back down to the floor. Both are true; `
             + `the second decides.`,
+    };
+  }
+
+  // Mostly terrain: not a test of the rung either way. Keep it, and say where to test it.
+  if (tested < planned / 2) {
+    return {
+      verdict: REPEAT, evidence,
+      next: 'Repeat this rung, on flatter ground if you want it to count.',
+      reason: `${terrain} of ${planned} blocks were decided by hills rather than by you, so this `
+            + `session cannot say whether the rung is comfortable. The hills were good training; `
+            + `they are just not a test of the rung.`,
     };
   }
 

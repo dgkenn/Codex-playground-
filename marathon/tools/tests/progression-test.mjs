@@ -185,6 +185,21 @@ const hrSummary = (over = {}) => ({
 }
 
 {
+  // Hills: blocks cut on climbs, or ended at the top of a steep descent, are set aside. Five of five
+  // flat blocks full is an advance even with two hill blocks cut; a session that was mostly hills
+  // tests nothing and holds the rung.
+  const j = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 5, blocksCut: 2, blocksHill: 2 }), 80);
+  assert.equal(j.verdict, ADVANCE, j.reason);
+  assert.equal(j.evidence.blocksTested, 5);
+  assert.match(j.reason, /2 on hills set aside/);
+  const hilly = judgeHrSession(HR_TARGET,
+    hrSummary({ blocksFull: 2, blocksCut: 3, blocksHill: 3, blocksSteepDown: 2 }), 80);
+  assert.equal(hilly.verdict, REPEAT, hilly.reason);
+  assert.match(hilly.reason, /decided by hills/);
+  console.log('  ok  hill blocks are set aside; a mostly-hill session holds the rung rather than judging it');
+}
+
+{
   // The athlete stopped early, no stall, no fatigue signal: a repeat, not a verdict either way.
   const j = judgeHrSession(HR_TARGET,
     hrSummary({ endedBy: 'athlete', runBlocks: 4, blocksFull: 4, toFloorMedianS: null }), null);

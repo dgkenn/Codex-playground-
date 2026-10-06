@@ -1240,7 +1240,8 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                                f"easy running. A block ends early if your heart rate reaches "
                                f"{RUN_WALK_WORK_PCT_MAX:.0%} of your maximum, and each is followed "
                                f"by a walk until it is back down to {RUN_WALK_REST_PCT_MAX:.0%} of "
-                               f"maximum. 5 min walk cool-down. With no armband, run "
+                               f"maximum. Walk steep downhills (7% or more). 5 min walk "
+                               f"cool-down. With no armband, run "
                                f"{run_min:g} min and walk {walk_min:g} min by the clock."),
                     intent="Build running-specific tissue tolerance in doses the tissue can "
                            "actually absorb. Two different things limit a block and neither "
@@ -1252,7 +1253,10 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                     cues=["Run the running portions slowly enough that the walk break feels almost "
                           "unnecessary.",
                           "Do not skip the walk breaks because you feel good. The breaks are why "
-                          "you feel good."]))
+                          "you feel good.",
+                          "Uphill: shorter steps and let the pace go -- heart rate decides. "
+                          "Downhill: short, quick steps; walk the steep ones, because heart rate "
+                          "falls on a descent while the impact on the shins goes up."]))
         # The honest weekly figure for this phase is what the ladder actually prescribes, not a
         # separate corridor that happens to disagree with it.
         minutes = round(run_min * reps * 3, 1)

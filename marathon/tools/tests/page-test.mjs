@@ -48,6 +48,22 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 
+// The terrain map (terrain.js) is asked of open-meteo.com at runtime. Answered here instead, from a
+// world the tests control: flat everywhere except a 6% climb used by the hill test below. Without
+// this the suite would depend on a network the sandbox may not have, and on real Boston elevations.
+const HILL = { lat: 42.4205, lon: -71.2054 };
+const terrainWorld = (lat, lon) => (Math.abs(lon - HILL.lon) < 0.02 && lat < HILL.lat + 0.001
+  ? 10 + (HILL.lat - lat) * 111195 * 0.06 : 10);
+const terrainAsked = [];
+await page.route(/api\.open-meteo\.com\/v1\/elevation/, route => {
+  const q = new URL(route.request().url()).searchParams;
+  const la = q.get('latitude').split(',').map(Number), lo = q.get('longitude').split(',').map(Number);
+  terrainAsked.push(la.length);
+  route.fulfill({ status: 200, contentType: 'application/json',
+                  headers: { 'access-control-allow-origin': '*' },
+                  body: JSON.stringify({ elevation: la.map((x, i) => terrainWorld(x, lo[i])) }) });
+});
+
 const errors = [];
 page.on('pageerror', e => errors.push('pageerror: ' + e.message));
 // The webfont stylesheet is the page's only external request and is deliberately non-blocking, so a
@@ -1042,6 +1058,39 @@ async function openAll(page) {
   await page.waitForTimeout(200);
   console.log(`  ok  the loop closes: too fast says ease, on target acknowledges, too slow says lift `
             + `(showed ${fast.shown} while over)`);
+}
+
+// --- hills come from the terrain map, and are spoken -----------------------------------------------
+
+{
+  // Grade used to be GPS altitude differenced over 40 m, and on a loop with six metres of relief it
+  // read 3%+ a third of the time -- and moved the pace band with it. Now it comes from the terrain
+  // map. Run up a 6% road (south from HILL in the stub world) and the app must: ask for terrain by
+  // grid square, read the grade as ~6%, and say "uphill" once.
+  const ctx = page.context();
+  await ctx.grantPermissions(['geolocation']);
+  await page.evaluate(() => localStorage.setItem('band.terrain', '1'));
+  let lat = HILL.lat;
+  await ctx.setGeolocation({ latitude: lat, longitude: HILL.lon, accuracy: 5 });
+  await page.click('#m-coach');
+  await page.fill('#target', '10:00');
+  await page.waitForTimeout(100);
+  await page.click('#go');
+  for (let i = 0; i < 70; i++) {
+    lat -= 3.0 / 111320;
+    await ctx.setGeolocation({ latitude: lat, longitude: HILL.lon, accuracy: 5 });
+    await page.waitForTimeout(1000);
+  }
+  const grade = (await page.textContent('#gradetile')).trim();
+  const lines = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  await page.click('#go');
+  await page.waitForTimeout(200);
+  assert.ok(terrainAsked.length > 0 && terrainAsked.every(n => n <= 100), `terrain asked by block: ${terrainAsked}`);
+  assert.match(grade, /^[5-7]%$/, `a 6% road reads about 6%: "${grade}"`);
+  const hill = lines.filter(l => /uphill \d+%/.test(l));
+  assert.match(hill[0] || "", /uphill [5-7]%/, `and announced at the grade it is: ${hill[0]}`);
+  assert.equal(hill.length, 1, `one uphill cue for one climb: ${JSON.stringify(lines.slice(0, 8))}`);
+  console.log(`  ok  a 6% climb reads ${grade} from the terrain map and is announced once ("${hill[0].slice(0, 40)}…")`);
 }
 
 // --- and it closes in the mode the plan is actually made of ---------------------------------------

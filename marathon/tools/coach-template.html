@@ -367,6 +367,14 @@
       </div>
     </div>
     <p class="note" id="profilenote" style="margin-top:.7rem"></p>
+    <label class="check" style="margin-top:.7rem">
+      <input type="checkbox" id="terrain">
+      <span>Hills from a terrain map</span>
+    </label>
+    <p class="note" id="terrainnote" style="margin-top:.4rem">GPS altitude is too noisy to tell a hill
+      from a flat street, so grade comes from a terrain map instead. Sends your rough location (to the
+      nearest ~100 m square, once per square kilometre) to open-meteo.com, and keeps the answers on
+      this phone. Off: no grade is used at all.</p>
     <p class="note" id="btnote" style="margin-top:.7rem"></p>
     <details style="margin-top:.7rem">
       <summary>Connection trouble</summary>
@@ -707,6 +715,7 @@
 /*{{PROGRESSION}}*/
 /*{{PACEVOICE}}*/
 /*{{HRBLOCKS}}*/
+/*{{TERRAIN}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -1181,6 +1190,40 @@ const WORK_PCT_MAX = 0.80, REST_PCT_MAX = 0.71;
 // v2: the first ceilings were stored against the Z2 table (155), and a stored number only ever
 // raises the formula, so the old key would have kept a 155 in force under a plan that says 80%.
 const CEILING_KEY = 'band.ceiling.v2';
+/// The terrain grid (see terrain.js), created on first use. Grade comes ONLY from here: GPS altitude
+/// read 3%+ a third of the time on a six-metre-relief loop, and that was moving the pace band.
+let terrainGridInst = null;
+function terrainOn() {
+  try { return localStorage.getItem('band.terrain') !== '0'; } catch { return true; }
+}
+function terrainGrid() {
+  if (!terrainGridInst) {
+    terrainGridInst = new TerrainGrid({
+      fetchJson: url => fetch(url).then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))),
+      store: {
+        getItem: k => { try { return localStorage.getItem(k); } catch { return null; } },
+        setItem: (k, v) => { try { localStorage.setItem(k, v); } catch { /* full */ } },
+      },
+    });
+  }
+  return terrainGridInst;
+}
+/** Grade over the last 100 m from the terrain map, or null when it is not known. Never GPS altitude. */
+const currentGrade = () => (S.grades ? S.grades.grade : null);
+/**
+ * Whether the run is still inside the bone window: the first twenty weeks of running, counted from
+ * where the athlete was when the plan was generated plus the weeks of plan since.
+ */
+function inBoneWindow() {
+  const bw = PLAN.bone_window;
+  if (!bw) return false;
+  let weeks = 0;
+  for (const p of PLAN.phases) {
+    if (p.phase === prog.phase) { weeks += Math.max(0, prog.week - 1); break; }
+    weeks += p.weeks.length;
+  }
+  return (bw.weeks_running_at_start || 0) + weeks < (bw.window_weeks || 20);
+}
 function hrPcts() {
   const s = focusSession();
   const hr = s && s.run_walk && s.run_walk.hr;
@@ -2312,7 +2355,7 @@ function recordSample(t, label = '') {
     // entirely fabricated trace that imported as clean data.
     hr_bpm: fresh ? sn.hr : null,
     accel_sd_g: sn ? sn.takeAccSd() : null,
-    grade: Math.round(S.track.grade * 1e4) / 1e4,
+    grade: currentGrade() == null ? null : Math.round(currentGrade() * 1e4) / 1e4,
     accuracy_m: S.track.lastAccuracy,
     label,
   });
@@ -2376,7 +2419,7 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
   }
 
   const paceEv = S.monitor.update(t, pace,
-                                  { grade: S.track.grade, paceTrusted: trusted, running });
+                                  { grade: currentGrade() ?? 0, paceTrusted: trusted, running });
   const hrEv = S.hrMonitor ? S.hrMonitor.update(t, fresh ? sn.hr : null) : null;
   // While the block controller governs, it owns the ceiling: it calls the walk and the voice names the
   // margin. The zone monitor's tones were a third voice on a different line (Z2's top, 155, against a
@@ -2482,7 +2525,7 @@ function tickRampPace(t) {
   $('pace').textContent = readoutText(pace);
   $('perlabel').textContent = readoutLabel();
   setMarker(pace);
-  $('gradetile').textContent = `${(S.track.grade * 100).toFixed(0)}%`;
+  $('gradetile').textContent = currentGrade() == null ? '—' : `${(currentGrade() * 100).toFixed(0)}%`;
   $('climbtile').textContent = unit === 'mi'
     ? `${Math.round(S.track.ascentM * 3.28084)}` : `${Math.round(S.track.ascentM)}`;
   while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
@@ -2879,6 +2922,14 @@ function recoveryHistory({ excludeAt = null } = {}) {
     .map(e => e.stats && e.stats.hrBlocks).filter(Boolean).reverse();
 }
 
+/** One line as a climb or a descent begins (see terrain.js HillCues). Quiet with no terrain. */
+function hillCue(running) {
+  const c = S.hillCues && S.hillCues.update(currentGrade(), { running });
+  if (!c) return;
+  log(`${c.kind === 'up' ? 'uphill' : 'downhill'} ${(c.grade * 100).toFixed(0)}% — “${c.text}”`, 'dim');
+  if (voiceCoaching) sayShortly(c.text);
+}
+
 function tickIntervals(t) {
   const runS = Number($('runmin').value) * 60, walkS = Number($('walkmin').value) * 60;
   const reps = Number($('reps').value);
@@ -2891,7 +2942,7 @@ function tickIntervals(t) {
   if (S.hrBlocks) {
     const sn = S.sensor;
     const fresh = sn && sn.hrFresh();
-    const ev = S.hrBlocks.update(t, fresh ? sn.hr : null, { hrFresh: !!fresh });
+    const ev = S.hrBlocks.update(t, fresh ? sn.hr : null, { hrFresh: !!fresh, grade: currentGrade() });
     if (!ev) return;
     if (ev.phase === 'done') { finish('Session complete.'); return; }
     // The body ended the running (`not recovering`) or the plan's own block count was reached
@@ -2948,6 +2999,7 @@ function tickIntervals(t) {
     ? `Run. ${counted} Target ${U.pace(targetSecKm)}.`
     : (S.ivReason === 'not recovering' ? 'Walk it in. That is the session.'
      : S.ivReason === 'blocks done' ? 'That was the last block. Walk it in.'
+     : S.ivReason === 'steep downhill' ? 'Steep downhill. Walk this part; I will start you again at the bottom.'
      : S.ivReason === 'ceiling' || S.ivReason === 'well over the ceiling'
        ? 'Heart rate is at the ceiling. Walk, as slowly as it takes.'
        : 'Walk. Ease right down.'));
@@ -3038,6 +3090,7 @@ function tick() {
     // The walk break has a job -- get heart rate down to the floor -- and the recorded session shows
     // the job not being done: 384 s above threshold while walking. One line, once per walk, only when a
     // minute in heart rate has not come down. The controller holds the walk regardless; this says why.
+    hillCue(S.ivPhase === 'run');
     if (S.hrBlocks && S.ivPhase === 'walk' && voiceCoaching && S.voice && !speechBusy()) {
       const sn = S.sensor;
       const w = S.voice.walkUpdate(t, sn && sn.hrFresh() ? sn.hr : null);
@@ -3060,11 +3113,12 @@ function tick() {
   const trusted = S.track.trustedAt(nowSeconds());
   const pace = S.track.paceSecKm;
   $('pace').textContent = readoutText(pace);
-  $('gradetile').textContent = `${(S.track.grade * 100).toFixed(0)}%`;
+  $('gradetile').textContent = currentGrade() == null ? '—' : `${(currentGrade() * 100).toFixed(0)}%`;
   $('climbtile').textContent = unit === 'mi'
     ? `${Math.round(S.track.ascentM * 3.28084)}` : `${Math.round(S.track.ascentM)}`;
   setMarker(pace);
   tickCoach(t, pace, trusted);
+  hillCue(true);
   const gov = S.governedBy === 'hr' ? S.hrMonitor : S.monitor;
   showVerdict(gov ? gov.state : 'unknown',
               S.governedBy === 'hr' ? true : trusted);
@@ -3216,6 +3270,10 @@ $('gain').onchange = e => {
 
 $('age').value = String(profile.age);
 $('hrrest').value = String(profile.hrRest);
+$('terrain').checked = terrainOn();
+$('terrain').onchange = e => {
+  try { localStorage.setItem('band.terrain', e.target.checked ? '1' : '0'); } catch { /* blocked */ }
+};
 for (const [id, key, lo, hi] of [['age', 'age', 14, 90], ['hrrest', 'hrRest', 30, 90]]) {
   $(id).addEventListener('input', e => {
     const v = Number(e.target.value);
@@ -3348,6 +3406,8 @@ $('go').onclick = () => {
       runBlockS: Number($('runmin').value) * 60,
       walkS: Number($('walkmin').value) * 60,
       reps: Number($('reps').value),
+      // Walk steep descents while bone is still catching up; see hr-blocks.js steepDownGrade.
+      steepDownGrade: inBoneWindow() ? HrBlockDefaults.steepDownGrade : null,
     });
     // Held, not logged here: the log is cleared a few lines further down, and this line was being
     // written and then wiped in the same tap. It is emitted after the clear, so the athlete actually
@@ -3374,6 +3434,7 @@ $('go').onclick = () => {
   Object.assign(S, { running: true, startedAt: Date.now(), samples: [], tones: 0,
                      governedBy: 'pace', batteryWarned: false, hrLostAnnounced: false,
                      track: new GpsTrack(), trackState: [],
+                     grades: new GradeTrack(), hillCues: new HillCues(), gradeAt: null, gradeDistM: 0,
                      ivPhase: null, ivRep: 0, ivUntil: 0,
                      // NOT `ramp`: the loaded protocol is a selection the athlete made, like the
                      // target pace, and clearing it here wiped the runner one line after it was
@@ -3392,6 +3453,21 @@ $('go').onclick = () => {
       });
       $('acc').textContent = c.accuracy == null ? '—' : `${c.accuracy.toFixed(0)}`;
       if (!r.accepted && r.reason === 'implausible jump') log('rejected a GPS jump', 'stop');
+      if (r.accepted && terrainOn()) {
+        const tg = terrainGrid();
+        tg.ensure(c.latitude, c.longitude);
+        // The run a grade is measured over is the distance between positions, taken in steps of at
+        // least 15 m so a few metres of jitter cannot add up to distance. Not the speed-derived
+        // distance: that lags the first minute of every run (the smoothing is catching up), and a
+        // short run makes a steep grade -- a 6% road read 8% that way.
+        const here = { lat: c.latitude, lon: c.longitude };
+        const step = S.gradeAt ? haversine(S.gradeAt, here) : 0;
+        if (!S.gradeAt || step >= 15) {
+          S.gradeDistM += step;
+          S.gradeAt = here;
+          S.grades.add(S.gradeDistM, tg.elevationAt(c.latitude, c.longitude));
+        }
+      }
     }, e => {
       log(`GPS: ${explainGeoError(e)}`, 'stop');
       S.geoError = e;
@@ -3519,6 +3595,8 @@ function showStats(stats, prevStats) {
       tile('Blocks', `${stats.hrBlocks.runBlocks}`);
     }
     if (stats.hrBlocks.blocksCut) tile('Cut by HR', `${stats.hrBlocks.blocksCut}`);
+    const hills = (stats.hrBlocks.blocksHill || 0) + (stats.hrBlocks.blocksSteepDown || 0);
+    if (hills) tile('Hill blocks', `${hills}`);
     if (stats.hrBlocks.toCeilingMedianS != null) {
       tile(`Run to ${S.hrBlocks ? S.hrBlocks.ceilingBpm : 'ceiling'}`, mmss(stats.hrBlocks.toCeilingMedianS));
     }
@@ -3807,6 +3885,9 @@ $('diag').onclick = async () => {
       // shuffle, "the app said it ran Sunday's long run" and "it ran on a Tuesday" are different
       // facts, and the title alone cannot tell them apart.
       plannedDay: S.plannedSession ? DAYS[S.plannedSession.day] : null,
+      // Whether grade is known at all, and why not if it is not.
+      terrain: terrainOn() ? (terrainGridInst ? terrainGridInst.status() : 'not used yet') : 'off',
+      grade: currentGrade(),
     },
     plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
     log: lines,

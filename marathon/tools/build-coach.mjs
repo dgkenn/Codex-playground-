@@ -60,6 +60,7 @@ const parts = {
   PROGRESSION: inline('progression.js'),
   PACEVOICE: inline('pace-voice.js'),
   HRBLOCKS: inline('hr-blocks.js'),
+  TERRAIN: inline('terrain.js'),
   THRESHOLD: inline('threshold.js'),
   LOADWATCH: inline('load-watch.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
