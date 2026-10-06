@@ -587,6 +587,146 @@ async function openAll(page) {
   console.log(`  ok  the target is the plan's number on a non-running day too (${target})`);
 }
 
+// --- shuffling the week: run any day's session on any day ------------------------------------------
+
+{
+  // "Sometimes I need to shuffle around my running schedule." The app treated the session to run
+  // and TODAY's session as the same thing in six places. On a rest day the first-screen button was
+  // dead, so running anything meant opening the collapsed plan, picking a day, tapping Load and
+  // scrolling; and after Load nothing else noticed -- the card still said "Rest", the mode line
+  // described a rest day, and the run/walk ladder seeded from the empty day came out one rung too
+  // easy (1 min x 8 where the plan prescribed 2 min x 7).
+  //
+  // Driven on FIXED calendar days, in fresh contexts, so the claims mean the same thing whichever
+  // weekday this suite happens to run on -- the three bugs above only showed on a day with no run.
+  const DAYN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  async function onDay(y, m, d, fn) {
+    const sp = await browser.newPage();
+    sp.on('pageerror', e => errors.push('pageerror (shuffle): ' + e.message));
+    await sp.clock.setFixedTime(new Date(y, m, d, 12, 0, 0));      // local noon: clear of any edge
+    await sp.goto('file://' + APP, { waitUntil: 'load' });
+    await sp.waitForSelector('#todaystrip button');
+    try { await fn(sp); } finally { await sp.close(); }
+  }
+  const T = async (sp, id) => (await sp.textContent(id)).replace(/\s+/g, ' ').trim();
+  const strip = sp => sp.$$('#todaystrip button');
+  const kinds = async sp => Promise.all((await strip(sp)).map(async b =>
+    (await b.textContent()).replace(/^./, '').trim()));
+  const pressed = async sp => {
+    const bs = await strip(sp);
+    for (let i = 0; i < bs.length; i++) if (await bs[i].getAttribute('aria-pressed') === 'true') return i;
+    return -1;
+  };
+
+  // 2026-10-06 is a Tuesday: a rest day in the plan's first phase.
+  await onDay(2026, 9, 6, async sp => {
+    // 1. A rest day must not leave the first-screen button dead. It offers the week's next run.
+    assert.equal(DAYN[await pressed(sp)], 'Wed', 'on a rest day the next run of the week is selected');
+    const label = await T(sp, '#starttoday');
+    assert.match(label, /^Start /, `a rest day must still offer something runnable: "${label}"`);
+    assert.equal(await sp.isDisabled('#starttoday'), false, 'and the button must be enabled');
+    const detail = await T(sp, '#todaydetail');
+    assert.match(detail, /^Wed's session, run today/,
+      `a moved session must say so rather than read as a mistake: "${detail}"`);
+    console.log(`  ok  on a rest day the Today card offers the week's next run ("${detail}")`);
+
+    // 2. Pick another day: the card, the mode line and the plan's strip all follow it.
+    const ks = await kinds(sp);
+    const sun = ks.lastIndexOf('run/walk');
+    assert.equal(DAYN[sun], 'Sun', `the week's last run is Sunday: ${JSON.stringify(ks)}`);
+    await (await strip(sp))[sun].click();
+    await sp.waitForTimeout(80);
+    assert.match(await T(sp, '#todaydetail'), /^Sun's session, run today/,
+      'the card must follow the day that was picked');
+    assert.match(await T(sp, '#modeplan'), /^Sun: .*run today instead/,
+      'and so must the mode line, which used to keep describing the rest day');
+    await sp.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; }));
+    const planBtns = await sp.$$('#strip button');
+    assert.equal(await planBtns[sun].getAttribute('aria-pressed'), 'true',
+      'the plan strip is the same choice and must show it');
+    console.log('  ok  picking another day moves the card, the mode line and the plan strip together');
+
+    // 3. A day with nothing to run says so and disables the button -- and picking back recovers.
+    await (await strip(sp))[0].click();                                   // Monday: strength
+    await sp.waitForTimeout(60);
+    assert.match(await T(sp, '#starttoday'), /Not a session the app can run/);
+    assert.equal(await sp.isDisabled('#starttoday'), true);
+    assert.doesNotMatch(await T(sp, '#todaydetail'), /run today/,
+      'a strength session must not be described as something to run');
+    await (await strip(sp))[sun].click();
+    await sp.waitForTimeout(60);
+    assert.equal(await sp.isDisabled('#starttoday'), false, 'picking a run again must re-enable it');
+    console.log('  ok  a non-running day is named and disabled, and picking a run re-enables it');
+
+    // 4. The ladder seeds from the plan's prescription, not from what today happens to schedule.
+    await sp.evaluate(() => localStorage.removeItem('band.rung'));
+    await sp.click('#starttoday');
+    await sp.waitForTimeout(250);
+    assert.equal(await sp.inputValue('#runmin'), '2',
+      'a rest day must not seed the ladder at rung 0 (1 min blocks) -- the plan prescribes 2 min');
+    assert.equal(await sp.inputValue('#reps'), '7');
+    assert.equal(await T(sp, '#go'), 'Stop', 'Start must actually start it');
+    assert.equal(await sp.getAttribute('#m-intervals', 'aria-pressed'), 'true',
+      'and in the mode the picked session belongs to');
+    // A stray tap on the card mid-run must not swap the session being judged for another.
+    await (await strip(sp))[5].click();
+    await sp.click('#starttoday');
+    assert.equal(await T(sp, '#go'), 'Stop', 'the run must carry on');
+    const log2 = await sp.$$eval('#log div', ds => ds.map(d => d.textContent));
+    assert.ok(log2.some(l => /already running/.test(l)), 'and it must say why nothing happened');
+    // Which day's session is actually running is recorded in the diagnostics. The run was started
+    // from Sunday, and the stray tap above selected Saturday: the session in force must still be
+    // Sunday's, or the run would be judged against a session the athlete never started.
+    await sp.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
+    await sp.click('#diag');
+    await sp.waitForSelector('#diagtext');
+    const diag = JSON.parse(await sp.inputValue('#diagtext'));
+    assert.equal(diag.session.plannedDay, 'Sun',
+      `the run must stay the session it was started as: ${JSON.stringify(diag.session)}`);
+    await sp.click('#go');
+    console.log('  ok  Start runs the picked day with the plan\'s own ladder rung, and a stray tap '
+              + 'mid-run changes nothing');
+  });
+
+  // The same, in a phase where the days genuinely differ -- Base 1 is easy, strides and a long run
+  // -- so that "ran the one I picked" can be told apart from "ran whatever was first".
+  await onDay(2026, 9, 6, async sp => {
+    await sp.evaluate(() => localStorage.setItem('band.progress',
+      JSON.stringify({ phase: 'base_1', week: 2, done: {} })));
+    await sp.reload({ waitUntil: 'load' });
+    await sp.waitForSelector('#todaystrip button');
+    const ks = await kinds(sp);
+    const long = ks.lastIndexOf('long');
+    assert.ok(long >= 0, `Base 1 must have a long run to pick: ${JSON.stringify(ks)}`);
+    await (await strip(sp))[long].click();
+    await sp.waitForTimeout(80);
+    assert.match(await T(sp, '#todaytitle'), /long/i, 'the card must show the long run that was picked');
+    await sp.click('#starttoday');
+    await sp.waitForTimeout(250);
+    // The reload above re-collapsed every section, and the diagnostics button lives in one.
+    await sp.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; }));
+    await sp.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
+    await sp.click('#diag');
+    await sp.waitForSelector('#diagtext');
+    const diag = JSON.parse(await sp.inputValue('#diagtext'));
+    assert.match(diag.session.planned, /long/i, `it must have started the long run: ${diag.session.planned}`);
+    assert.equal(diag.session.plannedDay, DAYN[long]);
+    assert.equal(await sp.inputValue('#runmin') !== '', true);
+    await sp.click('#go');
+    console.log(`  ok  a different day's DIFFERENT session starts as picked ("${diag.session.planned}", `
+              + `scheduled ${diag.session.plannedDay})`);
+  });
+
+  // 2026-10-07 is a Wednesday: a run day. Nothing is "moved", so nothing says so.
+  await onDay(2026, 9, 7, async sp => {
+    assert.equal(DAYN[await pressed(sp)], 'Wed', 'on a run day, today is selected');
+    const detail = await T(sp, '#todaydetail');
+    assert.match(detail, /^Wed\b/);
+    assert.doesNotMatch(detail, /run today/, `today's own session is not a moved one: "${detail}"`);
+    console.log(`  ok  on a run day today's session is selected and not described as moved`);
+  });
+}
+
 // --- the ramp test -------------------------------------------------------------------------------
 
 {

@@ -287,6 +287,9 @@
           <div class="weeklabel" id="todaydetail"></div>
         </div>
       </div>
+      <!-- Which session this button runs. Today's by default; any other day of the week on tap, so a
+           shuffled schedule is one tap on the first screen rather than a trip into the plan. -->
+      <div class="strip" id="todaystrip" role="group" aria-label="Which day's session to run"></div>
       <div class="seg hide" id="today-where" role="group">
         <button id="w-street" aria-pressed="true">On the street</button>
         <button id="w-mill" aria-pressed="false">Treadmill</button>
@@ -294,8 +297,10 @@
       <button id="starttoday" class="go">Start</button>
     </div>
     <p class="note" style="margin-top:.7rem">
-      Loads what the plan has scheduled for today, in the right mode, and starts it. Connect the
-      armband first if you want heart rate recorded with it.
+      Runs the session for the day highlighted above, in the right mode — today's by default. Tap
+      another day to run that session today instead: the plan is a menu, not a calendar, so move
+      things around when the week demands it. Connect the armband first if you want heart rate
+      recorded with it.
     </p>
   </section>
 
@@ -1124,6 +1129,30 @@ function renderArc() {
   box.replaceChildren(...kids);
 }
 
+/**
+ * Seven day buttons for the selected week.
+ *
+ * One builder for the plan's strip and the Today card's, because the two are views of the same
+ * choice -- two hand-written copies is how they would end up disagreeing about which day is chosen,
+ * or which are done.
+ */
+function dayButtons() {
+  const t = todayIndex();
+  return DAYS.map((name, i) => {
+    const s = sessionFor(i);
+    const b = document.createElement('button');
+    b.className = 'day' + (s && s.type === 'rest' ? ' rest' : '')
+                + (prog.done[doneKey(i)] ? ' done' : '') + (i === t ? ' today' : '');
+    b.setAttribute('aria-pressed', String(i === selectedDay));
+    const dn = document.createElement('div'); dn.className = 'dn'; dn.textContent = name[0];
+    const dm = document.createElement('div'); dm.className = 'dm';
+    dm.textContent = prog.done[doneKey(i)] ? '✓' : (s ? shortType(s.type) : '–');
+    b.append(dn, dm);
+    b.onclick = () => selectDay(i);
+    return b;
+  });
+}
+
 function renderPlan() {
   const ph = curPhase(), wk = curWeek();
   renderArc();
@@ -1132,29 +1161,8 @@ function renderPlan() {
     `Week ${wk.week} of ${ph.weeks.length}` + (wk.cutback ? ' · cutback' : '')
     + (wk.focus ? ` · ${wk.focus}` : '');
 
-  const todayIdx = (new Date().getDay() + 6) % 7;      // JS Sunday=0; the plan uses Monday=0
-  if (selectedDay == null) {
-    // Default to today if it has anything, else the next session that can actually be coached.
-    const today = sessionFor(todayIdx);
-    selectedDay = (today && today.type !== 'rest') ? todayIdx
-      : (wk.sessions.find(s => s.coachable && !prog.done[doneKey(s.day)])
-         || wk.sessions.find(s => s.type !== 'rest') || { day: todayIdx }).day;
-  }
-
-  $('strip').replaceChildren(...DAYS.map((name, i) => {
-    const s = sessionFor(i);
-    const b = document.createElement('button');
-    b.className = 'day' + (s && s.type === 'rest' ? ' rest' : '')
-                + (prog.done[doneKey(i)] ? ' done' : '') + (i === todayIdx ? ' today' : '');
-    b.setAttribute('aria-pressed', String(i === selectedDay));
-    b.innerHTML = '';
-    const dn = document.createElement('div'); dn.className = 'dn'; dn.textContent = name[0];
-    const dm = document.createElement('div'); dm.className = 'dm';
-    dm.textContent = prog.done[doneKey(i)] ? '✓' : (s ? shortType(s.type) : '–');
-    b.append(dn, dm);
-    b.onclick = () => { selectedDay = i; renderPlan(); };
-    return b;
-  }));
+  focusDay();                       // fills in the default the first time; see defaultDay
+  $('strip').replaceChildren(...dayButtons());
 
   const s = sessionFor(selectedDay);
   if (!s) {
@@ -1192,7 +1200,7 @@ function renderPlan() {
 $('donesess').onclick = () => {
   const k = doneKey(selectedDay);
   if (prog.done[k]) delete prog.done[k]; else prog.done[k] = new Date().toISOString();
-  saveProg(); renderPlan();
+  saveProg(); renderPlan(); renderToday();       // the Today card's strip shows the same checks
 };
 
 $('advance').onclick = () => {
@@ -1316,20 +1324,67 @@ $('loadsess').onclick = () => {
 // =================================================================================================
 
 const todayIndex = () => (new Date().getDay() + 6) % 7;
-const todaySession = () => sessionFor(todayIndex());
+
+/**
+ * The day whose session is about to be run, which is not always today.
+ *
+ * "Sometimes I need to shuffle around my running schedule." The app treated the session to run and
+ * today's session as the same thing, in six places, and the cost was concrete: on a rest day the
+ * first-screen button was dead ("Not a session the app can run"), so the only way to run anything
+ * was to open the collapsed plan, pick a day, tap Load, and scroll. And Load worked while nothing
+ * else noticed -- the card still said "Rest", the mode line still described a rest day, and the
+ * run/walk ladder was seeded from the empty rest day and came out one rung too easy.
+ *
+ * So the selected day is the single answer. It defaults sensibly and the athlete can move it.
+ */
+function defaultDay() {
+  const t = todayIndex();
+  const sessions = (curWeek().sessions || []);
+  const open = x => runnable(x) && !prog.done[doneKey(x.day)];
+  // Today's own session if it can be run; otherwise the next unfinished one later in the week; then
+  // any unfinished one earlier in the week (a run that got missed is precisely the shuffle case);
+  // then anything runnable at all; and only then today, so the card still has something to say.
+  const today = sessionFor(t);
+  if (runnable(today)) return t;
+  const pick = sessions.find(x => open(x) && x.day > t)
+            || sessions.find(open)
+            || sessions.find(runnable);
+  return pick ? pick.day : t;
+}
+
+/** The selected day, filling in the default the first time anything asks. */
+function focusDay() {
+  if (selectedDay == null) selectedDay = defaultDay();
+  return selectedDay;
+}
+const focusSession = () => sessionFor(focusDay());
+
+/** Select a day, wherever the tap came from, and bring every view of the choice along. */
+function selectDay(day) {
+  selectedDay = day;
+  renderPlan();
+  renderToday();
+}
 
 function renderToday() {
-  const s = todaySession();
-  const name = DAYS[todayIndex()];
+  // The SELECTED day's session, which is today's unless the athlete moved it. See defaultDay.
+  const day = focusDay();
+  const s = sessionFor(day);
+  const name = DAYS[day];
+  const moved = day !== todayIndex();
+  $('todaystrip').replaceChildren(...dayButtons());
   if (!s) {
     $('todaytitle').textContent = `${name} — nothing scheduled`;
     $('todaydetail').textContent = '';
     $('starttoday').disabled = true;
     $('starttoday').textContent = 'Nothing scheduled';
+    renderModePlan();
     return;
   }
   $('todaytitle').textContent = s.title;
-  const bits = [name, shortType(s.type)];
+  // Said outright when it is not today's session. Running Sunday's workout on a Tuesday is a fine
+  // thing to do, and the card should read as a decision rather than as a mistake.
+  const bits = [moved && runnable(s) ? `${name}'s session, run today` : name, shortType(s.type)];
   if (s.minutes) bits.push(`${s.minutes} min`);
   if (s.run_walk) bits.push(`${s.run_walk.reps} × ${s.run_walk.run_min}/${s.run_walk.walk_min} min`);
   if (s.ramp) bits.push(`${s.ramp.steps.filter(x => x.kind === 'stage').length} stages`);
@@ -1348,11 +1403,15 @@ function renderToday() {
 $('starttoday').onclick = () => {
   // Inside the tap, before anything async, or iOS refuses to make a sound for the rest of the run.
   audio();
-  const s = todaySession();
-  if (!loadSession(s)) { log('Today is not a session the app can run.', 'fast'); return; }
-  selectedDay = todayIndex();
+  // With the day picker on this card, a stray tap mid-run is no longer unlikely -- and loading a
+  // session replaces the one the run is being judged against.
+  if (S.running) { log('A session is already running.', 'fast'); return; }
+  const s = focusSession();
+  if (!loadSession(s)) { log('That day is not a session the app can run.', 'fast'); return; }
+  // No `selectedDay = todayIndex()` here any more: that line was the one that forced today back in
+  // after the athlete had chosen something else, and loadSession records the day it was loaded from.
   renderPlan();
-  if (!S.running) $('go').click();
+  $('go').click();
 };
 
 // =================================================================================================
@@ -1527,11 +1586,12 @@ function setMode(m) {
 function adoptToday(m) {
   if (S.plannedSession || S.targetEdited) return;
   if (m === 'ramp' || m === 'rehearse') return;
-  // Today's session when today is a running day; otherwise the week's next runnable one. The
-  // alternative is what actually happened on a Monday: strength day, nothing to adopt, and the
-  // target box kept the 14:30 placeholder -- so an unscheduled run started that day would have been
-  // coached to a pace nobody prescribed. The athlete's number is the plan's number whatever the day.
-  let s = todaySession();
+  // The selected day's session -- today's by default, wherever the athlete has moved it to -- and
+  // failing that the week's next runnable one. The alternative is what actually happened on a
+  // Monday: strength day, nothing to adopt, and the target box kept the 14:30 placeholder, so an
+  // unscheduled run started that day would have been coached to a pace nobody prescribed. The
+  // athlete's number is the plan's number whatever the day.
+  let s = focusSession();
   if (!runnable(s)) {
     const wk = curWeek();
     s = (wk && wk.sessions || []).find(x => runnable(x)) || null;
@@ -1571,10 +1631,14 @@ function adoptToday(m) {
  */
 function renderModePlan() {
   const el = $('modeplan');
-  const s = todaySession();
-  const day = DAYS[todayIndex()];
+  // What each mode will do with the session ABOUT to run, which is the selected day's. This kept
+  // describing today's after Load had put a different day's session in the controls, so a loaded
+  // Sunday run read "Tue: Rest -- the app can describe this one but not run it".
+  const s = focusSession();
+  const dayIdx = focusDay();
+  const day = DAYS[dayIdx];
   if (!s) { el.textContent = `${day}: nothing scheduled.`; return; }
-  const head = `${day}: ${s.title}`;
+  const head = `${day}: ${s.title}${dayIdx !== todayIndex() ? ' (run today instead)' : ''}`;
   if (!runnable(s)) {
     el.textContent = `${head} — the app can describe this one but not run it. See Your plan.`;
     return;
@@ -2502,9 +2566,17 @@ function currentRung() {
   let stored = null;
   try { stored = JSON.parse(localStorage.getItem(RUNG_KEY) || 'null'); } catch { /* corrupt */ }
   if (stored && Number.isInteger(stored.rung)) return Math.max(0, Math.min(L.length - 1, stored.rung));
-  // Seed from the plan: the rung whose prescription matches what today's session asks for.
-  const s = todaySession();
-  const rw = s && s.run_walk;
+  // Seed from the plan: the rung whose prescription matches what the week's run/walk asks for.
+  //
+  // It used to read TODAY's session, so the first rung depended on the weekday the app was opened
+  // on: on a rest or strength day there was no run/walk to match, the search fell through to rung 0,
+  // and the athlete was handed 1 min x 8 where the plan prescribed 2 min x 7 -- found when loading
+  // Sunday's session on a Tuesday. The run/walk rows within one week are the same prescription, so
+  // the selected day's if it has one and otherwise any other day's in the week gives the same answer
+  // on every day of it.
+  const s = focusSession();
+  const other = (curWeek().sessions || []).find(x => x.run_walk);
+  const rw = (s && s.run_walk) || (other && other.run_walk);
   if (rw) {
     const i = L.findIndex(r => r.run_min === rw.run_min && r.reps === rw.reps);
     if (i >= 0) return i;
@@ -3659,6 +3731,10 @@ $('diag').onclick = async () => {
       spokenLines: S.voice ? S.voice.spoken : null,
       governedBy: S.governedBy,
       planned: S.plannedSession ? S.plannedSession.title : null,
+      // Which day of the week it was loaded FROM, as well as what it was. With the schedule free to
+      // shuffle, "the app said it ran Sunday's long run" and "it ran on a Tuesday" are different
+      // facts, and the title alone cannot tell them apart.
+      plannedDay: S.plannedSession ? DAYS[S.plannedSession.day] : null,
     },
     plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
     log: lines,
