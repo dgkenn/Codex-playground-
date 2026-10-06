@@ -527,7 +527,7 @@ async function openAll(page) {
   await page.click('#painadd');
   await page.waitForTimeout(150);
   const out = (await page.textContent('#painout')).replace(/\s+/g, ' ');
-  // A 1/10 focal pain is urgent. That is the rule that matters most here -- 180 lb, inside the
+  // A 1/10 focal pain is urgent. That is the rule that matters most here -- inside the
   // first twenty weeks of running, and a stress reaction does not have to hurt much to be one.
   assert.match(out, /urgent/i, `focal pain at 1/10 must read urgent: "${out.slice(0, 160)}"`);
   assert.match(out, /stress injury/i, 'and must say why');

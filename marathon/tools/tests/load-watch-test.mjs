@@ -87,7 +87,7 @@ const on = (d, extra = {}) => ({ day: d, site: 'left_shin', level: 2, timing: 'a
 
 {
   // Focal outranks everything, including a low score. This is the rule that matters most for this
-  // athlete: 180 lb, inside the first twenty weeks of running, and bone shows up in none of the
+  // athlete: inside the first twenty weeks of running, and bone shows up in none of the
   // heart-rate measures that govern the rest of the plan.
   const t = painTrend([on('2026-09-01', { level: 1, focal: true })]);
   assert.equal(t[0].verdict, 'urgent',

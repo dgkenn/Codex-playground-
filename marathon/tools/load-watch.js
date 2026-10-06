@@ -122,7 +122,7 @@ const meanLevel = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
  *
  *   * `focal` -- a specific point of bone tenderness is a different problem from a diffuse ache and
  *     escalates straight to stopping however mild it feels. This matters more than usual here: the
- *     athlete is 180 lb, inside the first twenty weeks of running, and bone appears in none of the
+ *     athlete is inside the first twenty weeks of running, and bone appears in none of the
  *     heart-rate measures that govern everything else.
  *   * `timing === 'next_morning'` -- next-day pain is the most informative signal in overuse injury
  *     and the one most often dismissed, because by the time you run again it has eased off.
