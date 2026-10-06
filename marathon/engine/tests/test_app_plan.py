@@ -247,3 +247,61 @@ def test_a_raced_race_carries_no_band_and_a_paced_one_does(plan):
     assert seen["Half marathon"].get("pace"), (
         "the half is a paced rehearsal and must carry the target that makes it one")
     assert seen["Half marathon"]["coachable"] is True, "and the app can run that"
+
+
+def test_run_walk_is_defined_by_percent_of_max_heart_rate(plan):
+    """A run/walk session carries its heart-rate limits as fractions of maximum, and the beats agree.
+
+    The athlete asked for run/walk to be structured around percent of max heart rate. The engine is
+    where that definition belongs: the Python plan and the phone must agree about what "easy" means,
+    and two hand-kept copies drift. So the export carries the fractions (for the phone to apply to
+    whatever maximum it is using) and the resulting beats (for anything that reads the plan directly).
+    """
+    from marathon_engine.plan import RUN_WALK_REST_PCT_MAX, RUN_WALK_WORK_PCT_MAX
+    hr_max = plan["generated_for"]["hr_max"]
+    seen = 0
+    for s in _sessions(plan):
+        rw = s.get("run_walk")
+        if not rw:
+            continue
+        seen += 1
+        assert rw["hr"] == {"work_pct": RUN_WALK_WORK_PCT_MAX, "rest_pct": RUN_WALK_REST_PCT_MAX}
+        assert s["hr_ceiling_bpm"] == round(RUN_WALK_WORK_PCT_MAX * hr_max), (
+            "the ceiling must be 80% of maximum, not the top of Z2: "
+            f"{s['hr_ceiling_bpm']} vs {round(RUN_WALK_WORK_PCT_MAX * hr_max)}")
+        assert s["hr_floor_bpm"] == round(RUN_WALK_REST_PCT_MAX * hr_max)
+        assert s["hr_floor_bpm"] < s["hr_ceiling_bpm"], "the floor must sit below the ceiling"
+    assert seen, "the first phase is built of run/walk sessions; none were found"
+
+
+def test_run_walk_text_names_both_limits_and_the_clock_fallback(plan):
+    """The session text must say what the controller does, or the plan and the app disagree.
+
+    It used to say "7 x (2 min easy running + 2 min walking)", which described a clock session the
+    app no longer ran. Under heart-rate control a block's length and the heart-rate ceiling are
+    separate limits -- the first is the dose for tendon and bone, the second for the heart -- and the
+    text has to say that either can shorten a block, in the athlete's units, and what to do with no
+    armband.
+    """
+    for s in _sessions(plan):
+        if not s.get("run_walk"):
+            continue
+        text = s["structure"]
+        assert "blocks of up to" in text, f"the block length must read as a limit: {text!r}"
+        assert "80%" in text and "71%" in text, f"both limits in percent of max: {text!r}"
+        assert "no armband" in text, f"the fallback must be stated: {text!r}"
+        assert "7 x (" not in text, "the old clock-only wording must be gone"
+
+
+def test_the_ceiling_of_a_run_walk_is_not_the_top_of_z2(plan):
+    """80% of maximum and the zone model's Z2 edge are different numbers, and the plan must pick one.
+
+    At 187 maximum and 67 resting the Z2 edge is 155 and 80% of maximum is 150. The athlete's own
+    recording measured his threshold at 149, so 150 is the number that describes him; leaving 155 in
+    place would have the plan quote one ceiling while the controller enforced another.
+    """
+    for s in _sessions(plan):
+        if s.get("run_walk"):
+            assert s["hr_ceiling_bpm"] == 150, s["hr_ceiling_bpm"]
+            return
+    raise AssertionError("no run/walk session found")

@@ -6,7 +6,7 @@
 
 import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
-         DECOUPLING_LIMIT_PCT, judgeHrSession, hrrBaseline, HRR_DROP_FRACTION } from '../progression.js';
+         DECOUPLING_LIMIT_PCT, judgeHrSession, hrrBaseline, HRR_DROP_FRACTION, HR_DONE_FRACTION } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -109,99 +109,86 @@ const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of run
 
 // --- judgeHrSession: the gate for sessions where the body called the blocks, not the clock ---------
 
-const HR_TARGET = { runningMinTarget: 14 };      // 14 minutes of running under the ceiling, total
+const HR_TARGET = { blocks: 7, blockS: 120 };      // seven blocks of up to two minutes
+
+/** A summary shaped like HrBlocks.summary(): `full` blocks of `planned` ran their full length. */
+const hrSummary = (over = {}) => ({
+  governedBy: 'hr', endedBy: 'reps', blocksPlanned: 7, runBlocks: 7, blocksFull: 7, blocksCut: 0,
+  runBlockTargetS: 120, runningOverCeilingS: 0, hrr60Median: 25, ...over,
+});
 
 {
   // A clock-governed session -- the armband died, or it was never worn -- is a timer expiring, not a
-  // body responding to load. No ceiling crossings happened at all; there is nothing here to move the
-  // ladder on, in either direction.
-  const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'clock', runningUnderCeilingS: 900, endedBy: 'athlete', hrr60Median: null },
-    null, null);
+  // body responding to load. Nothing here moves the ladder in either direction.
+  const j = judgeHrSession(HR_TARGET, hrSummary({ governedBy: 'clock', hrr60Median: null }), null, null);
   assert.equal(j, null, 'a clock-governed summary must not move the ladder');
   console.log('  ok  a clock-governed HR summary returns nothing, not a guess');
 }
 
 {
-  // Two stalled recoveries ended the running well short of the target -- the body ended this session,
-  // and the plan should say so rather than pretend the target was met.
+  // The body stopped clearing the load early: two unrecovered walks after 3 of 7 blocks.
   const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'hr', endedBy: 'stall', runningUnderCeilingS: 240, hrr60Median: 20 }, null, null);
+    hrSummary({ endedBy: 'stall', runBlocks: 3, blocksFull: 2, blocksCut: 1 }), null, null);
   assert.equal(j.verdict, EASE_BACK, j.reason);
   assert.match(j.reason, /stopped clearing the load/);
-  console.log(`  ok  a stall well short of the target eases the ladder back ("${j.reason.slice(0, 50)}…")`);
+  console.log(`  ok  a stall well short of the plan eases the ladder back ("${j.reason.slice(0, 50)}…")`);
 }
 
 {
-  // The gap the reviewer found in the first version: a stall that had nonetheless reached the target
-  // fell through to ADVANCE, while the ADVANCE reason text claimed the session was "ended by the plan
-  // or the athlete rather than the body giving out". Reached-and-stalled is the load to sit at.
+  // A stall late in the session -- six blocks done -- is not an ease-back and must not advance.
   const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'hr', endedBy: 'stall', runningUnderCeilingS: HR_TARGET.runningMinTarget * 60 * 0.95,
-      hrr60Median: 20 }, { decouplingPct: 3 }, null);
+    hrSummary({ endedBy: 'stall', runBlocks: 6, blocksFull: 6 }), { decouplingPct: 3 }, null);
   assert.equal(j.verdict, REPEAT,
     `a session the body ended must not advance the rung however close it got: ${j.verdict}`);
-  assert.match(j.reason, /the body said that was enough/);
-  console.log('  ok  reaching the target and then stalling holds the rung rather than raising it');
+  assert.match(j.reason, /the second decides/);
+  console.log('  ok  stalling late holds the rung rather than raising it');
 }
 
 {
   // HRR60 down more than a fifth against his own recent baseline: accumulated fatigue, checked before
   // decoupling and before completion, because it is the more direct explanation for either.
   const baseline = 20, droppedHrr = baseline * HRR_DROP_FRACTION - 1;
-  const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'hr', endedBy: 'reps', runningUnderCeilingS: 800, hrr60Median: droppedHrr },
-    { decouplingPct: 3 }, baseline);
+  const j = judgeHrSession(HR_TARGET, hrSummary({ hrr60Median: droppedHrr }), { decouplingPct: 3 }, baseline);
   assert.equal(j.verdict, REPEAT, j.reason);
   assert.match(j.reason, /fatigue/);
   console.log('  ok  HRR60 down more than a fifth from baseline holds the ladder, despite completion');
 }
 
 {
-  // Recovery is fine, but heart rate drifted against pace between the halves: the ceiling did its
-  // job on intensity, the duration is what is at the edge.
-  const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'hr', endedBy: 'reps', runningUnderCeilingS: 800, hrr60Median: 25 },
-    { decouplingPct: DECOUPLING_LIMIT_PCT + 5 }, 20);
+  // Recovery is fine, but heart rate drifted against pace between the halves.
+  const j = judgeHrSession(HR_TARGET, hrSummary(), { decouplingPct: DECOUPLING_LIMIT_PCT + 5 }, 20);
   assert.equal(j.verdict, REPEAT, j.reason);
   assert.match(j.reason, /drift/i);
-  console.log('  ok  heart-rate drift holds the ladder even with the target reached and recovery fine');
+  console.log('  ok  heart-rate drift holds the ladder even with every block full and recovery fine');
 }
 
 {
-  // Reached the target, ended by the plan's own rep count, recovery holding, no drift: this is what
-  // earns the next rung.
-  const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'hr', endedBy: 'reps', runningUnderCeilingS: 800, hrr60Median: 25 },
-    { decouplingPct: 3 }, 20);
+  // Every block ran full length, recovery holding, no drift: this is what earns the next rung.
+  const j = judgeHrSession(HR_TARGET, hrSummary(), { decouplingPct: 3 }, 20);
   assert.equal(j.verdict, ADVANCE, j.reason);
   assert.match(j.next, /rung/);
-  console.log(`  ok  a target reached with recovery and decoupling both clean moves the ladder up `
-            + `("${j.reason.slice(0, 46)}…")`);
+  assert.equal(j.evidence.blocksFull, 7);
+  console.log(`  ok  every block full with recovery and decoupling clean moves the ladder up ("${j.reason.slice(0, 46)}…")`);
 }
 
 {
-  // `endedBy: 'target'` is what a session under HR governance actually reports now -- see
-  // hr-blocks.js: `reps` is retired as the block cap once the body is calling the blocks, replaced by
-  // a total-running target, and reaching it must read exactly like reaching the old rep count did:
-  // "the plan", not "the athlete", ended this, and it advances on the same evidence.
-  const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'hr', endedBy: 'target', runningUnderCeilingS: 800, hrr60Median: 25 },
-    { decouplingPct: 3 }, 20);
-  assert.equal(j.verdict, ADVANCE, j.reason);
-  assert.match(j.reason, /ended by the plan/,
-    `endedBy 'target' must read as the plan's own end, same as 'reps': "${j.reason}"`);
-  console.log(`  ok  endedBy 'target' with the running target met advances the ladder, same as 'reps'`);
+  // One block cut by the ceiling out of seven still advances (6/7 >= HR_DONE_FRACTION); three cut does
+  // not -- the heart is saying the rung is not yet comfortable, which is a repeat, not an ease-back.
+  const one = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 6, blocksCut: 1 }), { decouplingPct: 3 }, 20);
+  assert.ok(6 / 7 >= HR_DONE_FRACTION);
+  assert.equal(one.verdict, ADVANCE, one.reason);
+  const three = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 4, blocksCut: 3 }), { decouplingPct: 3 }, 20);
+  assert.equal(three.verdict, REPEAT, three.reason);
+  assert.match(three.reason, /3 cut short by the heart-rate ceiling/);
+  console.log('  ok  one cut block still advances; several cut blocks repeat the rung');
 }
 
 {
-  // Short of the target but not by a stall -- the athlete ended it, or the target was set a little
-  // ahead of what today had. Not a near miss that should be counted as done, and not a body failure
-  // that eases back either -- repeat and see.
+  // The athlete stopped early, no stall, no fatigue signal: a repeat, not a verdict either way.
   const j = judgeHrSession(HR_TARGET,
-    { governedBy: 'hr', endedBy: 'athlete', runningUnderCeilingS: 600, hrr60Median: null }, null, null);
+    hrSummary({ endedBy: 'athlete', runBlocks: 4, blocksFull: 4, hrr60Median: null }), null, null);
   assert.equal(j.verdict, REPEAT, j.reason);
-  console.log('  ok  short of the target without a stall or fatigue signal is a repeat, not a verdict either way');
+  console.log('  ok  stopping short without a stall or fatigue signal is a repeat');
 }
 
 {

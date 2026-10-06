@@ -25,8 +25,24 @@
 // from a higher floor than the last. That is the ratchet. The one time he did walk slowly for two
 // minutes his heart rate fell from 162 to 121.
 //
-// So both halves are governed here: run until the ceiling, walk until the floor, at whatever speed
-// each of those takes.
+// So both halves are governed here: a walk ends when heart rate is back at the floor, at whatever
+// speed that takes, and a run block is ended by the ceiling.
+//
+// ...but NOT ONLY by the ceiling, and the first version of this got that wrong. It ended a run block
+// at the ceiling and at nothing else, so with heart rate sitting at 142 -- comfortably under it -- it
+// called "run" at 3:00 and did not call a walk until 17:00. That is a fourteen-minute continuous run
+// for someone whose longest recorded run is about two minutes. Heart rate protects the cardiovascular
+// system and says nothing about the shins: how long a block runs is the dose for tendon and bone, it
+// is what the run/walk ladder exists to ration, and it is the load that matters most in the first
+// twenty weeks of running. Two different things limit a block, neither can stand in for the other,
+// and so a block ends at whichever comes first:
+//
+//     the rung's block length   -- the tissue limit  (fixed by the plan, `runBlockS`)
+//     the heart-rate ceiling    -- the cardiac limit (measured, `ceilingBpm`)
+//
+// Either can SHORTEN a block. Neither can lengthen one. The session is the rung's block count and no
+// more, so its length is bounded by construction and a block cut short by the ceiling is not made up
+// for later: carrying missed volume forward is how a hard week becomes a hard month.
 //
 // What it buys beyond not overcooking a session
 // ---------------------------------------------
@@ -71,6 +87,14 @@ export const HrBlockDefaults = {
   maxRunS: 2400,
   /// A walk shorter than this has not recovered anything regardless of what the number says.
   minWalkS: 45,
+  /// How long past the prescribed walk a break may be extended while heart rate is still above the
+  /// floor. The prescription (`walkS`) is what the walk is EXPECTED to take, not a minimum: rest ends
+  /// when heart rate has recovered, so a quick recovery shortens it and a slow one lengthens it, up
+  /// to this much more. At the usual two-minute walk this gives 3.5 minutes, which is where the cap
+  /// sat before it was tied to the plan.
+  walkExtraS: 90,
+  /// The cap on a walk when the plan gave no walk length to measure against.
+  ///
   /// After this long walking, go again even if the floor was never reached. Standing in the cold
   /// waiting for a number is worse training than a slightly hot block, and `recovered: false` on the
   /// block records that it happened so the session can be judged honestly afterwards.
@@ -105,27 +129,29 @@ export const BlockPhase = { WARMUP: 'warmup', RUN: 'run', WALK: 'walk', COOLDOWN
  * happened to this athlete: one session lost heart rate halfway through, another had none at all.
  */
 export class HrBlocks {
-  constructor({ ceilingBpm, floorBpm, fallbackRunS, fallbackWalkS, reps = null,
-                targetRunningS = null, ...opts } = {}) {
+  constructor({ ceilingBpm, floorBpm, runBlockS = null, walkS = null, reps = null,
+                fallbackRunS = null, fallbackWalkS = null, ...opts } = {}) {
     this.cfg = { ...HrBlockDefaults, ...opts };
     this.ceilingBpm = ceilingBpm;
     this.floorBpm = floorBpm;
-    /// What to do when there is no heart rate: the prescribed clock session, unchanged.
-    this.fallbackRunS = fallbackRunS;
-    this.fallbackWalkS = fallbackWalkS;
-    /// Optional cap on run blocks. Null means "until the athlete stops or stalls", which is what an
-    /// HR-governed session naturally is -- the load is bounded by the ceiling, not by a rep count.
+    /// How long a run block is allowed to be: the rung's own length. This is the TISSUE limit, and it
+    /// is also the clock the session falls back to with no heart rate -- the same number, because
+    /// "the session the athlete came out to do" and "the longest a block may run" are the same
+    /// prescription. Null means no rung cap, so only the heart-rate ceiling (and `maxRunS`) ends one.
+    this.runBlockS = runBlockS ?? fallbackRunS;
+    /// How long a walk is EXPECTED to take. Not a minimum -- rest ends at recovery -- but it fixes the
+    /// cap (see walkExtraS) and is the clock walk when there is no heart rate.
+    this.walkS = walkS ?? fallbackWalkS;
+    this.fallbackRunS = this.runBlockS;
+    this.fallbackWalkS = this.walkS;
+    /// The number of run blocks in the session. The session ends when the last one does, so its
+    /// length is bounded by construction: reps x (block + walk + extension), and no more. Null means
+    /// no block count, which suits only a session the athlete ends themselves.
     ///
-    /// Mutually the wrong knob once heart rate is calling the blocks: the rung's `run_min x reps` is
-    /// a target TOTAL of running under the ceiling, not a block structure, because the body decides
-    /// how long each block runs. A `reps` cap under HR governance ends the session on a block COUNT
-    /// instead -- seven 40-second blocks would stop a 14-minute prescription after 4.7 minutes. See
-    /// `targetRunningS` below, which is what an HR-governed session should be constructed with instead.
+    /// There used to be a `targetRunningS` here instead -- "keep going until N minutes have been run
+    /// under the ceiling" -- and it is what let a session run 14 minutes straight. A target is a
+    /// ratchet that can only be met by running more; a block count cannot be met by running longer.
     this.reps = reps;
-    /// Total seconds of running under the ceiling that satisfies the plan, or null to run until the
-    /// athlete stops or the body stalls. This is what `reps` is FOR once HR is calling the blocks --
-    /// see the note on `reps` above.
-    this.targetRunningS = targetRunningS;
 
     this.phase = BlockPhase.WARMUP;
     this.phaseStartT = null;
@@ -140,13 +166,11 @@ export class HrBlocks {
     this._pending = [];          // recoveries still waiting for their 60-second reading
     this._runUnderCeilingS = 0;  // seconds inside run blocks where HR was at or below the ceiling
     this._runOverCeilingS = 0;   // seconds inside run blocks where HR was above it
-    /// Which of the four real endings this session had -- 'reps' (the old clock plan's own rep count),
-    /// 'target' (the same idea under HR governance: enough total running under the ceiling), 'stall'
-    /// (the body stopped clearing the load) or 'athlete' (the session was stopped). Set once, at the
-    /// moment it becomes known, so `summary()` can tell "the plan's own end was reached" apart from
-    /// "the body stopped clearing the load" apart from "the athlete ended it" -- facts that all look
-    /// identical from the block list alone. `reps` and `target` read the same to everything downstream
-    /// (see judgeHrSession/judgeSession): both mean the plan got what it asked for.
+    /// Which of the three real endings this session had -- 'reps' (the plan's own block count was
+    /// reached), 'stall' (the body stopped clearing the load) or 'athlete' (the session was stopped).
+    /// Set once, at the moment it becomes known, so `summary()` can tell "the plan's own end was
+    /// reached" apart from "the body stopped clearing the load" apart from "the athlete ended it" --
+    /// facts that all look identical from the block list alone.
     this._endedBy = null;
   }
 
@@ -182,16 +206,6 @@ export class HrBlocks {
       else this._runOverCeilingS += 1;
     }
 
-    // The plan's own end, under HR governance: enough total running under the ceiling has happened,
-    // whatever block shape it arrived in. Checked ahead of the ordinary ceiling/floor dispatch below
-    // so it wins over "call a walk break" on the same second the target is met -- the session is done,
-    // not merely due for a break.
-    if (this.phase === BlockPhase.RUN && this.targetRunningS != null
-        && this._runUnderCeilingS >= this.targetRunningS) {
-      this._endedBy = 'target';
-      return this._to(BlockPhase.COOLDOWN, tS, 'target reached', true);
-    }
-
     if (this.phase === BlockPhase.COOLDOWN) {
       // Walking is training for this athlete, so a cool-down keeps recording -- it just never calls
       // another run block. Pending recoveries (the walk-to-run transition that led here) still
@@ -214,21 +228,26 @@ export class HrBlocks {
 
     if (this.phase === BlockPhase.RUN) {
       if (live) {
+        // The rung's own length first: a block that has run its full length is done however the
+        // heart rate looks, and it counts as FULL even if it touches the ceiling on the last second --
+        // the dose the tissue was meant to get was delivered. This is the limit the first version
+        // lacked entirely.
+        if (this.runBlockS != null && el >= this.runBlockS) {
+          return this._endRun(tS, 'full', true);
+        }
         // Far over the ceiling ends the block immediately; at or just over it waits out minRunS so
         // heart-rate lag cannot produce a stutter. See hardOverBpm.
         if (hr >= this.ceilingBpm + this.cfg.hardOverBpm) {
-          return this._to(BlockPhase.WALK, tS, 'well over the ceiling', true);
+          return this._endRun(tS, 'well over the ceiling', true);
         }
         if (el >= this.cfg.minRunS && hr >= this.ceilingBpm) {
-          return this._to(BlockPhase.WALK, tS, 'ceiling', true);
+          return this._endRun(tS, 'ceiling', true);
         }
-        if (el >= this.cfg.maxRunS) return this._to(BlockPhase.WALK, tS, 'long enough', true);
+        if (el >= this.cfg.maxRunS) return this._endRun(tS, 'long enough', true);
         return null;
       }
       // No heart rate: the clock the athlete was prescribed.
-      if (this.fallbackRunS && el >= this.fallbackRunS) {
-        return this._to(BlockPhase.WALK, tS, 'time', false);
-      }
+      if (this.runBlockS && el >= this.runBlockS) return this._endRun(tS, 'time', false);
       return null;
     }
 
@@ -238,7 +257,10 @@ export class HrBlocks {
         this.stalls = 0;
         return this._to(BlockPhase.RUN, tS, 'recovered', true);
       }
-      if (el >= this.cfg.maxWalkS) {
+      // The cap follows the plan's own walk: expected length plus a bounded extension, not a fixed
+      // number that happens to agree with a two-minute walk.
+      const walkCap = this.walkS != null ? this.walkS + this.cfg.walkExtraS : this.cfg.maxWalkS;
+      if (el >= walkCap) {
         // Went again without recovering. Recorded, counted, and if it keeps happening the session
         // is over -- that is the auto-regulation, and it is the honest reading of a body that is no
         // longer clearing the load between blocks.
@@ -270,9 +292,24 @@ export class HrBlocks {
     this.phase = BlockPhase.DONE;
   }
 
-  _to(next, tS, reason, governedByHr) {
+  /**
+   * A run block is over. If it was the last one the plan asked for, the running is finished and the
+   * session becomes a cool-down; otherwise a walk begins.
+   *
+   * The block's own reason ('full', 'ceiling', ...) is recorded either way, because whether the LAST
+   * block reached full length is exactly what the judge needs to know.
+   */
+  _endRun(tS, reason, governedByHr) {
+    if (this.reps != null && this.rep >= this.reps) {
+      this._endedBy = 'reps';
+      return this._to(BlockPhase.COOLDOWN, tS, 'blocks done', governedByHr, reason);
+    }
+    return this._to(BlockPhase.WALK, tS, reason, governedByHr);
+  }
+
+  _to(next, tS, reason, governedByHr, closeReason = reason) {
     const previous = this.phase;
-    const block = this._close(tS, governedByHr, reason);
+    const block = this._close(tS, governedByHr, closeReason);
     if (previous === BlockPhase.RUN) {
       // A run block ending is a heart-rate recovery test starting. The reading it needs is 60 s
       // away, so it is parked and resolved later rather than guessed at now.
@@ -281,14 +318,7 @@ export class HrBlocks {
     this.phase = next;
     this.phaseStartT = tS;
     this._peakHr = null;
-    if (next === BlockPhase.RUN) {
-      this.rep += 1;
-      if (this.reps != null && this.rep > this.reps) {
-        this.phase = BlockPhase.DONE;
-        this._endedBy = 'reps';   // the plan's own end, not the body's and not the athlete's
-        return { phase: BlockPhase.DONE, previous, reason: 'session complete', rep: this.rep - 1, block };
-      }
-    }
+    if (next === BlockPhase.RUN) this.rep += 1;
     return { phase: next, previous, reason, rep: this.rep, block };
   }
 
@@ -297,6 +327,11 @@ export class HrBlocks {
     const block = {
       kind: this.phase, startT: this.phaseStartT, endT: tS, durationS: tS - this.phaseStartT,
       peakHr: this._peakHr,
+      // Why it ended, kept on the block: 'full' / 'ceiling' / 'well over the ceiling' for a run,
+      // 'recovered' / 'going again' for a walk. The judge reads these, not the durations.
+      reason,
+      // A run block that reached the rung's full length: the unit progression is counted in.
+      full: this.phase === BlockPhase.RUN ? reason === 'full' : null,
       // A walk that ended because the clock ran out did not recover; one that reached the floor did.
       recovered: this.phase === BlockPhase.WALK ? reason === 'recovered' : null,
       governedBy: governedByHr == null ? null : (governedByHr ? 'hr' : 'clock'),
@@ -325,6 +360,13 @@ export class HrBlocks {
     const hrr = this.recoveries.map(r => r.hrr60);
     return {
       runBlocks: runs.length,
+      // The progression unit: blocks that ran their full length, out of the blocks planned. A block
+      // cut short by the ceiling is the heart saying the load was enough for today; it is neither
+      // counted as a failure nor made up for later.
+      blocksPlanned: this.reps,
+      blocksFull: runs.filter(b => b.full).length,
+      blocksCut: runs.filter(b => b.reason === 'ceiling' || b.reason === 'well over the ceiling').length,
+      runBlockTargetS: this.runBlockS,
       runningS: runs.reduce((a, b) => a + b.durationS, 0),
       longestRunBlockS: runs.reduce((a, b) => Math.max(a, b.durationS), 0),
       walkS: walks.reduce((a, b) => a + b.durationS, 0),

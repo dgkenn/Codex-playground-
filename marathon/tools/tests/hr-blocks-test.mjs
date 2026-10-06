@@ -27,7 +27,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // running asymptote above the ceiling and falls toward a walking one below the floor, with a time
   // constant of about half a minute. The exact constant does not matter; that HR LAGS does.
   let hr = 110;
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120 });
   const evs = drive(b, 1800, () => {
     const target = b.phase === Phase.RUN ? 172 : 105;
     hr += (target - hr) / 30;
@@ -55,7 +55,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // Pinned just AT the ceiling, which is the case the floor is for: a block that drifts up to the
   // line, where the first seconds are still reporting the walk that preceded it. (Pinned far OVER
   // the line is a different question and is the next case.)
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120 });
   const evs = drive(b, 900, () => CEIL + 2);
   const runs = [];
   let last = null;
@@ -72,7 +72,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // Far over the ceiling is not a lag artefact and must not be waited out. At fifteen beats over,
   // thirty seconds of grace is another ten beats -- and this athlete's recorded session reached 177
   // against a 155 ceiling, which is the number this exists to cut short.
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120 });
   const evs = drive(b, 600, () => 200);         // 50 over: unambiguous
   const first = evs.find(e => e.previous === Phase.RUN);
   assert.ok(first, 'a run block must have been ended');
@@ -90,7 +90,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // minutes continuously, comfortably, in Z2", and the ladder's top rung is 30 min x 1 -- so a cap
   // that forced a walk at fifteen minutes made that gate unreachable under heart-rate governance
   // however easy the running felt.
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 1800, walkS: 120 });
   drive(b, 2100, () => CEIL - 20);              // comfortably under the ceiling throughout
   b.finish(2100);                               // the block is still open; summary counts closed ones
   const s = b.summary();
@@ -104,7 +104,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // The armband dies mid-run. This has happened to this athlete: one session lost heart rate
   // halfway through, another had none at all. Governance must fall back to the clock session he
   // came out to do, and must not freeze in whichever phase it happened to be in.
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120 });
   let hr = 110;
   const evs = drive(b, 1500, () => { hr += ((b.phase === Phase.RUN ? 172 : 105) - hr) / 30; return hr; },
                     { hrFresh: t => t < 400 });     // band dies at 400 s
@@ -123,7 +123,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // is not saying the recording is over: for this athlete walking IS training, so this must move to
   // a cool-down that keeps recording -- never DONE, and never another run block -- until the athlete
   // ends the session themself.
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120 });
   // A heart rate that recovers at first and then stops coming down -- the ratchet, in miniature.
   let hr = 110;
   const evs = drive(b, 3000, t => {
@@ -149,7 +149,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // What the progression judge needs beyond `runningS`: how much of the running was actually inside
   // the ceiling it was governed by. Pin heart rate at 200, far above any plausible ceiling -- the
   // worst case -- and every second of every run block must land on the "over" side, none on "under".
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120 });
   drive(b, 900, () => 200);
   const s = b.summary();
   assert.equal(s.runningUnderCeilingS, 0, `pinned above the ceiling must count 0 seconds under it: ${JSON.stringify(s)}`);
@@ -162,7 +162,7 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
 {
   // A session with no armband at all is not evidence about fitness. It has to be labelled as such,
   // or the progression loop will advance or retreat a ladder on the strength of a clock.
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 60, fallbackWalkS: 60 });
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 60 });
   drive(b, 600, () => null, { hrFresh: () => false });
   assert.equal(b.summary().governedBy, 'clock');
   assert.equal(b.summary().hrr60Median, null, 'and it yields no autonomic measurement');
@@ -170,33 +170,87 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
 }
 
 {
-  // Under HR governance the rung's run_min x reps is a TOTAL running target, not a block structure --
-  // the body decides the block shape, so a `reps` cap is the wrong knob (seven 40s blocks would end a
-  // 14-minute prescription after 4.7 minutes). `targetRunningS` is what replaces it: once enough
-  // seconds have been spent running under the ceiling, the session moves to cool-down and keeps
-  // recording, exactly like a stall, but for the opposite reason -- the plan's own end, not the body's.
-  const TARGET_S = 600;   // 10 minutes of running under the ceiling
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120,
-                           reps: null, targetRunningS: TARGET_S });
+  // The failure that made this a two-rail controller. With heart rate sitting at 142 -- comfortably
+  // under a 150 ceiling -- the first version called "run" at warm-up and did not call a walk for
+  // fourteen minutes, because only the ceiling could end a block. Heart rate protects the heart, not
+  // the tendon: the rung's block length ends the block, and under the ceiling it ends it on time.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 7 });
+  const evs = drive(b, 600, () => 142);
+  const start = evs.find(e => e.phase === Phase.RUN);
+  const end = evs.find(e => e.previous === Phase.RUN);
+  assert.ok(end, 'a block held under the ceiling must still end');
+  assert.equal(end.reason, 'full', `and say that it ran its full length: ${end.reason}`);
+  assert.equal(end.t - start.t, 120, `at the rung's length, not later: ${end.t - start.t}s`);
+  assert.equal(end.phase, Phase.WALK);
+  console.log(`  ok  heart rate held under the ceiling ends the block at the rung's length (${end.t - start.t}s, "${end.reason}")`);
+}
+
+{
+  // Either limit may shorten a block, neither may lengthen one. Blocks: one that runs to its full
+  // length, then one the heart rate cuts. The summary must tell the judge which was which.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 2 });
   let hr = 110;
-  const evs = drive(b, 3600, () => {
-    // Held comfortably under the ceiling and recovering cleanly, so nothing but the target itself
-    // ends this session -- no stall must be able to intervene and steal the reading.
-    const target = b.phase === Phase.RUN ? 145 : 105;
-    hr += (target - hr) / 20;
+  let runs = 0, prev = Phase.WARMUP;
+  drive(b, 1200, () => {
+    if (b.phase === Phase.RUN && prev !== Phase.RUN) runs += 1;
+    prev = b.phase;
+    // Block one stays low; block two climbs through the ceiling.
+    const target = b.phase === Phase.RUN ? (runs === 1 ? 140 : 175) : 100;
+    hr += (target - hr) / 15;
     return hr;
   });
   const s = b.summary();
-  assert.equal(b.phase, Phase.COOLDOWN, 'the target reached must move to cool-down, not DONE');
-  assert.equal(s.endedBy, 'target', `the summary must say the plan's own target ended it: ${JSON.stringify(s)}`);
-  const hit = evs.find(e => e.reason === 'target reached');
-  assert.ok(hit, `the transition itself must be on the record: ${JSON.stringify(evs.slice(-3))}`);
-  assert.ok(s.runningUnderCeilingS >= TARGET_S,
-    `the target must actually have been met: ${s.runningUnderCeilingS} of ${TARGET_S}`);
-  assert.ok(evs.slice(evs.indexOf(hit) + 1).every(e => e.phase !== Phase.RUN),
-    `a cool-down reached by the target must never call another run block: ${JSON.stringify(evs.slice(evs.indexOf(hit) + 1))}`);
-  console.log(`  ok  a total-running target ends the session at cool-down, endedBy=target `
-            + `(${s.runningUnderCeilingS}s under ceiling against a ${TARGET_S}s target)`);
+  assert.equal(s.blocksPlanned, 2);
+  assert.equal(s.blocksFull, 1, `one block ran full length: ${JSON.stringify(s)}`);
+  assert.equal(s.blocksCut, 1, `one was cut by the heart rate: ${JSON.stringify(s)}`);
+  assert.equal(s.runBlockTargetS, 120);
+  assert.ok(s.longestRunBlockS <= 120, `no block may exceed the rung's length: ${s.longestRunBlockS}`);
+  console.log(`  ok  the summary separates full blocks from blocks the heart rate cut (${s.blocksFull} full, ${s.blocksCut} cut)`);
+}
+
+{
+  // The session is the rung's block count and no more: the last block's end is a cool-down whose
+  // reason is 'reps', whether that block ran full or was cut. Missed volume is not carried forward.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 60, reps: 3 });
+  let hr = 110;
+  const evs = drive(b, 3600, () => {
+    hr += ((b.phase === Phase.RUN ? 140 : 100) - hr) / 15;
+    return hr;
+  });
+  const s = b.summary();
+  assert.equal(b.phase, Phase.COOLDOWN, 'the last block ends in a cool-down, not DONE');
+  assert.equal(s.endedBy, 'reps');
+  assert.equal(s.runBlocks, 3, `exactly the planned blocks: ${s.runBlocks}`);
+  assert.equal(evs.filter(e => e.phase === Phase.RUN).length, 3);
+  const last = evs.findIndex(e => e.reason === 'blocks done');
+  assert.ok(last >= 0 && evs.slice(last + 1).every(e => e.phase !== Phase.RUN),
+    'a cool-down must never call another run block');
+  console.log(`  ok  the last planned block moves to cool-down, endedBy=reps (${s.runBlocks} blocks)`);
+}
+
+{
+  // A walk is expected to last walkS and may be extended by walkExtraS while heart rate is still
+  // above the floor -- no more. Pinned above the floor the whole time, so no walk can recover.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 100, reps: 5 });
+  const evs = drive(b, 2000, () => (b.phase === Phase.RUN ? 140 : 140));
+  const walkEnds = evs.filter(e => e.previous === Phase.WALK);
+  assert.ok(walkEnds.length >= 1, 'a walk that never recovers must still end');
+  const startOfFirstWalk = evs.find(e => e.phase === Phase.WALK).t;
+  assert.equal(walkEnds[0].t - startOfFirstWalk, 100 + 90,
+    `the cap is the plan's walk plus the extension: ${walkEnds[0].t - startOfFirstWalk}s`);
+  assert.equal(walkEnds[0].reason, 'going again');
+  console.log('  ok  a walk that never reaches the floor ends at the plan\'s walk + 90 s');
+}
+
+{
+  // A walk that does reach the floor ends then, and not before the minimum.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 120, reps: 5 });
+  const evs = drive(b, 1200, () => (b.phase === Phase.RUN ? 140 : 110));
+  const w = evs.find(e => e.phase === Phase.WALK && e.previous === Phase.RUN);
+  const r = evs.find(e => e.previous === Phase.WALK && e.t > w.t);
+  assert.equal(r.reason, 'recovered');
+  assert.equal(r.t - w.t, 45, `recovered walks end at the minimum, not the prescription: ${r.t - w.t}s`);
+  console.log('  ok  a walk that recovers quickly ends at HR recovery, not the clock');
 }
 
 // --- against the real session ---------------------------------------------------------------------
@@ -223,7 +277,7 @@ if (existsSync(POLAR)) {
   }
   assert.ok(hr.length > 1000, 'the recording must have loaded');
 
-  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, fallbackRunS: 120, fallbackWalkS: 120,
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120,
                            warmupS: 120 });
   const calls = [];
   for (let t = 0; t < hr.length; t++) {

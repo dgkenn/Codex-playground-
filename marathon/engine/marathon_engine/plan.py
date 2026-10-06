@@ -81,7 +81,7 @@ __all__ = [
     "PHASE_ORDER", "PHASE_MIN_WEEKS", "PHASE_STALL_WEEKS", "PHASE_GATES", "PHASE_GOALS",
     "LONG_RUN_MAX_MIN", "LONG_RUN_MAX_SHARE", "CUTBACK_EVERY", "CUTBACK_FACTOR",
     "TAPER_VOLUME_CUT", "TAPER_WEEKS", "LONG_RUN_PEAK_MAX_MIN", "LONG_RUN_MAX_KM",
-    "RACE_WEEK_VOLUME_FACTOR",
+    "RACE_WEEK_VOLUME_FACTOR", "RUN_WALK_WORK_PCT_MAX", "RUN_WALK_REST_PCT_MAX",
     "generate_week", "evaluate_gates", "taper_weeks",
     "long_run_progression", "weekly_volume_target", "phase_overview",
 ]
@@ -773,6 +773,28 @@ _RUN_WALK_LADDER: Tuple[Tuple[float, float, int], ...] = (
     (30.0, 0.0, 1),     # wk 8: continuous 30 min -- the FOUNDATION gate
 )
 
+#: How hard a run/walk running block may go, as a fraction of maximum heart rate.
+#:
+#: 80% because it is where this athlete's own recording puts his first threshold, not because 80 is
+#: a round number. On the 5 September session, metres travelled per heartbeat held flat from 130 to
+#: 149 bpm and fell away at 150-154, which is 79.7% of an estimated maximum of 187. The textbook
+#: range for the first ventilatory threshold is wide -- roughly 75-85% of maximum -- and an estimated
+#: maximum carries a standard deviation of about 7 bpm, so the phone refines this number from the
+#: athlete's own sessions (threshold.js) and treats this as the starting value, not the verdict.
+#:
+#: A CEILING, not a target. For someone who cannot yet hold Z2 for 26 minutes the aim of a running
+#: block is to stay under this line for the whole block, and a block that reaches it early is cut.
+RUN_WALK_WORK_PCT_MAX = 0.80
+
+#: Where a walk break has done its job, as a fraction of maximum heart rate.
+#:
+#: 71% is 133 bpm at an estimated maximum of 187, which is where the one slow walk on 5 September
+#: took him (162 down to 121 in two minutes, so it is reachable) and just above what his walking
+#: heart rate sat at when he was fresh (128-135). Much lower and a deconditioned athlete spends the
+#: session waiting; much higher and the next block starts from the heart rate the last one ended on,
+#: which is the ratchet that carried that session to 177.
+RUN_WALK_REST_PCT_MAX = 0.71
+
 #: Strength templates. The athlete already lifts, so these are *running-specific additions* framed
 #: as constraints on his existing sessions rather than a new programme -- the calf/Achilles work and
 #: the single-leg work are the parts that matter for running, and heavy compound lifting is already
@@ -1211,14 +1233,22 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
             else:
                 sessions.append(Session(
                     day_offset=day, type=SessionType.RUN_WALK,
-                    title=f"Run-walk {run_min:g}/{walk_min:g} x {reps}",
+                    title=f"Run-walk: {reps} blocks of up to {run_min:g} min",
                     duration_min=round(session_total + 10), run_walk=rung, zones=(1, 2),
                     pace_range_sec_km=paces.easy_range,
-                    structure=(f"5 min walk warm-up, then {reps} x ({run_min:g} min easy running + "
-                               f"{walk_min:g} min walking), 5 min walk cool-down."),
+                    structure=(f"5 min walk warm-up, then {reps} blocks of up to {run_min:g} min "
+                               f"easy running. A block ends early if your heart rate reaches "
+                               f"{RUN_WALK_WORK_PCT_MAX:.0%} of your maximum, and each is followed "
+                               f"by a walk until it is back down to {RUN_WALK_REST_PCT_MAX:.0%} of "
+                               f"maximum. 5 min walk cool-down. With no armband, run "
+                               f"{run_min:g} min and walk {walk_min:g} min by the clock."),
                     intent="Build running-specific tissue tolerance in doses the tissue can "
-                           "actually absorb. The walk break is not a concession -- it is what "
-                           "keeps the running portions aerobic and the total load survivable.",
+                           "actually absorb. Two different things limit a block and neither "
+                           "can stand in for the other: its length is the dose for the tendons "
+                           "and bone, and the heart-rate ceiling is the dose for the heart. Either "
+                           "can shorten a block; neither can lengthen it. The walk break is not "
+                           "a concession -- it is what keeps the running portions aerobic and the "
+                           "total load survivable.",
                     cues=["Run the running portions slowly enough that the walk break feels almost "
                           "unnecessary.",
                           "Do not skip the walk breaks because you feel good. The breaks are why "

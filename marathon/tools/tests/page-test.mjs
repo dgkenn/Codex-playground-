@@ -288,6 +288,27 @@ async function openAll(page) {
   console.log('  ok  the profile is editable, moves the zones, and persists');
 }
 
+// --- a run/walk day says what governs it, not just a clock reading --------------------------------
+
+{
+  // "I only see 7x2/2": the card said "2 min run / 2 min walk x 7" and nothing about the heart rate
+  // that actually ends a block. The plan card must show the pace of the RUNNING blocks (not the
+  // session average), both heart-rate limits in bpm, and the percent-of-max rule the plan states.
+  const detail = (await page.textContent('#sessdetail')).replace(/\s+/g, ' ').trim();
+  assert.match(detail, /run blocks \d+:\d\d.\d+:\d\d/, `the run-block pace, not the session average: "${detail}"`);
+  assert.match(detail, /blocks end at \d+, walks at \d+/, `both limits in bpm: "${detail}"`);
+  assert.match(detail, /80% of your maximum.*71% of maximum/, `the percent-of-max rule: "${detail}"`);
+  assert.doesNotMatch(detail, /min run \/ \d+ min walk/, `no bare clock reading: "${detail}"`);
+  const today = (await page.textContent('#todaydetail')).replace(/\s+/g, ' ').trim();
+  assert.match(today, /\d+ × up to [\d.]+ min, to \d+ bpm/, `the Today card names the ceiling: "${today}"`);
+  // 80% / 71% of the Tanaka max for the athlete's age: the numbers the page states are the plan's.
+  const nums = detail.match(/blocks end at (\d+), walks at (\d+)/);
+  const max = Math.round(208 - 0.7 * 30);
+  assert.equal(Number(nums[1]), Math.round(0.8 * max), 'the ceiling is 80% of maximum');
+  assert.equal(Number(nums[2]), Math.round(0.71 * max), 'the walk floor is 71% of maximum');
+  console.log(`  ok  a run/walk day states block pace, ${nums[1]} / ${nums[2]} bpm limits and the percent-of-max rule`);
+}
+
 // --- today, in one tap ---------------------------------------------------------------------------
 
 {
@@ -380,7 +401,8 @@ async function openAll(page) {
       await page.waitForTimeout(120);
       const iv = (await page.textContent('#modeplan')).replace(/\s+/g, ' ').trim();
       assert.match(iv, /as prescribed/, `Run / walk must claim the session: "${iv}"`);
-      assert.match(iv, /\d+ × [\d.]+\/[\d.]+ min/, `with its actual structure: "${iv}"`);
+      assert.match(iv, /\d+ blocks of up to [\d.]+ min, each ending early at \d+ bpm; walk down to \d+/,
+        `with both limits stated, not a bare clock reading: "${iv}"`);
       // The blocks themselves must have arrived in the controls, not just in the sentence.
       assert.ok(Number(await page.inputValue('#reps')) > 1, 'reps must come from the plan');
       await page.click('#m-coach');
@@ -495,12 +517,13 @@ async function openAll(page) {
   await page.waitForTimeout(150);
   const note = (await page.textContent('#hrblocknote')).replace(/\s+/g, ' ');
   assert.match(note, /\d+ bpm/, `the toggle must state the ceiling it would use: "${note}"`);
-  assert.match(note, /walk until it comes back down to \d+|walk down to \d+/,
+  assert.match(note, /back down to \d+ bpm|Walk until \d+ bpm/,
     `and the floor, which is the half that was actually broken: "${note}"`);
   await page.check('#hrblocks');
   await page.waitForTimeout(120);
   const on = (await page.textContent('#hrblocknote')).replace(/\s+/g, ' ');
   // Without an armband it must say so rather than looking like it is governing.
+  assert.match(on, /whichever comes first/, `the note must state both rails: "${on}"`);
   assert.match(on, /No armband connected/,
     `with no band it must own up rather than appear to govern: "${on}"`);
   await page.uncheck('#hrblocks');
@@ -1249,7 +1272,7 @@ async function openAll(page) {
   await page.click('#go');
   await page.waitForTimeout(300);
   const lines = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
-  assert.ok(lines.some(l => /heart rate calls the blocks — run to \d+/.test(l)),
+  assert.ok(lines.some(l => /heart rate calls the blocks — each ends at \d+ bpm/.test(l)),
     `Start under HR governance must log the ceiling it is running to: ${JSON.stringify(lines.slice(0, 5))}`);
   await page.click('#go');
   await page.waitForTimeout(200);

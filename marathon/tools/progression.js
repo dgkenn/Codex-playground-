@@ -173,20 +173,23 @@ export function nextRung(current, verdict, ladderLength) {
   return i;
 }
 
+/// The share of the planned blocks that must have run their FULL length for an HR-governed session to
+/// count as done. 6 of 7 passes and 2 of 3 does not, which is deliberate: on a short rung each block
+/// is a third of the session, and one cut block is a bigger fraction of the evidence.
+export const HR_DONE_FRACTION = 0.85;
+
 /**
  * Judge one HR-governed session against what it asked for.
  *
- * `judgeSession` reads a rung as a block STRUCTURE -- run this many minutes, this many times -- and
- * that stops meaning anything once heart rate is calling the blocks (see hr-blocks.js): the body
- * decides how long each block runs and how long each walk takes, so the number of blocks and their
- * individual lengths are an OUTCOME of the session, not a target for it. What the rung still means is
- * a target TOTAL amount of running under the ceiling, which is why `target` here is
- * `{runningMinTarget}` rather than `{runMin, walkMin, reps}`.
+ * A rung is `{blocks, blockS}` here: N run blocks, each up to `blockS` seconds -- the dose the tendon
+ * and bone are being asked to take (see hr-blocks.js). The heart rate is the other rail: it can end a
+ * block early, and when it does the block is "cut", which is the heart saying today's load was enough.
+ * So the evidence for moving up is how many blocks the HEART let run their full length. Blocks cut by
+ * the ceiling are neither a failure nor made up later; they are simply not evidence that the rung is
+ * comfortable yet, and a rung that is not comfortable is repeated.
  *
- * `summary` is `HrBlocks.summary()`. `stats` is `runStats()` output, read only for `decouplingPct` --
- * everything else HR-governance already tracked better than a pace-derived stat could. `hrrBaseline`
- * is a number (this athlete's own recent median HRR60, see `hrrBaseline()` below) or null when there
- * is not yet enough history to have one.
+ * `summary` is `HrBlocks.summary()`. `stats` is `runStats()` output, read only for `decouplingPct`.
+ * `hrrBaseline` is this athlete's own recent median HRR60 (see `hrrBaseline()` below) or null.
  *
  * Returns `{verdict, reason, evidence, next}`, or null when the session is not evidence at all.
  */
@@ -197,30 +200,37 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
   // case, just arriving from the other direction.
   if (!summary || summary.governedBy !== 'hr') return null;
 
-  const runningMinTarget = target && target.runningMinTarget;
-  if (!(runningMinTarget > 0)) return null;
+  const planned = target && target.blocks;
+  if (!(planned > 0)) return null;
 
-  const targetS = runningMinTarget * 60;
-  const underS = summary.runningUnderCeilingS || 0;
-  const mins = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+  const full = summary.blocksFull || 0;
+  const started = summary.runBlocks || 0;
+  const cut = summary.blocksCut || 0;
+  const fraction = full / planned;
+  const blockS = target.blockS || summary.runBlockTargetS || null;
   const evidence = {
-    runningUnderCeilingS: Math.round(underS),
+    blocksPlanned: planned,
+    blocksStarted: started,
+    blocksFull: full,
+    blocksCut: cut,
+    blockS,
+    completedFraction: fraction,
     runningOverCeilingS: Math.round(summary.runningOverCeilingS || 0),
-    targetS: Math.round(targetS),
-    completedFraction: targetS > 0 ? underS / targetS : null,
     endedBy: summary.endedBy,
     hrr60Median: summary.hrr60Median,
     hrrBaseline,
     decouplingPct: stats ? stats.decouplingPct : null,
   };
+  const of = `${full} of ${planned} blocks ran their full length`
+           + (cut ? ` (${cut} cut short by the heart-rate ceiling)` : '');
 
-  if (summary.endedBy === 'stall' && underS < targetS * ABANDONED_FRACTION) {
+  if (summary.endedBy === 'stall' && started < planned * ABANDONED_FRACTION) {
     return {
       verdict: EASE_BACK, evidence,
       next: 'Repeat this session one rung easier.',
-      reason: `The body stopped clearing the load after ${mins(underS)} under the ceiling, against `
-            + `${mins(targetS)} asked for -- two walks in a row that never reached the floor. The `
-            + `session that was actually possible today is easier than the plan set.`,
+      reason: `The body stopped clearing the load after ${started} of ${planned} blocks -- two walks `
+            + `in a row that never came back down to the floor. The session that was actually `
+            + `possible today is easier than the plan set.`,
     };
   }
 
@@ -242,46 +252,40 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
   if (stats && stats.decouplingPct > DECOUPLING_LIMIT_PCT) {
     return {
       verdict: REPEAT, evidence,
-      next: 'Repeat at this duration before adding to it.',
+      next: 'Repeat at this length before adding to it.',
       reason: `Heart rate drifted ${stats.decouplingPct.toFixed(0)}% against pace between the halves. `
-            + `The ceiling was doing its job; the duration is at the edge of what the aerobic base `
+            + `The ceiling was doing its job; the length is at the edge of what the aerobic base `
             + `currently supports, and that is the part to let catch up.`,
     };
   }
 
-  // A stall that nonetheless reached the target is not a reason to ask for more. The ADVANCE branch
-  // below says "ended by the plan or the athlete rather than the body giving out", and without this
-  // guard the code did not enforce it: two unrecovered walks in a row after 13 of 14 minutes would
-  // have advanced the rung, on the strength of a session whose ending was the body declining to go
-  // on. Reached-and-stalled is exactly the load to sit at, not to add to.
+  // A stall that nonetheless got most of the blocks in is not a reason to ask for more: the ADVANCE
+  // branch says the session ended by the plan rather than the body giving out, and without this guard
+  // two unrecovered walks late in the session would have advanced the rung on a session whose ending
+  // was the body declining to go on.
   if (summary.endedBy === 'stall') {
     return {
       verdict: REPEAT, evidence,
-      next: 'Repeat this target. The body ended the running; let it get comfortable here first.',
-      reason: `${mins(underS)} of running under the ceiling against ${mins(targetS)} asked for -- `
-            + `reached, and then two walks in a row that never came back down to the floor. The `
-            + `target was met and the body said that was enough. Both are true; the second decides.`,
+      next: 'Repeat this rung. The body ended the running; let it get comfortable here first.',
+      reason: `${of}, and then two walks in a row never came back down to the floor. Both are true; `
+            + `the second decides.`,
     };
   }
 
-  if (underS >= targetS * DONE_FRACTION) {
+  if (fraction >= HR_DONE_FRACTION) {
     return {
       verdict: ADVANCE, evidence,
-      next: 'Move up a rung: more total running time under the ceiling.',
-      reason: `${mins(underS)} of running under the ceiling against ${mins(targetS)} asked for, `
-            // `target` is the same ending as `reps`: HR governance retires the block count in favour
-            // of a total-running target (see hr-blocks.js), so reaching THAT target is the plan's own
-            // end just as reaching the rep count was before it -- both are "the plan", not "the athlete".
-            + `ended by ${['reps', 'target'].includes(summary.endedBy) ? 'the plan' : 'the athlete'} `
-            + `rather than the body giving out. Done as prescribed, so the next one can ask for more.`,
+      next: 'Move up a rung: longer run blocks, same total session time.',
+      reason: `${of}. Done as prescribed, with recovery and heart-rate drift both clean, so the `
+            + `next one can ask for more.`,
     };
   }
 
   return {
     verdict: REPEAT, evidence,
-    next: 'Repeat this same target before moving up.',
-    reason: `${mins(underS)} of running under the ceiling against ${mins(targetS)} asked for. Close, `
-          + `and close is a reason to do it again rather than to add to it.`,
+    next: 'Repeat this same rung before moving up.',
+    reason: `${of}. A block the heart rate cuts is the heart saying today was enough, not a miss -- `
+          + `but it is not yet a rung that is comfortable, and that is what earns the next one.`,
   };
 }
 

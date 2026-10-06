@@ -166,6 +166,18 @@ def _session_dict(s: planmod.Session, paces: Any, profile: Optional[FitnessProfi
     if s.run_walk:
         run_min, walk_min, reps = s.run_walk
         rw: Dict[str, Any] = {"run_min": run_min, "walk_min": walk_min, "reps": reps}
+        # The heart-rate limits on each block, as fractions of maximum so the phone can apply them
+        # to whatever maximum it is using. The athlete asked for run/walk to be structured around
+        # percent of max heart rate, and the engine is where that definition belongs: the Python
+        # plan and the phone must agree about what "easy" means, and two hand-kept copies drift.
+        rw["hr"] = {"work_pct": planmod.RUN_WALK_WORK_PCT_MAX,
+                    "rest_pct": planmod.RUN_WALK_REST_PCT_MAX}
+        if profile is not None and getattr(profile, "hr_max", None):
+            # Overrides the zone-edge ceiling set above. A run/walk session is no longer bounded by
+            # "the top of Z2" (155 at this athlete's numbers) but by 80% of maximum (150), which is
+            # also where his own recording measured his threshold.
+            out["hr_ceiling_bpm"] = int(round(planmod.RUN_WALK_WORK_PCT_MAX * profile.hr_max))
+            out["hr_floor_bpm"] = int(round(planmod.RUN_WALK_REST_PCT_MAX * profile.hr_max))
         # What to run the RUNNING blocks at, which is not the session's average pace.
         #
         # The session carried nothing but a schedule -- run two minutes, walk two minutes -- so the
