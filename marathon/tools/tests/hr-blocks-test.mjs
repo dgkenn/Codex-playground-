@@ -42,9 +42,9 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
     `every walk must end at the floor: ${JSON.stringify(walks.map(e => e.reason))}`);
   const s = b.summary();
   assert.equal(s.governedBy, 'hr');
-  assert.ok(s.hrr60Median > 0, 'and each transition must yield a recovery measurement');
+  assert.ok(s.toFloorMedianS > 0, 'and each walk must yield a recovery measurement');
   console.log(`  ok  ceiling ends the run, floor ends the walk `
-            + `(${s.runBlocks} blocks, ${s.runningS}s running, HRR60 median ${s.hrr60Median.toFixed(0)})`);
+            + `(${s.runBlocks} blocks, ${s.runningS}s running, ${s.toFloorMedianS}s ceiling-to-floor)`);
 }
 
 {
@@ -91,8 +91,8 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   // that forced a walk at fifteen minutes made that gate unreachable under heart-rate governance
   // however easy the running felt.
   const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 1800, walkS: 120 });
-  drive(b, 2100, () => CEIL - 20);              // comfortably under the ceiling throughout
-  b.finish(2100);                               // the block is still open; summary counts closed ones
+  drive(b, 2400, () => CEIL - 20);              // comfortably under the ceiling throughout
+  b.finish(2400);                               // the block is still open; summary counts closed ones
   const s = b.summary();
   assert.ok(s.longestRunBlockS >= 1800,
     `30 continuous minutes under the ceiling must be possible: longest was ${s.longestRunBlockS}s`);
@@ -205,6 +205,8 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   assert.equal(s.blocksCut, 1, `one was cut by the heart rate: ${JSON.stringify(s)}`);
   assert.equal(s.runBlockTargetS, 120);
   assert.ok(s.longestRunBlockS <= 120, `no block may exceed the rung's length: ${s.longestRunBlockS}`);
+  assert.ok(s.toCeilingMedianS > 0 && s.toCeilingMedianS < 120,
+    `time to the ceiling is the cut block's length: ${s.toCeilingMedianS}`);
   console.log(`  ok  the summary separates full blocks from blocks the heart rate cut (${s.blocksFull} full, ${s.blocksCut} cut)`);
 }
 
@@ -251,6 +253,50 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0 } = {}) {
   assert.equal(r.reason, 'recovered');
   assert.equal(r.t - w.t, 45, `recovered walks end at the minimum, not the prescription: ${r.t - w.t}s`);
   console.log('  ok  a walk that recovers quickly ends at HR recovery, not the clock');
+}
+
+{
+  // The warm-up is the plan's five minutes, whatever heart rate says. On 6 October it ended at 45 s
+  // because a resting heart rate is already under the floor, and the first block went 103 -> 152 in
+  // 85 seconds.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 7 });
+  const evs = drive(b, 400, () => 100);
+  const first = evs.find(e => e.phase === Phase.RUN);
+  assert.equal(first.t, 300, `the first block starts after the five-minute warm-up: ${first.t}s`);
+  // Without an armband the same five minutes, not the walk length.
+  const c = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 7 });
+  const ev2 = drive(c, 400, () => null, { hrFresh: () => false });
+  assert.equal(ev2.find(e => e.phase === Phase.RUN).t, 300);
+  console.log('  ok  the warm-up is the plan\'s five minutes even when heart rate is already low');
+}
+
+{
+  // Recovery, measured the way 6 October showed it has to be. Heart rate keeps CLIMBING for ~20 s
+  // after a block ends, and a walk can end inside a minute -- the old HRR60 read the peak at the
+  // block's end and the heart rate 60 s later, which by then was usually the next run. Median: 8.
+  //   - a short walk yields ceiling-to-floor seconds and NO HRR60 (it did not last long enough);
+  //   - a long one yields both, HRR60 measured from the walk's own (later) peak.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 60, reps: 3 });
+  let walkT = null;
+  drive(b, 2400, (t, phase) => {
+    if (phase !== Phase.WALK && phase !== Phase.COOLDOWN) { walkT = null; return phase === Phase.RUN ? 140 : 110; }
+    if (walkT == null) walkT = t;
+    const w = t - walkT;
+    // +8 bpm over 20 s, then down 0.5 bpm/s: reaches the floor (125) at ~66 s.
+    return w < 20 ? 140 + w * 0.4 : 148 - (w - 20) * 0.5;
+  });
+  b.finish(2400);
+  const r = b.recoveries;
+  assert.equal(r.length, 3, `one recovery per block: ${JSON.stringify(r)}`);
+  for (const x of r.slice(0, 2)) {
+    assert.ok(Math.abs(x.toFloorS - 66) <= 2, `ceiling to floor in ~66 s: ${JSON.stringify(x)}`);
+    assert.equal(x.hrr60, null, `a walk that ended at the floor before peak+60 has no HRR60: ${JSON.stringify(x)}`);
+    assert.ok(x.peakHr >= 147, `the peak is the walk's own, after the lag: ${x.peakHr}`);
+  }
+  const last = r[2];                                  // the cool-down: long enough for both
+  assert.ok(Math.abs(last.hrr60 - 30) <= 1, `HRR60 from the walk's own peak: ${JSON.stringify(last)}`);
+  assert.ok(Math.abs(b.summary().toFloorMedianS - 66) <= 2);
+  console.log(`  ok  recovery is ceiling-to-floor time, and HRR60 only when the walk lasted (${JSON.stringify(last)})`);
 }
 
 // --- against the real session ---------------------------------------------------------------------

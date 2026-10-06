@@ -102,8 +102,14 @@ export const HrBlockDefaults = {
   /// Consecutive walk breaks that fail to reach the floor before this many seconds. Two in a row is
   /// the session telling you it is over.
   stallWalkS: 180,
-  /// Walk at the start until heart rate settles, so the first block is not started mid-commute.
-  warmupS: 180,
+  /// The walk warm-up, which the plan states as five minutes and which is a minimum, not a target.
+  ///
+  /// It used to be a ceiling on a wait for the floor: "walk until heart rate is at the floor, or
+  /// three minutes". At the start of a session heart rate is already under any floor, so on
+  /// 6 October the warm-up ended at 45 s and the first block took heart rate from 103 to 152 in 85
+  /// seconds -- a cold start, the steepest rise of the session. Five minutes of walking first, then
+  /// the floor check (bounded by walkExtraS) for the case where getting there raised it.
+  warmupS: 300,
 };
 
 /** Phases this controller can be in. `warmup` is walking too. */
@@ -158,12 +164,12 @@ export class HrBlocks {
     this.rep = 0;
     /// Completed blocks: {kind, startT, endT, peakHr, endHr, recovered, governedBy}.
     this.blocks = [];
-    /// One entry per run->walk transition: {atT, peakHr, hr60, hrr60}. The autonomic series.
+    /// One entry per run->walk (or run->cool-down) transition: {atT, peakHr, toFloorS, hrr60}.
     this.recoveries = [];
+    this._trace = null;          // [secondsIntoWalk, hr] for the walk in progress
     this.stalls = 0;
     this._peakHr = null;
     this._lastFreshT = null;
-    this._pending = [];          // recoveries still waiting for their 60-second reading
     this._runUnderCeilingS = 0;  // seconds inside run blocks where HR was at or below the ceiling
     this._runOverCeilingS = 0;   // seconds inside run blocks where HR was above it
     /// Which of the three real endings this session had -- 'reps' (the plan's own block count was
@@ -195,7 +201,7 @@ export class HrBlocks {
     const hr = (hrFresh && hrBpm != null && hrBpm > 0) ? hrBpm : null;
     if (hr != null) this._lastFreshT = tS;
     if (hr != null && (this._peakHr == null || hr > this._peakHr)) this._peakHr = hr;
-    this._resolveRecoveries(tS, hr);
+    if (this._trace && hr != null) this._trace.push([tS - this._trace.startT, hr]);
 
     // What the judge needs: not just how much running happened, but how much of it was actually
     // under the ceiling it was governed by. A block that ends AT the ceiling can still have spent
@@ -220,10 +226,9 @@ export class HrBlocks {
       // Long enough to have settled, and either at the floor or out of patience. A warm-up that
       // waits forever for a floor the athlete cannot reach while walking is a session that never
       // starts, which is the same failure as a coach that never speaks.
-      const ready = live ? (hr <= this.floorBpm || el >= this.cfg.warmupS)
-                         : el >= Math.min(this.cfg.warmupS, this.fallbackWalkS ?? this.cfg.warmupS);
-      if (el >= this.cfg.minWalkS && ready) return this._to(BlockPhase.RUN, tS, 'warm-up done', live);
-      return null;
+      if (el < this.cfg.warmupS) return null;
+      const ready = !live || hr <= this.floorBpm || el >= this.cfg.warmupS + this.cfg.walkExtraS;
+      return ready ? this._to(BlockPhase.RUN, tS, 'warm-up done', live) : null;
     }
 
     if (this.phase === BlockPhase.RUN) {
@@ -289,6 +294,7 @@ export class HrBlocks {
     // still recorded as `kind: 'cooldown'`, correctly, with no special-casing needed here.
     if (this._endedBy == null) this._endedBy = 'athlete';
     this._close(tS);
+    this._closeRecovery();
     this.phase = BlockPhase.DONE;
   }
 
@@ -310,10 +316,11 @@ export class HrBlocks {
   _to(next, tS, reason, governedByHr, closeReason = reason) {
     const previous = this.phase;
     const block = this._close(tS, governedByHr, closeReason);
+    // A walk ending closes the recovery it was measuring; a run ending starts the next one.
+    if (previous === BlockPhase.WALK) this._closeRecovery();
     if (previous === BlockPhase.RUN) {
-      // A run block ending is a heart-rate recovery test starting. The reading it needs is 60 s
-      // away, so it is parked and resolved later rather than guessed at now.
-      this._pending.push({ atT: tS, peakHr: block ? block.peakHr : null, dueT: tS + 60 });
+      this._trace = [];
+      this._trace.startT = tS;
     }
     this.phase = next;
     this.phaseStartT = tS;
@@ -340,16 +347,37 @@ export class HrBlocks {
     return block;
   }
 
-  _resolveRecoveries(tS, hr) {
-    if (hr == null) return;
-    for (const p of this._pending) {
-      if (p.done || tS < p.dueT) continue;
-      p.done = true;
-      if (p.peakHr != null) {
-        this.recoveries.push({ atT: p.atT, peakHr: p.peakHr, hr60: hr, hrr60: p.peakHr - hr });
-      }
+  /**
+   * Read the recovery off the walk that just ended (or the cool-down, at the end).
+   *
+   * Two numbers, because the first version's one was wrong. It took the run block's peak and the
+   * heart rate 60 s after the block ENDED, and read it whatever was happening by then. But heart rate
+   * keeps rising for 15-30 s after the legs stop (on 6 October: +5 to +10 bpm, peaking 16-28 s into
+   * the walk), and half the walks were over inside 60 s, so the "60 s later" reading usually came
+   * from the next run block. Median HRR60: 8 bpm, which measured nothing.
+   *
+   *   toFloorS -- seconds from the end of the block to heart rate at the floor. Every block ends at
+   *               the same ceiling, so this is the same test every time: 150 down to 133. It is
+   *               available on nearly every walk, and it is the number that gets shorter with fitness
+   *               and longer with fatigue.
+   *   hrr60    -- the classical number, done properly: from the walk's own peak to 60 s after that
+   *               peak, and only when the walk lasted that long. Often null under this protocol, which
+   *               is the honest answer.
+   */
+  _closeRecovery() {
+    const tr = this._trace;
+    this._trace = null;
+    if (!tr || !tr.length) return;
+    const early = tr.filter(([s]) => s <= 60);
+    const peak = early.reduce((m, x) => (m == null || x[1] > m[1] ? x : m), null);
+    const floorAt = tr.find(([, h]) => h <= this.floorBpm);
+    let hrr60 = null;
+    if (peak) {
+      const later = tr.find(([s]) => s >= peak[0] + 60);
+      if (later) hrr60 = peak[1] - later[1];
     }
-    this._pending = this._pending.filter(p => !p.done);
+    this.recoveries.push({ atT: tr.startT, peakHr: peak ? peak[1] : null,
+                           toFloorS: floorAt ? floorAt[0] : null, hrr60 });
   }
 
   /** What the session amounted to, for the progression decision and for the athlete. */
@@ -357,7 +385,9 @@ export class HrBlocks {
     const runs = this.blocks.filter(b => b.kind === BlockPhase.RUN);
     const walks = this.blocks.filter(b => b.kind === BlockPhase.WALK);
     const cooldowns = this.blocks.filter(b => b.kind === BlockPhase.COOLDOWN);
-    const hrr = this.recoveries.map(r => r.hrr60);
+    const med = xs => (xs.length ? xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)] : null);
+    const hrr = this.recoveries.map(r => r.hrr60).filter(v => v != null);
+    const toFloor = this.recoveries.map(r => r.toFloorS).filter(v => v != null);
     return {
       runBlocks: runs.length,
       // The progression unit: blocks that ran their full length, out of the blocks planned. A block
@@ -367,6 +397,11 @@ export class HrBlocks {
       blocksFull: runs.filter(b => b.full).length,
       blocksCut: runs.filter(b => b.reason === 'ceiling' || b.reason === 'well over the ceiling').length,
       runBlockTargetS: this.runBlockS,
+      // How long running took to reach the ceiling, median over the blocks the ceiling cut. While the
+      // heart rate rather than the rung is what ends the blocks this IS the fitness number: the same
+      // effort, from the same floor to the same ceiling, taking longer is the aerobic base growing.
+      toCeilingMedianS: med(runs.filter(b => b.reason === 'ceiling' || b.reason === 'well over the ceiling')
+                               .map(b => b.durationS)),
       runningS: runs.reduce((a, b) => a + b.durationS, 0),
       longestRunBlockS: runs.reduce((a, b) => Math.max(a, b.durationS), 0),
       walkS: walks.reduce((a, b) => a + b.durationS, 0),
@@ -374,7 +409,10 @@ export class HrBlocks {
       unrecoveredWalks: walks.filter(b => b.recovered === false).length,
       // The autonomic number. Median rather than mean: one bad optical reading in a walk break
       // should not move a session-level statistic that gets trended across weeks.
-      hrr60Median: hrr.length ? hrr.slice().sort((a, b) => a - b)[Math.floor(hrr.length / 2)] : null,
+      hrr60Median: med(hrr),
+      // Seconds from the ceiling back down to the floor, median over the session's walks. The
+      // recovery number the judge trends -- see _closeRecovery.
+      toFloorMedianS: med(toFloor),
       recoveries: this.recoveries.length,
       // Whether this session is evidence at all. A session run on the clock because the armband was
       // flat says nothing about fitness, and must not be allowed to advance or retreat the ladder.

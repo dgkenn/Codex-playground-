@@ -53,10 +53,10 @@ export const ADVANCE = 'advance';
 export const REPEAT = 'repeat';
 export const EASE_BACK = 'ease_back';
 
-/// How far HRR60 is allowed to drop below the athlete's own recent baseline before it reads as
-/// fatigue rather than noise. See `judgeHrSession`: this is the autonomic half of the gate that
-/// `judgeSession` cannot do at all, because a clock session never produces an HRR60 series.
-export const HRR_DROP_FRACTION = 0.8;
+/// How much slower than the athlete's own recent baseline the ceiling-to-floor recovery may be before
+/// it reads as fatigue rather than noise. See `judgeHrSession`: this is the autonomic half of the gate
+/// that `judgeSession` cannot do at all, because a clock session has no ceiling to recover from.
+export const RECOVERY_SLOW_FRACTION = 1.25;
 
 /**
  * Judge one session against what it asked for.
@@ -188,12 +188,17 @@ export const HR_DONE_FRACTION = 0.85;
  * the ceiling are neither a failure nor made up later; they are simply not evidence that the rung is
  * comfortable yet, and a rung that is not comfortable is repeated.
  *
- * `summary` is `HrBlocks.summary()`. `stats` is `runStats()` output, read only for `decouplingPct`.
- * `hrrBaseline` is this athlete's own recent median HRR60 (see `hrrBaseline()` below) or null.
+ * `summary` is `HrBlocks.summary()`. `recoveryBaseline` is this athlete's own recent median
+ * ceiling-to-floor time in seconds (see `recoveryBaseline()` below) or null.
+ *
+ * Aerobic decoupling is NOT read here, though the first version did. It compares heart rate to pace
+ * between the halves of a session, and a run/walk governed to a fixed ceiling has neither a steady
+ * pace nor a free heart rate -- on 6 October it read 12% across blocks, walks and a nine-minute
+ * cool-down, and would have held the ladder on a number that described the session's shape.
  *
  * Returns `{verdict, reason, evidence, next}`, or null when the session is not evidence at all.
  */
-export function judgeHrSession(target, summary, stats, hrrBaseline) {
+export function judgeHrSession(target, summary, recoveryBaseline) {
   // A session that fell back to the clock is a timer expiring, not a body responding to load. It has
   // no ceiling crossings, no recovery measurements, nothing HR-governed at all -- moving the ladder
   // on it would be exactly the mistake governedBy exists to prevent for judgeSession's armband-dead
@@ -217,9 +222,8 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
     completedFraction: fraction,
     runningOverCeilingS: Math.round(summary.runningOverCeilingS || 0),
     endedBy: summary.endedBy,
-    hrr60Median: summary.hrr60Median,
-    hrrBaseline,
-    decouplingPct: stats ? stats.decouplingPct : null,
+    toFloorMedianS: summary.toFloorMedianS,
+    recoveryBaseline,
   };
   const of = `${full} of ${planned} blocks ran their full length`
            + (cut ? ` (${cut} cut short by the heart-rate ceiling)` : '');
@@ -234,28 +238,18 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
     };
   }
 
-  // Down more than a fifth from his own recent baseline is fatigue accumulating, not fitness
-  // improving -- the same reading that shows up as a rising resting heart rate, but available every
-  // session instead of needing a device this athlete does not have. Checked before decoupling because
-  // an autonomic system that has not recovered is the more direct explanation for whatever the pace
-  // trace also shows.
-  if (hrrBaseline != null && summary.hrr60Median != null && summary.hrr60Median < hrrBaseline * HRR_DROP_FRACTION) {
+  // Every block ends at the same ceiling, so the walk from it back down to the floor is the same
+  // test every session. A quarter slower than his own recent median is fatigue accumulating, not
+  // fitness improving -- the reading a coach takes from a rising resting heart rate, available every
+  // session without a device this athlete does not have.
+  const rec = summary.toFloorMedianS;
+  if (recoveryBaseline != null && rec != null && rec > recoveryBaseline * RECOVERY_SLOW_FRACTION) {
     return {
       verdict: REPEAT, evidence,
-      next: 'Repeat this session; do not add load until recovery comes back up.',
-      reason: `HRR60 of ${summary.hrr60Median.toFixed(0)} against a recent baseline of `
-            + `${hrrBaseline.toFixed(0)} -- down more than a fifth. That is accumulated fatigue, not `
-            + `today's fitness, and it is not something to build on top of.`,
-    };
-  }
-
-  if (stats && stats.decouplingPct > DECOUPLING_LIMIT_PCT) {
-    return {
-      verdict: REPEAT, evidence,
-      next: 'Repeat at this length before adding to it.',
-      reason: `Heart rate drifted ${stats.decouplingPct.toFixed(0)}% against pace between the halves. `
-            + `The ceiling was doing its job; the length is at the edge of what the aerobic base `
-            + `currently supports, and that is the part to let catch up.`,
+      next: 'Repeat this session; do not add load until recovery comes back.',
+      reason: `Heart rate took ${Math.round(rec)} s to come back down from the ceiling, against a recent `
+            + `${Math.round(recoveryBaseline)} s -- more than a quarter slower. That is accumulated `
+            + `fatigue, not today's fitness, and it is not something to build on top of.`,
     };
   }
 
@@ -276,7 +270,7 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
     return {
       verdict: ADVANCE, evidence,
       next: 'Move up a rung: longer run blocks, same total session time.',
-      reason: `${of}. Done as prescribed, with recovery and heart-rate drift both clean, so the `
+      reason: `${of}. Done as prescribed, with recovery holding, so the `
             + `next one can ask for more.`,
     };
   }
@@ -290,16 +284,15 @@ export function judgeHrSession(target, summary, stats, hrrBaseline) {
 }
 
 /**
- * The athlete's own recent autonomic baseline: the median of his last five HRR60 readings.
+ * The athlete's own recent recovery baseline: the median ceiling-to-floor time of his last five
+ * HR-governed sessions, in seconds.
  *
- * Compared against, not trended -- `judgeHrSession` asks only "is today down from what he has been
- * doing", the same question a coach asks by feel from a resting heart rate this athlete has no way to
- * take. Requires at least three sessions before answering anything, for the same reason `ceilingFrom`
- * waits for MIN_SESSIONS: a baseline built from one or two sessions is a guess wearing a number, and a
- * guess that can gate REPEAT vs ADVANCE is worse than admitting there is not one yet.
+ * Compared against, not trended -- `judgeHrSession` asks only "is today slower than what he has been
+ * doing". Requires at least three sessions before answering anything: a baseline built from one or
+ * two is a guess wearing a number, and a guess that can gate REPEAT vs ADVANCE is worse than none.
  */
-export function hrrBaseline(history) {
-  const vals = (history || []).map(h => h && h.hrr60Median).filter(v => v != null);
+export function recoveryBaseline(history) {
+  const vals = (history || []).map(h => h && h.toFloorMedianS).filter(v => v != null);
   const recent = vals.slice(-5);
   if (recent.length < 3) return null;
   const sorted = recent.slice().sort((a, b) => a - b);

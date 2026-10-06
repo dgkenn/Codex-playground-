@@ -2378,7 +2378,11 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
   const paceEv = S.monitor.update(t, pace,
                                   { grade: S.track.grade, paceTrusted: trusted, running });
   const hrEv = S.hrMonitor ? S.hrMonitor.update(t, fresh ? sn.hr : null) : null;
-  const ev = hrOk ? hrEv : paceEv;
+  // While the block controller governs, it owns the ceiling: it calls the walk and the voice names the
+  // margin. The zone monitor's tones were a third voice on a different line (Z2's top, 155, against a
+  // 150 ceiling) and on 6 October they sounded through the walks, where heart rate is still climbing
+  // for twenty seconds after the legs stop -- exactly when there is nothing to do about it.
+  const ev = hrOk ? (S.hrBlocks ? null : hrEv) : paceEv;
   if (ev) {
     play(ev.earcon);
     S.tones++;
@@ -2861,11 +2865,11 @@ function recoveryFloorBpm() {
 /**
  * The controller's own summary from every archived session that had one, oldest first.
  *
- * `hrrBaseline()` (progression.js) takes the median of the LAST five, which only means "most recent"
+ * `recoveryBaseline()` (progression.js) takes the median of the LAST five, which only means "most recent"
  * if the list arrives oldest-first -- `sessions.index()` returns newest-first (see session-store.js
  * `archive()`, which unshifts each new entry), so this reverses it.
  */
-function hrrHistory({ excludeAt = null } = {}) {
+function recoveryHistory({ excludeAt = null } = {}) {
   // `excludeAt` is the session being judged. It has already been archived by the time showStats runs,
   // so without this the session would sit inside its own baseline -- five readings where one of them
   // is today, which dilutes exactly the drop the judge is looking for. Matched on the index's `at`,
@@ -3431,6 +3435,15 @@ $('go').onclick = () => {
   if (S.mode === 'coach' && S.voice) S.voice.begin(0);
   S.lastSpeechAt = 0;
   S.speechFreeAt = 0;
+  // The warm-up is five minutes of walking before the first block (see hr-blocks.js warmupS). Said,
+  // and shown, so five minutes of nothing does not read as an app that did not start.
+  if (S.hrBlocks) {
+    const mins = Math.round(S.hrBlocks.cfg.warmupS / 60);
+    sayShortly(`Walk ${mins} minutes to warm up. I will tell you when to run.`);
+    log(`warm-up — walk ${mins} min`, 'on');
+    $('pace').textContent = 'WALK';
+    $('verdict').textContent = 'warm-up';
+  }
   startSpeechWatchdog();
   S.tickId = setInterval(tick, 1000);
   // The band went flat halfway through a session and nothing warned. The level was read once at
@@ -3492,7 +3505,9 @@ function showStats(stats, prevStats) {
     if (stats.efficiencyFactor != null) tile('Efficiency', stats.efficiencyFactor.toFixed(2));
     if (stats.decouplingPct != null) tile('Drift', `${stats.decouplingPct.toFixed(1)}%`);
     if (stats.pctAtOrBelowEasy != null) tile('Easy', `${Math.round(stats.pctAtOrBelowEasy)}%`);
-    if (stats.hrr60 != null) tile('Recovery', `-${stats.hrr60}`);
+    // Whole-session HRR60 is meaningless once the blocks are heart-rate governed (6 October: -16,
+    // shown as "--16"); the controller's ceiling-to-floor time below replaces it there.
+    if (stats.hrr60 > 0 && !stats.hrBlocks) tile('Recovery', `-${stats.hrr60}`);
     if (stats.trimp != null) tile('Load', Math.round(stats.trimp));
   }
   // The controller's own account of the session, when heart rate was calling the blocks. Terse on
@@ -3504,6 +3519,12 @@ function showStats(stats, prevStats) {
       tile('Blocks', `${stats.hrBlocks.runBlocks}`);
     }
     if (stats.hrBlocks.blocksCut) tile('Cut by HR', `${stats.hrBlocks.blocksCut}`);
+    if (stats.hrBlocks.toCeilingMedianS != null) {
+      tile(`Run to ${S.hrBlocks ? S.hrBlocks.ceilingBpm : 'ceiling'}`, mmss(stats.hrBlocks.toCeilingMedianS));
+    }
+    if (stats.hrBlocks.toFloorMedianS != null) {
+      tile(`Back to ${recoveryFloorBpm()}`, mmss(stats.hrBlocks.toFloorMedianS));
+    }
     if (stats.hrBlocks.hrr60Median != null) tile('HRR60', `-${Math.round(stats.hrBlocks.hrr60Median)}`);
   }
   tile('Cues', `${stats.tones} (${stats.tonesPerMin.toFixed(2)}/min)`);
@@ -3571,8 +3592,8 @@ function showStats(stats, prevStats) {
   // everything else still goes through `judgeSession` exactly as before.
   const rw = S.plannedSession && S.plannedSession.runWalk;
   const judged = (stats.hrBlocks && stats.hrBlocks.governedBy === 'hr' && rw)
-    ? judgeHrSession({ blocks: rw.reps, blockS: rw.runMin * 60 }, stats.hrBlocks, stats,
-                     hrrBaseline(hrrHistory({ excludeAt: new Date(S.startedAt).toISOString() })))
+    ? judgeHrSession({ blocks: rw.reps, blockS: rw.runMin * 60 }, stats.hrBlocks,
+                     recoveryBaseline(recoveryHistory({ excludeAt: new Date(S.startedAt).toISOString() })))
     : (rw ? judgeSession(rw, stats) : null);
   // And it is applied, not merely announced. This is the line that turns a schedule into a
   // controller; everything it needs has existed and been tested for weeks.
@@ -3651,7 +3672,7 @@ function finish(msg) {
     // The controller's own account of the session -- run/walk block shape, seconds under and over the
     // ceiling, the autonomic recovery series, and which of the four endings actually happened -- none
     // of which `runStats` can derive from the pace-and-HR trace alone. Archived with the session so it
-    // reaches `showStats` on replay and `hrrHistory()` below for every session after this one.
+    // reaches `showStats` on replay and `recoveryHistory()` below for every session after this one.
     stats.hrBlocks = S.hrBlocks ? S.hrBlocks.summary() : null;
     // Stored WITH the session, not recomputed on demand: the zones and the profile can change
     // afterwards, and a statistic that silently restates itself when the settings move is not a

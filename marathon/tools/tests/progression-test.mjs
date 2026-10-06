@@ -6,7 +6,7 @@
 
 import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
-         DECOUPLING_LIMIT_PCT, judgeHrSession, hrrBaseline, HRR_DROP_FRACTION, HR_DONE_FRACTION } from '../progression.js';
+         DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -114,13 +114,13 @@ const HR_TARGET = { blocks: 7, blockS: 120 };      // seven blocks of up to two 
 /** A summary shaped like HrBlocks.summary(): `full` blocks of `planned` ran their full length. */
 const hrSummary = (over = {}) => ({
   governedBy: 'hr', endedBy: 'reps', blocksPlanned: 7, runBlocks: 7, blocksFull: 7, blocksCut: 0,
-  runBlockTargetS: 120, runningOverCeilingS: 0, hrr60Median: 25, ...over,
+  runBlockTargetS: 120, runningOverCeilingS: 0, toFloorMedianS: 80, ...over,
 });
 
 {
   // A clock-governed session -- the armband died, or it was never worn -- is a timer expiring, not a
   // body responding to load. Nothing here moves the ladder in either direction.
-  const j = judgeHrSession(HR_TARGET, hrSummary({ governedBy: 'clock', hrr60Median: null }), null, null);
+  const j = judgeHrSession(HR_TARGET, hrSummary({ governedBy: 'clock', toFloorMedianS: null }), null);
   assert.equal(j, null, 'a clock-governed summary must not move the ladder');
   console.log('  ok  a clock-governed HR summary returns nothing, not a guess');
 }
@@ -128,7 +128,7 @@ const hrSummary = (over = {}) => ({
 {
   // The body stopped clearing the load early: two unrecovered walks after 3 of 7 blocks.
   const j = judgeHrSession(HR_TARGET,
-    hrSummary({ endedBy: 'stall', runBlocks: 3, blocksFull: 2, blocksCut: 1 }), null, null);
+    hrSummary({ endedBy: 'stall', runBlocks: 3, blocksFull: 2, blocksCut: 1 }), null);
   assert.equal(j.verdict, EASE_BACK, j.reason);
   assert.match(j.reason, /stopped clearing the load/);
   console.log(`  ok  a stall well short of the plan eases the ladder back ("${j.reason.slice(0, 50)}…")`);
@@ -137,7 +137,7 @@ const hrSummary = (over = {}) => ({
 {
   // A stall late in the session -- six blocks done -- is not an ease-back and must not advance.
   const j = judgeHrSession(HR_TARGET,
-    hrSummary({ endedBy: 'stall', runBlocks: 6, blocksFull: 6 }), { decouplingPct: 3 }, null);
+    hrSummary({ endedBy: 'stall', runBlocks: 6, blocksFull: 6 }), null);
   assert.equal(j.verdict, REPEAT,
     `a session the body ended must not advance the rung however close it got: ${j.verdict}`);
   assert.match(j.reason, /the second decides/);
@@ -145,39 +145,40 @@ const hrSummary = (over = {}) => ({
 }
 
 {
-  // HRR60 down more than a fifth against his own recent baseline: accumulated fatigue, checked before
-  // decoupling and before completion, because it is the more direct explanation for either.
-  const baseline = 20, droppedHrr = baseline * HRR_DROP_FRACTION - 1;
-  const j = judgeHrSession(HR_TARGET, hrSummary({ hrr60Median: droppedHrr }), { decouplingPct: 3 }, baseline);
+  // Ceiling-to-floor a quarter slower than his own recent baseline: accumulated fatigue, so the
+  // rung holds even though every block ran full.
+  const baseline = 80;
+  const j = judgeHrSession(HR_TARGET, hrSummary({ toFloorMedianS: baseline * RECOVERY_SLOW_FRACTION + 5 }), baseline);
   assert.equal(j.verdict, REPEAT, j.reason);
   assert.match(j.reason, /fatigue/);
-  console.log('  ok  HRR60 down more than a fifth from baseline holds the ladder, despite completion');
+  console.log('  ok  recovery a quarter slower than baseline holds the ladder, despite completion');
 }
 
 {
-  // Recovery is fine, but heart rate drifted against pace between the halves.
-  const j = judgeHrSession(HR_TARGET, hrSummary(), { decouplingPct: DECOUPLING_LIMIT_PCT + 5 }, 20);
-  assert.equal(j.verdict, REPEAT, j.reason);
-  assert.match(j.reason, /drift/i);
-  console.log('  ok  heart-rate drift holds the ladder even with every block full and recovery fine');
+  // Decoupling is not evidence about a run/walk held to a ceiling (6 October read 12% across blocks,
+  // walks and a cool-down). It must not hold the ladder.
+  const j = judgeHrSession(HR_TARGET, hrSummary(), 80);
+  assert.equal(j.verdict, ADVANCE, j.reason);
+  assert.equal(judgeHrSession.length, 3, 'the judge takes no stats object to read drift from');
+  console.log('  ok  heart-rate drift is not read for a ceiling-governed run/walk');
 }
 
 {
   // Every block ran full length, recovery holding, no drift: this is what earns the next rung.
-  const j = judgeHrSession(HR_TARGET, hrSummary(), { decouplingPct: 3 }, 20);
+  const j = judgeHrSession(HR_TARGET, hrSummary(), 80);
   assert.equal(j.verdict, ADVANCE, j.reason);
   assert.match(j.next, /rung/);
   assert.equal(j.evidence.blocksFull, 7);
-  console.log(`  ok  every block full with recovery and decoupling clean moves the ladder up ("${j.reason.slice(0, 46)}…")`);
+  console.log(`  ok  every block full with recovery clean moves the ladder up ("${j.reason.slice(0, 46)}…")`);
 }
 
 {
   // One block cut by the ceiling out of seven still advances (6/7 >= HR_DONE_FRACTION); three cut does
   // not -- the heart is saying the rung is not yet comfortable, which is a repeat, not an ease-back.
-  const one = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 6, blocksCut: 1 }), { decouplingPct: 3 }, 20);
+  const one = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 6, blocksCut: 1 }), 80);
   assert.ok(6 / 7 >= HR_DONE_FRACTION);
   assert.equal(one.verdict, ADVANCE, one.reason);
-  const three = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 4, blocksCut: 3 }), { decouplingPct: 3 }, 20);
+  const three = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 4, blocksCut: 3 }), 80);
   assert.equal(three.verdict, REPEAT, three.reason);
   assert.match(three.reason, /3 cut short by the heart-rate ceiling/);
   console.log('  ok  one cut block still advances; several cut blocks repeat the rung');
@@ -186,25 +187,25 @@ const hrSummary = (over = {}) => ({
 {
   // The athlete stopped early, no stall, no fatigue signal: a repeat, not a verdict either way.
   const j = judgeHrSession(HR_TARGET,
-    hrSummary({ endedBy: 'athlete', runBlocks: 4, blocksFull: 4, hrr60Median: null }), null, null);
+    hrSummary({ endedBy: 'athlete', runBlocks: 4, blocksFull: 4, toFloorMedianS: null }), null);
   assert.equal(j.verdict, REPEAT, j.reason);
   console.log('  ok  stopping short without a stall or fatigue signal is a repeat');
 }
 
 {
   // No target, no summary: a real answer, not a guess.
-  assert.equal(judgeHrSession(null, { governedBy: 'hr' }, null, null), null);
-  assert.equal(judgeHrSession(HR_TARGET, null, null, null), null);
+  assert.equal(judgeHrSession(null, { governedBy: 'hr' }, null), null);
+  assert.equal(judgeHrSession(HR_TARGET, null, null), null);
   console.log('  ok  an unjudgeable HR session returns nothing rather than a guess');
 }
 
-// --- hrrBaseline: this athlete's own recent autonomic baseline, in place of overnight HRV -----------
+// --- recoveryBaseline: this athlete's own recent ceiling-to-floor time, in place of overnight HRV -----------
 
 {
-  assert.equal(hrrBaseline([]), null);
-  assert.equal(hrrBaseline([{ hrr60Median: 20 }, { hrr60Median: 22 }]), null,
+  assert.equal(recoveryBaseline([]), null);
+  assert.equal(recoveryBaseline([{ toFloorMedianS: 20 }, { toFloorMedianS: 22 }]), null,
     'two sessions is a guess wearing a number, not a baseline');
-  const three = hrrBaseline([{ hrr60Median: 18 }, { hrr60Median: 20 }, { hrr60Median: 22 }]);
+  const three = recoveryBaseline([{ toFloorMedianS: 18 }, { toFloorMedianS: 20 }, { toFloorMedianS: 22 }]);
   assert.equal(three, 20);
   console.log(`  ok  a baseline needs at least three sessions and is their median (${three})`);
 }
@@ -212,10 +213,10 @@ const hrSummary = (over = {}) => ({
 {
   // Nulls (sessions with no recovery reading at all) are dropped rather than counted as zero, and
   // only the most recent five count -- the baseline follows fitness, it does not average a career.
-  const withNulls = hrrBaseline([{ hrr60Median: 10 }, { hrr60Median: null }, { hrr60Median: 12 },
-                                  { hrr60Median: 14 }, { hrr60Median: 16 }, { hrr60Median: 18 }]);
+  const withNulls = recoveryBaseline([{ toFloorMedianS: 10 }, { toFloorMedianS: null }, { toFloorMedianS: 12 },
+                                  { toFloorMedianS: 14 }, { toFloorMedianS: 16 }, { toFloorMedianS: 18 }]);
   assert.equal(withNulls, 14);
-  const longHistory = hrrBaseline([1, 2, 3, 4, 5, 6, 7].map(hrr60Median => ({ hrr60Median })));
+  const longHistory = recoveryBaseline([1, 2, 3, 4, 5, 6, 7].map(toFloorMedianS => ({ toFloorMedianS })));
   assert.equal(longHistory, 5, 'only the last five sessions count toward the baseline');
   console.log(`  ok  a missing recovery reading is dropped, not counted as zero, `
             + `and the baseline follows the last five sessions (${withNulls}, ${longHistory})`);
