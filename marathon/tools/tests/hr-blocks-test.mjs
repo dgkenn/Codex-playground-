@@ -6,7 +6,7 @@
 
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { HrBlocks, BlockPhase as Phase } from '../hr-blocks.js';
+import { HrBlocks, BlockPhase as Phase, comfortableRunPace } from '../hr-blocks.js';
 
 const CEIL = 150, FLOOR = 125;
 
@@ -351,6 +351,46 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0, gradeAt = () 
   assert.equal(s.blocksHill, 0); assert.equal(s.blocksSteepDown, 0);
   assert.ok(b.blocks.filter(x => x.kind === Phase.RUN).every(x => x.climb === null));
   console.log('  ok  with no terrain, grade changes nothing');
+}
+
+{
+  // Running time the ceiling cut short is made up in extra blocks -- each still capped by the rung
+  // and the ceiling, at most three, and never past the plan's total.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 7,
+                           runningTargetS: 7 * 120 });
+  let hr = 110;
+  const evs = drive(b, 5000, () => {
+    hr += ((b.phase === Phase.RUN ? 160 : 100) - hr) / 30;    // every block cut by the ceiling
+    return hr;
+  });
+  const s = b.summary();
+  assert.equal(b.phase, Phase.COOLDOWN);
+  assert.ok(s.runBlocks > 7 && s.runBlocks <= 10, `extra blocks, bounded: ${s.runBlocks}`);
+  assert.equal(s.blocksExtra, s.runBlocks - 7);
+  assert.ok(s.longestRunBlockS <= 120, 'no block past the rung length');
+  assert.ok(s.runningS <= 7 * 120 + 120, `never well past the planned running: ${s.runningS}`);
+  // Full blocks: no extras at all.
+  const f = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 3,
+                           runningTargetS: 3 * 120 });
+  drive(f, 3000, () => (f.phase === Phase.RUN ? 140 : 110));
+  assert.equal(f.summary().runBlocks, 3);
+  assert.equal(f.summary().blocksExtra, 0);
+  console.log(`  ok  cut blocks are made up with up to 3 extra short ones (${s.runBlocks} blocks, ${Math.round(s.runningS / 60)} min running)`);
+}
+
+{
+  // The comfortable pace: settled run seconds under ceiling-5, jogging, on the flat.
+  const samples = [];
+  let t = 0;
+  for (let blk = 0; blk < 4; blk++) {
+    for (let i = 0; i < 90; i++) samples.push({ t_s: t++, label: 'run', speed_m_s: i < 30 ? 1.2 : 1.8,
+                                                hr_bpm: 130 + i * 0.15, grade: 0 });
+    for (let i = 0; i < 60; i++) samples.push({ t_s: t++, label: 'walk', speed_m_s: 1.3, hr_bpm: 135, grade: 0 });
+  }
+  const p = comfortableRunPace(samples, 150);
+  assert.ok(Math.abs(p - 1000 / 1.8) < 1, `the settled jog, not the first 30 s or the walks: ${p}`);
+  assert.equal(comfortableRunPace(samples.slice(0, 80), 150), null, 'under a minute of evidence is no answer');
+  console.log(`  ok  the comfortable run pace is learned from settled, under-ceiling jogging (${Math.round(p)} s/km)`);
 }
 
 // --- against the real session ---------------------------------------------------------------------

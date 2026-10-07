@@ -120,7 +120,48 @@ export const HrBlockDefaults = {
   /// gradient -- the one case where the heart-rate machinery is blind to exactly the tissue the first
   /// twenty weeks are protecting. Null turns it off (after the bone window).
   steepDownGrade: -0.07,
+  /// How many blocks past the plan's count may be added to make up running time the ceiling cut
+  /// short (see `runningTargetS`). Bounded, so a day when every block is cut at thirty seconds is a
+  /// short session and not an endless one.
+  extraBlocks: 3,
 };
+
+/**
+ * The pace at which this athlete's heart rate was still comfortable while running: the median speed
+ * over run-block seconds at least 30 s into a block (past the lag), at least 5 bpm under the ceiling,
+ * actually jogging (>= 1.4 m/s), and not on a hill. Seconds per km, or null with under a minute of
+ * such running (counted in seconds, so an archived 5 s session and a live 1 s one are judged alike).
+ *
+ * Why it exists: the plan's 12:04/mi is the engine's estimate from a pace table, and the voice said
+ * "Target 12:04" at the start of every block. Fitted to the 6 October trace, 12:04 is the pace that
+ * reaches the 150 ceiling fastest (about a minute from the walk floor); his own comfortable running
+ * that day was ~14:54/mi by the app's speed. A target the heart rate guarantees to cut short is an
+ * instruction to fail, so the run-block target becomes this, learned from his own sessions. It is
+ * measured with the same GPS speed the coach compares against, so any calibration error in the
+ * speed cancels.
+ */
+export function comfortableRunPace(samples, ceilingBpm, { marginBpm = 5, settleS = 30, minS = 60 } = {}) {
+  if (!samples || !samples.length || ceilingBpm == null) return null;
+  const v = [];
+  let runStart = null;
+  for (const x of samples) {
+    if (x.label !== 'run') { runStart = null; continue; }
+    if (runStart == null) runStart = x.t_s;
+    if (x.t_s - runStart < settleS) continue;
+    if (x.hr_bpm == null || x.hr_bpm > ceilingBpm - marginBpm) continue;
+    if (x.speed_m_s == null || x.speed_m_s < 1.4) continue;
+    if (x.grade != null && Math.abs(x.grade) >= 0.04) continue;
+    v.push(x.speed_m_s);
+  }
+  // Evidence in seconds, not samples: an archived session is stored on a 5 s grid, a live one at 1 s.
+  const gaps = [];
+  for (let i = 1; i < Math.min(samples.length, 200); i++) gaps.push(samples[i].t_s - samples[i - 1].t_s);
+  gaps.sort((a, b) => a - b);
+  const stepS = gaps.length ? Math.max(1, gaps[Math.floor(gaps.length / 2)]) : 1;
+  if (v.length * stepS < minS) return null;
+  v.sort((a, b) => a - b);
+  return 1000 / v[Math.floor(v.length / 2)];
+}
 
 /** Phases this controller can be in. `warmup` is walking too. */
 /// Named for this module rather than `Phase`, which is what it wants to be called: the built page
@@ -146,7 +187,7 @@ export const BlockPhase = { WARMUP: 'warmup', RUN: 'run', WALK: 'walk', COOLDOWN
  */
 export class HrBlocks {
   constructor({ ceilingBpm, floorBpm, runBlockS = null, walkS = null, reps = null,
-                fallbackRunS = null, fallbackWalkS = null, ...opts } = {}) {
+                runningTargetS = null, fallbackRunS = null, fallbackWalkS = null, ...opts } = {}) {
     this.cfg = { ...HrBlockDefaults, ...opts };
     this.ceilingBpm = ceilingBpm;
     this.floorBpm = floorBpm;
@@ -168,6 +209,16 @@ export class HrBlocks {
     /// under the ceiling" -- and it is what let a session run 14 minutes straight. A target is a
     /// ratchet that can only be met by running more; a block count cannot be met by running longer.
     this.reps = reps;
+    /// The rung's total running (block length x block count). When the ceiling cuts blocks short,
+    /// up to `extraBlocks` more are added until this much running is done -- the planned dose for
+    /// tendon and bone, delivered in shorter pieces.
+    ///
+    /// Not the `targetRunningS` that was removed, which let one block run fourteen minutes: every
+    /// block here is still capped at the rung's length and at the ceiling, the total can never exceed
+    /// what the plan prescribed, and two unrecovered walks still end the running. On 6 October six of
+    /// seven blocks were cut and 10.6 of 14 planned minutes were run; three short extra blocks would
+    /// have delivered the rest at the same ceiling.
+    this.runningTargetS = runningTargetS;
 
     this.phase = BlockPhase.WARMUP;
     this.phaseStartT = null;
@@ -327,7 +378,11 @@ export class HrBlocks {
    * block reached full length is exactly what the judge needs to know.
    */
   _endRun(tS, reason, governedByHr) {
-    if (this.reps != null && this.rep >= this.reps) {
+    const ran = this.blocks.filter(b => b.kind === BlockPhase.RUN).reduce((a, b) => a + b.durationS, 0)
+              + this.elapsed(tS);
+    const enough = this.runningTargetS == null || ran >= this.runningTargetS * 0.9;
+    if (this.reps != null
+        && ((this.rep >= this.reps && enough) || this.rep >= this.reps + this.cfg.extraBlocks)) {
       this._endedBy = 'reps';
       return this._to(BlockPhase.COOLDOWN, tS, 'blocks done', governedByHr, reason);
     }
@@ -427,6 +482,8 @@ export class HrBlocks {
       // cut short by the ceiling is the heart saying the load was enough for today; it is neither
       // counted as a failure nor made up for later.
       blocksPlanned: this.reps,
+      blocksExtra: this.reps == null ? 0 : Math.max(0, runs.length - this.reps),
+      runningTargetS: this.runningTargetS,
       blocksFull: runs.filter(b => b.full).length,
       blocksCut: runs.filter(b => b.reason === 'ceiling' || b.reason === 'well over the ceiling').length,
       runBlockTargetS: this.runBlockS,

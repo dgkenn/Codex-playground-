@@ -1240,7 +1240,9 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
                                f"easy running. A block ends early if your heart rate reaches "
                                f"{RUN_WALK_WORK_PCT_MAX:.0%} of your maximum, and each is followed "
                                f"by a walk until it is back down to {RUN_WALK_REST_PCT_MAX:.0%} of "
-                               f"maximum. Walk steep downhills (7% or more). 5 min walk "
+                               f"maximum. If heart rate cuts blocks short, up to 3 extra short "
+                               f"blocks make up the {run_min * reps:g} min of running. Walk steep "
+                               f"downhills (7% or more). 5 min walk "
                                f"cool-down. With no armband, run "
                                f"{run_min:g} min and walk {walk_min:g} min by the clock."),
                     intent="Build running-specific tissue tolerance in doses the tissue can "

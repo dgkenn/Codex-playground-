@@ -311,7 +311,8 @@ async function openAll(page) {
   // that actually ends a block. The plan card must show the pace of the RUNNING blocks (not the
   // session average), both heart-rate limits in bpm, and the percent-of-max rule the plan states.
   const detail = (await page.textContent('#sessdetail')).replace(/\s+/g, ' ').trim();
-  assert.match(detail, /run blocks \d+:\d\d.\d+:\d\d/, `the run-block pace, not the session average: "${detail}"`);
+  assert.match(detail, /run blocks an easy jog — heart rate decides/,
+    `with no sessions yet, no pace-table number for the run blocks: "${detail}"`);
   assert.match(detail, /blocks end at \d+, walks at \d+/, `both limits in bpm: "${detail}"`);
   assert.match(detail, /80% of your maximum.*71% of maximum/, `the percent-of-max rule: "${detail}"`);
   assert.doesNotMatch(detail, /min run \/ \d+ min walk/, `no bare clock reading: "${detail}"`);
@@ -323,6 +324,46 @@ async function openAll(page) {
   assert.equal(Number(nums[1]), Math.round(0.8 * max), 'the ceiling is 80% of maximum');
   assert.equal(Number(nums[2]), Math.round(0.71 * max), 'the walk floor is 71% of maximum');
   console.log(`  ok  a run/walk day states block pace, ${nums[1]} / ${nums[2]} bpm limits and the percent-of-max rule`);
+}
+
+// --- the run-block pace is learned from his own sessions -----------------------------------------
+
+{
+  // The plan's 12:04 was the pace that reached the ceiling fastest. Once an HR-governed session is on
+  // the phone -- including one saved before the pace was stored with it, as 6 October was -- the run
+  // blocks are paced from what his heart rate was comfortable at. Seed one, archived the old way on a
+  // 5 s grid: settled jogging at 1.8 m/s (14:54/mi) under 145 bpm.
+  const t = [], hr = [], spd = [], grd = [], labels = [[0, '']];
+  let k = 0;
+  for (let blk = 0; blk < 6; blk++) {
+    labels.push([k, 'run']);
+    for (let i = 0; i < 18; i++) { t.push(k); hr.push(128 + i); spd.push(i < 6 ? 12 : 18); grd.push(0); k += 5; }
+    labels.push([k, 'walk']);
+    for (let i = 0; i < 18; i++) { t.push(k); hr.push(135 - i / 2); spd.push(13); grd.push(0); k += 5; }
+  }
+  const session = { schema_version: 2, started_at: '2026-10-06T20:54:11.998Z', title: 'Run-walk',
+                    mode: 'intervals', step_s: 5, t0: 1, t, hr, spd, grd, acc: t.map(() => null), labels, route: [],
+                    stats: { hrBlocks: { governedBy: 'hr', runBlocks: 6, blocksPlanned: 7 } } };
+  await page.evaluate(sess => {
+    const id = '20261006T205411998Z';
+    localStorage.setItem('band.session.' + id, JSON.stringify(sess));
+    const idx = JSON.parse(localStorage.getItem('band.session.index') || '[]');
+    localStorage.setItem('band.session.index', JSON.stringify([{ id, at: sess.started_at, title: sess.title,
+      mode: sess.mode, stats: sess.stats }, ...idx]));
+  }, session);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(300);
+  const detail = (await page.textContent('#sessdetail')).replace(/\s+/g, ' ');
+  assert.match(detail, /run blocks about 14:5\d \/ mi \(your comfortable pace\)/,
+    `the run-block pace comes from his own session: "${detail}"`);
+  await page.evaluate(() => {
+    const idx = JSON.parse(localStorage.getItem('band.session.index') || '[]').filter(e => e.id !== '20261006T205411998Z');
+    localStorage.setItem('band.session.index', JSON.stringify(idx));
+    localStorage.removeItem('band.session.20261006T205411998Z');
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  console.log(`  ok  the run-block pace is learned from his own (older, 5 s) session: "${detail.match(/run blocks about [^)]*\)/)[0]}"`);
 }
 
 // --- today, in one tap ---------------------------------------------------------------------------
