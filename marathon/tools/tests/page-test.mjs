@@ -366,6 +366,28 @@ async function openAll(page) {
   console.log(`  ok  the run-block pace is learned from his own (older, 5 s) session: "${detail.match(/run blocks about [^)]*\)/)[0]}"`);
 }
 
+// --- the card names the step that will actually run ---------------------------------------------
+
+{
+  // 9 October: the card said "7 blocks of up to 2 min" and the app ran 8 x 1 min, because the ladder
+  // step had moved and only a dim log line said so. The card and the mode line must name the step.
+  await page.evaluate(() => localStorage.setItem('band.rung', JSON.stringify({ rung: 0 })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  const title = (await page.textContent('#todaytitle')).trim();
+  const detail = (await page.textContent('#todaydetail')).trim();
+  const mode = (await page.textContent('#modeplan')).replace(/\s+/g, ' ');
+  if (/run-?walk/i.test(title)) {
+    assert.match(title, /8 blocks of up to 1 min \(your current step\)/, `the card names the step: "${title}"`);
+    assert.match(detail, /8 × up to 1 min/, `and its detail line: "${detail}"`);
+    assert.doesNotMatch(mode, /7 blocks of up to 2 min/, `the mode line must not describe the week's text: "${mode}"`);
+  }
+  await page.evaluate(() => localStorage.removeItem('band.rung'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  console.log(`  ok  the Today card names the ladder step that will run ("${title}")`);
+}
+
 // --- today, in one tap ---------------------------------------------------------------------------
 
 {

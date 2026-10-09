@@ -128,19 +128,25 @@ export const HrBlockDefaults = {
 
 /**
  * The pace at which this athlete's heart rate was still comfortable while running: the median speed
- * over run-block seconds at least 30 s into a block (past the lag), at least 5 bpm under the ceiling,
- * actually jogging (>= 1.4 m/s), and not on a hill. Seconds per km, or null with under a minute of
- * such running (counted in seconds, so an archived 5 s session and a live 1 s one are judged alike).
+ * over run-block seconds at least 60 s into a block, at least 5 bpm under the ceiling, actually
+ * jogging (>= 1.4 m/s), and not on a hill. Seconds per km, or null with under a minute of such
+ * running (counted in seconds, so an archived 5 s session and a live 1 s one are judged alike).
+ *
+ * Sixty seconds is one heart-rate time constant (54 s, fitted on 6 October). Before that the heart
+ * rate is still reporting the walk: on 9 October one-minute blocks at about 12:20/mi ended at
+ * 128-149 bpm, and the same pace run continuously went to 175. With a 30 s settle that session read
+ * as an "easy pace" of 11:40/mi; with 60 s it gives no reading at all, which is the honest answer
+ * for blocks that never outlast the lag. 6 October, with blocks of 65-120 s, gives 15:47/mi.
  *
  * Why it exists: the plan's 12:04/mi is the engine's estimate from a pace table, and the voice said
  * "Target 12:04" at the start of every block. Fitted to the 6 October trace, 12:04 is the pace that
  * reaches the 150 ceiling fastest (about a minute from the walk floor); his own comfortable running
- * that day was ~14:54/mi by the app's speed. A target the heart rate guarantees to cut short is an
+ * that day was ~15:47/mi by the app's speed. A target the heart rate guarantees to cut short is an
  * instruction to fail, so the run-block target becomes this, learned from his own sessions. It is
  * measured with the same GPS speed the coach compares against, so any calibration error in the
  * speed cancels.
  */
-export function comfortableRunPace(samples, ceilingBpm, { marginBpm = 5, settleS = 30, minS = 60 } = {}) {
+export function comfortableRunPace(samples, ceilingBpm, { marginBpm = 5, settleS = 60, minS = 60 } = {}) {
   if (!samples || !samples.length || ceilingBpm == null) return null;
   const v = [];
   let runStart = null;
@@ -460,7 +466,9 @@ export class HrBlocks {
     let hrr60 = null;
     if (peak) {
       const later = tr.find(([s]) => s >= peak[0] + 60);
-      if (later) hrr60 = peak[1] - later[1];
+      // A heart rate HIGHER a minute after the walk's peak is not a recovery reading: it means the
+      // walk was run (9 October: the last "walk" was five more minutes of running, HRR60 -3).
+      if (later && peak[1] - later[1] > 0) hrr60 = peak[1] - later[1];
     }
     this.recoveries.push({ atT: tr.startT, peakHr: peak ? peak[1] : null,
                            toFloorS: floorAt ? floorAt[0] : null, hrr60 });

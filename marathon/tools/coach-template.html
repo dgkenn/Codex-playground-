@@ -1189,6 +1189,7 @@ const hrMaxFor = age => Math.round(208 - 0.7 * age);
 /// not enough and why the median is taken rather than the latest.
 const THRESHOLD_KEY = 'band.threshold';
 
+const RUNG_KEY = 'band.rung';
 // Declared here, above the first render, on purpose: `measuredCeiling()` reads these inside a try whose
 // catch would turn a temporal-dead-zone ReferenceError into "no measured ceiling" without a word.
 const WORK_PCT_MAX = 0.80, REST_PCT_MAX = 0.71;
@@ -1264,6 +1265,21 @@ function hrPcts() {
   return { work: (hr && hr.work_pct) || WORK_PCT_MAX, rest: (hr && hr.rest_pct) || REST_PCT_MAX };
 }
 const fmtMin = m => String(Math.round(m * 10) / 10);
+/**
+ * The run/walk that will actually run: the ladder step his sessions have put him on, which can differ
+ * from the week's text. On 9 October the card said "7 blocks of up to 2 min" and the app ran 8 x 1
+ * min, because the step had moved and only a dim log line said so.
+ */
+function effectiveRunWalk(s) {
+  if (!s || !s.run_walk) return null;
+  return rungSession() || s.run_walk;
+}
+/** A session's name as it will run. */
+function sessionName(s) {
+  const rw = effectiveRunWalk(s);
+  if (!rw || (rw.run_min === s.run_walk.run_min && rw.reps === s.run_walk.reps)) return s.title;
+  return `Run-walk: ${rw.reps} blocks of up to ${fmtMin(rw.run_min)} min (your current step)`;
+}
 function runWalkLine(rw, { short = false } = {}) {
   const c = aerobicCeilingBpm().bpm, f = recoveryFloorBpm();
   const blocks = `${rw.reps} blocks of up to ${fmtMin(rw.run_min)} min`;
@@ -1515,12 +1531,12 @@ function renderToday() {
     renderModePlan();
     return;
   }
-  $('todaytitle').textContent = s.title;
+  $('todaytitle').textContent = sessionName(s);
   // Said outright when it is not today's session. Running Sunday's workout on a Tuesday is a fine
   // thing to do, and the card should read as a decision rather than as a mistake.
   const bits = [moved && runnable(s) ? `${name}'s session, run today` : name, shortType(s.type)];
   if (s.minutes) bits.push(`${s.minutes} min`);
-  if (s.run_walk) bits.push(runWalkLine(s.run_walk, { short: true }));
+  if (s.run_walk) bits.push(runWalkLine(effectiveRunWalk(s), { short: true }));
   if (s.ramp) bits.push(`${s.ramp.steps.filter(x => x.kind === 'stage').length} stages`);
   $('todaydetail').textContent = bits.join(' · ');
   $('today-where').classList.toggle('hide', !s.ramp);
@@ -1773,13 +1789,13 @@ function renderModePlan() {
   const dayIdx = focusDay();
   const day = DAYS[dayIdx];
   if (!s) { el.textContent = `${day}: nothing scheduled.`; return; }
-  const head = `${day}: ${s.title}${dayIdx !== todayIndex() ? ' (run today instead)' : ''}`;
+  const head = `${day}: ${sessionName(s)}${dayIdx !== todayIndex() ? ' (run today instead)' : ''}`;
   if (!runnable(s)) {
     el.textContent = `${head} — the app can describe this one but not run it. See Your plan.`;
     return;
   }
   const per = readoutLabel().toLowerCase();
-  const rw = s.run_walk;
+  const rw = effectiveRunWalk(s);
   const own = rw ? runBlockPace(s) : null;
   const at = rw ? (own ? `${readoutText(own)} ${per}` : null)
                 : (s.pace ? `${readoutText(s.pace.target_sec_km)} ${per}` : null);
@@ -2692,7 +2708,7 @@ function tickRamp(t) {
  * the first time a rung is needed it comes from the plan, and from then on it is evidence that moves
  * it. `nextRung` never moves more than one step in either direction.
  */
-const RUNG_KEY = 'band.rung';
+// RUNG_KEY is declared with the other boot-time state, above the first render.
 
 function ladder() { return (PLAN.run_walk_ladder || []); }
 
@@ -2973,6 +2989,31 @@ function recoveryHistory({ excludeAt = null } = {}) {
     .map(e => e.stats && e.stats.hrBlocks).filter(Boolean).reverse();
 }
 
+/**
+ * A walk break that is being run.
+ *
+ * Twice now: on 6 October he jogged on for a minute after the walk call at 7:30 (heart rate to 155,
+ * the slowest recovery of the session), and on 9 October the cool-down was five more minutes of
+ * running, to 178 bpm. Sometimes that is a choice and sometimes the cue was missed, so it is said
+ * ONCE per walk -- 15 s of grace for slowing down, then 20 s at jogging speed -- and the seconds are
+ * counted, so the session's recovery numbers can be read for what they are.
+ */
+function walkRunCheck(t) {
+  const w = S.walkRun;
+  if (!S.hrBlocks || S.ivPhase !== 'walk' || !w) return;
+  const v = S.track.trustedAt(nowSeconds()) ? S.track.speedMS : null;
+  const jogging = v != null && v >= 2.0 && t - w.startT >= 15;
+  if (jogging) S.ranInWalksS = (S.ranInWalksS || 0) + 1;
+  w.fastS = jogging ? w.fastS + 1 : 0;
+  if (w.fastS >= 20 && !w.said) {
+    w.said = true;
+    const done = S.hrBlocks.phase === 'cooldown';
+    const text = done ? 'Running is done for today. Walk it in.' : 'That is a walk break. Walk, slowly.';
+    log(`running in a ${done ? 'cool-down' : 'walk break'} — “${text}”`, 'fast');
+    if (voiceCoaching) sayShortly(text);
+  }
+}
+
 /** One line as a climb or a descent begins (see terrain.js HillCues). Quiet with no terrain. */
 function hillCue(running) {
   const c = S.hillCues && S.hillCues.update(currentGrade(), { running });
@@ -3033,6 +3074,7 @@ function tickIntervals(t) {
   if (run) {
     S.voice && S.voice.begin(t);
   } else if (S.voice) {
+    S.walkRun = { startT: t, fastS: 0, said: false };
     S.voice.standDown();
     // Where heart rate was as the walk began, so the walk can be judged by whether it comes down.
     const sn = S.sensor;
@@ -3150,6 +3192,7 @@ function tick() {
     // the job not being done: 384 s above threshold while walking. One line, once per walk, only when a
     // minute in heart rate has not come down. The controller holds the walk regardless; this says why.
     hillCue(S.ivPhase === 'run');
+    walkRunCheck(t);
     if (S.hrBlocks && S.ivPhase === 'walk' && voiceCoaching && S.voice && !speechBusy()) {
       const sn = S.sensor;
       const w = S.voice.walkUpdate(t, sn && sn.hrFresh() ? sn.hr : null);
@@ -3496,6 +3539,7 @@ $('go').onclick = () => {
                      governedBy: 'pace', batteryWarned: false, hrLostAnnounced: false,
                      track: new GpsTrack(), trackState: [],
                      grades: new GradeTrack(), hillCues: new HillCues(), gradeAt: null, gradeDistM: 0,
+                     walkRun: null, ranInWalksS: 0,
                      ivPhase: null, ivRep: 0, ivUntil: 0,
                      // NOT `ramp`: the loaded protocol is a selection the athlete made, like the
                      // target pace, and clearing it here wiped the runner one line after it was
@@ -3659,6 +3703,7 @@ function showStats(stats, prevStats) {
     const hills = (stats.hrBlocks.blocksHill || 0) + (stats.hrBlocks.blocksSteepDown || 0);
     if (hills) tile('Hill blocks', `${hills}`);
     if (stats.hrBlocks.blocksExtra) tile('Extra blocks', `${stats.hrBlocks.blocksExtra}`);
+    if (stats.hrBlocks.ranInWalksS >= 30) tile('Ran in walks', mmss(stats.hrBlocks.ranInWalksS));
     if (stats.hrBlocks.comfortPaceSecKm) tile('Easy pace', readoutText(stats.hrBlocks.comfortPaceSecKm));
     if (stats.hrBlocks.toCeilingMedianS != null) {
       tile(`Run to ${S.hrBlocks ? S.hrBlocks.ceilingBpm : 'ceiling'}`, mmss(stats.hrBlocks.toCeilingMedianS));
@@ -3731,11 +3776,21 @@ function showStats(stats, prevStats) {
   // HR-governed session with a run/walk rung in force is judged by `judgeHrSession` instead, fed the controller's own summary
   // (archived on `stats.hrBlocks`, see `finish()`) and this athlete's own recent recovery baseline;
   // everything else still goes through `judgeSession` exactly as before.
-  const rw = S.plannedSession && S.plannedSession.runWalk;
-  const judged = (stats.hrBlocks && stats.hrBlocks.governedBy === 'hr' && rw)
-    ? judgeHrSession({ blocks: rw.reps, blockS: rw.runMin * 60 }, stats.hrBlocks,
-                     recoveryBaseline(recoveryHistory({ excludeAt: new Date(S.startedAt).toISOString() })))
-    : (rw ? judgeSession(rw, stats) : null);
+  //
+  // Only a run/walk that was actually run as one moves the ladder. The ladder went from 7 x 2 min down
+  // to 8 x 1 min between 6 and 9 October without a session that earned it, and every path that could
+  // do that went through the clock judge: a session stopped during the warm-up (no block run, so the
+  // controller reports `clock`), or a Pace coach run started after a run/walk had been loaded
+  // (`plannedSession` still set). Both read as "a fraction of the running was done" -> ease back. So:
+  // run/walk mode only; HR-governed sessions are judged by heart rate or not at all; and a clock
+  // session must have got past the warm-up and lasted ten minutes before it counts as evidence.
+  const rw = S.mode === 'intervals' && S.plannedSession && S.plannedSession.runWalk;
+  const clockEvidence = stats.durationS >= 600 && (stats.runningS || 0) >= 60;
+  const judged = !rw ? null
+    : stats.hrBlocks
+      ? judgeHrSession({ blocks: rw.reps, blockS: rw.runMin * 60 }, stats.hrBlocks,
+                       recoveryBaseline(recoveryHistory({ excludeAt: new Date(S.startedAt).toISOString() })))
+      : (clockEvidence ? judgeSession(rw, stats) : null);
   // And it is applied, not merely announced. This is the line that turns a schedule into a
   // controller; everything it needs has existed and been tested for weeks.
   const moved = judged ? applyVerdict(judged, stats) : null;
@@ -3779,6 +3834,10 @@ const statsZones = () => S.hrZones || zoneModel(hrMaxFor(profile.age), profile.h
 
 /** What a session is called in the saved list. The planned session's name, or the mode. */
 function sessionTitle() {
+  if (S.mode === 'intervals' && S.plannedSession && S.plannedSession.runWalk) {
+    const r = S.plannedSession.runWalk;
+    return `Run-walk: ${r.reps} blocks of up to ${fmtMin(r.runMin)} min`;
+  }
   if (S.plannedSession && S.plannedSession.title) return S.plannedSession.title;
   return { coach: 'Pace run', intervals: 'Run / walk', ramp: 'Ramp test',
            rehearse: 'Rehearsal' }[S.mode] || 'Session';
@@ -3815,7 +3874,10 @@ function finish(msg) {
     // of which `runStats` can derive from the pace-and-HR trace alone. Archived with the session so it
     // reaches `showStats` on replay and `recoveryHistory()` below for every session after this one.
     stats.hrBlocks = S.hrBlocks ? S.hrBlocks.summary() : null;
-    if (stats.hrBlocks) stats.hrBlocks.comfortPaceSecKm = comfortableRunPace(S.samples, S.hrBlocks.ceilingBpm);
+    if (stats.hrBlocks) {
+      stats.hrBlocks.comfortPaceSecKm = comfortableRunPace(S.samples, S.hrBlocks.ceilingBpm);
+      stats.hrBlocks.ranInWalksS = S.ranInWalksS || 0;
+    }
     // Stored WITH the session, not recomputed on demand: the zones and the profile can change
     // afterwards, and a statistic that silently restates itself when the settings move is not a
     // record of anything.
