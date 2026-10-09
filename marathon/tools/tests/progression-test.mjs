@@ -6,7 +6,8 @@
 
 import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
-         DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION } from '../progression.js';
+         DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION,
+         talkTestOffset, talkTestApplies, TALK_LIMIT_BPM } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -235,6 +236,23 @@ const hrSummary = (over = {}) => ({
   assert.equal(longHistory, 5, 'only the last five sessions count toward the baseline');
   console.log(`  ok  a missing recovery reading is dropped, not counted as zero, `
             + `and the baseline follows the last five sessions (${withNulls}, ${longHistory})`);
+}
+
+// --- the talk test moves the ceiling --------------------------------------------------------------
+
+{
+  assert.equal(talkTestOffset([]), 0);
+  assert.equal(talkTestOffset([{ answer: 'easy' }, { answer: 'easy' }]), 6, 'two easy answers: +6');
+  assert.equal(talkTestOffset([{ answer: 'easy' }, { answer: 'hard' }]), -2, 'hard steps down further than easy steps up');
+  assert.equal(talkTestOffset(Array(10).fill({ answer: 'easy' })), TALK_LIMIT_BPM, 'bounded above');
+  assert.equal(talkTestOffset(Array(10).fill({ answer: 'hard' })), -TALK_LIMIT_BPM, 'and below');
+  assert.equal(talkTestOffset([{ answer: 'just' }, { answer: 'nonsense' }]), 0);
+  // Asked only when the ceiling actually ended blocks -- not on 9 October's all-full one-minute blocks.
+  assert.equal(talkTestApplies({ governedBy: 'hr', blocksCut: 0, blocksFull: 8 }), false);
+  assert.equal(talkTestApplies({ governedBy: 'hr', blocksCut: 6 }), true);
+  assert.equal(talkTestApplies({ governedBy: 'hr', blocksCut: 3, blocksHill: 2 }), false, 'hill cuts do not count');
+  assert.equal(talkTestApplies({ governedBy: 'clock', blocksCut: 6 }), false);
+  console.log('  ok  talk-test answers move the ceiling in small bounded steps, asked only when it was tested');
 }
 
 console.log('\nAll progression tests passed.');

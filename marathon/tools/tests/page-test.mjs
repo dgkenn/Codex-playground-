@@ -388,6 +388,59 @@ async function openAll(page) {
   console.log(`  ok  the Today card names the ladder step that will run ("${title}")`);
 }
 
+// --- the button a run starts from is the button it stops from -------------------------------------
+
+{
+  // Stop used to live only on the lower button, inside the folded sections at the bottom of the page.
+  const before = (await page.textContent('#starttoday')).trim();
+  assert.match(before, /^Start /, `before a run it is Start: "${before}"`);
+  await page.click('#starttoday');
+  await page.waitForTimeout(400);
+  const during = (await page.textContent('#starttoday')).trim();
+  assert.equal(during, 'Stop run', `during a run it is Stop: "${during}"`);
+  assert.ok(await page.$eval('#starttoday', b => b.classList.contains('stop') && !b.disabled),
+    'and it is the red, enabled stop style');
+  const bg = await page.$eval('#starttoday', b => getComputedStyle(b).backgroundColor);
+  assert.match(bg, /rgb\(232, 110, 110\)/, `solid red, not outlined: ${bg}`);
+  // Picking another day mid-run must not take Stop away.
+  await page.click('#todaystrip button:first-child');
+  await page.waitForTimeout(100);
+  assert.equal((await page.textContent('#starttoday')).trim(), 'Stop run');
+  await page.click('#starttoday');
+  await page.waitForTimeout(400);
+  const after = (await page.textContent('#starttoday')).trim();
+  assert.ok(after !== 'Stop run' && !(await page.$eval('#starttoday', b => b.classList.contains('stop'))),
+    `after stopping it is no longer Stop: "${after}"`);
+  assert.equal((await page.textContent('#go')).trim(), 'Start', 'and the lower button agrees');
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  console.log(`  ok  the Today button becomes a red Stop run during a run and stops it ("${before}" → "${during}")`);
+}
+
+// --- talk-test answers move the ceiling ------------------------------------------------------------
+
+{
+  // Two "could talk easily" answers raise the ceiling 6 bpm; a "no" takes 5 back. The plan card's
+  // bpm limits follow, so the athlete sees the number the next run will use.
+  const read = async () => Number((await page.textContent('#sessdetail')).match(/blocks end at (\d+)/)[1]);
+  const base = await read();
+  await page.evaluate(() => localStorage.setItem('band.talk', JSON.stringify(
+    [{ session: 'a', answer: 'easy' }, { session: 'b', answer: 'easy' }])));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.equal(await read(), base + 6, 'two easy answers: +6');
+  await page.evaluate(() => localStorage.setItem('band.talk', JSON.stringify(
+    [{ session: 'a', answer: 'easy' }, { session: 'b', answer: 'easy' }, { session: 'c', answer: 'hard' }])));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.equal(await read(), base + 1, 'then a hard one: -5');
+  assert.ok(await page.$eval('#talkq', el => el.classList.contains('hide')), 'the question is hidden until a run asks it');
+  await page.evaluate(() => localStorage.removeItem('band.talk'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  console.log(`  ok  talk-test answers move the ceiling the next run uses (${base} → ${base + 6} → ${base + 1})`);
+}
+
 // --- today, in one tap ---------------------------------------------------------------------------
 
 {
@@ -770,12 +823,11 @@ async function openAll(page) {
     assert.equal(await T(sp, '#go'), 'Stop', 'Start must actually start it');
     assert.equal(await sp.getAttribute('#m-intervals', 'aria-pressed'), 'true',
       'and in the mode the picked session belongs to');
-    // A stray tap on the card mid-run must not swap the session being judged for another.
+    // A stray tap on the day strip mid-run must not swap the session being judged for another, and
+    // must leave the card's button as Stop (it is the Stop button during a run now).
     await (await strip(sp))[5].click();
-    await sp.click('#starttoday');
+    assert.equal(await T(sp, '#starttoday'), 'Stop run', 'the card keeps its Stop button');
     assert.equal(await T(sp, '#go'), 'Stop', 'the run must carry on');
-    const log2 = await sp.$$eval('#log div', ds => ds.map(d => d.textContent));
-    assert.ok(log2.some(l => /already running/.test(l)), 'and it must say why nothing happened');
     // Which day's session is actually running is recorded in the diagnostics. The run was started
     // from Sunday, and the stray tap above selected Saturday: the session in force must still be
     // Sunday's, or the run would be judged against a session the athlete never started.
@@ -785,7 +837,8 @@ async function openAll(page) {
     const diag = JSON.parse(await sp.inputValue('#diagtext'));
     assert.equal(diag.session.plannedDay, 'Sun',
       `the run must stay the session it was started as: ${JSON.stringify(diag.session)}`);
-    await sp.click('#go');
+    await sp.click('#starttoday');
+    assert.equal(await T(sp, '#go'), 'Start', 'the card\'s Stop button ends the run');
     console.log('  ok  Start runs the picked day with the plan\'s own ladder rung, and a stray tap '
               + 'mid-run changes nothing');
   });

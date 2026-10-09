@@ -320,3 +320,46 @@ export function recoveryBaseline(history) {
     ? sorted[(sorted.length - 1) / 2]
     : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
 }
+
+/**
+ * The talk test, as a correction to the heart-rate ceiling.
+ *
+ * The ceiling is meant to sit at the first ventilatory threshold, and the talk test is the field
+ * marker for exactly that point: below it you can speak in full sentences, at it speech starts to
+ * break up. Everything else the ceiling is built from is indirect -- 80% of an age-predicted maximum
+ * (good to about +/-10 bpm), and an efficiency roll-off read off one early session. On 9 October he
+ * held 175-178 bpm for two and a half minutes and "could keep going", which is hard to square with a
+ * 187 maximum and says the formula may well be low for him. His own answer to "could you talk at the
+ * moment the ceiling called the walk" is the direct measurement, so it moves the ceiling:
+ *
+ *   'easy' -> +3 bpm      'just' -> 0      'hard' -> -5 bpm
+ *
+ * Asymmetric on purpose: being over the threshold costs more than being a few beats under it. Small
+ * steps, because each answer is one person's impression at one moment, and the next session tests
+ * the new number. Bounded to +/-10 of where the ceiling started; the caller also caps the result at
+ * 80% of heart-rate reserve, the most this phase ever asks for.
+ *
+ * `answers` is `[{answer, at}]`, oldest first. Returns the offset in bpm.
+ */
+export const TALK_STEP_BPM = { easy: 3, just: 0, hard: -5 };
+export const TALK_LIMIT_BPM = 10;
+
+export function talkTestOffset(answers) {
+  let off = 0;
+  for (const a of answers || []) {
+    const step = a && TALK_STEP_BPM[a.answer];
+    if (step == null) continue;
+    off = Math.max(-TALK_LIMIT_BPM, Math.min(TALK_LIMIT_BPM, off + step));
+  }
+  return off;
+}
+
+/**
+ * Whether a session tested the ceiling at all, and so whether to ask. Only when heart rate actually
+ * ended at least two blocks: if every block ran its full length (9 October, one-minute blocks), the
+ * walk was called by the clock, and "could you talk then" is a question about a different heart rate.
+ */
+export function talkTestApplies(summary) {
+  return !!summary && summary.governedBy === 'hr'
+    && ((summary.blocksCut || 0) - (summary.blocksHill || 0)) >= 2;
+}

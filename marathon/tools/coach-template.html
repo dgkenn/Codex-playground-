@@ -101,7 +101,9 @@
     width: 100%; font-size: 1.0625rem; font-weight: 600; padding: 1.05rem;
     background: var(--on); border-color: var(--on); color: #08120C;
   }
-  button.go.stop { background: var(--surface); border-color: var(--stop); color: var(--stop); }
+  /* Solid, not outlined: mid-run this is the one control that matters, and it has to read as Stop
+     at a glance on a phone in a hand that is moving. */
+  button.go.stop { background: var(--stop); border-color: var(--stop); color: #1A0808; }
 
   .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 10px;
@@ -613,6 +615,16 @@
           <div id="statsprogress" class="note"></div>
           <div id="statsverdict" class="note hide"
                style="border-top:1px solid var(--line);padding-top:.6rem;margin-top:.2rem"></div>
+          <div id="talkq" class="hide" style="border-top:1px solid var(--line);padding-top:.6rem;margin-top:.2rem">
+            <p class="note" style="margin:0 0 .5rem">When the app called “walk” at the end of a block, could
+              you have talked in full sentences?</p>
+            <div class="row">
+              <button data-answer="easy">Yes, easily</button>
+              <button data-answer="just">Just about</button>
+              <button data-answer="hard">No</button>
+            </div>
+            <p class="note" id="talknote" style="margin-top:.4rem"></p>
+          </div>
         </div>
         <p class="note" style="margin-top:.7rem">
           Beats per mile and efficiency factor are the two that track fitness: the same pace at a lower
@@ -1190,6 +1202,7 @@ const hrMaxFor = age => Math.round(208 - 0.7 * age);
 const THRESHOLD_KEY = 'band.threshold';
 
 const RUNG_KEY = 'band.rung';
+const TALK_KEY = 'band.talk';
 // Declared here, above the first render, on purpose: `measuredCeiling()` reads these inside a try whose
 // catch would turn a temporal-dead-zone ReferenceError into "no measured ceiling" without a word.
 const WORK_PCT_MAX = 0.80, REST_PCT_MAX = 0.71;
@@ -1529,6 +1542,7 @@ function renderToday() {
     $('starttoday').disabled = true;
     $('starttoday').textContent = 'Nothing scheduled';
     renderModePlan();
+    syncStopButton();          // picking a rest day mid-run must not take the Stop button away
     return;
   }
   $('todaytitle').textContent = sessionName(s);
@@ -1548,6 +1562,25 @@ function renderToday() {
               : `Start ${s.run_walk ? 'run / walk' : 'the run'}`)
     : 'Not a session the app can run';
   renderModePlan();
+  syncStopButton();
+}
+
+/**
+ * The Today card's button is Start before a run and Stop during one.
+ *
+ * Stop used to live only on the lower Start button, inside the folded-up sections at the bottom of
+ * the page -- so ending a run meant scrolling past everything to find it. The button the run was
+ * started from is the one it is stopped from.
+ */
+function syncStopButton() {
+  const b = $('starttoday');
+  if (S.running) {
+    b.disabled = false;
+    b.textContent = 'Stop run';
+    b.classList.add('stop');
+  } else {
+    b.classList.remove('stop');
+  }
 }
 
 $('starttoday').onclick = () => {
@@ -1555,7 +1588,7 @@ $('starttoday').onclick = () => {
   audio();
   // With the day picker on this card, a stray tap mid-run is no longer unlikely -- and loading a
   // session replaces the one the run is being judged against.
-  if (S.running) { log('A session is already running.', 'fast'); return; }
+  if (S.running) { finish('Stopped.'); return; }
   const s = focusSession();
   if (!loadSession(s)) { log('That day is not a session the app can run.', 'fast'); return; }
   // No `selectedDay = todayIndex()` here any more: that line was the one that forced today back in
@@ -2954,8 +2987,50 @@ function recordThreshold(samples) {
  */
 function aerobicCeilingBpm() {
   const measured = measuredCeiling();
-  if (measured) return { bpm: measured.bpm, source: measured.source };
-  return { bpm: formulaCeilingBpm(), source: `${Math.round(WORK_PCT_MAX * 100)}% of max heart rate` };
+  const base = measured ? { bpm: measured.bpm, source: measured.source }
+                        : { bpm: formulaCeilingBpm(), source: `${Math.round(WORK_PCT_MAX * 100)}% of max heart rate` };
+  // His talk-test answers, applied on top (see progression.js talkTestOffset), capped at the most the
+  // phase ever asks for. `baseBpm` is what gets remembered as "the ceiling in force", so the offset is
+  // never counted twice.
+  const off = talkTestOffset(talkAnswers());
+  const bpm = Math.min(ceilingRaiseCapBpm(), base.bpm + off);
+  return { bpm, baseBpm: base.bpm,
+           source: off ? `${base.source}, ${off > 0 ? '+' : ''}${bpm - base.bpm} from your talk tests` : base.source };
+}
+
+// TALK_KEY lives with the other boot-time state, above the first render.
+function talkAnswers() {
+  try { return JSON.parse(localStorage.getItem(TALK_KEY) || '[]'); } catch { return []; }
+}
+
+/**
+ * After a run where heart rate actually ended blocks, one question: at the moment the walk was
+ * called, could you have talked in full sentences? The answer moves the ceiling for the next run.
+ */
+function renderTalkQuestion(stats, startedAt) {
+  const box = $('talkq');
+  if (!stats.hrBlocks || !talkTestApplies(stats.hrBlocks)) { box.classList.add('hide'); return; }
+  const at = new Date(startedAt).toISOString();
+  const already = talkAnswers().find(a => a.session === at);
+  const before = aerobicCeilingBpm().bpm;
+  const say = msg => { $('talknote').textContent = msg; };
+  box.classList.remove('hide');
+  say(already ? `Answered: ${already.answer}. Ceiling for the next run: ${before} bpm.` : '');
+  box.querySelectorAll('button').forEach(b => {
+    b.disabled = !!already;
+    b.onclick = () => {
+      const list = talkAnswers();
+      if (list.some(a => a.session === at)) return;
+      list.push({ session: at, answer: b.dataset.answer, ceiling: before, at: new Date().toISOString() });
+      try { localStorage.setItem(TALK_KEY, JSON.stringify(list.slice(-30))); } catch { /* full */ }
+      const after = aerobicCeilingBpm().bpm;
+      box.querySelectorAll('button').forEach(x => { x.disabled = true; });
+      say(after === before ? `Noted. Ceiling stays at ${after} bpm.`
+                           : `Noted. Ceiling for the next run: ${after} bpm (was ${before}).`);
+      log(`talk test: ${b.dataset.answer} — ceiling ${before} → ${after}`, 'on');
+      renderPlan(); renderToday();
+    };
+  });
 }
 
 /**
@@ -3497,7 +3572,7 @@ $('go').onclick = () => {
     // the ceiling IN FORCE, and without this it was handed the age-formula value every time -- so
     // two held-to readings could lift the ceiling one band, and then the same two readings would
     // reproduce that one band forever. The self-lock was half broken: it could rise once.
-    try { localStorage.setItem(CEILING_KEY, String(ceil.bpm)); } catch { /* storage full */ }
+    try { localStorage.setItem(CEILING_KEY, String(ceil.baseBpm)); } catch { /* storage full */ }
     // Two rails. The rung's block length is the dose for tendon and bone; the ceiling is the dose for
     // the heart; a block ends at whichever comes first and neither can lengthen it. The session is the
     // rung's block count, so it is bounded by construction. See hr-blocks.js for the 14-minute run
@@ -3645,6 +3720,7 @@ $('go').onclick = () => {
 
   $('go').textContent = 'Stop';
   $('go').classList.add('stop');
+  syncStopButton();
   $('copy').disabled = true;
   const governing = (S.sensor && S.sensor.connected)
     ? `heart rate leads (ceiling ${Math.round(S.hrMonitor.high)} bpm), pace is information`
@@ -3820,6 +3896,7 @@ function showStats(stats, prevStats) {
     $('statsverdict').classList.add('hide');
   }
 
+  renderTalkQuestion(stats, S.startedAt);
   $('stats-section').classList.remove('hide');
   // The section lives inside a collapsed <details> now (see "How it went" in the layout) — removing
   // `hide` alone would make it present but still invisible behind a closed disclosure triangle. A
@@ -3894,6 +3971,7 @@ function finish(msg) {
   keepAwake(false);
   $('go').textContent = 'Start';
   $('go').classList.remove('stop');
+  renderToday();
   $('copy').disabled = S.samples.length === 0;
   $('copyfull').disabled = S.samples.length === 0;
   // Tones per minute is the number that says whether the coach is coaching or nagging, and the
