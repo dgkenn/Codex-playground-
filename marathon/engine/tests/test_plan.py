@@ -274,11 +274,30 @@ def test_assess_week_has_no_hard_running(profile):
 def test_foundation_uses_run_walk_and_ends_continuous(profile):
     w1 = generate_week(profile, Phase.FOUNDATION, 1)
     assert any(s.type == SessionType.RUN_WALK for s in w1.sessions)
-    # Week 9, not week 8: week 8 is a cutback week, and a cutback week deliberately HOLDS the ladder
-    # at the previous rung rather than advancing to continuous running.
-    w9 = generate_week(profile, Phase.FOUNDATION, 9)
-    assert any(s.type == SessionType.EASY for s in w9.sessions)
-    assert not any(s.type == SessionType.RUN_WALK for s in w9.sessions)
+    # The ladder has ten rungs, and a cutback week HOLDS the rung rather than advancing, so the first
+    # continuous week comes after the last run/walk rung -- find it rather than hard-coding a week.
+    first = next(w for w in range(1, 16)
+                 if any(s.type == SessionType.EASY for s in generate_week(profile, Phase.FOUNDATION, w).sessions))
+    wk = generate_week(profile, Phase.FOUNDATION, first)
+    assert not any(s.type == SessionType.RUN_WALK for s in wk.sessions)
+    assert 10 <= first <= 14, f"continuous running arrives after the ten-rung ladder: week {first}"
+    assert any(s.type == SessionType.RUN_WALK
+               for s in generate_week(profile, Phase.FOUNDATION, first - 1).sessions)
+
+
+def test_foundation_never_skips_a_rung(profile):
+    """After a cutback week holds the ladder, the next week continues from the held rung: every rung
+    is run, in order, one step at a time."""
+    from marathon_engine.plan import _RUN_WALK_LADDER
+    seen = []
+    for w in range(1, 16):
+        for s in generate_week(profile, Phase.FOUNDATION, w).sessions:
+            if s.type == SessionType.RUN_WALK:
+                i = _RUN_WALK_LADDER.index(tuple(s.run_walk))
+                if not seen or seen[-1] != i:
+                    seen.append(i)
+                break
+    assert all(b - a == 1 for a, b in zip(seen, seen[1:])), f"rungs skipped or reversed: {seen}"
 
 
 def test_foundation_cutback_holds_the_ladder_rather_than_advancing(profile):

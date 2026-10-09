@@ -747,30 +747,43 @@ def run_walk_entry_rung(continuous_min: Optional[float]) -> int:
     one-minute repeats is not conservative, it is a month of sessions that do not touch the tissue
     they are supposed to load, and it teaches that the plan does not know what they can do.
 
-    Entry is deliberately one rung BELOW demonstrated capacity. What was demonstrated was a single
-    effort, at a pace that drove heart rate to 180; the ladder asks for the same block repeated
-    several times, aerobically. Those are different demands, and the gap between them is exactly
-    where a beginner gets hurt.
+    Entry is the last rung whose block is no more than HALF the demonstrated effort. What was
+    demonstrated was a single effort, at a pace that drove heart rate to 180; the ladder asks for the
+    same block repeated several times, aerobically. Those are different demands, and the gap between
+    them is exactly where a beginner gets hurt. (It was "one rung below", which meant the margin
+    depended on how finely the ladder was cut: when rungs were added on 10 October the same 4.5
+    minutes would have entered at 3-minute blocks instead of 2. Half is a property of the athlete.)
 
     ``None`` means nothing has been demonstrated, which returns the bottom rung.
     """
     if not continuous_min or continuous_min <= 0:
         return 0
-    # The last rung whose run block is at or below what was actually held, then step back one.
-    reachable = [i for i, (run_min, _, _) in enumerate(_RUN_WALK_LADDER) if run_min <= continuous_min]
-    return max(0, (reachable[-1] if reachable else 0) - 1)
+    reachable = [i for i, (run_min, _, _) in enumerate(_RUN_WALK_LADDER) if run_min <= continuous_min / 2]
+    return min(reachable[-1] if reachable else 0, len(_RUN_WALK_LADDER) - 2)
 
 
-#: Run-walk progression for FOUNDATION, one row per week: ``(run_min, walk_min, repeats)``.
+#: Run-walk progression for FOUNDATION: ``(run_min, walk_min, repeats)``.
+#:
+#: Ten rungs rather than eight, so no single step asks for much more than the last. The old ladder
+#: went 3 x 6 (18 min of running) straight to 5 x 5 (25 min): +39% total running and +67% block
+#: length in one step, at the point in the bone window where single-session spikes matter most
+#: (Frandsen et al. 2025: a run more than ~10% longer than the longest of the previous 30 days was
+#: where injuries clustered). Here total running grows by at most ~30% per rung after the first, and
+#: the block grows while total running holds (4 x 5 -> 5 x 4, 6 x 4 -> 8 x 3, 10 x 3 -> 15 x 2 ->
+#: 30 x 1), because continuity costs the heart and the walk breaks, not the tissue: the impact count
+#: is the running time either way. The phone moves along this on evidence (see progression.js) at
+#: most one rung a week, so these are steps, not weeks; the plan's weeks only seed where to start.
 _RUN_WALK_LADDER: Tuple[Tuple[float, float, int], ...] = (
-    (1.0, 2.0, 8),      # wk 1: 8 min running inside a 24 min session
-    (2.0, 2.0, 7),      # wk 2: 14 min running
-    (3.0, 2.0, 6),      # wk 3: 18 min running
-    (5.0, 2.0, 5),      # wk 4: 25 min running
-    (8.0, 2.0, 3),      # wk 5: 24 min running, longer continuous blocks
-    (12.0, 2.0, 2),     # wk 6: 24 min in two blocks
-    (15.0, 1.0, 2),     # wk 7: 30 min running
-    (30.0, 0.0, 1),     # wk 8: continuous 30 min -- the FOUNDATION gate
+    (1.0, 2.0, 8),      #  8 min running inside a 24 min session
+    (2.0, 2.0, 7),      # 14 min
+    (3.0, 2.0, 6),      # 18 min
+    (4.0, 2.0, 5),      # 20 min
+    (5.0, 2.0, 4),      # 20 min, longer blocks
+    (6.0, 1.5, 4),      # 24 min
+    (8.0, 1.5, 3),      # 24 min, longer blocks
+    (10.0, 1.5, 3),     # 30 min
+    (15.0, 1.0, 2),     # 30 min in two blocks
+    (30.0, 0.0, 1),     # continuous 30 min -- the FOUNDATION gate
 )
 
 #: How hard a run/walk running block may go, as a fraction of maximum heart rate.
@@ -789,8 +802,9 @@ RUN_WALK_WORK_PCT_MAX = 0.80
 #: Where a walk break has done its job, as a fraction of maximum heart rate.
 #:
 #: 71% is 133 bpm at an estimated maximum of 187, which is where the one slow walk on 5 September
-#: took him (162 down to 121 in two minutes, so it is reachable) and just above what his walking
-#: heart rate sat at when he was fresh (128-135). Much lower and a deconditioned athlete spends the
+#: took him (162 down to 121 in two minutes, so it is reachable). Walking fresh he sits far lower --
+#: 101-108 bpm at 5-5.6 km/h in the 9 October warm-up -- so what keeps a walk above 133 is the
+#: running before it, which is exactly what the floor is there to let settle. Much lower and a deconditioned athlete spends the
 #: session waiting; much higher and the next block starts from the heart rate the last one ended on,
 #: which is the ratchet that carried that session to 177.
 RUN_WALK_REST_PCT_MAX = 0.71
@@ -1219,9 +1233,11 @@ def generate_week(profile: FitnessProfile, phase: Phase, week_in_phase: int, *,
         # supposed to be easier.
         # Start from what the athlete has been observed to hold, not from zero.
         entry = run_walk_entry_rung(getattr(profile, "demonstrated_run_min", None))
-        rung_index = min(entry + week_in_phase - 1, len(_RUN_WALK_LADDER) - 1)
-        if is_cutback and rung_index > 0:
-            rung_index -= 1
+        # One rung per ordinary week. A cutback week holds, and the week after it carries on from the
+        # rung it held rather than from where it would have been: it used to subtract one only IN the
+        # cutback week, so the next week jumped two rungs and one was never run at all.
+        held = (week_in_phase - 1) // CUTBACK_EVERY + (1 if is_cutback else 0)
+        rung_index = max(0, min(entry + week_in_phase - 1 - held, len(_RUN_WALK_LADDER) - 1))
         rung = _RUN_WALK_LADDER[rung_index]
         run_min, walk_min, reps = rung
         continuous = walk_min == 0

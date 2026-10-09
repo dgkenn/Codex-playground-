@@ -7,7 +7,8 @@
 import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
          DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION,
-         talkTestOffset, talkTestApplies, TALK_LIMIT_BPM } from '../progression.js';
+         talkTestOffset, talkTestApplies, TALK_LIMIT_BPM,
+         stepLadder, QUALIFYING_TO_ADVANCE, MIN_DAYS_BETWEEN_STEPS } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -253,6 +254,38 @@ const hrSummary = (over = {}) => ({
   assert.equal(talkTestApplies({ governedBy: 'hr', blocksCut: 3, blocksHill: 2 }), false, 'hill cuts do not count');
   assert.equal(talkTestApplies({ governedBy: 'clock', blocksCut: 6 }), false);
   console.log('  ok  talk-test answers move the ceiling in small bounded steps, asked only when it was tested');
+}
+
+// --- the ladder moves at the pace tissue adapts ----------------------------------------------------
+
+{
+  const L = 10, day = d => new Date(Date.UTC(2026, 9, d, 18));
+  // Wed / Sat / Sun / Wed, every run qualifying. One rung a week, not three.
+  let st = { rung: 1, qualifying: 0, changedAt: day(7).toISOString() };
+  const trail = [];
+  for (const d of [10, 11, 14, 17, 18, 21]) {
+    st = stepLadder(st, ADVANCE, { ladderLength: L, now: day(d) });
+    trail.push(`${d}:${st.rung}`);
+  }
+  assert.deepEqual(trail, ['10:1', '11:1', '14:2', '17:2', '18:2', '21:3'],
+    `two in a row, six days apart: ${trail.join(' ')}`);
+  // A REPEAT breaks the run of qualifying sessions.
+  let r = stepLadder({ rung: 2, qualifying: 1, changedAt: day(1).toISOString() }, REPEAT, { ladderLength: L, now: day(10) });
+  assert.equal(r.qualifying, 0); assert.equal(r.rung, 2);
+  r = stepLadder(r, ADVANCE, { ladderLength: L, now: day(11) });
+  assert.equal(r.rung, 2, 'one qualifying run after a repeat is not two');
+  // EASE_BACK is immediate, however recent the last change.
+  const e = stepLadder({ rung: 3, qualifying: 1, changedAt: day(9).toISOString() }, EASE_BACK, { ladderLength: L, now: day(10) });
+  assert.equal(e.rung, 2); assert.equal(e.moved, true);
+  // A pain pattern holds the step up but keeps the count, and the top is the top.
+  const p = stepLadder({ rung: 2, qualifying: 1, changedAt: day(1).toISOString() }, ADVANCE, { ladderLength: L, now: day(10), painHold: true });
+  assert.equal(p.rung, 2); assert.match(p.why, /niggle/);
+  assert.equal(stepLadder({ rung: 9, qualifying: 5 }, ADVANCE, { ladderLength: L, now: day(10) }).rung, 9);
+  // No history (first ever step): two qualifying runs are still needed, but no wait.
+  let f = stepLadder(null, ADVANCE, { ladderLength: L, now: day(10) });
+  f = stepLadder(f, ADVANCE, { ladderLength: L, now: day(11) });
+  assert.equal(f.rung, 1);
+  console.log(`  ok  the ladder needs ${QUALIFYING_TO_ADVANCE} good runs in a row and ${MIN_DAYS_BETWEEN_STEPS} days between steps up (${trail.join(' ')})`);
 }
 
 console.log('\nAll progression tests passed.');

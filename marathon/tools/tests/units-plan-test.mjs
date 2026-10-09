@@ -196,12 +196,18 @@ for (const ph of PLAN.phases) {
 // the saved one no longer exists in it. That is stale-data recovery, not a decision -- it can only
 // ever fall back to the start, never step forward, so it cannot be how someone gets silently
 // promoted. Anything else assigning prog.phase is exactly the thing this test exists to catch.
+// And one more, on evidence: Foundation's gate IS the ladder's last rung (thirty continuous minutes),
+// which the phone measures itself, so the athlete's tap may start the next phase -- only behind
+// `foundationGateMet()`, never on a date.
+const gated = /if \(ph\.phase === 'foundation' && nextPh && foundationGateMet\(\)\) \{\s*prog\.phase = nextPh\.phase;/;
+assert.ok(gated.test(js), 'the Foundation exit must be behind the measured gate');
 const withoutResetToStart = js
+  .replace(gated, '')
   .replace(/prog\.phase\s*=\s*PLAN\.phases\[0\]\.phase\s*;/g, '')
   .replace(/PLAN\.phases\[0\]\.phase/g, '');
 assert.ok(!/advancePhase|prog\.phase\s*=/.test(withoutResetToStart),
   'the app must not advance a phase by itself');
-console.log('  ok  the app advances weeks, never phases');
+console.log('  ok  the app advances weeks, and phases only through a measured gate');
 
 // --- speed, as distinct from pace ----------------------------------------------------------------
 

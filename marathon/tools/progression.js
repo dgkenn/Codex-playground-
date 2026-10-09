@@ -363,3 +363,59 @@ export function talkTestApplies(summary) {
   return !!summary && summary.governedBy === 'hr'
     && ((summary.blocksCut || 0) - (summary.blocksHill || 0)) >= 2;
 }
+
+/// How many sessions in a row must earn ADVANCE on a rung before it moves up.
+export const QUALIFYING_TO_ADVANCE = 2;
+/// And the least time between two steps up, in days.
+export const MIN_DAYS_BETWEEN_STEPS = 6;
+
+/**
+ * Move along the ladder, at the pace tissue adapts rather than the pace the heart does.
+ *
+ * `nextRung` alone advanced on any single ADVANCE, and three sessions a week meant three rungs a week
+ * were possible: 8 minutes of running to 18 in five days. The heart adapts in weeks; bone and tendon
+ * remodel over months, show nothing in any heart-rate measure, and are what ends a beginner's first
+ * year. So a step up needs TWO qualifying sessions in a row on the current rung AND at least six
+ * days since the last step up -- at three runs a week, one rung a week when everything goes right,
+ * which is the couch-to-5K cadence and puts thirty continuous minutes about two months out. A REPEAT
+ * resets the count (the two must be consecutive). An EASE_BACK is immediate: protection does not wait.
+ * A pain pattern holds the step up (the caller passes `painHold`).
+ *
+ * `state` is `{rung, qualifying, changedAt}` or null; `now` is a Date. Returns the new state plus
+ * `{moved, from, to, why}` for the athlete.
+ */
+export function stepLadder(state, verdict, { ladderLength, now = new Date(), painHold = false } = {}) {
+  const from = Math.max(0, Math.min((state && state.rung) | 0, ladderLength - 1));
+  const changedAt = state && state.changedAt ? new Date(state.changedAt) : null;
+  const days = changedAt ? (now - changedAt) / 86400000 : Infinity;
+  const base = { rung: from, qualifying: (state && state.qualifying) || 0,
+                 changedAt: state && state.changedAt ? state.changedAt : null };
+
+  if (verdict === EASE_BACK) {
+    const to = Math.max(0, from - 1);
+    return { ...base, rung: to, qualifying: 0, changedAt: to !== from ? now.toISOString() : base.changedAt,
+             moved: to !== from, from, to, why: 'stepping back one rung' };
+  }
+  if (verdict !== ADVANCE) {
+    return { ...base, qualifying: 0, moved: false, from, to: from,
+             why: 'repeat this rung; two good runs in a row move it up' };
+  }
+  const qualifying = base.qualifying + 1;
+  if (from >= ladderLength - 1) {
+    return { ...base, qualifying, moved: false, from, to: from, why: 'top of the ladder' };
+  }
+  if (painHold) {
+    return { ...base, qualifying, moved: false, from, to: from, why: 'holding while the niggle settles' };
+  }
+  if (qualifying < QUALIFYING_TO_ADVANCE) {
+    return { ...base, qualifying, moved: false, from, to: from,
+             why: `${qualifying} of ${QUALIFYING_TO_ADVANCE} good runs on this rung` };
+  }
+  if (days < MIN_DAYS_BETWEEN_STEPS) {
+    const ready = new Date(changedAt.getTime() + MIN_DAYS_BETWEEN_STEPS * 86400000);
+    return { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(),
+             why: `earned, but the last step up was ${Math.floor(days)} day${Math.floor(days) === 1 ? '' : 's'} ago` };
+  }
+  return { rung: from + 1, qualifying: 0, changedAt: now.toISOString(),
+           moved: true, from, to: from + 1, why: `${qualifying} good runs in a row on this rung` };
+}

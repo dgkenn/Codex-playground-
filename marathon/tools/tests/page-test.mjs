@@ -441,6 +441,51 @@ async function openAll(page) {
   console.log(`  ok  talk-test answers move the ceiling the next run uses (${base} → ${base + 6} → ${base + 1})`);
 }
 
+// --- the ladder says where you are and what moves you ----------------------------------------------
+
+{
+  // One step up needs two good runs in a row and six days since the last step; the card says so.
+  const recent = new Date(Date.now() - 2 * 86400000).toISOString();
+  await page.evaluate(at => localStorage.setItem('band.rung', JSON.stringify(
+    { rung: 1, run_min: 2, reps: 7, qualifying: 1, changedAt: at })), recent);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  const step = (await page.textContent('#stepnote')).trim();
+  if (step) {
+    assert.match(step, /^Step 2 of 10 · next: 3 min × 6 after 2 good runs in a row here \(1 so far\), not before /,
+      `the step line: "${step}"`);
+  }
+  // A step stored by the old eight-rung ladder's index is found again by what it was (5 x 5 -> 5 min).
+  await page.evaluate(() => localStorage.setItem('band.rung', JSON.stringify({ rung: 3, verdict: 'advance', at: '2026-09-01T00:00:00Z' })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  const migrated = (await page.textContent('#stepnote')).trim();
+  if (migrated) assert.match(migrated, /^Step 5 of 10/, `old rung 3 (5 min blocks) is step 5 now: "${migrated}"`);
+
+  // Foundation ends on the measured gate, from the phone: last week, top rung, one good run there.
+  await page.evaluate(() => {
+    localStorage.setItem('band.progress', JSON.stringify({ phase: 'foundation', week: 6, done: {} }));
+    localStorage.setItem('band.rung', JSON.stringify({ rung: 9, run_min: 30, reps: 1, qualifying: 0 }));
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.equal(await page.isDisabled('#advance'), true, 'not met yet: the 30-minute run has not been done well');
+  assert.match(await page.textContent('#gatenote'), /thirty continuous minutes, not on a date/);
+  await page.evaluate(() => localStorage.setItem('band.rung', JSON.stringify({ rung: 9, run_min: 30, reps: 1, qualifying: 1 })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.match(await page.textContent('#advance'), /^Start /, 'met: the button starts the next phase');
+  await page.evaluate(() => { document.querySelectorAll('details').forEach(d => { d.open = true; }); });
+  await page.click('#advance');
+  await page.waitForTimeout(150);
+  const prog = await page.evaluate(() => JSON.parse(localStorage.getItem('band.progress')));
+  assert.equal(prog.phase, 'base_1'); assert.equal(prog.week, 1);
+  await page.evaluate(() => { localStorage.removeItem('band.rung'); localStorage.removeItem('band.progress'); });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  console.log(`  ok  the step line explains the ladder ("${step.slice(0, 60)}…"), old steps migrate, and Foundation ends on its gate`);
+}
+
 // --- today, in one tap ---------------------------------------------------------------------------
 
 {
@@ -571,7 +616,7 @@ async function openAll(page) {
   // every module suite.
   const L = await page.evaluate(() => (window.__PLAN_LADDER__ || null));
   const rung = await page.evaluate(() => {
-    localStorage.setItem('band.rung', JSON.stringify({ rung: 3 }));
+    localStorage.setItem('band.rung', JSON.stringify({ rung: 3, run_min: 4, reps: 5 }));
     return JSON.parse(localStorage.getItem('band.rung')).rung;
   });
   assert.equal(rung, 3, 'the rung must be storable');
@@ -583,9 +628,9 @@ async function openAll(page) {
   await page.waitForTimeout(80);
   await page.click('#loadsess');
   await page.waitForTimeout(150);
-  // Rung 3 of the shipped ladder is 5 min run / 2 min walk x 5. Loading a plan session must take
+  // Rung 3 of the shipped ladder is 4 min run / 2 min walk x 5. Loading a plan session must take
   // the athlete's rung, not the week's baked row.
-  assert.equal(await page.inputValue('#runmin'), '5',
+  assert.equal(await page.inputValue('#runmin'), '4',
     'a loaded session must use the rung the athlete is on, not the calendar week');
   assert.equal(await page.inputValue('#reps'), '5');
   console.log('  ok  a loaded session comes from the stored rung, not from the calendar week');

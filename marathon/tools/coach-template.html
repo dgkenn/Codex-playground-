@@ -287,6 +287,7 @@
         <div>
           <div class="phase" id="todaytitle">—</div>
           <div class="weeklabel" id="todaydetail"></div>
+          <div class="note" id="stepnote" style="margin-top:.25rem"></div>
         </div>
       </div>
       <!-- Which session this button runs. Today's by default; any other day of the week on tap, so a
@@ -1202,6 +1203,9 @@ const hrMaxFor = age => Math.round(208 - 0.7 * age);
 const THRESHOLD_KEY = 'band.threshold';
 
 const RUNG_KEY = 'band.rung';
+/// Run-block minutes of the eight-rung ladder before 10 October, by index: what a stored `{rung}`
+/// written then meant, so it can be found again on the ten-rung ladder.
+const OLD_LADDER_RUN_MIN = [1, 2, 3, 5, 8, 12, 15, 30];
 const TALK_KEY = 'band.talk';
 // Declared here, above the first render, on purpose: `measuredCeiling()` reads these inside a try whose
 // catch would turn a temporal-dead-zone ReferenceError into "no measured ceiling" without a word.
@@ -1287,6 +1291,39 @@ function effectiveRunWalk(s) {
   if (!s || !s.run_walk) return null;
   return rungSession() || s.run_walk;
 }
+/**
+ * Where he is on the ladder and what moves him, in one line: the rule is only fair if it is visible.
+ */
+function stepText() {
+  const L = ladder();
+  const i = currentRung();
+  if (i == null || !L.length) return '';
+  const st = rungState() || {};
+  const head = `Step ${i + 1} of ${L.length}`;
+  if (i >= L.length - 1) {
+    return `${head} — thirty minutes continuous. One good run here completes Foundation.`;
+  }
+  const next = L[i + 1];
+  const q = Math.min(st.qualifying || 0, QUALIFYING_TO_ADVANCE);
+  let when = '';
+  if (st.changedAt) {
+    const ready = new Date(new Date(st.changedAt).getTime() + MIN_DAYS_BETWEEN_STEPS * 86400000);
+    if (ready > new Date()) when = `, not before ${ready.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}`;
+  }
+  return `${head} · next: ${fmtMin(next.run_min)} min × ${next.reps} after ${QUALIFYING_TO_ADVANCE} good runs `
+       + `in a row here (${q} so far)${when}`;
+}
+
+/**
+ * Foundation ends at thirty continuous minutes, not on a date -- and the phone can tell, because the
+ * last rung IS that run. It used to tell him to "run cli status", which a phone cannot.
+ */
+function foundationGateMet() {
+  const L = ladder();
+  const st = rungState();
+  return !!(L.length && st && currentRung() === L.length - 1 && (st.qualifying || 0) >= 1);
+}
+
 /** A session's name as it will run. */
 function sessionName(s) {
   const rw = effectiveRunWalk(s);
@@ -1348,8 +1385,19 @@ function renderPlan() {
   const runsLeft = wk.sessions.filter(x => x.coachable && !prog.done[doneKey(x.day)]).length;
   const lastWeek = wk.week >= ph.weeks.length;
   $('advance').disabled = runsLeft > 0 && !lastWeek ? false : lastWeek;
+  $('advance').textContent = 'Next week';
   $('gatenote').textContent = lastWeek ? ph.gate_note
     : (runsLeft === 0 ? 'Every run this week is done. Next week when you are ready.' : '');
+  const nextPh = PLAN.phases[PLAN.phases.findIndex(p => p.phase === ph.phase) + 1];
+  if (lastWeek && ph.phase === 'foundation') {
+    const met = foundationGateMet();
+    $('advance').disabled = !(met && nextPh);
+    if (met && nextPh) $('advance').textContent = `Start ${nextPh.label}`;
+    $('gatenote').textContent = met
+      ? 'Thirty continuous minutes, done well. Foundation is complete.'
+      : `Foundation ends at thirty continuous minutes, not on a date. ${stepText()}. Keep running `
+        + 'this week\'s days; the app runs your step.';
+  }
 }
 
 $('donesess').onclick = () => {
@@ -1362,6 +1410,13 @@ $('advance').onclick = () => {
   const ph = curPhase();
   if (prog.week < ph.weeks.length) {
     prog.week += 1; selectedDay = null; saveProg(); renderPlan(); renderToday();
+    return;
+  }
+  const nextPh = PLAN.phases[PLAN.phases.findIndex(p => p.phase === ph.phase) + 1];
+  if (ph.phase === 'foundation' && nextPh && foundationGateMet()) {
+    prog.phase = nextPh.phase; prog.week = 1; selectedDay = null;
+    saveProg(); renderPlan(); renderToday();
+    log(`Foundation complete — ${nextPh.label} starts`, 'on');
   }
 };
 
@@ -1553,6 +1608,7 @@ function renderToday() {
   if (s.run_walk) bits.push(runWalkLine(effectiveRunWalk(s), { short: true }));
   if (s.ramp) bits.push(`${s.ramp.steps.filter(x => x.kind === 'stage').length} stages`);
   $('todaydetail').textContent = bits.join(' · ');
+  $('stepnote').textContent = s.run_walk ? stepText() : '';
   $('today-where').classList.toggle('hide', !s.ramp);
   $('starttoday').disabled = !runnable(s);
   // The label states which flow is about to run. A one-tap start that silently picks between two
@@ -2749,9 +2805,20 @@ function ladder() { return (PLAN.run_walk_ladder || []); }
 function currentRung() {
   const L = ladder();
   if (!L.length) return null;
-  let stored = null;
-  try { stored = JSON.parse(localStorage.getItem(RUNG_KEY) || 'null'); } catch { /* corrupt */ }
-  if (stored && Number.isInteger(stored.rung)) return Math.max(0, Math.min(L.length - 1, stored.rung));
+  const stored = rungState();
+  if (stored) {
+    // Stored by WHAT the rung is (run_min, reps), not only by position, so a change to the ladder --
+    // it went from eight rungs to ten on 10 October -- cannot silently move him to a different step.
+    const runMin = stored.run_min != null ? stored.run_min
+                 : Number.isInteger(stored.rung) ? OLD_LADDER_RUN_MIN[stored.rung] : null;
+    if (runMin != null) {
+      const exact = L.findIndex(r => r.run_min === runMin && (stored.reps == null || r.reps === stored.reps));
+      if (exact >= 0) return exact;
+      let i = 0;
+      L.forEach((r, k) => { if (r.run_min <= runMin) i = k; });
+      return i;
+    }
+  }
   // Seed from the plan: the rung whose prescription matches what the week's run/walk asks for.
   //
   // It used to read TODAY's session, so the first rung depended on the weekday the app was opened
@@ -2768,6 +2835,19 @@ function currentRung() {
     if (i >= 0) return i;
   }
   return 0;
+}
+
+
+/** The stored ladder state, or null: `{rung, run_min, reps, qualifying, changedAt, verdict, at}`. */
+function rungState() {
+  let st = null;
+  try { st = JSON.parse(localStorage.getItem(RUNG_KEY) || 'null'); } catch { /* corrupt */ }
+  if (!st || typeof st !== 'object') return null;
+  // Written before the rate limit existed: a step that was a move counts as the last change.
+  if (st.changedAt === undefined) {
+    st.changedAt = (st.verdict === ADVANCE || st.verdict === EASE_BACK) ? st.at || null : null;
+  }
+  return st;
 }
 
 /** The run/walk prescription for the rung the athlete is on. */
@@ -2796,19 +2876,24 @@ function applyVerdict(judged, stats) {
   // Pain that recurs is a reason to stop adding, not a reason to detrain -- and an athlete who is
   // told to hold while something settles is far more likely to keep logging it than one who is told
   // their training is being cut.
+  // At the pace tissue adapts: two qualifying runs in a row on a rung and six days since the last
+  // step up (progression.js stepLadder). A pain pattern holds the step up; it never stops a step back.
   const held = painHolds(painTrend(painLog()));
-  if (held && held.hold && judged.verdict === ADVANCE) {
-    return { moved: false, why: `the ${held.site.replace(/_/g, ' ')} is a pattern — holding here `
-                              + 'until it has two clean weeks' };
-  }
-  const from = currentRung();
-  const to = nextRung(from, judged.verdict, L.length);
+  const before = rungState() || {};
+  const st = stepLadder({ ...before, rung: currentRung() }, judged.verdict,
+                        { ladderLength: L.length, painHold: !!(held && held.hold) });
   try {
     localStorage.setItem(RUNG_KEY, JSON.stringify({
-      rung: to, verdict: judged.verdict, at: new Date().toISOString(),
+      rung: st.rung, run_min: L[st.rung].run_min, reps: L[st.rung].reps,
+      qualifying: st.qualifying, changedAt: st.changedAt,
+      verdict: judged.verdict, at: new Date().toISOString(),
     }));
   } catch { /* storage full; the verdict is still shown, it just will not stick */ }
-  return { moved: to !== from, from, to, why: judged.reason };
+  return { moved: st.moved, from: st.from, to: st.to,
+           why: st.moved ? judged.reason
+              : (held && held.hold && judged.verdict === ADVANCE)
+                ? `the ${held.site.replace(/_/g, ' ')} is a pattern — holding here until it has two clean weeks`
+                : st.why };
 }
 
 // =================================================================================================
@@ -3875,7 +3960,7 @@ function showStats(stats, prevStats) {
     const say = r => `${r.run_min}/${r.walk_min} × ${r.reps}`;
     let where = '';
     if (moved && moved.moved) where = ` Ladder: ${say(L[moved.from])} → ${say(L[moved.to])}.`;
-    else if (moved && moved.from != null) where = ` Ladder stays at ${say(L[moved.from])}.`;
+    else if (moved && moved.from != null) where = ` Ladder stays at ${say(L[moved.from])} — ${moved.why}.`;
     else if (moved) where = ` Ladder unchanged — ${moved.why}.`;
     // Which of the four endings the controller actually recorded -- the plan's target, a stall, or the
     // athlete stopping it. Stated plainly here rather than relying on the judge's prose to carry it,
