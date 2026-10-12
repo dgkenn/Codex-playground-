@@ -1,0 +1,165 @@
+{
+  "deposits": {
+    "chennu": {
+      "agent": "propofol"
+    },
+    "ds005620": {
+      "agent": "propofol"
+    },
+    "ds004541": {
+      "agent": "unrecorded"
+    }
+  },
+  "same_drug_pair": [
+    "chennu",
+    "ds005620"
+  ],
+  "features": {
+    "lempel_ziv": {
+      "delta": {
+        "chennu": 1.0174343377515926,
+        "ds005620": 1.9118805593548671,
+        "ds004541": 1.7980802047240705
+      },
+      "floor": 0.8944462216032745,
+      "floor_ci": [
+        0.09752129946186132,
+        2.1176835348788976
+      ],
+      "mean_abs_delta": 1.5757983672768434,
+      "R": 1.7617586493375317,
+      "frac_resamples_floor_ge_effect": 0.09835,
+      "registered_margin": 2.1176835348788976,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    },
+    "whole_head_exponent": {
+      "delta": {
+        "chennu": -0.35074179382703785,
+        "ds005620": 1.0049042300222328,
+        "ds004541": 1.3404294856797145
+      },
+      "floor": 1.3556460238492707,
+      "floor_ci": [
+        0.7404767861175959,
+        2.2238596569016478
+      ],
+      "mean_abs_delta": 0.8986918365096618,
+      "R": 0.6629251446907087,
+      "frac_resamples_floor_ge_effect": 0.79015,
+      "registered_margin": 2.2238596569016478,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    },
+    "relative_alpha_power": {
+      "delta": {
+        "chennu": -0.4328893676123112,
+        "ds005620": 0.994265070276955,
+        "ds004541": -0.20916429177301
+      },
+      "floor": 1.4271544378892662,
+      "floor_ci": [
+        0.8121779016695779,
+        2.412841229008399
+      ],
+      "mean_abs_delta": 0.545439576554092,
+      "R": 0.38218679217421386,
+      "frac_resamples_floor_ge_effect": 0.99505,
+      "registered_margin": 2.412841229008399,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    },
+    "relative_delta_power": {
+      "delta": {
+        "chennu": -0.4814332898057185,
+        "ds005620": -0.5844635641459333,
+        "ds004541": -0.039307423608786314
+      },
+      "floor": 0.10303027434021478,
+      "floor_ci": [
+        0.011585150068547167,
+        0.8766636637363774
+      ],
+      "mean_abs_delta": 0.36840142585347935,
+      "R": 3.5756618936778364,
+      "frac_resamples_floor_ge_effect": 0.17935,
+      "registered_margin": 0.8766636637363774,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    },
+    "spectral_edge_95": {
+      "delta": {
+        "chennu": 0.27434518259678253,
+        "ds005620": -0.5889524235937591,
+        "ds004541": 0.42426664096973465
+      },
+      "floor": 0.8632976061905416,
+      "floor_ci": [
+        0.3973963406992761,
+        1.4984852416770527
+      ],
+      "mean_abs_delta": 0.4291880823867588,
+      "R": 0.49714962639666016,
+      "frac_resamples_floor_ge_effect": 0.9057,
+      "registered_margin": 1.4984852416770527,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    },
+    "spectral_entropy": {
+      "delta": {
+        "chennu": 0.6480684385059183,
+        "ds005620": 0.0681616404836757,
+        "ds004541": -0.3073217647006967
+      },
+      "floor": 0.5799067980222427,
+      "floor_ci": [
+        0.14277827004857155,
+        1.1536122780999456
+      ],
+      "mean_abs_delta": 0.3411839478967636,
+      "R": 0.5883427286252941,
+      "frac_resamples_floor_ge_effect": 0.7726,
+      "registered_margin": 1.1536122780999456,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    },
+    "uce_v1": {
+      "delta": {
+        "chennu": -0.2212447577672225,
+        "ds005620": 0.9961304085181977,
+        "ds004541": 1.2948446699874745
+      },
+      "floor": 1.2173751662854202,
+      "floor_ci": [
+        0.6616407498233146,
+        2.0342836465393983
+      ],
+      "mean_abs_delta": 0.8374066120909648,
+      "R": 0.6878788357792328,
+      "frac_resamples_floor_ge_effect": 0.83745,
+      "registered_margin": 2.0342836465393983,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    },
+    "wpli_alpha": {
+      "delta": {
+        "chennu": -0.14465705332736303,
+        "ds005620": 0.724536240539425,
+        "ds004541": -0.35928908949078786
+      },
+      "floor": 0.869193293866788,
+      "floor_ci": [
+        0.06787797646170388,
+        2.9371779159284084
+      ],
+      "mean_abs_delta": 0.40949412778585864,
+      "R": 0.47111975054954514,
+      "frac_resamples_floor_ge_effect": 0.83115,
+      "registered_margin": 2.9371779159284084,
+      "future_test_unpowered_at_this_margin": true,
+      "verdict": "NOT RESOLVABLE (same-drug study disagreement reaches the state effect)"
+    }
+  },
+  "reps": 20000,
+  "seed": 20260731
+}

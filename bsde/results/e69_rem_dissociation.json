@@ -1,0 +1,219 @@
+{
+  "n_subjects": 142,
+  "features": {
+    "exponent_low": {
+      "testable": true,
+      "w_n3_dz": 3.156843333901577,
+      "frac_rem_near_w": 0.9078014184397163,
+      "lo": 0.8581560283687943,
+      "hi": 0.950354609929078,
+      "median_position": 0.25645200325447237,
+      "n_used_for_position": 141,
+      "stage_medians": [
+        1.2706497159999999,
+        1.3909502955000002,
+        1.9002928575000002,
+        2.664840281
+      ],
+      "monotone_W_to_N3": true
+    },
+    "exponent_high": {
+      "testable": true,
+      "w_n3_dz": 1.1429097824952537,
+      "frac_rem_near_w": 0.11347517730496454,
+      "lo": 0.06382978723404255,
+      "hi": 0.1702127659574468,
+      "median_position": 1.188809592125805,
+      "n_used_for_position": 140,
+      "stage_medians": [
+        0.07035707364999999,
+        2.1036844855,
+        1.9853810345,
+        1.59888807
+      ],
+      "monotone_W_to_N3": false
+    },
+    "whole_head_exponent": {
+      "testable": true,
+      "w_n3_dz": 4.008442378042586,
+      "frac_rem_near_w": 0.6099290780141844,
+      "lo": 0.524822695035461,
+      "hi": 0.6879432624113475,
+      "median_position": 0.47849183390654354,
+      "n_used_for_position": 141,
+      "stage_medians": [
+        0.6910403743,
+        1.5155904279999999,
+        2.1300238765,
+        2.692676538
+      ],
+      "monotone_W_to_N3": true
+    },
+    "lempel_ziv": {
+      "testable": true,
+      "w_n3_dz": -2.2811419899607634,
+      "frac_rem_near_w": 0.7375886524822695,
+      "lo": 0.6666666666666666,
+      "hi": 0.8085106382978723,
+      "median_position": 0.3618677042455173,
+      "n_used_for_position": 139,
+      "stage_medians": [
+        0.6814105005,
+        0.60687473885,
+        0.48853105045,
+        0.3118459999
+      ],
+      "monotone_W_to_N3": true
+    },
+    "spectral_entropy": {
+      "testable": true,
+      "w_n3_dz": -2.185744818774727,
+      "frac_rem_near_w": 0.900709219858156,
+      "lo": 0.851063829787234,
+      "hi": 0.9432624113475178,
+      "median_position": 0.004342505233722091,
+      "n_used_for_position": 139,
+      "stage_medians": [
+        0.73818506615,
+        0.765414257,
+        0.6667840275,
+        0.5043492637
+      ],
+      "monotone_W_to_N3": false
+    },
+    "relative_alpha_power": {
+      "testable": true,
+      "w_n3_dz": -0.5008632622670822,
+      "frac_rem_near_w": 0.7730496453900709,
+      "lo": 0.7090425531914895,
+      "hi": 0.8368794326241135,
+      "median_position": -0.5795177572601997,
+      "n_used_for_position": 132,
+      "stage_medians": [
+        0.056987996410000005,
+        0.11428543845,
+        0.081012767455,
+        0.03084945396
+      ],
+      "monotone_W_to_N3": false
+    },
+    "relative_delta_power": {
+      "testable": true,
+      "w_n3_dz": 1.509657990631264,
+      "frac_rem_near_w": 0.8652482269503546,
+      "lo": 0.8085106382978723,
+      "hi": 0.9148936170212766,
+      "median_position": -0.0859434404255977,
+      "n_used_for_position": 137,
+      "stage_medians": [
+        0.61010183625,
+        0.4928066904,
+        0.66291866925,
+        0.8588494367
+      ],
+      "monotone_W_to_N3": false
+    },
+    "spectral_edge_95": {
+      "testable": true,
+      "w_n3_dz": -2.867701158125397,
+      "frac_rem_near_w": 0.6028368794326241,
+      "lo": 0.5177304964539007,
+      "hi": 0.6808510638297872,
+      "median_position": 0.4208783861462066,
+      "n_used_for_position": 136,
+      "stage_medians": [
+        36.387381250000004,
+        25.69489379,
+        13.804912105,
+        7.767978039
+      ],
+      "monotone_W_to_N3": true
+    },
+    "pac_slow_alpha": {
+      "testable": true,
+      "w_n3_dz": -0.3601687599372629,
+      "frac_rem_near_w": 0.425531914893617,
+      "lo": 0.3475177304964539,
+      "hi": 0.5106382978723404,
+      "median_position": 0.8612981633969486,
+      "n_used_for_position": 131,
+      "stage_medians": [
+        0.00080520195535,
+        0.00047404699185,
+        0.00054054467885,
+        0.000628112409
+      ],
+      "monotone_W_to_N3": false
+    },
+    "critical_slowing_ar1": {
+      "testable": true,
+      "w_n3_dz": 3.25574250953781,
+      "frac_rem_near_w": 0.6950354609929078,
+      "lo": 0.6170212765957447,
+      "hi": 0.7730496453900709,
+      "median_position": 0.3893317522568006,
+      "n_used_for_position": 141,
+      "stage_medians": [
+        0.42601463455,
+        0.5256057396,
+        0.7131889755,
+        0.8509957858
+      ],
+      "monotone_W_to_N3": true
+    },
+    "multiscale_entropy_slope": {
+      "testable": true,
+      "w_n3_dz": 3.6119802880423704,
+      "frac_rem_near_w": 0.7375886524822695,
+      "lo": 0.6666666666666666,
+      "hi": 0.8085106382978723,
+      "median_position": 0.3874899168374389,
+      "n_used_for_position": 141,
+      "stage_medians": [
+        -0.004131143777,
+        0.043545718494999996,
+        0.1738668677,
+        0.2904941186
+      ],
+      "monotone_W_to_N3": true
+    },
+    "emg_index": {
+      "testable": true,
+      "w_n3_dz": -2.071130732391682,
+      "frac_rem_near_w": 0.6028368794326241,
+      "lo": 0.524645390070922,
+      "hi": 0.6810283687943268,
+      "median_position": 0.35494082128080756,
+      "n_used_for_position": 138,
+      "stage_medians": [
+        0.44370458805,
+        0.3103350898,
+        0.32450868175,
+        0.1270335096
+      ],
+      "monotone_W_to_N3": false
+    }
+  },
+  "rem_with_wake": [
+    "exponent_low",
+    "whole_head_exponent",
+    "lempel_ziv",
+    "spectral_entropy",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "critical_slowing_ar1",
+    "multiscale_entropy_slope",
+    "emg_index"
+  ],
+  "rem_with_n3": [
+    "exponent_high"
+  ],
+  "untestable": [],
+  "ambiguous": [
+    "pac_slow_alpha"
+  ],
+  "primary_mean_frac": 0.6643026004728133,
+  "placebo_mean_frac": 0.500839243498818,
+  "verdict": "SPLIT -- ['exponent_high'] place REM with DEEP SLEEP while ['exponent_low', 'whole_head_exponent', 'lempel_ziv', 'spectral_entropy', 'relative_alpha_power', 'relative_delta_power', 'spectral_edge_95', 'critical_slowing_ar1', 'multiscale_entropy_slope', 'emg_index'] place it with wake. The departing features are the ones worth pursuing: they are not simply reading cortical desynchronisation, and behavioural output is the candidate for what they do read."
+}

@@ -1,0 +1,51 @@
+{
+  "n_cases_narrow_bis": 36,
+  "arms": {
+    "volatile": {
+      "n": 61,
+      "c2": -3.389718147624922,
+      "lo": -4.243338885996828,
+      "hi": -2.5109759032042014,
+      "c1": 1.8405742970827292,
+      "contrast": -5.230292444707651,
+      "contrast_lo": -6.46280037777427,
+      "contrast_hi": -3.957905901326605,
+      "G3_transfer_slope": 3.9577437844710333,
+      "G3_pass": true,
+      "G4_uniform": -2.9252125485078566,
+      "G4_pass": false,
+      "G4_computable": false,
+      "G4_n_cases": 9,
+      "placebo": [
+        -0.538291249588423,
+        0.5333050488838588
+      ],
+      "placebo_inside": false
+    },
+    "tiva": {
+      "n": 96,
+      "c2": -3.14370090930518,
+      "lo": -3.711157423975423,
+      "hi": -2.5892522547911296,
+      "c1": 1.9034983200489428,
+      "contrast": -5.047199229354122,
+      "contrast_lo": -6.056072286222165,
+      "contrast_hi": -4.02696794322059,
+      "G3_transfer_slope": 2.2310835970321468,
+      "G3_pass": true,
+      "G4_uniform": -2.171379995770164,
+      "G4_pass": true,
+      "G4_computable": true,
+      "G4_n_cases": 25,
+      "placebo": [
+        -0.44357695544266734,
+        0.46000296870738117
+      ],
+      "placebo_inside": false
+    }
+  },
+  "gates": {
+    "G1_pass": true
+  },
+  "verdict": "**THE SHAPE TRANSFERS, in ['tiva'].** A non-monotone profile found across SLEEP STAGES reappears against ANAESTHETIC DEPTH in an independent deposit, in a measure combination fixed in advance, specifically for comp2 and not comp1, surviving a uniform-BIS subsample and a within-case BIS permutation. E116's second axis is not only a property of sleep. In ['volatile'] every computable statistic agrees -- same sign, same magnitude, contrast excluding zero, real value outside the placebo -- but G4 was NOT COMPUTABLE there (too few cases populate enough BIS deciles), so that arm is consistent with the finding without confirming it. SCOPE: BIS is a proprietary index and the only continuous depth variable available, not ground truth."
+}

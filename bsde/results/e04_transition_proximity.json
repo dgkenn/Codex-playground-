@@ -1,0 +1,308 @@
+{
+  "experiment": "E04",
+  "contrast": "emergence_within_subject",
+  "acq_restriction": {
+    "primary": {
+      "sed2": [
+        "rest"
+      ],
+      "sed": [
+        "rest"
+      ]
+    },
+    "reference": {
+      "sed": [
+        "rest"
+      ],
+      "awake": [
+        "EC"
+      ]
+    },
+    "note": "awake was never recorded at acq-rest, so the reference contrast cannot match acquisition; see build()"
+  },
+  "search_space_size": 8,
+  "analytic_dof": 1,
+  "n_logged": 8,
+  "summary": {
+    "lempel_ziv": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.5915032679738562,
+      "ci": [
+        0.50656346841062,
+        0.6844873090745732
+      ],
+      "null_mean": 0.4840925925925926,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.8165784832451499,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    },
+    "relative_alpha_power": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.5617283950617284,
+      "ci": [
+        0.48683869196840895,
+        0.641865622192273
+      ],
+      "null_mean": 0.4870236020334059,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.48236331569664903,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    },
+    "relative_delta_power": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.4045025417574437,
+      "ci": [
+        0.32667047951255973,
+        0.47101924102974524
+      ],
+      "null_mean": 0.515285403050109,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.48236331569664903,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    },
+    "spectral_edge_95": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.5646332607116921,
+      "ci": [
+        0.48874137161647513,
+        0.6546392631126524
+      ],
+      "null_mean": 0.48828286129266524,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.11904761904761904,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    },
+    "spectral_entropy": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.5849673202614378,
+      "ci": [
+        0.504773748137483,
+        0.6733004385964912
+      ],
+      "null_mean": 0.48536891793754533,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.43915343915343913,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    },
+    "uce_v1": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.3758169934640523,
+      "ci": [
+        0.2706796033900801,
+        0.4694119843944837
+      ],
+      "null_mean": 0.5124538852578069,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.9435626102292769,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    },
+    "whole_head_exponent": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.38453159041394336,
+      "ci": [
+        0.278787762103126,
+        0.4762169018550816
+      ],
+      "null_mean": 0.5131267247639797,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.9470899470899471,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    },
+    "wpli_alpha": {
+      "verdict": "INCOMPLETE",
+      "auc_sed2_lower": 0.4270152505446623,
+      "ci": [
+        0.31328751911392577,
+        0.5357460220438552
+      ],
+      "null_mean": 0.5052374727668845,
+      "null_scheme": "within_subject",
+      "n_perm": 1000,
+      "reference_auc_sed_vs_awake": 0.5608465608465608,
+      "primary": {
+        "n": 105,
+        "n_pos": 51,
+        "n_neg": 54,
+        "n_subjects": 20,
+        "dropped": {
+          "task=awake": 59,
+          "sed:acq=tms": 38
+        }
+      },
+      "reference": {
+        "n": 75,
+        "n_pos": 54,
+        "n_neg": 21,
+        "n_subjects": 21,
+        "dropped": {
+          "awake:acq=EO": 21,
+          "task=sed2": 51,
+          "awake:acq=tms": 17,
+          "sed:acq=tms": 38
+        }
+      },
+      "failed": []
+    }
+  }
+}

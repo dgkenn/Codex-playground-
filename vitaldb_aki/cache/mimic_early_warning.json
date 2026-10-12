@@ -1,0 +1,160 @@
+{
+  "seed": 20260628,
+  "early_window_hours": 6.0,
+  "n_stays_with_norepi": 15949,
+  "n_stays_with_outcome": 15949,
+  "n_deaths": 5258,
+  "overall_mortality": 0.33,
+  "test1_early_vs_whole": {
+    "early_window_hours": 6.0,
+    "early_peak": {
+      "n": 15949,
+      "deaths": 5258,
+      "mortality_rate": 0.33,
+      "adj_or_per_sd": 1.726,
+      "ci": [
+        1.592,
+        1.89
+      ],
+      "auc_x_alone": 0.668,
+      "auc_age_alone": 0.559,
+      "auc_age_plus_x": 0.673,
+      "delta_auc_over_age": 0.1148
+    },
+    "early_median": {
+      "n": 15949,
+      "deaths": 5258,
+      "mortality_rate": 0.33,
+      "adj_or_per_sd": 2.032,
+      "ci": [
+        1.898,
+        2.153
+      ],
+      "auc_x_alone": 0.673,
+      "auc_age_alone": 0.559,
+      "auc_age_plus_x": 0.682,
+      "delta_auc_over_age": 0.1232
+    },
+    "whole_peak": {
+      "n": 15949,
+      "deaths": 5258,
+      "mortality_rate": 0.33,
+      "adj_or_per_sd": 1.862,
+      "ci": [
+        1.717,
+        2.058
+      ],
+      "auc_x_alone": 0.742,
+      "auc_age_alone": 0.559,
+      "auc_age_plus_x": 0.729,
+      "delta_auc_over_age": 0.1703
+    },
+    "whole_median": {
+      "n": 15949,
+      "deaths": 5258,
+      "mortality_rate": 0.33,
+      "adj_or_per_sd": 3.798,
+      "ci": [
+        3.441,
+        4.174
+      ],
+      "auc_x_alone": 0.756,
+      "auc_age_alone": 0.559,
+      "auc_age_plus_x": 0.764,
+      "delta_auc_over_age": 0.2051
+    },
+    "auc_early_peak": 0.668,
+    "auc_whole_peak": 0.742,
+    "auc_warning_retained_frac": 0.694
+  },
+  "test2_rising_trajectory": {
+    "n": 12096,
+    "deaths": 4156,
+    "frac_rising": 0.276,
+    "median_slope": -0.00085,
+    "slope_adj_or_per_sd": 5.291,
+    "auc_base_age_early": 0.632,
+    "auc_plus_slope": 0.771,
+    "delta_auc_slope_increment": 0.1385,
+    "lr_test_chi2": 1743.413,
+    "lr_test_p": 0.0
+  },
+  "test3_escalation": {
+    "esc_def": "rate>= 2.0x prev OR >= prev+0.1 mcg/kg/min, after 1h",
+    "frac_any_escalation": 0.49,
+    "count_escalations": {
+      "n": 15949,
+      "deaths": 5258,
+      "mortality_rate": 0.33,
+      "adj_or_per_sd": 1.388,
+      "ci": [
+        1.332,
+        1.456
+      ],
+      "auc_x_alone": 0.61,
+      "auc_age_alone": 0.559,
+      "auc_age_plus_x": 0.623,
+      "delta_auc_over_age": 0.064
+    },
+    "any_escalation": {
+      "n": 15949,
+      "deaths": 5258,
+      "mortality_rate": 0.33,
+      "adj_or_per_sd": 1.458,
+      "ci": [
+        1.411,
+        1.506
+      ],
+      "auc_x_alone": 0.591,
+      "auc_age_alone": 0.559,
+      "auc_age_plus_x": 0.622,
+      "delta_auc_over_age": 0.063
+    },
+    "mortality_with_escalation": 0.412,
+    "mortality_without_escalation": 0.251,
+    "lead_time_n_deaths_with_esc": 3214,
+    "median_lead_h_first_norepi_to_last_esc": 42.73,
+    "lead_iqr_h": [
+      10.75,
+      135.03
+    ],
+    "median_runway_h_last_esc_to_end_of_norepi": 9.26
+  },
+  "test4_bedside_rule": {
+    "window_hours": 6.0,
+    "note": "IN-SAMPLE operating points (pre-specified round-number thresholds, evaluated on the same data -- NOT cross-validated)",
+    "rules": [
+      {
+        "early_peak_threshold_mcg_kg_min": 0.2,
+        "n_above": 6324,
+        "n_below": 9625,
+        "mortality_above": 0.473,
+        "mortality_below": 0.236,
+        "sensitivity": 0.568,
+        "specificity": 0.688,
+        "ppv": 0.473,
+        "npv": 0.764,
+        "tp": 2989,
+        "fp": 3335,
+        "fn": 2269,
+        "tn": 7356
+      },
+      {
+        "early_peak_threshold_mcg_kg_min": 0.3,
+        "n_above": 4020,
+        "n_below": 11929,
+        "mortality_above": 0.543,
+        "mortality_below": 0.258,
+        "sensitivity": 0.415,
+        "specificity": 0.828,
+        "ppv": 0.543,
+        "npv": 0.742,
+        "tp": 2183,
+        "fp": 1837,
+        "fn": 3075,
+        "tn": 8854
+      }
+    ]
+  },
+  "verdict": "EARLY in-ICU norepinephrine requirement (MIMIC-IV, 15949 stays, 5258 deaths, 33% mortality): ACTIONABLE EARLY-WARNING -- first-6h norepi already stratifies death (early-peak age-adj OR 1.726 [1.592, 1.89], AUC 0.668 vs whole-stay 0.742 -> 0.694 of the rank signal retained from a 6h snapshot); a RISING requirement adds warning beyond the early level (slope LR-test p 0.0, +0.1385 AUC, slope OR 5.291/SD); escalation events mark risk (any-escalation age-adj OR 1.458 [1.411, 1.506]; median lead 42.73 h from first norepi to the last escalation among deaths). Bedside rule: early-peak >= 0.2 mcg/kg/min -> 0.473 mortality vs 0.236 below (sens 0.568, spec 0.688, PPV 0.473, NPV 0.764; IN-SAMPLE). Observational, age-adjusted ONLY -- the early requirement MARKS the sicker patient (severity confounding unaddressed here, handled elsewhere); this identifies WHO is high-risk early, not that acting on the dose changes outcome (a trial)."
+}

@@ -1,0 +1,431 @@
+# Findings ledger — HEEDB EEG-foundation-model research machine
+
+Running log of experiments + hostile-review verdicts. Status: PROVISIONAL (not gated) / GATED-NULL
+(ran the hostile-review gate, no finding) / SURVIVED (passed gate + external validation) / KILLED.
+
+| # | Cycle | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|---|
+| 1 | 1 | Novelty pre-screen: frozen EEG-FM → outcome, cross-site | No prior work combines FM + clinical outcome + multi-site external validation (DELPHI-EEG single-center) | — | white space confirmed |
+| 2 | 1 | Design pre-mortem (hostile-review BEFORE running) | 3 CRITICALs: site confound; abnormal-EEG is solved+circular; use ICD/death not report | redesigned → cognitive-ICD primary + mortality secondary + site gate | design gate PASSED |
+| 3 | 2 | **Gated cross-site: frozen CBraMod + attention-MIL, S0001↔I0002** (n=327) | **Site-probe embedding→hospital AUC 0.961**; cross-site abnormal 0.50/0.53 (in-sample 0.52); cognitive 0.62/0.58 (underpowered) | **FAILS site-invariance gate** (site-AUC 0.96 ≫ chance); outcome AUCs confounded + ~chance | **GATED-NULL** |
+| 4 | 3 | **Site-correction + re-test** (ComBat/CORAL fit on S0001 ref, align I0002; n=327) | Linear site-probe 0.961→**0.585** (both); **nonlinear MIL site-probe 0.96 (ComBat) / 0.99 (CORAL)** — residual site survives. Cognitive outcome on corrected 0.466 (25 pos, inside null band) | Linear harmonization = **false site-invariance assurance** → gate must be nonlinear (novelty **INCREMENTAL**, unpublished in EEG-FM, red-team MAJOR-REVISION). Outcome null = power-calibrated (detects ≥0.3σ, so excludes a *strong* frozen signal, not a weak one) | **GATED-NULL (outcome) + methods observation** |
+
+| 5 | 4 | **Full-token vs mean+std decider (EEG-FM)** | matched age OOF 0.40 vs 0.48 (both ≈chance) | frozen encoder is the ceiling, not pooling → GPU fine-tuning required | **path capped (CPU exhausted)** |
+| 6 | 5 | **VitalDB: induction MAP-recovery-τ → postop AKI, incremental to TWA-MAP** (n=1,255; 149 AKI) | M1 hemodynamics 0.806 → +τ 0.801 (Δ −0.005); τ coef +0.043 CI [−0.156,+0.187] | novelty pre-screen reframed idea (killed pressure-only wave-separation framing, Mynard 2012); powered → **τ adds nothing** | **GATED-NULL** |
+
+### Cycle 5 (CPU pivot) detail → `docs/VITALDB_PIVOT_IDEA2.md`
+- User chose "broaden the hunt" (EEG-FM GPU-gated). Picked VitalDB (open, 500 Hz arterial waveform).
+- Novelty pre-screen (haiku+PubMed) killed the original "wave-reflection recovery kinetics" framing
+  (named-index proximity + pressure-only wave separation discredited, Mynard 2012 + INSPIRE has no
+  waveforms) but CONFIRMED the white space beneath (higher-MAP-target RCTs null → field needs a dynamic
+  reserve dimension beyond TWA-MAP). Reframed to a pressure-only, non-named marker: MAP recovery-τ after
+  induction. Feasibility gate PASSED (2,542 AKI-derivable cases, 12%). Powered read = clean NULL (τ adds 0).
+- Reusable: VitalDB AKI cohort + cheap 2 s numeric hemodynamics pipeline. Next = re-rank (Idea 4/3 or a
+  MIMIC↔eICU externally-validated tabular question).
+
+### Cycle 3 detail → `docs/CYCLE3_SITE_INVARIANCE.md`
+- **Methods observation (Claim A):** a *linear* site-probe collapses to 0.585 after ComBat/CORAL (looks
+  invariant) while a *nonlinear* probe recovers hospital at 0.96–0.99 from the same corrected embeddings.
+  A site-invariance gate must be **nonlinear**. Novelty INCREMENTAL (safeguard, not discovery); needs
+  per-fold CIs + ≥3–5 sites before it is a publishable methods note. Best home: the site-gate methods
+  section of the main study, not a headline.
+- **Outcome null (Claim B):** no *strong* cross-site cognitive signal survives in the frozen mean+std
+  representation (injected-signal calibration: pipeline detects ≥0.3σ effects at n=25; found none). A weak
+  signal cannot be excluded at 25 positives. Needs a larger multi-site cohort to resolve.
+- **Consequence:** the frozen + CPU path cannot yield a positive cross-site clinical finding now. Real
+  levers (evidence-backed): larger labeled n, and encoder fine-tuning (GPU).
+
+## Reading
+- The machine's hostile-review gate is doing its job: it **refused to claim a cross-site finding** because
+  the frozen embeddings encode hospital (AUC 0.96) → any outcome signal is site-confounded, and the frozen
+  per-window MIL shows little usable outcome signal (in-sample ~chance/weak). This is the honest state.
+- **The path forward is concrete** (LESSONS cycle-3 fixes): site-correction (`correct_sites.py`) with a
+  published post-correction site-AUC ≤ ~0.6 gate; fix class/outcome balance; then re-test. If corrected
+  site-invariant frozen embeddings still underperform, that is itself a publishable methods result
+  (frozen EEG-FM insufficient for cross-site clinical outcome → fine-tuning required).
+- No over-claim anywhere. Every step committed + logged.
+
+## Cycle 9 — critical-care/anesthesia measurement-bias batch (5 ideas) + 4-venue literature mine
+| # | Cycle | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|---|
+| 7a | 9 | **Occult hypoxemia (SpO₂ vs SaO₂) by race → harm** (MIMIC-IV) | Racial direction replicates (occult OR 1.47, z=+3.5); magnitude/harm blocked — labevents 50817 SaO₂ mixes arterial+venous (p25=70) | Not gated — data-quality block; needs chartevents 220227; occult-vs-overt harm acuity-confounded | **PARTIAL / blocked** |
+| 7b | 9 | **Cuff vs arterial MAP discordance → vasopressor under-titration** (MIMIC-IV, 232,656 pairs) | Naive +14.4 mmHg@MAP<55, occult-hypotension 43%, under-titration OR 0.82 | Red-team: **+14→+1.5 mmHg (RTM binning artifact, Bland-Altman); harm reverses to null on sustained; known device behavior** | **KILLED** |
+| 7c | 9 | **Personalized MAP floor for chronic HTN** (MIMIC-IV, 33,861 stays) | Sub-65 harm interaction significant in WRONG direction (z=−2.97); "count<T" metric monotone-artifact | Not supported / opposite | **GATED-NULL** |
+| 7d | 9 | **Creatinine-masked AKI by sex/muscle mass** (MIMIC-IV, n=320,677) | Isolated-absolute-criterion sensitivity F 90.5% vs M 97.4% (OR 0.47–0.63, robust to baseline def/RTM/draws); male AKI excess 1.295→0.999 artifact | Red-team: effect ROBUST but **not novel** (Nat Rev Nephrol + BMJ Public Health), applies to **isolated-absolute EHR alerts only** (full KDIGO misses no one), whole effect in baseline<0.6 (noise zone, no cystatin C) | **SURVIVES, reframed → methods/quality letter (not flagship)** |
+| 7e | 9 | **Blood-gas vs lab glucose discordance in shock** (MIMIC-IV, 47,894 pairs) | Discordance real (SD 16) but widens at HIGH glucose; missed-hypo no mortality signal (OR 0.86 ns); central lab is bigger misser (opposite of hypothesis) | Mostly null | **GATED-NULL** |
+| 8 | 9 | **4-venue literature mine (NEJM/JAMA/Nature, PubMed-verified)** → doc 07 | ~50 verified studies; sweeps independently re-derived our corrected-Ca/K⁺-discordance/KDIGO-creatinine/cuff-MAP bets; new leads: Bazett/Fridericia QTc, eGFR→ICU drug-dosing | — | **catalogue built; leads queued** |
+
+## Cycle 10 — ten-idea measurement-bias batch (from the top-tier journal mine) + red-team on 2 winners
+| # | Cycle | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|---|
+| 9a | 10 | **Chloride indirect-ISE vs blood-gas discordance by race** (MIMIC-IV, 12,056 pairs) | chem Cl −1.31 mmol/L lower in Black at matched true Cl (z=−9.4); hyperchloremia gap inflated 3.6× at >106, sign-flip at >110 | Red-team SURVIVES: A-V confound disclosed but doesn't explain (art-confirmed −1.37); Na-independent (~69%, adj floor −0.8 z=−5.65); mechanism = hypothesis (protein n=134); critical-care-only | **SURVIVES (tempered) — coordinated 4th analyte for flagship panel** |
+| 9b | 10 | **Hyperglycemia-corrected sodium → false-hyponatremia labeling by race** (2.5M pairs) | flip rate Black 20.3% vs White 14.1% (z=37.7) | Red-team: robust to clustering/factor, BUT Oaxaca shows 84% = known hyperglycemia disparity, 16% residual (~1pp); framing is translocational not pseudo; consequence untested | **DEMOTED — modest label-quality restatement of a known disparity** |
+| 9c | 10 | **Corrected calcium by SEX** (24,674 ionized triplets) | no residual sex offset (+0.023 mg/dL z=0.99); correction collapses true sex gap | — | **NULL — valuable specificity control (bias race-specific not sex-specific → reinforces flagship)** |
+| 9d | 10 | QTc Bazett vs Fridericia by sex/HR (798k ECG) | 450ms cutoff: Bazett female excess +2.1pp (z=8.5) reverses to −1.0pp under Fridericia | already-known mechanism | **confirmatory + modest formula-artifact** |
+| 9e | 10 | HbA1c–glucose by race (27,897 A1c) | at matched glucose Black cross A1c≥6.5% ~2×; ~½ inpatient diabetes gap artifact | already-known (Bergenstal) | **confirmatory** |
+| 9f | 10 | Benign ethnic neutropenia ANC threshold (80k adm) | baseline ANC ↓ in Black (z=−22.8) but over-labeling REVERSES in ICU | acuity confound; BEN is outpatient | **NULL in this cohort** |
+| 9g | 10 | Anion-gap albumin correction subgroup (379k) | +42pp masking in low-albumin (known) but NULL by race/sex | hypoalbuminemia race/sex-invariant | **already-known + NULL subgroup** |
+| 9h | 10 | Co-oximetry vs CBC Hb → transfusion (26,764) | discordance −0.28 g/dL (known); sex gap is base-rate, vanishes conditioning on Hb (z=−0.76) | base-rate artifact | **NULL/confounded** |
+| 9i | 10 | eGFR equation → renal drug-dosing (415k) | race arm arithmetically forced; sex CG-vs-CKDEPI 5.9pp (z=12) | tautological / already-known | **mechanism-only** |
+| 9j | 10 | Bilirubin–Jaffe creatinine interference (750k) | −0.017 mg/dL per SD bilirubin (z=−2.3), trivial, inseparable from sarcopenia | already-known | **NULL** |
+
+## Chloride use-case round (post cycle-10) — 2 wins survive red-team (tempered)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 10a | **Chloride acid-base propagation/cancellation** (8,018 paired) | absolute Cl/Na bias −1.2/−1.1 (z≈−8.5) but AG/SID/Na−Cl bias +0.10 (z=0.65) — self-protected | Red-team SURVIVES: RTM correctly handled; AG>16 "residual" is case-mix not bias; null underpowered (CI −0.21..+0.42); needs external rep | **WIN (tempered) — the "where bias matters vs cancels" map** |
+| 10b | **Chloride prognostic misclassification** (4,010 paired) | false-hypochloremia Black 11.7% vs White 4.8% (Fisher p=0.0001); apparent hypochloremia gap vanishes at truth | Red-team SURVIVES at measurement level; harm framing overclaimed (mortality OR 2.77→1.28 adj; no CDS tool) | **WIN (measurement-classification disparity, not harm)** |
+| 10c | **Masked hyperchloremia & AKI** (fluid-type infeasible) | masked hyperchloremia Black 14.7% vs White 10.9% (z=3.34); no AKI harm at matched true Cl (adjOR 1.03) | acuity-confounded outcome; clean measurement signal | **partial / mechanism-only** |
+
+## Fluid-responsiveness program (scoping + first results)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 11a | **MIMIC fluid-response trait-vs-state** (5,612 boluses, 3,740 subj) | corrected response +1.46 mmHg (73% RTM); within-episode ICC 0.126, CROSS-ENCOUNTER ICC −0.046 (≈0); Frank-Starling fails; both NCs pass | rigorous null; novel framing (0 prior cross-encounter work) | **STATE-not-phenotype (de-hyping win); red-team pending** |
+| 11b | **VitalDB objective ΔSV-after-bolus label gate** | label VALID (pre-bolus SVV AUROC 0.814) but routine boluses not timestamped → only 15 FMS cases (n≈4 w/ ECG+pleth) | hybrid design adopted (train device-SVV 871, anchor on objective boluses) | **gate done; full model queued** |
+| 11c | VitalDB non-invasive SVV model (ECG-increment-over-PVI) | interrupted by session limit | — | **queued/resume** |
+| 11d | INSPIRE preop-labs → intraop instability | interrupted (labs downloaded) | — | **queued/resume** |
+| 11e | MIMIC objective SV-bolus label probe (PiCCO subset) | interrupted (extracting) | — | **queued/resume** |
+
+## Fluid-responsiveness program — COMPLETE (post-red-team verdicts)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 11f | **VitalDB ECG→SVV (increment + equivalence)** | M0 0.618 / ECG-alone 0.632 / pleth-PVI 0.733; ECG-alone−pleth −0.100 [−0.138,−0.061]; ECG-alone−M0 +0.014 (≈0) | pre-registered; equivalence REJECTED not underpowered; uncorrelated w/ pleth; no rescue in low-perfusion | **SOLID NULL — ECG not a non-invasive FR signal under GA** |
+| 11g | **MIMIC real-SV proxy + trait-state** | ΔMAP AUROC 0.56 for true ΔCO≥10%; within-episode CCO ICC −0.06 | Red-team: CCO no-bolus noise floor SD 14.2%/21.4%≥10% ≈ post-bolus 24.5% (p=0.49) → CCO reliability ~0% | **A (ΔMAP poor proxy) survives PRACTICAL/softened; B (state-not-phenotype) NOT ESTABLISHED** |
+| 11h | **MIMIC continuous-CO as FR ground truth** | test-retest reliability ~0% (no-bolus var ≥ post-bolus var) | red-team noise-floor | **cautionary methods result — MIMIC CO too noisy to ground-truth FR** |
+| 11i | **INSPIRE preop-labs → intraop instability** | severe AUROC 0.808 / routine 0.734; labs add only +0.017 over structural | associational/confounded | **MODEST/NULL — preop labs add little** |
+
+## Chloride mechanism — cross-national confirmation (SICdb)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 12 | **SICdb chloride electrolyte-exclusion mechanism** (8,912 paired patients) | discordance∼total-protein slope −0.552 mmol/L/g/dL (z=−18.6), strictly monotone quartiles; 10-min robust (−0.495); Na:Cl slope ratio 0.65 ≈ conc ratio 0.71 | replicates the 4-rounds-survived sodium method; cleaner reference (no sensor flag); self-checked (window/monotonicity/globulin/slope-ratio) | **CONFIRMED — chloride is a validated coordinated 4th analyte (Na↓,Cl↓,Ca↑)** |
+| 12c | **MC-MED (Stanford ED) racial calcium validation** — the independent racial-endpoint prize | **DOES NOT REPLICATE (honest boundary).** Substrate fully present (ionized Ca 2,491 rows, total Ca, albumin, total protein, native corrected-Ca; race White 47,504/Asian 19,430/Black 7,653/Hispanic 32,494). Paired N=931 (one-per-patient 892: White 397, Hispanic 189, Asian 163, Black 69). Race coeffs on corrected-Ca null/slightly-negative (Black β=−0.05 z=−0.47; Asian −0.09; Hispanic 0.00). False-hyperCa OR vs White: Black 1.17 (**0 events**), Asian 4.47 (z=1.88, only 4 events, mechanism-unsupported), Hispanic 2.13 NS. No minority excess of masked-hypoCa. False-hyperCa rare overall (8/922, 0.9%). corrected_Ca reproduced vs MC-MED native at r=0.999 (compute verified) | **honest boundary condition, NOT a mechanism contradiction** — genuine setting difference: ED albumin ~3.86 g/dL (near-normal) vs hypoalbuminemic ICU where the formula's over-correction bites; Black arm n=69 underpowered | **DOES-NOT-REPLICATE — racial ENDPOINT is ICU-hypoalbuminemia-specific (MIMIC+eICU, both US); mechanism itself unaffected (still 5 cohorts). Fold into manuscript Limitations as a bounded scope, not a failure** |
+| 12d | **PIC (Chinese pediatric ICU) calcium mechanism** — accessible novel extension | **BLOCKED — same DUA gate as MC-MED.** netrc auth OK but file requests → PhysioNet app-level 403 = PIC per-project DUA unsigned (CITI "Data or Specimens Only" + DUA 1.5.0 required). No data | INDETERMINATE — USER ACTION (sign PIC DUA) | **WIN (5th cohort, first PEDIATRIC).** N=7,585 paired total↔ionized (ionized itemid 5215, median 1.19 mmol/L; median age 0.72yr, zero adults). Mechanism replicates: albumin coef **+0.764 mg/dL/g/dL** (CI 0.739–0.788), biases measurement not physiology (albumin r=0.55 total-Ca / 0.08 ionized). NUANCE (honest): bias is albumin-specific (globulin coef ≈0) and empirical slope 0.76 ≈ formula 0.8 → **corrected-Ca formula WORKS in pediatrics** (the flagship's globulin-driven over-correction is an ADULT phenomenon). NOVEL: coefficient is **age-dependent (inverted-U)** neonate 0.80→toddler 0.94→older-child 0.85; adult Payne 0.8 under-corrects in infants/toddlers (CIs exclude 0.8). Magnitude credible, no over-shoot | mechanism 5th cohort + a standalone novel pediatric age-dependence finding; honest population difference (pediatric albumin-dominated vs adult globulin-driven) | **WIN — mechanism now 5 cohorts / 4 countries / 3 settings (US-ICU, Austria-ICU, Korea-surgical, China-pediatric; US-ED [MC-MED] mechanism substrate present but racial ENDPOINT does not replicate — see 12c); pediatric age-dependent correction = potential companion contribution** |
+| 12b | **INSPIRE calcium mechanism — 4th cohort (Korean surgical, less-mined pivot)** (90,248 total-Ca/ionized pairs) | total_Ca~ionized+protein **+0.279 mg/dL/g/dL (z=127)**; globulin-specific **+0.115 (z=38.5)** ≈ SICdb z=39.6; corrected-Ca STILL tracks globulin **+0.092 (z=28.9)** → formula fails to remove globulin, confirmed. Magnitude credible (~1.3× SICdb, same order — no over-shoot). 100% Asian → mechanism-only (no race); binary endpoints dominated by hypoalbuminemia over-correction in this low-albumin surgical cohort (reported honestly) | novelty: un-mined in INSPIRE/East-Asian-surgical (0 PubMed hits); magnitude-check pass | **WIN — flagship mechanism now validated across 4 cohorts / 3 continents / 2 settings (MIMIC+eICU US-ICU, SICdb Austria-ICU, INSPIRE Korea-surgical); add to manuscript as 4th mechanism cohort** |
+
+## Cycle 11 — second measurement-bias batch (10 novel-angle ideas) + red-team on 2 wins
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 13a | **False hypercalcemia (corrected-Ca) by race** (103,655 pairs) | corrected>10.5 at ionized<1.30: Black 13.3% vs White 8.0%, OR 1.77 (z=4.66); matched-band 32.9% vs 20.0% | Red-team SURVIVES: robust to threshold; not RTM; not albumin-composition (formula amplifies a genuine +0.22 mg/dL raw-total gap); scope=hypoalbuminemic 84%; classification not harm | **WIN — upper-threshold complement to the calcium flagship** |
+| 13b | **Bicarbonate specificity control** (3,129 pairs) | HCO3 racial differential β=−0.16 (z=−1.32 NS); 95% CI excludes Na/Cl effects; no protein-tracking (z=0.28) | well-powered negative control | **WIN — bias specific to indirect-ISE Na/Cl, not generic** |
+| 13c | **Osmolar-gap propagation** | propagates ×−2 (algebra exact); Black−White +1.9 mOsm/kg at ±6h | Red-team DEMOTED: z=2.77 is exact −2× rescaling of the sodium regression (0 incremental evidence); flag disparity null under tight timing | **DEMOTED — propagates-vs-cancels PRINCIPLE valid; clinical flag underpowered** |
+| 13d | Occult hypoxemia (clean SaO2 220227) | occult Black 5.36% vs White 2.28%, OR 2.45; bias +1pp (not the contaminated +13-17) | replicates Sjoding; decision endpoint non-testable (53% already vented) | **confirmatory + validated clean source** |
+| 13e | Paraprotein pseudohyponatremia | protein dose-response −0.96 mEq/L/g/dL (z=−8.3); false-hypo ~2× Black | known mechanism; extreme underpowered | **confirmatory** |
+| 13f | Low-AG self-flag | AG doesn't track globulin (z=−0.3); low AG less common in Black | chain broken | **NULL** |
+| 13g | Sex-specific troponin | raw female MI gap vanishes adj for troponin+age (OR 0.98 NS); cTnT can't resolve hs window | known/dataset-limited | **NULL** |
+| 13h | Ferritin × inflammation | acute-phase inflation z=36.8 (known); race gap NS; no iron gold standard | feasibility-limited | **NULL subgroup** |
+| 13i | TSH age/race reference | uniform>4.5 flag 7.6%→16.6% age; White 15.1% vs Black 8.0% | Surks already published age+race | **confirmatory** |
+| 13j | ETCO2–PaCO2 gradient | masked hypercapnia 16.4%, lung-dz OR 3.5; no race/sex signal | dead-space physiology, known | **confirmatory** |
+
+## Gate-demonstration batch (IDEA_GATE pre-screened; depth on the electrolyte seam)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 14a | **Potassium concentration-scaled specificity control** (46,968 pairs) | de-hemolyzed racial displacement +0.009 [−0.003,+0.020] (well-powered null); concentration law Na −1.08 / Cl −1.29 / K +0.009 (~100× smaller as predicted) | quantitative negative control confirmed; cleanly separated from the hemolysis false-hyperK mechanism | **WIN — completes the concentration-scaled displacement law** |
+| 14b | Sodium masked-hypernatremia (upper-tail complement) | racial differential replicates (−0.84, z=−7.7) but chem OVER-reads Na → over-flags not masks; artifactual-disparity reframe NULL (DiD +0.12pp — hypernatremia gap is genuine) | threshold-complement premise fails on baseline offset direction | **NULL** |
+| 14c | Within-patient Na+Cl fingerprint (slope=0.71) | correlation r≈0.25 (known, PMID 16548813); slope 0.25–0.34 across all estimators incl albumin-IV → 0.71 FALSIFIED; Cl only partially protein-mediated | sharp prediction cleanly falsified | **NULL (clean falsification)** |
+
+## Discriminator kills (feasible but gate-failed on novelty/decision — logged, not run)
+| # | Idea | Feasibility | Why killed | Status |
+|---|---|---|---|---|
+| K-T4 | **Free Thyroxine Index (total T4 × uptake) vs measured free T4 — protein-binding displacement 6th analyte** (TBG driver) | PASSES: 6,801 total-T4↔free-T4 co-drawn specimens; 3,482 T4-index↔free-T4; total/free ratio median 6.09 (real binding variation); itemids 50994/50995/50896/51005/50895 all present | **NOVELTY-DEAD + OBSOLETE ENDPOINT.** The TBG→FTI bias is the textbook reason direct free-T4 assays *replaced* the index (same trap as the already-published creatinine mechanism). Decision premise also fails in-era: free T4 (63,095) outnumbers total T4 (12,010) **~5:1** → clinicians already act on the direct measurement, so "biased formula drives decisions" has no live endpoint. Would only be a confirmatory panel footnote the calcium flagship doesn't need | **KILLED at gate (novelty + decision), not run — cheap honest negative** |
+
+## Flagship consolidation — single reconciled MIMIC cohort (resolves §2.5 heterogeneity)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| RECON-1 | **All racial endpoints on ONE uniform MIMIC extraction** (full labevents; N=23,449 paired, 3,553 Black/19,896 White, 9,324 pts; doc 18) | Reproduces the headline on one cohort: E1 raw bias Black +0.182 mg/dL at matched ionized (z=11.1); E1b corrected bias PERSISTS +0.185 (z=11.7); E2 false-hyperCa 13.5% vs 8.6% **OR 1.65 [1.47,1.85]**. E3 masked-hypoCa (broad, ionized<1.15) 79.6% vs 78.0% **OR 1.10 [0.98,1.23] NS** — pooled null (consistent with §3b's range-dependent mild-signal-reverses-at-severe). Aggregate masking severe & race-neutral (~78% of true hypoCa unflagged both races) | **RIGOR WIN — §2.5 heterogeneity is provenance not result-instability; all racial endpoints hold on one extraction. Applied: §2.5 reconciliation paragraph + Abstract/§3b masked-hypoCa tempered to range-dependent; false hyperCa = confirmatory racial endpoint. Primary provenance-tracked numbers retained** |
+
+## Flagship consolidation — testing the manuscript's proposed globulin-inclusive fix
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| FIX-1 | **Globulin-inclusive corrected-Ca fix vs Payne-0.8, validated against ionized** (MIMIC full labevents; doc 17) | Quadruple-pairing (ionized+total+albumin+**protein** co-drawn ≤2h) collapses to **N=693 even in full labevents** (protein=chem order rarely co-timed with blood-gas ionized). At that N the globulin term is NON-significant for ionized prediction (z=−1.53, was −2.63 in an N=327 pilot), improves tracking 0.2%, derived term only 0.073 mg/dL/g/dL → racial false-hyperCa gap UNCHANGED (Black/White 1.62→1.62). Pilot signal was small-sample noise | **HONEST NEGATIVE (power/co-measurement limited, not a mechanism refutation).** Applied to manuscript: tempered Discussion §4 + Abstract to make DIRECT IONIZED MEASUREMENT the supported fix; globulin-inclusive correction = mechanistically-motivated but unvalidated, needs prospective co-measurement. Integrity win (self-tested our own proposed fix) |
+
+## PIC pediatric calcium — does refining the age-dependent correction help clinically? (loop pivot)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| 12d-ext | **PIC age-corrected calcium formula → reclassification vs ionized truth** (N=23,980 triple-paired, 9,227 children; doc 16) | Age-dependence CONFIRMED (albumin coef 0.80 infants → **0.93 toddlers 1–3yr [0.90,0.96]** → 0.85 school-age → 0.72 adolescents; correction to prior claim — under-correction is TODDLER, not infant). **But the age-corrected formula does NOT beat adult Payne-0.8** (net worse: overall fixes 74/breaks 141; 1–3yr fixes 23/breaks 70). Root cause: albumin-corrected Ca poorly tracks ionized in children (**r≈0.47–0.49**, barely above raw total 0.467) → refining the slope can't help a weak surrogate | **STRIKE-OUT on the clinical headline (honest negative).** Age-slope is a minor confirmatory measurement note; the clinically-useful "age-corrected formula → better classification" extension WASHES OUT. Message = "measure ionized directly," not "better correction." Not a standalone win; flagship's adult globulin story unaffected |
+
+## New-triple pilot (loop, post-MC-MED) — anion-gap masking of lactic acidosis
+| # | Experiment | Predicted | Result | Status |
+|---|---|---|---|---|
+| 17 | **Albumin-corrected anion gap masks lactic acidosis in hypoalbuminemia** (MIMIC, 57,761 paired AG+albumin↔lactate; doc 15) | 0.40 → novelty-screen 0.30 → **red-team DEMOTE** | **Severity-stratified masking gradient REAL & LARGE:** among true lactic acidosis (lactate≥4), % with falsely-normal AG (≤12) rises 1.0%→8.7% as albumin falls ≥3.5→<2.0; **RR severe-vs-normo = 8.95 (95% CI 5.29–15.12)**, robust (lactate≥6 ~13×, AG≤10 ~20×); mean AG flat ~21 while mean corrected-AG rises 22.5→27.3 (Figge at scale). Naive corrected-AG>12 fix fails: +5.8pt sensitivity for **−36.8pt specificity** (45%→8%) = reproduces Dinh 2006. **RED-TEAM (sonnet): DEMOTE-TO-CONFIRMATORY + Phase-2 NO-GO.** (1) effect *direction* is Figge algebra → near-tautological; only the magnitude-at-scale is empirical (a calibration exercise, not a discovery). (3) LETHAL for the actionable framing: cohort is CONDITIONED on patients who already had lactate drawn → structurally cannot show masking ever changed ordering; that population (AG normal, lactate never drawn, truly acidotic) is excluded by the sampling frame. Phase-2 delayed-lactate endpoint = confounding-by-indication (reason lactate wasn't drawn ~ how sick they looked, shared cause) → full re-download buys more unidentifiable data, not identification. | **DEMOTED → confirmatory quantitative extension of Figge/Dinh, honest caveat. Minimal defensible claim: a large-cohort quantification of a KNOWN masking mechanism; naive fix fails; cannot speak to real ordering behavior. Phase-2 NO-GO unless a cheap severity-adjusted pilot shows AG-masking predicts time-to-lactate net of illness severity (needs vitals/SOFA, not in current lab-only extraction).** |
+
+| 18 | **Blood-gas Hgb vs CBC Hgb → transfusion-threshold (Hgb<7) reclassification** (MIMIC, 25,802 pairs ≤60min; recorded-action candidate) | 0.32 (triage; best available, driver unconfirmed) | Discordance REAL: BG−CBC mean **+0.29 g/dL** (SD 0.87, LoA [−1.41,+1.99] — matches published), near-threshold (CBC 6–8) discordance **17.6%**; BG runs high → falsely-reassuring/missed-transfusion direction. Non-tautological (device bias, not formula). **BUT driver test NULL:** bias uniform across sex (F 0.282 vs M 0.294, z=−1.07 NS) and race (all 0.25–0.33, no gradient); **sex-null argues AGAINST the body-size/dilution mechanism** (small blood volume would shift women — it doesn't). No differential reclassification → no disparity | **CONFIRMATORY / NULL-on-driver — real but UNIFORM device discordance (known: BG-Hgb ~0.3 high, ~17% near-threshold flip); no subgroup driver in hand → not a disparity win. Transfusion-action download NOT justified. (Body-size driver would need weight, not in local tables; but the sex-null already weakens that hypothesis)** |
+
+## New-seam pilot (from the discriminator's new-triple search)
+| # | Experiment | Predicted | Result | Status |
+|---|---|---|---|---|
+| 15 | **POC glucose-meter hematocrit interference** (137,984 POC↔lab pairs) | high (all-3-ingredients) | Hct dose-response −0.449 mg/dL/%Hct (z=−11.9), monotone +5.7→−10; negative control clean (plasma-cal POC slope 0.00); ~1.8× false-hyperglycemia in anemia. BUT racial framing FAILS specificity (Black=White Hct in ICU 29.8 vs 29.7; race offset +4 unchanged by Hct adj → not a Hct effect) | **PARTIAL: anemia→false-hyperglycemia mechanism-confirmed WIN; racial flagship NOT supported (confounded)** |
+| 16 | **Thrombocytosis → pseudohyperkalemia (serum vs plasma K)** (platelet-binned K discordance) | med-high (clean textbook mechanism + abundant driver range + reference) | platelet slope **+0.052 mEq/L per 100k (z=22.9)**, strictly monotone to +0.79 at platelets >1000k; false-hyperK 1.6%→28% across platelet bands; **WBC arm null** (localizes to platelets); racial false-hyperK gap replicates (Black 6.6% vs White 3.3%) but is **NOT platelet-mediated** (unchanged adjusting for platelets) | **WIN — driver with abundant in-cohort range + clean reference; racial angle confounded/separate** |
+| 16b | **COHb → pulse-oximeter SpO₂ bias** (co-oximetry SaO₂ vs SpO₂) | high (predicted) → **wrong** | driver has **no dynamic range** in ICU (COHb mean 1.1%, max ~7%; severe CO triaged elsewhere) → no dose-response detectable. Clean sub-result: **COHb is racially invariant** (Black≈White), so it cannot confound the Sjoding occult-hypoxemia racial gap | **NULL (driver lacks in-cohort range) — but rules COHb out as a confounder of occult hypoxemia** |
+| 16c | **MetHb → pulse-oximeter SpO₂ bias** (co-oximetry) | med-high | mechanism directionally consistent but MetHb≥5% only **n=28** → extreme-tail power failure; no subgroup test possible | **mechanism-only (underpowered)** |
+
+## eICU external validation of the false-hypercalcemia (upper-threshold) calcium bias + full gate (doc 12)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| 17 | **eICU false-hypercalcemia (upper-threshold) external validation** (14,164 paired total+ionized draws, 93 hospitals; truncated-download subset) | Test1 raw gap +0.195 mg/dL (z=3.54)≈MIMIC; **false-hyperCa OR 2.57** (Black 4.68% vs White 1.87%); RTM-immune band Black 11.4% vs White 3.9% (z=5.69); masked-hypoCa OR 1.66 | 3-agent gate: **reproduction SURVIVES** (from-scratch, strengthens under stricter filters, cells>>30); **hostile panel = promotable-with-caveats**; **CKD-robust**: raw gap +0.195→+0.147 (creat+phos, sig), false-hyperCa 2.57→2.56 in creat<1.3 (SURVIVES), masked-hypoCa 1.66→1.24 (does NOT survive — renal-mediated). Total-protein mediates (mechanism, not confound); myeloma-excluded unchanged; pH negligible. Heterogeneity site-concentrated (pooled +2.67pp z=5.46 vs inverse-var meta +0.57pp) | **SURVIVES — upper-threshold error externally validated + CKD-robust + reproduction-confirmed; the durable NEJM-genre endpoint** |
+| 17-gap | **eICU treatment consequence (IV calcium repletion)** | UNMEASURABLE: infusionDrug charts Ca infusion in only 316/73,547 stays; repletion is bolus/push in the absent `medication` table | data-coverage null, NOT equal-treatment evidence | **blocked in eICU → pursue in MIMIC (inputevents/repletions.csv exist)** |
+| 18 | **MIMIC false-hypercalcemia → differential UNNECESSARY workup (measurement-mediated)** (25,170 pairs, 3,442 Black) | **Measurement-mediated link POWERED+robust:** biased Ca drives PTH/VitD/SPEP workup holding true ionized fixed — corrected_Ca OR 1.17 (z=3.37), total_Ca OR 1.42 (z=8.7), survives malignancy exclusion (OR 1.21, z=3.53). **Exposure disparity POWERED:** false-flag Black 4.7% vs White 2.5% (z=4.43, ~1.9×). Within-flag workup rate NOT race-differential (signal is exposure not response). Population differential-unnecessary-workup: "any workup" +1.28pp (z=3.08) but proxy-weak (repeat-ionized contaminated); **specific endpoint +0.04pp (z=0.26) UNDERPOWERED (4 Black false-flag+workup events, +72h window)** | Self-red-teamed: caught+fixed a labevents schema bug (extra order_provider_id col → false zeros); malignancy-robust; temporality enforced; honest underpowered null on the specific endpoint | **PARTIAL WIN — causal chain established (bias→workup independent of truth; Black 2× exposed); population differential promising-but-underpowered in MIMIC, needs larger corpus** |
+| 18b | **Workup-differential power-check (3 windows: +72h/+7d/whole-admission)** | Black false-flag+specific-workup events 4→7→8 (all <25 needed); exposure disparity unchanged (4.7% vs 2.5%, z=4.4) at every window; within-flag workup rate favors White (Black 6.3%/10.9%/12.5% vs White 10.1%/14.1%/16.6%); widening only adds confounding | ceiling confirmed — not powerable in MIMIC | **CONFIRMED CEILING — population workup differential needs multi-site order data; the two upstream links stand** |
+| 18c | **NEJM manuscript assembled** → `docs/research/MANUSCRIPT_DRAFT.md` | full eGFR-analogue framing; mechanism + eICU external validation + workup causal-link + exposure disparity; hard-outcome chain kept hypothesis-generating | flagged 4 pre-submission number-reconciliation items (cohort-size/denominator differences across extractions) | **DRAFT COMPLETE — pending number harmonization + a multi-site workup corpus** |
+
+## Cycle-12 NEJM/Nature-tier CC/anesthesia slate (discriminator-ranked; predictions in IDEA_GATE)
+| # | Experiment | Predicted | Result | Status |
+|---|---|---|---|---|
+| C12-2 | Pre-analytic false hyperlactatemia (bg vs central lactate) → sepsis mis-triage | MED-HIGH | chem lactate 53154 = 104 rows/93 pts; 1 paired patient at ±60min — two-method design has no substrate | **NULL (infeasible; reference not co-ordered at scale)** |
+| C12-3 | False-hyperK → emergency insulin/D50 → iatrogenic hypoglycemia (doc-02 consequence) | MED-HIGH | **LINK1 STRONG:** chem-K drives hyperK treatment holding true bg-K fixed, OR 2.34/mEq/L (p=1.7e-61), bg-K NS. **Exposure disparity replicates:** false-hyperK Black 13.8% vs White 6.4%, RR 2.15 (matches doc-05 OR 2.36). LINK2 unnecessary-treatment tiny absolute (0.38%). **LINK3 terminal harm EMPTY (0/4 false-flag-treated hypoglycemic).** Selection: paired-gas=ICU where true K visible protects against acting on artifact | **PARTIAL — action-level measurement-mediated link + disparity are clean, publishable (hardens doc 02); terminal iatrogenic-harm doesn't close (paired-design selection wall, same as calcium workup)** |
+| C12-1 | **Occult hypoxemia → SpO₂/FiO₂ → ARDS-Berlin & SOFA-resp racial misclassification** (MIMIC, 104,696 paired ABG↔SpO₂↔FiO₂, 10,841 Black) | HIGH | SF over-reads at matched true PF: **Black +6.87 SF units (z=7.44)**; ARDS under-classification PF<200→SF≥235 **OR 1.43 (z=8.16)**, PF<300→SF≥315 **OR 2.00 (z=9.55)**; SOFA-resp under-score ≥1pt **OR 1.66 (z=14.0)**; attributable missed-ARDS **+1.2pp** (CI +0.9..+1.5). Robustness: FiO₂-charting ruled out (0.558 vs 0.556), SpO₂-nonlinearity ruled out (88–96 unchanged), PEEP≥5 holds, Sjoding occult-hypoxemia positive control replicates (OR 2.09). Honest nuance: mean PF−SF net-negative both races (SF globally conservative); racial harm is in the under-scoring TAIL | **WIN — in hostile-review gate (novelty/prior-art vs Fawzy/Gottlieb/Sjoding; cluster-robust re-inference for Tests 2–4; eICU external-validation feasibility)** |
+## Fluid-vs-pressor responsive phenotype (user pivot from the bolus-vs-pressor tool)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| FP-gate | **Novelty + design pre-mortem** (fluid-bolus-vs-vasopressor responsive phenotypes) | ALREADY DONE POSITIVE inside RCTs: **Kiernan 2025 AJRCCM (PMID 40668865)** — CLOVERS 3-biomarker subphenotype (angpt-1/2, sTNFR1); SP2 41% vs 27% mortality by fluid strategy (p-int 0.02), severity-independent; **DeMerle/Seymour 2024 (PMID 38485953)** ProCESS; **ANDROMEDA-SHOCK-2** prospective RCT already running. Observational is WORSE: confounding = near-positivity-violation (phenotype IS the treatment rule); the severity-independence biomarkers aren't in MIMIC/eICU/SICdb (no rescue for the steroids-style orthogonality collapse); no outcome supports a defensible observational HTE | **NO-GO (decisive)** — already RCT-answered with biomarkers we lack; observational route redundant + inferior | **KILLED — gate found the RCT-embedded positive result; do not re-run observationally** |
+
+## Propagation-map gates (post-decision-tool pivot)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| PM-vanco | **Vancomycin overdosing via creatinine-muscle bias (trough = ground truth)** | Novelty CROWDED (cystatin-C-vs-creatinine dosing subfield, PMID 28131530); feasibility N=28,475 (clean matched-dose only 1,393); **magnitude 5× UNDER-shoot** (predicted 18–35% higher trough F, observed 3.5–10%) | **NO-GO** — trough is TDM-CONTROLLED (titration feedback loop corrects the upstream bias, severs decision→outcome) | **KILLED cheaply by the 3-part gate → new lesson: propagation endpoint must be a FREE (untitrated) variable; magnitude-check catches under-shoot as well as over-shoot** |
+
+## Extubation → reintubation-risk tool (decision-tool candidate #3)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| EX-1 | **Novelty + MIMIC feasibility (STATIC features)** (N=29,580 extubations; reintubation 6.8%/48h, 10.1% in ≥24h-MV subset) | Outcome CLEAN + abundant (opposite of AF). Static predictor signal modest: RSBI 0.573 → 6-var 0.635 → full 0.645 (~0.64 ceiling, but MISSING several Tier-1 features + the entire dynamic layer). Me-too static score is crowded: RSC/RISC (Bansal 2022 PMID 35252224, C 0.72), Fenske 2025 ML ext-validated 0.87 (PMID 40731125) | me-too STATIC score NO-GO | **STATIC score killed; SBT-DYNAMICS layer untested → EX-2** |
+| EX-2 | **SBT vital-sign DYNAMICS incremental-value test** (the one novel angle) | Static AUROC 0.726 → static+dynamic 0.737 (Δ+0.012, p<1e-6) — BUT the gain is LEVEL re-encoding (top feats RR_mean/HR_mean), NOT trajectory: RR-variability (the WAVE signal) ranks near-bottom; pure-variability-only AUROC 0.596 (~chance); Δ collapses at 6h window (p=0.88) + excluding-sickest (CI touches 0). Root cause: MIMIC charting q1–2h (~2 pts/channel) too coarse for breath-by-breath variability | **NO-GO** — the increment is trivial + acuity-confounded; the real WAVE hypothesis needs MIMIC-IV-Waveform (GPU/data-gated) | **KILLED — extubation fully closed (static crowded + dynamics data-resolution-ceilinged)** |
+
+**META-CALIBRATION after 3 decision-tool cycles (nuanced):** observational bedside-decision-tools have a LOW hit rate — steroids (confounding → trial-ready ceiling), AF (outcome not observable in-cohort), extubation-static (crowded). The measurement-bias-PROPAGATION template won twice (calcium, occult-hypoxemia→SOFA/ARDS) → **comparative advantage = propagation-maps.** A decision-tool is worth running only if it clears ALL FOUR: (a) clean in-cohort observable+timestamped outcome; (b) genuinely unfilled; (c) low confounding (diagnostic/risk not treatment-benefit); (d) predictable outcome. The ONE live exception: extubation's SBT-DYNAMICS layer is a specific unfilled physiology gap (b) with a clean outcome (a) — being tested (EX-2). Otherwise prefer propagation-maps.
+
+## New-onset AF in sepsis — anticoagulation-decision tool (decision-tool candidate #2)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| AF-nov | **Novelty pre-screen** | NARROW-BUT-NOVEL white space (Sibley/Walkey 2025 review PMID 40323451: "no validated risk-stratification tools"; 2025 meta-analysis equipoise + 3–86% practice variation; 2026 BET calls for an RCT). **BUT** Myers/Walkey 2024 (PMID 38594918) built this exact tool and FAILED external validation (model AUC 0.54; CHA₂DS₂-VASc AUC **0.50 = chance**); Walkey 2023 target-trial (PMID 36852680) found OAC → HIGHER stroke/TIA; much stroke risk is post-discharge (MIMIC-blind) | white space real but a prior attempt failed + outcome may be in-hospital-unpredictable | — |
+| AF-feas | **MIMIC feasibility + cohort** (32,168 septic; 9,214 new-onset AF; 702 in-hospital stroke, 789 bleed) | CHA₂DS₂-VASc AUROC **0.559** (poor, confirms white space). BUT binding constraint = OUTCOME VALIDITY: no ICD timestamps/POA → 54% of "in-hospital strokes" are present-on-admission (untethered to AF onset); credible incident strokes ≤324; decision-relevant thromboembolic risk is POST-DISCHARGE (MIMIC-blind); competing mortality 20.5% | **NULL on in-hospital feasibility** — needs a linked-longitudinal-outcomes dataset; MIMIC/eICU/SICdb can only phenotype the acute state | **KILLED in our data (outcome not observable/time-orderable) — validates the new checklist item; white space stays open for a linked-outcomes study** |
+
+**CALIBRATION (decision-tool ranking):** I scored AF HIGH on tool-value but under-weighted two screens now added to the checklist — **(a) did a prior attempt already fail external validation? (b) is the outcome even predictable from in-hospital data, or does the risk live post-discharge/out-of-cohort?** CHA₂DS₂-VASc=0.50 + Myers-2024-failed are strong priors that a risk tool won't discriminate here. Predict TOOL-FEASIBILITY, not just white-space.
+
+## Steroids-in-septic-shock bedside score (user idea; design in doc 14)
+| # | Experiment | Result | Gate verdict | Status |
+|---|---|---|---|---|
+| S-v1 | **Naive subphenotype discovery + baseline-IPTW steroid HTE** (MIMIC, N=14,381 septic shock, 1,147 hydrocortisone) | k=2 = pure SEVERITY gradient (severity-artifact trap, as pre-mortem predicted); k=4 shows difference in KIND — **C2 hyperlactatemic vasopressor-refractory** (lactate 9.6, bicarb 14, NEE 1.23, Seymour-δ-like). Baseline-IPTW steroid assoc HARMFUL in every phenotype (RD +0.10..+0.22) = confounding-by-indication signature; attenuates to near-null (RD +0.04) ONLY in C2 | design pre-mortem's confounding warning CONFIRMED; baseline IPTW can't remove time-varying confounding | **Confounding-dominated as-is; C2 (hyperlactatemic-refractory) is the one defensible signal → rigorous g-methods follow-up (v2)** |
+| S-v3 | **External validation SICdb + eICU** (SICdb N=11,591 NE-treated, hydrocortisone 1,271, HLVR 960) | **PARTIAL / compromised by no-lactate.** SICdb lactate not locally available → HLVR defined by vasopressor-refractoriness ONLY (collapses onto NE-dose severity — not the true hyperlactatemic-refractory phenotype). **Mortality interaction directionally replicates** (broad OR 0.77 NS; **true-sepsis subset N=742 OR 0.14 [0.065–0.29], survives orthogonality**). **Shock-reversal interaction FAILS** (opposite, HR 0.68–0.77) — but confounded by phenotype mis-definition. **eICU INFEASIBLE** (13 hydrocortisone rows; medication table not local) | hypothesis-SUPPORTING for mortality, non-confirmatory for reversal; not a clean test without lactate | **PARTIAL — mortality signal externally supported (strong in true-sepsis); reversal unconfirmed; clean test needs SICdb lactate (454/657/465) + eICU medication table** |
+
+| S-v3b | **SICdb clean re-test with PROPER lactate-defined HLVR** (lactate extracted: 711,824 rows, 97.8% t0 coverage; true HLVR=692, HLVR&steroid=465) | **Reversal: does NOT replicate** — opposite→null; septic-subset point 1.09 but bootstrap/orthogonalized ≤1; positive reversal signal is carried by steroid×SEVERITY not steroid×phenotype. **Mortality: directionally replicates** (septic subset OR 0.32/HR 0.31, MIMIC direction) BUT **fails severity-orthogonality** (HLVR term flips >1 with steroid×severity — collinear with NE-dose severity even after lactate) + reference cell n=23 (fragile) | external validation TEMPERS: the phenotype is largely a severity axis externally (MIMIC passed orthogonality, SICdb fails) → the effect modification is severity-confounded | **HYPOTHESIS-GENERATING, weak external support — steroids thread SETTLED: MIMIC signal + mortality-direction consistency, but reversal doesn't replicate + severity-confounded externally; NOT validated. RCT-IPD is the only clean test** |
+
+| S-v2 | **Target-trial emulation (g-methods, time-varying) on shock-reversal + phenotype×steroid HTE** | **Time-varying g moved naive→null (mort HR 2.50→2.16; reversal 0.63→0.79) = confounding was time-varying, as predicted. INTERACTION (consistent across 3 phenotype defs): HLVR phenotype gets FASTER shock reversal (steroid HR 1.21–1.32 vs 0.82 non-HLVR; interaction HR 1.43–1.78, CI excl 1) + NEUTRAL mortality (HR 1.05 vs 2.04; interaction HR 0.47–0.56). Survives SOFA-orthogonality; E-values 2.2–3.6.** Negative-control PARTIALLY FIRES (AxP OR ~0.51) → residual phenotype-differential confounding not fully excluded | mechanism-aligned effect modification on the less-confounded endpoint; hypothesis-generating not causal (neg-control caveat) | **PERSIST — strongest defensible steroids result; trial-ready HLVR-steroid-responsive signal → external-validate (eICU/SICdb) + parsimonious score + RCT-IPD** |
+
+| C12-1a | **Cluster-robust re-inference + eICU feasibility** | **Task A: all effects SURVIVE subject-clustering** — SEs inflate ~1.8× (ORs unchanged): 2a OR 1.43 (cluster 95% CI 1.21–1.69, z=4.24), 2b/4 OR 2.00 (1.56–2.55, z=5.51), 3 OR 1.66 (1.46–1.88, z=7.81); one-pair-per-subject gives even larger ORs (1.46/2.78/1.98). **Task B: eICU infeasible LOCALLY** — no pulse-ox SpO₂ in the local extract (lives in un-downloaded `vitalPeriodic`); agent refused to substitute arterial co-oximetry; race + arterial gases present & powered (~34k) → download gap, not a null | inference hardened; external validation pending `vitalPeriodic` acquisition | **HARDENED — internally airtight; eICU external validation needs vitalPeriodic download** |
+| C12-1b | **eICU external validation** (70,044 SF/PF pairs, 154 hospitals; 157k occult-hypoxemia pairs) | **Positive control REPLICATES: occult hypoxemia OR 2.03 (z=8.29) ≈ MIMIC 2.09; differential bias +1.15 SpO₂ (z=6.31) — universal.** BUT the PROPAGATION FAILS: Test 1 SF-over-read wrong-sign (−3.42, ~0 in bands); Test 2 OR 1.06(null)/1.29; Test 3 OR 1.03 (null). Mechanistic tell: +1.15 SpO₂÷FiO₂≈+2 SF units, but MIMIC gave +6.87 (~3× over-estimate); eICU cohort too sick (median PF 160) for SF headroom | external validation of the NOVEL claim FAILS; biomarker bias universal but score-propagation MIMIC-specific | **TEMPERED — C12-1 downgraded: biomarker bias universal (=Sjoding, known); the SF→ARDS/SOFA racial-misclassification propagation does NOT externally replicate. Publish as a DISSOCIATION or drop the strong claim** |
+
+## A-LINES arterial-line decision tool (C8 spinoff → candidate THIRD FLAGSHIP)
+Companion to C8 (doc 20: oscillometric cuff misses ~half of harm-associated intra-op hypotension). Where C8 is
+the field-reframing finding, the A-LINES tool is the actionable deliverable — a bedside decision aid for *whom to
+give an arterial line*. Full detail in `docs/research/21_aline_decision_tool.md`.
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| AL-opt | **Per-factor optimization** (INSPIRE n=27,140; target harm-assoc cuff-missed hypotension 2.1%) | DROP BMI/"N" (AUC 0.485, multivariable p=0.86 — obesity degrades cuff *accuracy* but not harm-missed-hypotension); ADD Age≥65 (indep OR 1.57, z=8.7); keep ASA≥3/Long>4h/Serious-surgery(refined: drop neuro 0.7%, OB/gyn 0.2%); male sex redundant (collinear). Optimized AUC **0.752 vs 0.687** | **DONE — mnemonic earns each letter** |
+| AL-tier1 | **DATA-DRIVEN Tier-1 via revealed practice** (INSPIRE n=131,045 monitored ops; A-line = art_mbp present) | Placement rate cleanly self-separates Tier-1: **Cardiothoracic 97.0% · Neurosurgery 94.9% · interventional-radiology/hybrid 91.3%** (≥85% = near-universal, already standard) vs gray zone (OB/gyn 45 · urology 36 · general 36 · ortho 30 · plastic 22 · ENT 12%). **ASA≥4 de-facto Tier-1** (89/94/88% at ASA 4/5/6) regardless of specialty; contested zone = ASA 2 & the ASA2/3 boundary. Tool self-calibrates (re-estimate rates → Tier-1 re-derives) and honestly declines to "recommend" the routine | **DONE — answers 'identify where it's already near-universal'** |
+| AL-graytest | **Tier-2 robustness when Tier-1 removed** (target broad any-harm 7.9%, so AUC not comparable to AL-opt's narrow target) | Restricting the score to the gray zone (drop CTS/NS/RAD + ASA≥4) leaves discrimination intact: **AUC 0.654→0.661**; at ≥2 flags 43→49%, captures 65→71%, NNM 8→9. Score doesn't lean on the near-universal cases to look good — earns its keep where the decision is contested | **DONE** |
+| AL-composite | **COMPOSITE benefit endpoint** (INSPIRE gray-zone co-recording n=19,405; user: "composite endpoint guides the mnemonic") | Realized A-line benefits per case: B1 hypotension-detection 25%, B2 vasoactive infusion 21%, B3 serial labs/ABG≥3 42%, B4 BMI≥35 1% → **ANY 59.6%** (≥2 in ~25%). **Tier-2 score predicts composite better than hypotension alone (AUC 0.653 vs 0.593)**; at ≥2 captures 58%, **NNM 1.4** (vs 3.3 hypo-alone). Monotone by band: 39→53→65→81→95→98%. Reframes the decision from single-purpose hypotension flag to composite-benefit index | **DONE — composite endpoint operationalized** |
+| AL-eICU | **US external validation** (eICU, 154 hospitals, 24,691 co-recording ICU stays) | Discordance replicates: cuff misses **47%** of art-hypotension at <65, **68%** at <55 (≈VitalDB 44%/73%); over-reads at low pressure (+13.1 mmHg at 20–55, +5.2 at 55–65). Attenuation replicates directionally: mortality art **OR 5.40** vs cuff **4.86** (higher absolute ORs = ICU baseline risk). Different country/setting/monitor → device-physics, not local artifact | **DONE — softens single-institution limitation** |
+
+**Three-layer final structure:** (1) auto-Tier-1 by category (cardiac/neuro/interventional or ASA≥4) → place;
+(2) Tier-1 by specific indication (beat-to-beat/ABG/NIBP-unreliable/vasoactive/GDT) → place; (3) gray zone →
+**detection correction (cuff q≤2–3min + treat MAP<70)**; higher-acuity features raise suspicion but the pre-op
+score is EXPLORATORY only.
+
+### RIGOROUS RE-ANALYSIS + adversarial review (goal: tool that survives review) — SAP doc 22, results doc 23
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| AL-tripod | **Pre-specified subject-split held-out modeling** (INSPIRE n=27,528, 25,080 subjects) | Held-out 4-factor count AUC **0.601** (Y_missed), **0.68** (Y_harm); calibration slope 1.00; DCA net-benefit positive; hard-outcome gradient 12.5→68.8%. **Corrects doc-21's in-sample 0.75** | DONE |
+| AL-redteam | **Hostile reviewer (anesthesiologist+biostatistician)** | 7 attacks; 3 rated FATAL. Verdict: standalone tool NOT publishable; fold into C8 as hypothesis-generating | DONE |
+| AL-kill1 | **Duration-leakage test** (drop realized duration) | Y_missed 0.609→**0.574**, **Y_harm 0.682→0.572** — nearly all Y_harm "signal" was realized-duration look-ahead | DONE |
+| AL-kill2 | **External validation = FAILED** (VitalDB n=1,071) | AUC **0.546 [0.511–0.579]**, non-monotone calibration (24/31/36/35/25%). Not "attenuation" — a failed validation | DONE |
+| AL-kill3 | **Severity-confound test** (score→harm by Y_missed status) | harm\|missed=0 AUC **0.708** > harm\|missed=1 **0.646** → score predicts general severity, NOT the cuff-blindness pathway | DONE |
+| AL-kill4 | **Verification/selection bias** (lined vs un-lined population) | lined ASA≥3 13% vs 9%, dept-mix shifted (NS 23%); target outcome observable only in already-lined patients → deployment population structurally unrepresented (unfixable in data) | DONE |
+
+**REVISED VERDICT (supersedes flagship claim):** the standalone pre-op A-line *prediction tool* **does not survive
+adversarial review** (leakage-free AUC ≈0.57, failed external validation, severity-confounded, selection-biased).
+**What survives + is high-impact:** C8 measurement finding (externally validated) + a **model-free detection
+correction** (cuff q≤2–3min + MAP<70, 57%→75% sensitivity) + guideline-anchored structure, with the score as
+exploratory. Benefit-validated decision rule → **prospective RCT (doc 24)**. Honest downgrade from "3rd flagship
+tool" to "C8 clinical-implications section + trial protocol."
+
+### ROUND 2 review (fresh reviewer) + hardening — verdict MAJOR REVISIONS (up from reject); C8 publishable
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| AL-r2 | **2nd hostile reviewer** (anesthesiologist + trials methodologist) | RTM-safe design + score demotion = genuine upgrade; C8 publishable. Remaining: MAP<70 in-sample, attenuation-tautology, mechanism-confounders, RCT-tension | DONE |
+| AL-taut | **Tautology test** (INSPIRE n=27,528: outcome on cuff_hypo + continuous true arterial burden/depth) | **cuff_hypo OR → 1.05 [0.98–1.12] NULL**; art_burden OR 1.73 carries all signal → attenuation is the QUANTIFIED CONSEQUENCE of cuff undercounting (not a separate effect). Turns the tautology attack into a clean confirmation | DONE — reframes §3c |
+| AL-thr-eicu | **External replication of MAP<70 threshold numbers** (eICU 1.14M pairs, 154 hospitals) | sens <65→<70 = 53.0%→70.7% (VitalDB 56→72%); FPR 11.8%→23.6% (VitalDB 10→19%) — near-identical → threshold trade NOT in-sample artifact | DONE |
+| AL-thr-safe | **Overtreatment audit** (VitalDB 5,906 pairs) | <65: sens 56%/FPR 10%/PPV 50%; <70: sens 72%/FPR 19%/PPV 41%. Newly-flagged (cuff 65-70) median art **70** (25% truly <65) → intensifies in mild-low-normal, not toward hypertension. Bounded, honestly reported; net-benefit → RCT arm | DONE |
+| AL-window | **Window/anchor sensitivity** (VitalDB ±30/60/90s) | sensitivity 55.0/56.1/55.9% at <65; bias +30.7/+30.8/+30.5 — rock-stable → discordance is systematic device over-read, NOT a cuff-cycle timing artifact | DONE |
+
+**AFTER TWO ROUNDS — durable package:** (i) C8 measurement (RTM-safe, Bland-Altman-by-stratum, window-stable,
+eICU-replicated); (ii) harm-attenuation reframed as C8's quantified consequence (cuff adds nothing beyond true
+burden, OR 1.05 null); (iii) MAP<70 detection correction with eICU-replicated operating characteristics + bounded
+overtreatment, framed as a **trial hypothesis**; (iv) two-stage RCT (doc 24, cuff-threshold arm promoted to
+co-primary lead-in).
+
+### ROUND 3 (convergence check) — VERDICT: CONVERGED
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| AL-r3 | **3rd reviewer convergence check** | Severity trajectory FATAL(r1)→MAJOR(r2)→**"completeness gap, not validity gap; close to publishable, should clear a top journal"(r3)**. One remaining item: vasopressor mechanism analysis, ideally within-patient crossover | DONE |
+| AL-vaso-within | **Within-patient MAP-matched vasopressor crossover** (INSPIRE) | At matched true MAP within the same op, cuff-art bias on-vs-off infusion = **−0.1 [−2.8,+2.6] (art20-55), +0.3 [−1.7,+2.2] (55-65) — NULL** → device physics, NOT vasoconstriction (the design r3 said reviewers credit) | DONE — closes r3's blocking item |
+| AL-magnitude | **Honest magnitude reconciliation** | over-read +30.6 (VitalDB, 2s waveforms) vs +13.1 (eICU, minute-level ICU, sicker) ≈2.3× → reported as replication of DIRECTION + order-of-magnitude, not identical magnitude | DONE |
+
+**CONVERGENCE ACHIEVED across 3 adversarial rounds** (fatal→major→completeness→resolved). Final durable package =
+C8 measurement finding (RTM-safe; Bland-Altman-by-stratum; window-stable; vasopressor confounder ruled out both
+between- and within-patient; eICU direction-replicated) + harm-attenuation as C8's quantified consequence (cuff
+OR→1.05 null) + MAP<70 detection correction (eICU-replicated operating chars, bounded overtreatment, framed as
+trial hypothesis) + two-stage RCT (doc 24). Predictive score = exploratory only. No surviving claim rests on an
+in-sample/un-replicated number. **The "best possible tool that survives review" = an honest measurement paper +
+model-free correction + definitive trial — NOT an overfit prediction score.** Residual (disclosed, not blocking):
+single-institution primary cohort; positioning confounder needs prospective data.
+
+## EEG idea #1 — foundation-model NCSE/IIC-vs-encephalopathy differentiation (the repo mission) — SAP doc 26
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| EEG-data | **Dataset sufficiency (live check)** | BDSP `morgoth1/data/internal_dataset` reachable via credentialed AP: expert-labeled .mat (200Hz,19ch,10min) — SEIZURE 2,161 / IIIC 47,328 / LPD/GPD/LRDA/GRDA ~8k vs GENSLOWING/FOCALSLOWING/BS/NORMAL; 2 well-covered sites (S0001,S0002). CBraMod weights cached+pinned. DATA SUFFICIENT | DONE |
+| EEG-seizure | **Seizure prognostication** (single-site S0001, n=1,184, patient-split CV; cross-site infeasible - S0002 labels sparse) | Descriptive gradient coherent (LPD/LRDA>GPD/GRDA>slowing). **CBraMod adds SIGNIFICANTLY over age+category: 0.591->0.654, ΔAUC +0.067 [+0.023,+0.110]; beats classical (0.619) -- FIRST FM advantage in the program.** Within-GPD CBraMod 0.696 (age 0.59). BUT signal is cross-pattern (works in slowing 0.61 too) = generic epileptogenicity (learned-2HELPS2B), not gray-zone-specific; single-site only | **KILLED (red-team): ascertainment bias** |
+| EEG-outcome | **Outcome-anchored (30-d mortality), powered** (n=1,316, site-split) | Pattern gradient coherent (GPD 32%/LPD 18%/slowing 8%). **WITHIN-category EEG separates survivors: GPD classical/CBraMod 0.595 (both dirs), LPD classical 0.594, age-only 0.50** -> EEG morphology carries mortality info beyond age+label (non-me-too). Modest (AUC ~0.6); incremental-over-category +0.039 [-0.001,0.078]; classical>=CBraMod; unmeasured-severity is main caveat | DONE -- PROMISING/MODEST |
+| EEG-cpu | **CPU-only models, no GPU** (hard contrast N=637, site-split) | **Classical features (band-power/periodicity/SEF/skew) + gradient boosting = 0.753 cross-site, matching frozen CBraMod 0.776 (CIs overlap) with LOWER site-leakage (0.708 vs 0.775)**. Fusion redundant (0.763). Top feats clinically sensible (periodicity, α/δ spatial, sharpness). No GPU/foundation-model needed for the classifier at this scale | DONE — CPU path viable |
+| EEG-hard | **Matched-amplitude gray-zone contrast** (GPD/LPD vs GEN/FOCAL-slowing, N=480, overlapping µV) | **CBraMod cross-site 0.732/0.785 vs amplitude-only 0.625/0.631; amplitude-MATCHED band CBraMod 0.723/0.787 vs amp 0.624/0.628** → frozen CBraMod beats amplitude by +0.10..+0.16 on the clinically-decisive IIC gray-zone contrast (vs only +0.03 on the easy binary). Site-probe 0.78 | DONE — POSITIVE, approach viable |
+| EEG-probe | **End-to-end feasibility (N=50/class/site, 593 segs, SITE-SPLIT)** | Frozen CBraMod cross-site AUC **0.771/0.775** for ICTAL{SZ,LPD,GPD} vs ENCEPH{slowing,BS}; amplitude-only baseline 0.73/0.75; **amplitude-residualized 0.770/0.751 (signal is NOT just amplitude)**; within-site 0.77. **Caveat: site-probe leakage 0.78** | DONE — positive but MODEST |
+
+**EEG verdict:** DATA + pipeline fully feasible (verified live, runs end-to-end). Frozen CBraMod carries genuine
+class signal beyond amplitude (~0.77 cross-site, survives amplitude-residualization) but site-leakage is high and
+the crude binary is the easy version. Practice-changing study = amplitude-matched IIC gray zone + OUTCOME-anchored
+resolution + fine-tuning (GPU). Next: (1) matched-amplitude GPD/LPD-vs-slowing contrast; (2) fine-tune; (3)
+hard-outcome relabel. Predicted win-likelihood: frozen-embedding me-too ~0.2; outcome-anchored+fine-tuned ~0.4 (Nature-tier ceiling).
+
+## etCO₂→PaCO₂ occult hypercapnia (anesthesiology idea #1) — KILLED (data artifact)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| ETCO2-disc | INSPIRE etCO₂ vs PaCO₂ discordance (93,178 pairs) | etCO₂ under-reads (mean −7.5), gap widens with PaCO₂; looked striking | superseded |
+| ETCO2-mech | Dead-space mechanism | PARTIAL: age (p=1e-207) + one-lung/CTS (p=1.8e-73) widen gap; BMI null; abdominal reverses (lap CO₂). Oldham's-fallacy caveat on magnitude self-caught | superseded |
+| ETCO2-kill | Consequence test → channel diagnosis | etCO₂ NEVER >45 in 17k hypercapnic ABGs; raw `etco2` **hard-clipped to [23,41]** (max 41, 0.00% >45) → the whole discordance is a CLIPPED-CHANNEL artifact | **KILLED (cheap)** |
+
+**Verdict:** not runnable in INSPIRE (clipped capnography). Re-file only for VitalDB `Primus/ETCO2` waveform or
+MIMIC-IV-Waveform. New LESSON logged: range-check every channel before a discordance study.
+
+## SpO₂ occult hypoxemia during hypotension (anesthesiology idea #2) — KILLED in INSPIRE (bad reference)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| SPO2-ref | Range-check the SaO₂ reference BEFORE running (lesson applied) | INSPIRE `sao2` is coarsely binned/likely CALCULATED from PaO₂: values only at 87,93,95-100 with a **complete gap at 88-92** (the occult-hypoxemia zone), floor at 74. Not measured co-oximetry → invalid ground truth | **KILLED pre-analysis (cheap)** |
+
+**Verdict:** occult-hypoxemia needs MEASURED co-oximetry SaO₂ (as in Sjoding NEJM 2020). INSPIRE's SaO₂ is
+unusable (gapped/calculated). Re-file for **MIMIC-IV or eICU** (co-oximetry SaO₂ + SpO₂). The range-check lesson
+paid off twice in one session (etCO₂ clipped, SaO₂ gapped) — both caught before/at analysis, cheaply.
+
+## Bottleneck-remover #2: ComBat/CORAL harmonization for EEG site-leakage — FAILED (redirects strategy)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| CB-1 | Parametric-EB ComBat on IIC features (S0001 vs S0002), protecting class covariate | site-probe **0.708 → 0.999** (WORSE), class cross-site AUC **0.741 → 0.610** (harmed) | FAILED |
+| CB-2 | Diagnostic: linear vs tree probe | ComBat killed the *linear* site probe (0.674→0.273) but a *tree* recovers site at 0.999 → leakage is nonlinear/higher-moment | mechanism |
+| CB-3 | CORAL (covariance alignment) | site-tree still 0.999, class 0.661 → not a covariance effect either | FAILED |
+| CB-4 | Degenerate-feature check | 0 near-constant/var-ratio>1e3 features; site is DISTRIBUTED over real slow-wave feats (delta/alpha ratio, slow_ratio + stds; 50% in 3, 90% in 11 of 48) | fundamental |
+
+**Verdict:** marginal and covariance harmonization are the WRONG tools for EEG-DSP site leakage — ComBat *sharpens*
+site recoverability while *attenuating* biology (it strips the shared physiology it's designed to equalize, exposing
+the pure site-interaction fingerprint). Methods-cautionary corollary (publishable): cross-site EEG performance
+reported "after ComBat" can be fully site-confounded to a nonlinear model. **Strategic redirect (confirmed):** don't
+subtract site — use WITHIN-subject / WITHIN-device measurement-reclassification designs (deployed measure vs a
+ground-truth reference from the SAME monitor). This is exactly the BIS-occult-suppression class of design now in
+progress. Predicted win-likelihood of harmonization-unlocks-cross-site: was ~0.3, actual 0 → logged.
+
+## BIS occult burst-suppression (EEG depth-monitor idea) — KILLED for top tier (circular reference)
+| # | Experiment | Result | Status |
+|---|---|---|---|
+| BIS-1 | Gating: P(SR>0 | BIS 40-60, SQI≥50), N=15 pilot | 3.9% overall; age gradient 0.4/3.2/5.2/15.9% (18-50/50-65/65-75/75+) | signal real but... |
+| BIS-2 | Independent raw-EEG confirmation (EEG1_WAV 128Hz, pp<8µV detector) | FAILED validation: per-case corr vs monitor SR = **−0.386** (wrong sign); detector conflates low-amplitude w/ isoelectric | no orthogonal check |
+| BIS-3 | Sonnet adversarial red-team | KILL: BIS blends BSR into its own output + epoch-smoothing lag (self-referential, not discordance); age gradient = known age-EEG susceptibility (Purdon/Fritz); ENGAGES minimized suppression directly w/ no delirium benefit → undermines mechanism; no delirium outcome in VitalDB | **KILLED (top tier)** |
+
+**Verdict:** monitor-self-referential co-occurrence, not a discordance between INDEPENDENT instruments (the exact
+difference from C8, where the arterial line is independent of the cuff). Tier ceiling = technical note
+(A&A/BJA/JCMC), not NEJM/JAMA. Predicted win-likelihood was ~0.5 (measurement-reclassification template); actual =
+capped at technical-note → logged. The reusable discriminator: a same-device sub-parameter is not a gold standard.
+
+## EEG top-tier loop — HONEST META-VERDICT (2026-07-10)
+Ran every reachable EEG angle; all capped at two root gates — **(1) no GPU** (frozen CBraMod never beat classical DSP
+on any clinical outcome) and **(2) no external EEG+outcome+2nd-site dataset** (no NEDC/TUH key; VitalDB lacks
+delirium; HEEDB site-confounded & unharmonizable). Angle ceilings: IIC classifier=me-too; IIC→mortality=generic
+severity; seizure-prognosis=ascertainment; BIS occult-suppression=circular/known-physiology; ComBat remover=fails.
+**Reachable EEG win = Anesthesiology/A&A-tier measurement note. Genuine top-tier white space (cross-site foundation-
+model→outcome) is GPU+credential-gated** — exactly as CLAUDE.md's mission line states. Machine action: surface the
+gate; bank the Anesthesiology-tier findings (C8 is submission-ready); do not force a capped finding past the bar.
+
+## "Confound as finding" methods paper (site dominates EEG clinical prediction) — REFUTED
+| # | Decomposition | CBraMod | Classical |
+|---|---|---|---|
+| D1 site-probe AUC | 0.775 | 0.708 |
+| D2 within-site vs cross-site class AUC | 0.719 / 0.751 | 0.741 / 0.741 |
+| D2 generalization gap (within−cross) | −0.03 | 0.00 |
+| D3 drop top-20 site feats → cross-site class | 0.749 | 0.721 |
+| D4 corr(site-imp, class-imp) | 0.05 | −0.19 |
+
+**Verdict:** with class balanced within site (site⊥class), the IIC signal generalizes cross-site and is NOT
+site-confounded — site leakage lives in different feature directions than the class signal. Refutes the "models
+predict site not physiology" paper; vindicates balanced cross-site EEG classification (but it's a me-too task,
+CBraMod≈classical). Salvageable nugget = "ComBat counterproductive + unnecessary under balanced designs" (technical
+note). Predicted win-likelihood ~0.35; actual = refuted/technical-note → logged.
+
+## Hemodynamic occult hypoxemia (eICU) — novel angle REFUTED; strong Sjoding replication
+| # | Test | Result | Status |
+|---|---|---|---|
+| OH-pair | Stream 146.7M vitalPeriodic rows, pair SpO2+MAP to measured-SaO2 ABG | 176,440 paired readings (gold standard validated) | built |
+| OH-bias | SpO2−SaO2 by true-SaO2 stratum | +0.2 (normal) → +13.8 (SaO2 70–80), monotonic | ✅ textbook |
+| OH-race | Occult rate P(SaO2<88 | SpO2 92–96) by race | Black 12.6% vs White 5.3% (~2.4×); Asian 9.4% | ✅ replicates Sjoding |
+| OH-hemo | bias ~ SaO2+MAP+pressor (hypoxemic n=10,221) | **MAP coef +0.05 (z+9) WRONG SIGN**; pressor null | ❌ REFUTED |
+| OH-conseq | RTM-safe: occult vs normal mortality at matched SpO2≥92 | age-adj OR **2.84 [2.61–3.09]** (28.9% vs 13.0%) | ✅ but not novel (Wong/Fawzy) |
+
+**Verdict:** rigorous REPLICATION (Sjoding racial bias + occult-hypoxemia mortality), but the novel hemodynamic-
+amplification differentiator is REFUTED (low perfusion does not amplify the over-read of present SpO2 readings;
+the effect, if any, is in SpO2 dropout/quality, unmeasured here). Downgraded per pre-registered gate. Predicted
+win-likelihood ~0.5; actual = replication/no-novel → logged. Reusable: validated eICU co-oximetry reference +
+streaming pairing pipeline for the next SaO2-anchored question.
+
+## Dyshemoglobin decomposition of occult hypoxemia (cached-data scout) — NEGATIVE/underpowered
+Tested whether measured COHb/MetHb drive the pulse-ox over-read and explain the racial gap (join to paired draws,
+no new stream). COHb coef on bias non-monotonic/wrong-sign; COHb dynamic range too low (median 0.8%, p95 2.2% — few
+CO-poisoning cases in general ICU); racial gap in the COHb-measured subset not significant (z=−1.8) so the
+"33% explained" is noise. No clean novel finding. Confirms occult-hypoxemia line is exhausted for a breakthrough.
+
+## ED triage under-triage disparity (MC-MED, fresh dataset) — LIVE LEAD (passed robustness gate)
+| # | Test | Result | Status |
+|---|---|---|---|
+| ED-A | P(high-acuity ESI 1-2 | objective MEWS>=2) by race | White 73% vs Hispanic 69%, matched MEWS | signal |
+| ED-B2 | logistic ESI(1-2) ~ MEWS+age+sex+race+payor+EMS | **Hispanic OR 0.86 [0.80-0.93]; Black OR 0.89 [0.79-0.99]** (under-triaged) | ✅ robust |
+| ED-C | 72h-return | discharged ~ race+age+MEWS+payor+sex | **Black OR 1.60 [1.42-1.80]**; Hispanic null after adj (0.95) | ✅ robust (Black) |
+
+**Verdict:** first post-C8 lead to SURVIVE its robustness gate (insurance/access-adjusted). Coherent Black-patient
+signal: under-triaged vs objective severity + 60% higher 72h bounce-back. Single-center (Stanford) — external
+replication (MIMIC-IV-ED) is the #1 gate; soft outcome (return) + MEWS-anchor imperfection are the honest caveats.
+Tier: solid health-equity (JAMA Netw Open/JAMA IM/Annals EM); ceiling raised by external replication + harder
+outcome. Predicted win-likelihood ~0.45 (real publishable finding; top-tier needs replication). Doc: docs/research/32.
+
+### ED under-triage — EXTERNAL REPLICATION (MIMIC-IV-ED, BIDMC Boston, n=398,622)
+Under-triage at matched MEWS+age+sex REPLICATES & strengthens: Black OR 0.78 [0.75-0.81], Hispanic 0.72 [0.68-0.76],
+Asian 0.83 [0.77-0.89] (all sig). 72h-return: Black OR 1.19 [1.14-1.24] (replicates MC-MED 1.60); Hispanic null,
+Asian lower (both match MC-MED). **Two US health systems, ~500k visits — #1 gate (external replication) CLEARED.**
+Predicted win-likelihood revised 0.45 -> 0.6 (two-center objective-anchored disparity + consequence). Tier -> JAMA/JAMA IM.
+
+### ED under-triage — DEATH-ANCHORED VALIDATION downgrades the harm claim
+Hardening held (NEWS2 anchor, chief-complaint adj, all ESI cutpoints, MIMIC replication, Hispanic door-to-room
++6.9min). BUT death-anchored test (unbiasable): at matched NEWS2, Black/Hispanic mortality LOWER than White in BOTH
+cohorts (NEWS2 5+: Hisp ~5%, Black ~8% vs White ~11%) → vitals anchor over-states minority risk → apparent
+under-triage largely appropriate calibration, not bias. Downgrade: JAMA-IM clinical claim → methods-cautionary
+contribution (+ residual Asian-under-triage-at-equal-mortality and Hispanic door-to-room signals). Predicted
+win-likelihood 0.6 → actual: dissolved by decisive validation → logged.
+
+## POC vs lab glucose → iatrogenic hypoglycemia — KILLED fast by decisive-first test (lesson applied)
+Gating test (eICU, 172k paired POC↔lab glucose): (Q1) POC over-reads at low glucose (+17 mean at lab<54 but medABS
+~7, outlier/temporal-drift driven); (Q2) the bet-on ANEMIA mechanism is tiny (~3.6 mg/dL across Hct range — modern
+meters are Hct-corrected); (Q3) POC misses 33% of true hypoglycemia (real but KNOWN per ISO 15197, and NO Hct
+gradient). Novel/mechanistic angle weak, residual known + temporal-pairing confound. KILLED in one test — decisive-
+first discipline worked (no wasted build). Predicted win-likelihood 0.4; actual ~0 → logged.
+
+## eGFR (creatinine) vs cystatin-C over-dosing — FEASIBILITY-KILLED (no cystatin in reachable data)
+Best-fit C8-analog (true independent muscle-independent reference + ARITHMETIC dosing consequence). Feasibility gate:
+eICU lab has creatinine (1M+) but NO cystatin; MIMIC-IV d_labitems has NO cystatin C item at all. The muscle-
+independent reference does not exist in any reachable dataset → cannot run. Killed via tiny dictionary file (no 15GB
+labevents stream wasted) — decisive-first feasibility discipline. Predicted win-likelihood was ~0.5; unrunnable.
+
+## Oxygenation C8-analog (SpO2 attenuates hypoxemia-harm) — KILLED by decisive-first test (attenuation reversed)
+Reused validated SpO2<->SaO2 data (42,847 stays). C8-exact test: SpO2-defined hypoxemia OR is LARGER than SaO2-
+defined (SpO2<88 OR 6.14 vs SaO2<88 OR 3.27, ratio 0.53) — REVERSED from C8. SpO2's systematic over-read makes its
+threshold-flag MORE SPECIFIC for severe hypoxemia (higher OR), unlike cuff's noise (attenuation). Arithmetic reframe
+fails. Corrected-target number real but known (SpO2 92-96 permits 10-20% SaO2<88; Sjoding). Killed in one run.

@@ -1,0 +1,60 @@
+{
+  "n_subjects": 141,
+  "reps": 600,
+  "features": {
+    "bis_rbr": {
+      "per_seed": {
+        "20260736": {
+          "lo": 0.02745799489829683,
+          "hi": 0.1863219455630888,
+          "frac_wrong_side": 0.006666666666666667,
+          "two_sided_p": 0.013333333333333334,
+          "verdict": "MUSCLE-ATTRIBUTED"
+        },
+        "20260836": {
+          "lo": 0.01899985071254914,
+          "hi": 0.18423879278567123,
+          "frac_wrong_side": 0.005,
+          "two_sided_p": 0.01,
+          "verdict": "MUSCLE-ATTRIBUTED"
+        },
+        "20260936": {
+          "lo": 0.018062265053479756,
+          "hi": 0.1860980207623277,
+          "frac_wrong_side": 0.008333333333333333,
+          "two_sided_p": 0.016666666666666666,
+          "verdict": "MUSCLE-ATTRIBUTED"
+        }
+      },
+      "stable": true,
+      "verdict": "MUSCLE-ATTRIBUTED"
+    },
+    "bis_sfs": {
+      "per_seed": {
+        "20260736": {
+          "lo": -0.012845197863915091,
+          "hi": 0.12651470962054043,
+          "frac_wrong_side": 0.055,
+          "two_sided_p": 0.11,
+          "verdict": "NOT-ATTRIBUTED"
+        },
+        "20260836": {
+          "lo": -0.01604715456822363,
+          "hi": 0.12473545544922822,
+          "frac_wrong_side": 0.056666666666666664,
+          "two_sided_p": 0.11333333333333333,
+          "verdict": "NOT-ATTRIBUTED"
+        },
+        "20260936": {
+          "lo": -0.011840156733919749,
+          "hi": 0.12964328367503958,
+          "frac_wrong_side": 0.05,
+          "two_sided_p": 0.1,
+          "verdict": "NOT-ATTRIBUTED"
+        }
+      },
+      "stable": true,
+      "verdict": "NOT-ATTRIBUTED"
+    }
+  }
+}

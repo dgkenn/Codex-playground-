@@ -1,0 +1,163 @@
+{
+ "E133  Challenge A, sleep-EDFx irreversibility": {
+  "G2": {
+   "observed": 0.9313592595095725,
+   "pass": true,
+   "stored": 0.9293
+  },
+  "G3": {
+   "floor": 0.2,
+   "rates": {
+    "0.1": 0.35,
+    "0.2": 0.95,
+    "0.3": 1.0,
+    "0.4": 1.0
+   }
+  },
+  "n_candidates": 6,
+  "n_clusters": 142,
+  "n_rows": 563,
+  "placebo_fired": [],
+  "primary": {
+   "frontal_incr": {
+    "helps": false,
+    "increment": -0.0002987749024938591,
+    "p": 0.5473333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.9146666666666666
+   },
+   "frontal_irr3": {
+    "helps": false,
+    "increment": -0.0003341250711059729,
+    "p": 0.998,
+    "p_holm": 1.0,
+    "placebo_p": 0.4686666666666667
+   },
+   "frontal_irr4": {
+    "helps": false,
+    "increment": -0.00020595466604955703,
+    "p": 0.9993333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.6746666666666666
+   },
+   "posterior_incr": {
+    "helps": false,
+    "increment": -0.0005981054068519009,
+    "p": 0.228,
+    "p_holm": 1.0,
+    "placebo_p": 0.48733333333333334
+   },
+   "posterior_irr3": {
+    "helps": false,
+    "increment": -0.0005709156406209503,
+    "p": 0.8593333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.8273333333333334
+   },
+   "posterior_irr4": {
+    "helps": false,
+    "increment": -0.0006504708825562089,
+    "p": 0.8933333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.51
+   }
+  },
+  "winners": []
+ },
+ "E134  Challenge B, Dreyer SMR predictor": {
+  "G2": {
+   "observed": 0.4461391585666411,
+   "pass": true,
+   "stored": 0.4440475322592404
+  },
+  "G3": {
+   "floor": null,
+   "rates": {
+    "0.1": 0.075,
+    "0.2": 0.175,
+    "0.3": 0.375,
+    "0.4": 0.7
+   }
+  },
+  "n_candidates": 10,
+  "n_clusters": 87,
+  "n_rows": 87,
+  "placebo_fired": [],
+  "primary": {
+   "alpha_prom": {
+    "helps": false,
+    "increment": 0.01313702367318248,
+    "p": 0.6413333333333333,
+    "p_holm": 1.0,
+    "placebo_p": 0.5753333333333334
+   },
+   "cl": {
+    "helps": false,
+    "increment": 0.007703528802109227,
+    "p": 0.572,
+    "p_holm": 1.0,
+    "placebo_p": 0.9526666666666667
+   },
+   "cl_norm": {
+    "helps": false,
+    "increment": 0.04955784919321282,
+    "p": 0.944,
+    "p_holm": 1.0,
+    "placebo_p": 0.088
+   },
+   "deg": {
+    "helps": false,
+    "increment": -0.0044944848514080205,
+    "p": 0.192,
+    "p_holm": 1.0,
+    "placebo_p": 0.59
+   },
+   "ge": {
+    "helps": false,
+    "increment": -0.026948675904182706,
+    "p": 0.078,
+    "p_holm": 0.78,
+    "placebo_p": 0.9186666666666666
+   },
+   "ge_norm": {
+    "helps": false,
+    "increment": 0.016838364139047823,
+    "p": 0.5686666666666667,
+    "p_holm": 1.0,
+    "placebo_p": 0.892
+   },
+   "iaf": {
+    "helps": false,
+    "increment": 0.02332938485751146,
+    "p": 0.8206666666666667,
+    "p_holm": 1.0,
+    "placebo_p": 0.12933333333333333
+   },
+   "modularity": {
+    "helps": false,
+    "increment": 0.017248611235018196,
+    "p": 0.6646666666666666,
+    "p_holm": 1.0,
+    "placebo_p": 0.9226666666666666
+   },
+   "smallworld": {
+    "helps": false,
+    "increment": 0.024888323822198632,
+    "p": 0.76,
+    "p_holm": 1.0,
+    "placebo_p": 0.49133333333333334
+   },
+   "strength_cv": {
+    "helps": false,
+    "increment": -0.009016319509213888,
+    "p": 0.146,
+    "p_holm": 1.0,
+    "placebo_p": 0.756
+   }
+  },
+  "winners": []
+ },
+ "experiment": "E163",
+ "perms": 1500,
+ "verdict": "NEITHER MOVES -- both nulls were real and the blind instrument happened to give the right answer twice. The registered prediction is half wrong, E134's comprehensive negative stands, and the remaining seven increment-decided rows become much less urgent."
+}

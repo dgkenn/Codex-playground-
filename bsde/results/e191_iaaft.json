@@ -1,0 +1,153 @@
+{
+  "experiment": "E191",
+  "n_recordings": 62,
+  "n_windows": 17196,
+  "ladder": [
+    0.0,
+    0.5,
+    0.8,
+    0.95,
+    0.99
+  ],
+  "n_reps": 20,
+  "n_surrogates_ladder": 60,
+  "alpha": 0.05,
+  "nominal": 0.05,
+  "families": {
+    "iaaft": {
+      "rungs": {
+        "0.0": {
+          "n": 20,
+          "hits": 1,
+          "fp_rate": 0.05,
+          "ci": [
+            0.00888144879786612,
+            0.23613119350676542
+          ],
+          "surrogate_rho": 0.07287725937854003,
+          "g4_destroys": true,
+          "usable": true
+        },
+        "0.5": {
+          "n": 20,
+          "hits": 1,
+          "fp_rate": 0.05,
+          "ci": [
+            0.00888144879786612,
+            0.23613119350676542
+          ],
+          "surrogate_rho": 0.09314739757259835,
+          "g4_destroys": true,
+          "usable": true
+        },
+        "0.8": {
+          "n": 20,
+          "hits": 2,
+          "fp_rate": 0.1,
+          "ci": [
+            0.027866481206268723,
+            0.3010336452867371
+          ],
+          "surrogate_rho": 0.1480272427197202,
+          "g4_destroys": true,
+          "usable": true
+        },
+        "0.95": {
+          "n": 20,
+          "hits": 1,
+          "fp_rate": 0.05,
+          "ci": [
+            0.00888144879786612,
+            0.23613119350676542
+          ],
+          "surrogate_rho": 0.26626861498506377,
+          "g4_destroys": true,
+          "usable": true
+        },
+        "0.99": {
+          "n": 20,
+          "hits": 4,
+          "fp_rate": 0.2,
+          "ci": [
+            0.08065766256307697,
+            0.4160174323066774
+          ],
+          "surrogate_rho": 0.36035399706513044,
+          "g4_destroys": false,
+          "usable": false
+        }
+      },
+      "aliveness": {
+        "real": -0.050628695932507295,
+        "frac": 0.0,
+        "surrogate_rho": 0.07727049135471772,
+        "pass": true
+      }
+    }
+  },
+  "g1_rebuild": true,
+  "g2_incumbent_rho": 0.3986932948626475,
+  "candidate_autocorrelation": {
+    "emg_index": {
+      "ac1": 0.8420380502321423,
+      "ac9": 0.2147938454559131
+    },
+    "multiscale_entropy_slope": {
+      "ac1": 0.9389738882537823,
+      "ac9": 0.4969696721598616
+    },
+    "relative_alpha_power": {
+      "ac1": 0.9331008044439713,
+      "ac9": 0.5009315066239612
+    },
+    "bis_rbr": {
+      "ac1": 0.9545427620402838,
+      "ac9": 0.5241719806777526
+    },
+    "whole_head_exponent": {
+      "ac1": 0.9372300053573375,
+      "ac9": 0.4379848257794851
+    },
+    "wpli_theta": {
+      "ac1": 0.7074597329415417,
+      "ac9": 0.0954217695462978
+    },
+    "emg_kurtosis": {
+      "ac1": 0.7510752944403775,
+      "ac9": 0.13855335881326103
+    },
+    "emg_beta_gamma_fraction": {
+      "ac1": 0.9208970803920074,
+      "ac9": 0.38340421346957443
+    },
+    "pac_slow_alpha": {
+      "ac1": 0.6781179028161765,
+      "ac9": 0.09481086594327559
+    },
+    "wpli_delta": {
+      "ac1": 0.698952053700697,
+      "ac9": 0.10155453906578714
+    },
+    "wpli_alpha_2ch": {
+      "ac1": 0.7275937195746329,
+      "ac9": 0.09825675516566384
+    }
+  },
+  "candidates_above_top_rung": [],
+  "licensed_candidates": {
+    "iaaft": [
+      "emg_index",
+      "multiscale_entropy_slope",
+      "relative_alpha_power",
+      "whole_head_exponent",
+      "wpli_theta",
+      "emg_kurtosis",
+      "emg_beta_gamma_fraction",
+      "pac_slow_alpha",
+      "wpli_delta",
+      "wpli_alpha_2ch"
+    ]
+  },
+  "verdict": "USABLE \u2014 TABLE LICENSED",
+  "why": "iaaft: 10 of 11 candidates licensed (['emg_index', 'multiscale_entropy_slope', 'relative_alpha_power', 'whole_head_exponent', 'wpli_theta', 'emg_kurtosis', 'emg_beta_gamma_fraction', 'pac_slow_alpha', 'wpli_delta', 'wpli_alpha_2ch'])"
+}

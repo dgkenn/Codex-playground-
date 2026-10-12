@@ -1,0 +1,44 @@
+{
+  "gates": {
+    "G1_subjects": 23,
+    "G1_pass": true,
+    "G2_pass": false,
+    "G2b_pass": false
+  },
+  "excluded": [
+    "sub-001"
+  ],
+  "windows": {
+    "early": [
+      0.0,
+      0.75
+    ],
+    "late": [
+      1.5,
+      3.0
+    ],
+    "early_bins": [
+      8,
+      9,
+      10
+    ],
+    "late_bins": [
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ]
+  },
+  "anchor": {
+    "early_d_z": -0.08907557747600706,
+    "lo": -0.6853680164365129,
+    "hi": 0.32237927524485965,
+    "late_d_z": 0.29582876612256337,
+    "n": 20,
+    "alive": false,
+    "early_larger_than_late": false
+  },
+  "verdict": "GATE-FAILED -- ds007554 CLOSED for covert-versus-passive by the stopping rule"
+}

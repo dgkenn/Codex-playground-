@@ -1,0 +1,71 @@
+{
+  "experiment": "E206",
+  "n_cases": 115,
+  "n_propofol": 44,
+  "n_sevo": 71,
+  "features": [
+    "lempel_ziv",
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "exponent_low",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "relative_delta_power",
+    "exponent_high"
+  ],
+  "n_draws": 200,
+  "g1": true,
+  "g3": {
+    "knn": 0.45934699103713184,
+    "floor": 0.13556338028169013,
+    "pass": true
+  },
+  "g2": {
+    "within": {
+      "propofol": {
+        "deep_above_light": 0.6818181818181819,
+        "floor": 0.2272727272727273,
+        "n": 44
+      },
+      "sevoflurane": {
+        "deep_above_light": 0.6619718309859155,
+        "floor": 0.21126760563380276,
+        "n": 71
+      }
+    },
+    "pass": true
+  },
+  "transport": {
+    "propofol -> sevoflurane": {
+      "cross_mean": 0.1513232514177694,
+      "within_mean": 0.24539697542533084,
+      "ratio": 0.6088964137294136,
+      "ratio_ci": [
+        0.19077630415561475,
+        1.2213658322353977
+      ],
+      "n_train": 44,
+      "n_eval": 23,
+      "sizes_equal": true,
+      "n_draws": 200
+    },
+    "sevoflurane -> propofol": {
+      "cross_mean": 0.09645408163265305,
+      "within_mean": 0.27005102040816326,
+      "ratio": 0.3090366581415173,
+      "ratio_ci": [
+        0.020680147058823324,
+        1.0584169884169887
+      ],
+      "n_train": 30,
+      "n_eval": 14,
+      "sizes_equal": true,
+      "n_draws": 200
+    }
+  },
+  "g4": true,
+  "verdict": "TRANSPORTS",
+  "why": "both directions' ratio intervals include or exceed 1: {'propofol -> sevoflurane': 0.609, 'sevoflurane -> propofol': 0.309}. A depth axis learned on one agent works on the other, on a cohort where the agent IS legible in the raw family (+0.4593 vs +0.1356)"
+}

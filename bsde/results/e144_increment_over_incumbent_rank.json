@@ -1,0 +1,520 @@
+{
+ "G1": {
+  "n": 104,
+  "pass": true
+ },
+ "G2": {
+  "ci": [
+   -0.5997032946412111,
+   0.25632702529485424
+  ],
+  "increment": -0.18306822403055262,
+  "n_reps": 3000,
+  "p": 0.192,
+  "pass": false
+ },
+ "G3": {
+  "detection_rate": {
+   "0.1": 0.0,
+   "0.15": 0.0,
+   "0.2": 0.0,
+   "0.25": 0.0,
+   "0.3": 0.0,
+   "0.4": 0.0
+  },
+  "floor": null,
+  "pass": false
+ },
+ "G4": {
+  "pass": true
+ },
+ "experiment": "E144",
+ "holm": {
+  "alpha_prom": 1.0,
+  "aperiodic_frontal": 1.0,
+  "aperiodic_posterior": 1.0,
+  "aperiodic_wholehead": 1.0,
+  "cl": 1.0,
+  "cl_norm": 1.0,
+  "critical_slowing_ar1": 1.0,
+  "deg": 1.0,
+  "emg_beta_gamma_fraction": 1.0,
+  "emg_index": 1.0,
+  "emg_kurtosis": 1.0,
+  "exponent_gamma": 1.0,
+  "exponent_high": 1.0,
+  "exponent_low": 1.0,
+  "ge": 1.0,
+  "ge_norm": 1.0,
+  "iaf": 1.0,
+  "icoh_alpha": 1.0,
+  "lempel_ziv": 1.0,
+  "lrtc_alpha": 1.0,
+  "modularity": 1.0,
+  "multiscale_entropy_slope": 1.0,
+  "pac_slow_alpha": 1.0,
+  "relative_delta_power": 1.0,
+  "smallworld": 1.0,
+  "spatial_participation_ratio": 1.0,
+  "spectral_edge_95": 1.0,
+  "spectral_entropy": 1.0,
+  "strength_cv": 1.0,
+  "uce_v1": 1.0,
+  "whole_head_exponent": 1.0,
+  "wpli_alpha": 1.0
+ },
+ "n_candidates": 32,
+ "n_subjects": 104,
+ "primary": {
+  "alpha_prom": {
+   "ci": [
+    -0.08763649753530743,
+    0.2844209678665476
+   ],
+   "helps": false,
+   "increment": 0.027022128146574745,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.5823333333333334,
+   "p_holm": 1.0,
+   "placebo_p": 0.5533333333333333,
+   "rho": 0.22207640841609685
+  },
+  "aperiodic_frontal": {
+   "ci": [
+    -0.07491133362764194,
+    0.3311131117333967
+   ],
+   "helps": false,
+   "increment": 0.04789931413746592,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.6286666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.39266666666666666,
+   "rho": -0.022747853680889416
+  },
+  "aperiodic_posterior": {
+   "ci": [
+    -0.038655008959034745,
+    0.365008670167871
+   ],
+   "helps": false,
+   "increment": 0.07081073542794938,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7666666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.653,
+   "rho": 0.018269781574974046
+  },
+  "aperiodic_wholehead": {
+   "ci": [
+    -0.06622299468780815,
+    0.3321842408841934
+   ],
+   "helps": false,
+   "increment": 0.057001905003588225,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.6833333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.668,
+   "rho": -0.0069966516756888985
+  },
+  "cl": {
+   "ci": [
+    -0.055465860052104334,
+    0.3785253977346595
+   ],
+   "helps": false,
+   "increment": 0.06087327997630773,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7466666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.717,
+   "rho": 0.14020543769948493
+  },
+  "cl_norm": {
+   "ci": [
+    -0.25332964303515115,
+    0.18168828314493182
+   ],
+   "helps": false,
+   "increment": -0.07474141540943834,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.21,
+   "p_holm": 1.0,
+   "placebo_p": 0.116,
+   "rho": 0.2626464698157081
+  },
+  "critical_slowing_ar1": {
+   "ci": [
+    -0.06096396226815406,
+    0.357551559516182
+   ],
+   "helps": false,
+   "increment": 0.05064388555587764,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.6883333333333334,
+   "p_holm": 1.0,
+   "placebo_p": 0.41333333333333333,
+   "rho": 0.10327894657415829
+  },
+  "deg": {
+   "ci": [
+    -0.041188375224386516,
+    0.39959324211670477
+   ],
+   "helps": false,
+   "increment": 0.07254793736055201,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7896666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.589,
+   "rho": 0.08825655434518981
+  },
+  "emg_beta_gamma_fraction": {
+   "ci": [
+    -0.04493812658525335,
+    0.3456419267698688
+   ],
+   "helps": false,
+   "increment": 0.06112933033579771,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7633333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.5656666666666667,
+   "rho": -0.05805706485364487
+  },
+  "emg_index": {
+   "ci": [
+    -0.06246993304165995,
+    0.40976300405344734
+   ],
+   "helps": false,
+   "increment": 0.07093719592751496,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7236666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.21733333333333332,
+   "rho": 0.01645208012575951
+  },
+  "emg_kurtosis": {
+   "ci": [
+    -0.04056691524493427,
+    0.39285955358186864
+   ],
+   "helps": false,
+   "increment": 0.09195099456249896,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.857,
+   "p_holm": 1.0,
+   "placebo_p": 0.25266666666666665,
+   "rho": 0.022282859495881158
+  },
+  "exponent_gamma": {
+   "ci": [
+    -0.1334874216175076,
+    0.30938887413051286
+   ],
+   "helps": false,
+   "increment": 0.013754325211851395,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.448,
+   "p_holm": 1.0,
+   "placebo_p": 0.4046666666666667,
+   "rho": -0.07964108437012445
+  },
+  "exponent_high": {
+   "ci": [
+    -0.0451963824413275,
+    0.3667324755618622
+   ],
+   "helps": false,
+   "increment": 0.0649457831189225,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7543333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.76,
+   "rho": 0.07607219928447816
+  },
+  "exponent_low": {
+   "ci": [
+    -0.046455986293592655,
+    0.34666293242796464
+   ],
+   "helps": false,
+   "increment": 0.060950719403700136,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7733333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.7,
+   "rho": -0.07803001815806887
+  },
+  "ge": {
+   "ci": [
+    -0.062309644233310535,
+    0.3887607424636988
+   ],
+   "helps": false,
+   "increment": 0.06396809759549935,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.73,
+   "p_holm": 1.0,
+   "placebo_p": 0.7676666666666667,
+   "rho": 0.05681942458478098
+  },
+  "ge_norm": {
+   "ci": [
+    -0.04836843127226852,
+    0.3507441009793417
+   ],
+   "helps": false,
+   "increment": 0.06654661203462879,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7746666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.473,
+   "rho": 0.031106381067867613
+  },
+  "iaf": {
+   "ci": [
+    -0.08531906338227417,
+    0.3127535172735672
+   ],
+   "helps": false,
+   "increment": 0.04189440965450055,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.6123333333333333,
+   "p_holm": 1.0,
+   "placebo_p": 0.6306666666666667,
+   "rho": 0.16879767566165013
+  },
+  "icoh_alpha": {
+   "ci": [
+    -0.065674436479197,
+    0.3720342043959581
+   ],
+   "helps": false,
+   "increment": 0.061114004171178196,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7166666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.577,
+   "rho": 0.13363847575564253
+  },
+  "lempel_ziv": {
+   "ci": [
+    -0.07082259202036306,
+    0.3359111130695491
+   ],
+   "helps": false,
+   "increment": 0.0504950644222258,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.667,
+   "p_holm": 1.0,
+   "placebo_p": 0.5456666666666666,
+   "rho": 0.08788846305832944
+  },
+  "lrtc_alpha": {
+   "ci": [
+    -0.219087269526716,
+    0.2037255001204546
+   ],
+   "helps": false,
+   "increment": -0.05158000341363814,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.23133333333333334,
+   "p_holm": 1.0,
+   "placebo_p": 0.697,
+   "rho": 0.24459399279055566
+  },
+  "modularity": {
+   "ci": [
+    -0.16024338050845005,
+    0.27648283131567075
+   ],
+   "helps": false,
+   "increment": 0.001308928020309328,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.4096666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.7296666666666667,
+   "rho": 0.07226325466392294
+  },
+  "multiscale_entropy_slope": {
+   "ci": [
+    -0.08260294776410536,
+    0.321400390559973
+   ],
+   "helps": false,
+   "increment": 0.049598135578420154,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.6686666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.6666666666666666,
+   "rho": -0.08599999471704575
+  },
+  "pac_slow_alpha": {
+   "ci": [
+    -0.14594695614097353,
+    0.16607810993716546
+   ],
+   "helps": false,
+   "increment": -0.026588293263478238,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.277,
+   "p_holm": 1.0,
+   "placebo_p": 0.253,
+   "rho": 0.03781737873265537
+  },
+  "relative_delta_power": {
+   "ci": [
+    -0.07247778216648564,
+    0.2994517224156687
+   ],
+   "helps": false,
+   "increment": 0.04237585952957134,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.645,
+   "p_holm": 1.0,
+   "placebo_p": 0.6693333333333333,
+   "rho": -0.07095626386275204
+  },
+  "smallworld": {
+   "ci": [
+    -0.21092699035199516,
+    0.25966543970628786
+   ],
+   "helps": false,
+   "increment": -0.016457933169457536,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.37366666666666665,
+   "p_holm": 1.0,
+   "placebo_p": 0.4553333333333333,
+   "rho": 0.1690019125758954
+  },
+  "spatial_participation_ratio": {
+   "ci": [
+    -0.05733390340543592,
+    0.342030485512021
+   ],
+   "helps": false,
+   "increment": 0.06312743135974429,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7566666666666667,
+   "p_holm": 1.0,
+   "placebo_p": 0.7273333333333334,
+   "rho": 0.07257799938747021
+  },
+  "spectral_edge_95": {
+   "ci": [
+    -0.07872970364969573,
+    0.345616695997537
+   ],
+   "helps": false,
+   "increment": 0.046990663428670074,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.65,
+   "p_holm": 1.0,
+   "placebo_p": 0.7176666666666667,
+   "rho": -0.10785074705009082
+  },
+  "spectral_entropy": {
+   "ci": [
+    -0.05524569600669406,
+    0.32349390192086175
+   ],
+   "helps": false,
+   "increment": 0.049586302443480675,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.6726666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.7826666666666666,
+   "rho": -0.06557359562446041
+  },
+  "strength_cv": {
+   "ci": [
+    -0.0392313554773269,
+    0.3429418234762211
+   ],
+   "helps": false,
+   "increment": 0.06457736988376009,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.7986666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.745,
+   "rho": -0.08642676722355054
+  },
+  "uce_v1": {
+   "ci": [
+    -0.07338822727727827,
+    0.35839633695535555
+   ],
+   "helps": false,
+   "increment": 0.048326837551059744,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.6516666666666666,
+   "p_holm": 1.0,
+   "placebo_p": 0.765,
+   "rho": 0.08533316267563203
+  },
+  "whole_head_exponent": {
+   "ci": [
+    -0.06404135726418181,
+    0.3508405684720637
+   ],
+   "helps": false,
+   "increment": 0.05206780883199239,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.709,
+   "p_holm": 1.0,
+   "placebo_p": 0.39566666666666667,
+   "rho": 0.04904149565373126
+  },
+  "wpli_alpha": {
+   "ci": [
+    -0.03766264588503452,
+    0.39140685091414346
+   ],
+   "helps": false,
+   "increment": 0.06935355762034671,
+   "n_reps": 3000,
+   "n_subjects": 104,
+   "p": 0.782,
+   "p_holm": 1.0,
+   "placebo_p": 0.7556666666666667,
+   "rho": 0.08936616286210225
+  }
+ },
+ "reps": 3000,
+ "verdict": "NO VERDICT -- G2 failed: the Challenge B incumbent does not beat its own permutation out of bag in rank units either, so this deposit has no incumbent to add to and the 'increment over the incumbent' framing must be replaced rather than repeated. G3 failed: no injected effect up to rho_partial 0.40 is detectable, so this target cannot support an increment test at n=104 under any rule and Challenge B needs a different design or deposit."
+}

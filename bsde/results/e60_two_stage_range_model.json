@@ -1,0 +1,33 @@
+{
+  "gate_m1": true,
+  "band_shares": [
+    0.30573139435414887,
+    0.6432848588537211,
+    0.050983746792130025
+  ],
+  "n_windows": 5845,
+  "n_cases": 247,
+  "n_target": 2330,
+  "n_fallback_rows": 0,
+  "one_stage": {
+    "target": 5.482252121947578,
+    "pooled": 4.599207138829762
+  },
+  "two_stage": {
+    "target": 4.764457635536756,
+    "pooled": 4.515812766265725
+  },
+  "primary_increment": {
+    "mean": -0.6345031540439301,
+    "lo": -1.0352728153281403,
+    "hi": -0.2027354706437493,
+    "reps": 400
+  },
+  "placebo_random_partition": {
+    "mean": 0.019756585731943156,
+    "lo": -0.1672193823644696,
+    "hi": 0.2483259160265848,
+    "reps": 400
+  },
+  "verdict": "GAIN -- a sub-model selected from a first-pass prediction beats one global fit in [0,40), and a random partition of the same sizes does not. This does NOT reopen the top of the scale; the refusal above BIS 60 stands on separate evidence."
+}

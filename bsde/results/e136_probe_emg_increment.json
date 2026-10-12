@@ -1,0 +1,24 @@
+{
+ "status": "PROBE -- run before registration, reported as such",
+ "question": "Does the real submental EMG carry sleep-depth information the EEG spectrum lacks?",
+ "n_rows": 566,
+ "n_subjects": 142,
+ "n_spectral": 16,
+ "n_emg": 4,
+ "primary_spectral_plus_emg": {
+  "mean": 0.0018,
+  "lo": -0.0017,
+  "hi": 0.0079
+ },
+ "mirror_emg_plus_spectral": {
+  "mean": -0.4829,
+  "lo": -0.5743,
+  "hi": -0.3926
+ },
+ "gaussian_control": {
+  "mean": 0.0007,
+  "lo": -0.0022,
+  "hi": 0.0044
+ },
+ "verdict": "SUBSUMED, exactly as irreversibility was in E133. The submental EMG adds NOTHING to the 16-column EEG spectral set (+0.0018 [-0.0017,+0.0079], against a Gaussian control at +0.0007), while the spectrum adds hugely to the EMG (-0.4829 [-0.5743,-0.3926]). Same asymmetry, second measure. THIS IS THE MORE SURPRISING VERSION. E128 bounded within-stage submental-to-EEG coupling at 9.4% of a demonstrated ceiling -- the chin channel and Fpz-Cz/Pz-Oz are close to INDEPENDENT sensors. A physically separate sensor, largely uncoupled to the EEG, still carries no staging information the EEG spectrum lacks. Whatever state signal the EMG has is already in the spectrum. CAVEAT, the same one E133 carries: the spectral incumbent sits at out-of-bag rho +0.9293 for this ordinal, so headroom is small and some of this null is ceiling. Unlike E133 there is no analogue of the REM-placement secondary here to escape it, so the caveat stands undiminished. FOR CHALLENGE A this is the second consecutive demonstration that the answer is not another measure: 130 experiments looked inside the EEG, E133 showed a provably non-spectral EEG measure is subsumed, and this shows a non-EEG SENSOR is subsumed too, on the same task."
+}

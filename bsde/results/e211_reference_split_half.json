@@ -1,0 +1,88 @@
+{
+  "experiment": "E211",
+  "n_anaes_subjects": 20,
+  "half_sizes": [
+    75,
+    68
+  ],
+  "g1": true,
+  "g2": true,
+  "references": {
+    "R_AWAKE": {
+      "n_reference": 215,
+      "n_resolved": 2,
+      "floor": 0.04999999999999716,
+      "resolved_pairs": [
+        true,
+        true,
+        false
+      ],
+      "medians": {
+        "W": 0.4651162790697674,
+        "N1": -0.30232558139534893,
+        "N2": -0.5023255813953489,
+        "N3": -0.5023255813953489
+      },
+      "awake_spread": 0.7674418604651163,
+      "deep_spread": 0.0
+    },
+    "R_SPAN": {
+      "n_reference": 358,
+      "n_resolved": 3,
+      "floor": 0.04999999999999716,
+      "resolved_pairs": [
+        true,
+        true,
+        true
+      ],
+      "medians": {
+        "W": 0.3072625698324022,
+        "N1": -0.2150837988826816,
+        "N2": -0.5279329608938548,
+        "N3": -0.5837988826815643
+      },
+      "awake_spread": 0.5223463687150838,
+      "deep_spread": 0.05586592178770955
+    },
+    "R_SPAN_halfA": {
+      "n_reference": 290,
+      "n_resolved": 3,
+      "floor": 0.04999999999999716,
+      "resolved_pairs": [
+        true,
+        true,
+        true
+      ],
+      "medians": {
+        "W": 0.36206896551724144,
+        "N1": -0.2413793103448275,
+        "N2": -0.503448275862069,
+        "N3": -0.5448275862068965
+      },
+      "awake_spread": 0.603448275862069,
+      "deep_spread": 0.04137931034482756
+    },
+    "R_SPAN_halfB": {
+      "n_reference": 283,
+      "n_resolved": 3,
+      "floor": 0.04999999999999716,
+      "resolved_pairs": [
+        true,
+        true,
+        true
+      ],
+      "medians": {
+        "W": 0.3710247349823321,
+        "N1": -0.2544169611307421,
+        "N2": -0.5335689045936396,
+        "N3": -0.5618374558303887
+      },
+      "awake_spread": 0.6254416961130742,
+      "deep_spread": 0.028268551236749095
+    }
+  },
+  "g3": true,
+  "g4": true,
+  "verdict": "SCHEME-ROBUST",
+  "why": "both disjoint halves reproduce full R_SPAN's 3 of 3, against R_AWAKE's 2. The recommendation is about ADDING anaesthetised data, not about these particular subjects"
+}

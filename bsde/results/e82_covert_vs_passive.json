@@ -1,0 +1,20 @@
+{
+  "gates": {
+    "G1_subjects": 13,
+    "G3_within_session_pairs": 31,
+    "G1_pass": true,
+    "G2_pass": false
+  },
+  "primary": {},
+  "anchor": {
+    "contrast": "activemotor vs passivemotor",
+    "feature": "relative_alpha_power",
+    "d_z": 0.3930469678899857,
+    "lo": -0.02806993015459519,
+    "hi": 0.9338480042644791,
+    "n": 11,
+    "alive": false
+  },
+  "family": {},
+  "verdict": "GATE-FAILED"
+}

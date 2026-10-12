@@ -1,0 +1,77 @@
+{
+  "experiment": "E220",
+  "n_windows": 2690,
+  "n_prop_cases": 43,
+  "n_sevo_cases": 68,
+  "overlap": [
+    0.12852708163624793,
+    3.995976399213431
+  ],
+  "bins": [
+    {
+      "bin": "[0.129, 0.588)",
+      "n_prop": 146,
+      "n_sevo": 293,
+      "alpha_prop": 0.16113526235,
+      "alpha_sevo": 0.1876434532,
+      "diff": 0.026508190850000002
+    },
+    {
+      "bin": "[0.588, 0.816)",
+      "n_prop": 47,
+      "n_sevo": 390,
+      "alpha_prop": 0.2125842714,
+      "alpha_sevo": 0.16195180165,
+      "diff": -0.05063246974999999
+    },
+    {
+      "bin": "[0.816, 1.180)",
+      "n_prop": 151,
+      "n_sevo": 286,
+      "alpha_prop": 0.2210975543,
+      "alpha_sevo": 0.14236033175,
+      "diff": -0.07873722254999999
+    },
+    {
+      "bin": "[1.180, 1.480)",
+      "n_prop": 250,
+      "n_sevo": 190,
+      "alpha_prop": 0.24228084230000002,
+      "alpha_sevo": 0.16370739699999998,
+      "diff": -0.07857344530000004
+    },
+    {
+      "bin": "[1.480, 1.911)",
+      "n_prop": 254,
+      "n_sevo": 184,
+      "alpha_prop": 0.21717371024999998,
+      "alpha_sevo": 0.1641425637,
+      "diff": -0.05303114654999999
+    },
+    {
+      "bin": "[1.911, 3.996)",
+      "n_prop": 179,
+      "n_sevo": 260,
+      "alpha_prop": 0.165685571,
+      "alpha_sevo": 0.14280929585,
+      "diff": -0.022876275150000014
+    }
+  ],
+  "bins_dropped": [],
+  "g4_median_rho_U_vs_own": 0.8439974670050847,
+  "p1": -0.04289039474166667,
+  "p1_ci": [
+    -0.07274638486854167,
+    -0.019249514941458337
+  ],
+  "p2_slopes": {
+    "propofol": -0.061111987524275456,
+    "sevoflurane": -0.07286447567616788
+  },
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "g4": true,
+  "verdict": "SURVIVES",
+  "why": "the agents still differ in alpha at matched potency (-0.0429 [-0.0727, -0.0192]), on an anchor that is equipotent by construction, carries the opioid term and contains no EEG. Non-equipotence was the last standing candidate mechanism and it does not explain this"
+}

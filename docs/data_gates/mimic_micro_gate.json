@@ -1,0 +1,74 @@
+{
+ "rows": 400000,
+ "both_times": 366018,
+ "frac_both": 0.915,
+ "turnaround_h": {
+  "n": 361277,
+  "p10": 17.616666666666667,
+  "p25": 32.28333333333333,
+  "p50": 59.583333333333336,
+  "p75": 117.15,
+  "p90": 142.8
+ },
+ "org_positive_rows": 164476,
+ "ab_rows": 141826,
+ "distinct_hadm": 20041,
+ "top_specimens": [
+  [
+   "URINE",
+   134912
+  ],
+  [
+   "BLOOD CULTURE",
+   80737
+  ],
+  [
+   "SWAB",
+   38090
+  ],
+  [
+   "SPUTUM",
+   19776
+  ],
+  [
+   "STOOL",
+   19412
+  ],
+  [
+   "TISSUE",
+   16179
+  ],
+  [
+   "SEROLOGY/BLOOD",
+   14008
+  ],
+  [
+   "MRSA SCREEN",
+   7725
+  ]
+ ],
+ "interp_values": [
+  [
+   "S",
+   113587
+  ],
+  [
+   "R",
+   24360
+  ],
+  [
+   "I",
+   3845
+  ],
+  [
+   "D",
+   24
+  ],
+  [
+   "Z",
+   10
+  ]
+ ],
+ "has_ab_col": true,
+ "has_interp_col": true
+}

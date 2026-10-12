@@ -1,0 +1,62 @@
+{
+ "G1": {
+  "cnn_windows": 46948,
+  "matched": 46948,
+  "pass": true
+ },
+ "G2": {
+  "pass": true
+ },
+ "G2_null": {
+  "cnn": {
+   "max": 0.4686511288334157,
+   "mean": 0.44482185379943767,
+   "sd": 0.012089974570669201
+  },
+  "mean_agreement": 0.007239790662547596,
+  "spectral": {
+   "max": 0.4973433672500438,
+   "mean": 0.45206164446198527,
+   "sd": 0.014770207072363213
+  }
+ },
+ "G3": {
+  "increment": -0.29425740296281,
+  "p": 0.0,
+  "pass": true
+ },
+ "auc": {
+  "both": 0.9484626910719333,
+  "cnn_10pc": 0.8091644517284583,
+  "spectral_11": 0.9426338552418803
+ },
+ "auc_full": 0.9512572426964444,
+ "experiment": "E159",
+ "leave_one_out": {
+  "alpha_peak_hz": 0.016721640175862307,
+  "alpha_prom_db": 0.0005307281849608048,
+  "exponent_1_40": 0.03897787194756408,
+  "rel_alpha": -0.0016794275193297015,
+  "rel_beta": 0.00899923219984411,
+  "rel_delta": 0.0010107486994621606,
+  "rel_gamma": 0.004414779662712753,
+  "rel_theta": 0.003953426975639718,
+  "spectral_edge_95": 0.0017058539470162781,
+  "spectral_entropy": 0.004648789935763786,
+  "total_power_db": -0.0004512946373347315
+ },
+ "n_pc": 10,
+ "null_draws": 50,
+ "perms": 300,
+ "primary": {
+  "cnn_over_spectrum": {
+   "increment": -0.0029609958322959207,
+   "p": 0.01
+  },
+  "spectrum_over_cnn": {
+   "increment": -0.12980211008555043,
+   "p": 0.0
+  }
+ },
+ "verdict": "BOTH ADD -- each representation carries information the other does not (spectrum over CNN p=0.0000, CNN over spectrum p=0.0100). Neither dominates, and the honest reading is that the learned reduction and the interpretable panel are complementary at these ten subjects."
+}

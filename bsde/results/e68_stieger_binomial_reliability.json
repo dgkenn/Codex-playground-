@@ -1,0 +1,27 @@
+{
+  "gate_g1": true,
+  "gate_g2": true,
+  "n_sessions": 185,
+  "n_subjects": 62,
+  "n_pairs": 122,
+  "observed_variance": 0.018676099320054467,
+  "binomial_noise": 0.00064899460008324,
+  "R1": {
+    "value": 0.9652499920373444,
+    "lo": 0.9568057661899896,
+    "hi": 0.9706286822205479
+  },
+  "R2": {
+    "value": 0.6539444617937982,
+    "lo": 0.5282240175920944,
+    "hi": 0.7361400183872613
+  },
+  "ceiling_within": 0.9824713695764088,
+  "ceiling_across": 0.8086683261967159,
+  "eegmmidb_reference": {
+    "r_sb": 0.2918,
+    "hi": 0.4345,
+    "ceiling": 0.5402
+  },
+  "verdict": "PREMISE SUPPORTED -- R1 = 0.9652 [0.9568, 0.9706] clears eegmmidb's 0.2918 [0.1163, 0.4345] with no overlap. The within-session ceiling rises from 0.5402 to 0.9825. A SUBJECT-ability design is capped nearer sqrt(R2) = 0.8087; the two must not be substituted for one another."
+}

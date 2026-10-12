@@ -1,2 +1,70 @@
 # local Claude Code harness state (settings, worktree admin) -- not project content
 .claude/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Pipeline runtime outputs (keep only the .gitkeep placeholders)
+artifacts/**
+!artifacts/.gitkeep
+!artifacts/frozen/
+!artifacts/frozen/.gitkeep
+
+# Credentials / secrets -- NEVER commit. Real creds live outside the repo (the
+# user's ~/.aws, ~/.ssh, ~/.netrc) and are supplied at runtime only.
+.aws/
+.ssh/
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+.netrc
+credentials
+*credentials*.csv
+.env
+*.env
+!docs/go-live.env.template
+aws_credentials*
+**/secrets*
+
+
+# Raw data working area — PHI (HEEDB/MIMIC/eICU under DUA); NEVER commit
+scratchpad/
+
+# Raw PK input time series: ~1 GB of per-case infusion/gas traces at full track resolution.
+# Regenerable with `python bsde/scripts/extract_vitaldb_pk_inputs.py` (resumable), so it is a cache, not
+# a result. It exceeded the remote's push limit at 282 MB with only half the cases fetched.
+bsde/results/vitaldb_pk_inputs.jsonl
+# Sharded form of the same cache, same reason. Regenerable, resumable:
+#   for i in 0 1 2 3; do python bsde/scripts/extract_vitaldb_pk_inputs.py --shard $i --of 4 \
+#     --out bsde/results/vitaldb_pk_inputs.s$i.jsonl & done
+bsde/results/vitaldb_pk_inputs.s*.jsonl
+
+# MIMIC-IV extraction outputs: credentialed patient-derived data, never committed (CLAUDE.md)
+bsde/results/mimic_*.csv
+
+# eeg-power-anesthesia (MGH) derived windows: credentialed patient-derived data, never committed
+bsde/results/mgh_power_windows.csv
+
+bsde/results/mgh_volunteer_cnn_btlncks.feather
+bsde/results/mgh_volunteer_windows.csv
+bsde/results/mgh_volunteer_windows_lt30.csv
+bsde/results/vitaldb_agentprobe.s*.csv
+# Same treatment for the peak-anchored re-extraction, for the same reason: VitalDB's API grants
+# CC BY-NC-SA 4.0 for R&D, which is more restrictive than the other deposits here, and this repo is
+# public. Regenerable in about 15 minutes with:
+#   for i in 0 1 2 3; do python bsde/scripts/stream_vitaldb_grid.py --case-shard $i --of 4 \
+#     --candidates alpha_peak_hz_wide,relative_alpha_power_iaf,alpha_peak_hz,relative_alpha_power \
+#     --out bsde/results/vitaldb_iaf.s$i.csv & done
+bsde/results/vitaldb_iaf.s*.csv
+bsde/results/vitaldb_iaf.s*.csv.manifest.json
+bsde/results/mimic_cohort.csv
+bsde/results/mimic_cohort.csv.manifest.json
+
+# Transient extractor logs. These are process diagnostics, not results -- they are rewritten on
+# every run and their constant churn left the working tree dirty between checkpoints. The results
+# are the CSVs and the JSON reports, which are tracked.
+bsde/results/logs/

@@ -1,0 +1,164 @@
+{
+  "experiment": "E185",
+  "n_cases": 115,
+  "n_sevoflurane": 71,
+  "n_propofol": 44,
+  "amplitude": [
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent",
+    "exponent_low",
+    "exponent_high",
+    "lempel_ziv",
+    "exponent_gamma"
+  ],
+  "phase_complexity": [
+    "critical_slowing_ar1",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha"
+  ],
+  "dead_columns": [
+    "lrtc_alpha",
+    "icoh_alpha",
+    "spatial_participation_ratio",
+    "uce_v1"
+  ],
+  "G1_pass": true,
+  "per_feature": {
+    "relative_theta_power": {
+      "depth": 0.1302457466918715,
+      "depth_floor_p95": 0.04495274102079394,
+      "agent": 0.3031370038412292,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "alpha_peak_hz": {
+      "depth": 0.12034026465028358,
+      "depth_floor_p95": 0.05622117202268432,
+      "agent": 0.33898847631242,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "relative_alpha_power": {
+      "depth": 0.055689981096408325,
+      "depth_floor_p95": 0.05314177693761817,
+      "agent": 0.2576824583866837,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "relative_delta_power": {
+      "depth": 0.15807183364839317,
+      "depth_floor_p95": 0.05929300567107748,
+      "agent": 0.08130601792573622,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "spectral_edge_95": {
+      "depth": 0.15837429111531187,
+      "depth_floor_p95": 0.059848771266540646,
+      "agent": 0.2564020486555698,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "spectral_entropy": {
+      "depth": 0.1606427221172022,
+      "depth_floor_p95": 0.06272211720226839,
+      "agent": 0.028489116517285584,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "whole_head_exponent": {
+      "depth": 0.17289224952741022,
+      "depth_floor_p95": 0.06351228733459353,
+      "agent": 0.28233034571062743,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "exponent_low": {
+      "depth": 0.16752362948960298,
+      "depth_floor_p95": 0.0597051039697542,
+      "agent": 0.308898847631242,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "exponent_high": {
+      "depth": 0.07444234404536865,
+      "depth_floor_p95": 0.06061247637051042,
+      "agent": 0.08098591549295775,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "lempel_ziv": {
+      "depth": 0.17081285444234406,
+      "depth_floor_p95": 0.04934404536862004,
+      "agent": 0.3228233034571063,
+      "alive": true,
+      "family": "amplitude"
+    },
+    "exponent_gamma": {
+      "depth": 0.01463137996219277,
+      "depth_floor_p95": 0.05071077504725898,
+      "agent": 0.1075544174135723,
+      "alive": false,
+      "family": "amplitude"
+    },
+    "critical_slowing_ar1": {
+      "depth": 0.1749338374291115,
+      "depth_floor_p95": 0.05553875236294892,
+      "agent": 0.37355953905249684,
+      "alive": true,
+      "family": "phase_complexity",
+      "max_corr_with_amplitude": 0.8591809358478657,
+      "max_corr_partner": "exponent_low"
+    },
+    "multiscale_entropy_slope": {
+      "depth": 0.23338374291115316,
+      "depth_floor_p95": 0.06968620037807188,
+      "agent": 0.37355953905249684,
+      "alive": true,
+      "family": "phase_complexity",
+      "max_corr_with_amplitude": 0.7526079065730295,
+      "max_corr_partner": "whole_head_exponent"
+    },
+    "pac_slow_alpha": {
+      "depth": 0.06332703213610591,
+      "depth_floor_p95": 0.06537996219281664,
+      "agent": 0.12451984635083224,
+      "alive": false,
+      "family": "phase_complexity",
+      "max_corr_with_amplitude": 0.3745504413280963,
+      "max_corr_partner": "lempel_ziv"
+    }
+  },
+  "amplitude_alive": [
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent",
+    "exponent_low",
+    "exponent_high",
+    "lempel_ziv"
+  ],
+  "phase_complexity_alive": [
+    "critical_slowing_ar1",
+    "multiscale_entropy_slope"
+  ],
+  "escaped": [
+    "critical_slowing_ar1",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha"
+  ],
+  "phase_complexity_used": [
+    "critical_slowing_ar1",
+    "multiscale_entropy_slope"
+  ],
+  "verdict": "NOT-A-DIFFERENT-FAMILY",
+  "why": "2 non-amplitude measures are both alive for depth and escape the amplitude family, and 10 amplitude measures are alive; at least 3 of each are required"
+}

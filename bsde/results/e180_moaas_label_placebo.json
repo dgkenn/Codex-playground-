@@ -1,0 +1,170 @@
+{
+  "experiment": "E180",
+  "n_recordings": 62,
+  "n_windows": 17196,
+  "e150_adds": {
+    "emg_index": -0.02478,
+    "multiscale_entropy_slope": -0.03191,
+    "relative_alpha_power": -0.03512,
+    "bis_rbr": -0.02878,
+    "whole_head_exponent": -0.01514,
+    "wpli_theta": -0.00831,
+    "emg_kurtosis": -0.0073,
+    "emg_beta_gamma_fraction": -0.00927,
+    "pac_slow_alpha": -0.00248,
+    "wpli_delta": -0.00161,
+    "wpli_alpha_2ch": -0.00152
+  },
+  "G1_pass": true,
+  "G2_baseline_rho": 0.3986932948626475,
+  "G2_pass": true,
+  "G3": {
+    "halflife_windows": 9,
+    "n_recordings_measured": 62,
+    "pass": true
+  },
+  "G4": {
+    "matched": false,
+    "n_shifts": 200,
+    "n_tries": 3000,
+    "real_baseline": 0.3986932948626475,
+    "shift_baseline_mean": 0.032427479392467574,
+    "tol": 0.03
+  },
+  "table": {
+    "emg_index": {
+      "e150": -0.02478,
+      "real": -0.021492003857098263,
+      "p_real": 0.0,
+      "shift_mean": 0.0037276346528316052,
+      "shift_p05": -0.008924947399674098,
+      "fraction_at_or_below_real": 0.025,
+      "n_shifts": 200,
+      "muscle": true,
+      "withdrawn": false
+    },
+    "multiscale_entropy_slope": {
+      "e150": -0.03191,
+      "real": -0.0276941217427078,
+      "p_real": 0.0,
+      "shift_mean": 0.009037886570795238,
+      "shift_p05": -0.007952305631014532,
+      "fraction_at_or_below_real": 0.0,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": false
+    },
+    "relative_alpha_power": {
+      "e150": -0.03512,
+      "real": -0.033307884715106706,
+      "p_real": 0.0,
+      "shift_mean": -0.020032813431085986,
+      "shift_p05": -0.06303528309970267,
+      "fraction_at_or_below_real": 0.19,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": true
+    },
+    "bis_rbr": {
+      "e150": -0.02878,
+      "real": -0.025587751872012454,
+      "p_real": 0.0,
+      "shift_mean": 0.0042908880270510425,
+      "shift_p05": -0.017256730920399376,
+      "fraction_at_or_below_real": 0.025,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": false
+    },
+    "whole_head_exponent": {
+      "e150": -0.01514,
+      "real": -0.016639692667339112,
+      "p_real": 0.0,
+      "shift_mean": -0.0040937766938296425,
+      "shift_p05": -0.03209019471409194,
+      "fraction_at_or_below_real": 0.165,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": true
+    },
+    "wpli_theta": {
+      "e150": -0.00831,
+      "real": -0.008279235932744156,
+      "p_real": 0.0,
+      "shift_mean": 0.001284610074268846,
+      "shift_p05": -0.004798041707788847,
+      "fraction_at_or_below_real": 0.015,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": false
+    },
+    "emg_kurtosis": {
+      "e150": -0.0073,
+      "real": -0.005896930813701795,
+      "p_real": 0.0,
+      "shift_mean": -0.0021927278390480587,
+      "shift_p05": -0.013542057425895527,
+      "fraction_at_or_below_real": 0.215,
+      "n_shifts": 200,
+      "muscle": true,
+      "withdrawn": true
+    },
+    "emg_beta_gamma_fraction": {
+      "e150": -0.00927,
+      "real": -0.01351749561198834,
+      "p_real": 0.0,
+      "shift_mean": 0.0017744606422399882,
+      "shift_p05": -0.013583231881158297,
+      "fraction_at_or_below_real": 0.055,
+      "n_shifts": 200,
+      "muscle": true,
+      "withdrawn": true
+    },
+    "pac_slow_alpha": {
+      "e150": -0.00248,
+      "real": -0.0015714170270278993,
+      "p_real": 0.0,
+      "shift_mean": 0.0004369410571585397,
+      "shift_p05": -0.00954468387328562,
+      "fraction_at_or_below_real": 0.305,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": true
+    },
+    "wpli_delta": {
+      "e150": -0.00161,
+      "real": -0.001482190318360499,
+      "p_real": 0.0033333333333333335,
+      "shift_mean": -0.0015522967257016712,
+      "shift_p05": -0.015289139128204858,
+      "fraction_at_or_below_real": 0.355,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": true
+    },
+    "wpli_alpha_2ch": {
+      "e150": -0.00152,
+      "real": -0.0003858394386921926,
+      "p_real": 0.04666666666666667,
+      "shift_mean": -0.001412597715181479,
+      "shift_p05": -0.009633845284634856,
+      "fraction_at_or_below_real": 0.525,
+      "n_shifts": 200,
+      "muscle": false,
+      "withdrawn": true
+    }
+  },
+  "survivors": [
+    "emg_index",
+    "multiscale_entropy_slope",
+    "bis_rbr",
+    "wpli_theta"
+  ],
+  "non_muscle_survivors": [
+    "multiscale_entropy_slope",
+    "bis_rbr",
+    "wpli_theta"
+  ],
+  "verdict": "SURVIVES",
+  "why": "['multiscale_entropy_slope', 'bis_rbr', 'wpli_theta'] exceed the shifted-label distribution and are not muscle measures. E150's claim now has the label placebo it was missing, and this is the strongest surviving Challenge C result in the ledger. **The shift pool is UNMATCHED on baseline predictability** (real +0.3987 vs shifted +0.0324); a weaker baseline gives an added column more room, so an unmatched placebo that FIRES is too harsh and one that does NOT fire is too lenient -- the direction is stated and the verdict is not adjusted"
+}

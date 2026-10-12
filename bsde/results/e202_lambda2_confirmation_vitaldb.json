@@ -1,0 +1,89 @@
+{
+  "experiment": "E202",
+  "lambda": 2.0,
+  "n_cases": 115,
+  "n_sevo": 71,
+  "n_propofol": 44,
+  "features": [
+    "lempel_ziv",
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "exponent_low",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "relative_delta_power",
+    "exponent_high"
+  ],
+  "pool_target": 2000,
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "g1": true,
+  "g1b": {
+    "knn": 0.45934699103713184,
+    "null_p95": 0.1338028169014085,
+    "p": NaN,
+    "pass": true
+  },
+  "primary": {
+    "lambda": 2.0,
+    "state": 0.21304347826086956,
+    "agent": 0.023047375160051287,
+    "frac_below": {
+      "11": 0.0535,
+      "22": 0.049,
+      "33": 0.0535
+    },
+    "pool_n": {
+      "11": 2000,
+      "22": 2000,
+      "33": 2000
+    },
+    "pool_state_gap": {
+      "11": 0.010241398865784493,
+      "22": 0.010124045368620035,
+      "33": 0.010231417769376177
+    },
+    "pool_agent_mean": {
+      "11": 0.18194094110115236,
+      "22": 0.18214420614596674,
+      "33": 0.1815532970550576
+    },
+    "frac_below_mean": 0.052,
+    "unstable": true
+  },
+  "reference": {
+    "lambda": 0.0,
+    "state": 0.2305103969754254,
+    "agent": 0.032970550576184365,
+    "frac_below": {
+      "11": 0.094,
+      "22": 0.104,
+      "33": 0.0845
+    },
+    "pool_n": {
+      "11": 2000,
+      "22": 2000,
+      "33": 2000
+    },
+    "pool_state_gap": {
+      "11": 0.011201285444234469,
+      "22": 0.01126680529300573,
+      "33": 0.01129788279773163
+    },
+    "pool_agent_mean": {
+      "11": 0.15899119718309856,
+      "22": 0.15776248399487838,
+      "33": 0.1635105633802817
+    },
+    "frac_below_mean": 0.09416666666666668,
+    "unstable": false
+  },
+  "g2": true,
+  "verdict": "UNSTABLE",
+  "why": "frac_below straddles 0.05 across seeds ([0.049, 0.0535, 0.0535]); the pool is too small"
+}

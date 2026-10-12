@@ -1,0 +1,41 @@
+{
+  "survival": {
+    "[0,20)": {
+      "n_before": 90,
+      "n_after": 14,
+      "cases_after": 10,
+      "frac": 0.15555555555555556,
+      "median_sqi": 5.123333333333333
+    },
+    "[20,40)": {
+      "n_before": 2240,
+      "n_after": 2138,
+      "cases_after": 228,
+      "frac": 0.9544642857142858,
+      "median_sqi": 91.73499999999999
+    },
+    "[40,60)": {
+      "n_before": 2879,
+      "n_after": 2792,
+      "cases_after": 240,
+      "frac": 0.9697811740187565,
+      "median_sqi": 93.65333333333335
+    },
+    "[60,80)": {
+      "n_before": 468,
+      "n_after": 448,
+      "cases_after": 183,
+      "frac": 0.9572649572649573,
+      "median_sqi": 91.55333333333331
+    },
+    "[80,100)": {
+      "n_before": 168,
+      "n_after": 133,
+      "cases_after": 93,
+      "frac": 0.7916666666666666,
+      "median_sqi": 69.90166666666667
+    }
+  },
+  "gate_g1": false,
+  "verdict": "BAND EMPTIED -- the SQI >= 50 filter leaves 14 windows in [0,20), from 10 cases. This is not a fidelity result and no error figure may be quoted on the remnant. It settles the refusal below BIS 20 more decisively than a number would: that band consists almost entirely of windows the monitor itself disowns, and the index was being scored against readings the device declares unreliable."
+}

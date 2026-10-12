@@ -1,0 +1,75 @@
+{
+  "experiment": "E215",
+  "n_rows": 632,
+  "n_records": 106,
+  "n_excluded_alignment": 20,
+  "excluded_alignment": [
+    "ins3",
+    "ins4",
+    "ins6",
+    "n2",
+    "narco5",
+    "nfle14",
+    "nfle24",
+    "nfle29",
+    "nfle30",
+    "nfle31",
+    "nfle36",
+    "nfle5",
+    "nfle9",
+    "plm4",
+    "plm5",
+    "plm9",
+    "rbd1",
+    "rbd15",
+    "rbd18",
+    "sdb3"
+  ],
+  "n_usable": 86,
+  "references": {
+    "R_AWAKE": {
+      "n_reference": 215,
+      "n_resolved": 1,
+      "floor": 0.0,
+      "extreme_fraction": 0.4127906976744186,
+      "resolved_pairs": [
+        false,
+        true,
+        false
+      ],
+      "medians": {
+        "W": 0.0023255813953487747,
+        "N1": -0.2697674418604652,
+        "N2": -0.5023255813953489,
+        "N3": -0.5023255813953489
+      },
+      "awake_spread": 0.27209302325581397,
+      "deep_spread": 0.0
+    },
+    "R_SPAN": {
+      "n_reference": 358,
+      "n_resolved": 1,
+      "floor": 0.0,
+      "extreme_fraction": 0.16569767441860464,
+      "resolved_pairs": [
+        false,
+        true,
+        false
+      ],
+      "medians": {
+        "W": 0.0013966480446926943,
+        "N1": -0.18994413407821242,
+        "N2": -0.5418994413407822,
+        "N3": -0.5726256983240224
+      },
+      "awake_spread": 0.19134078212290512,
+      "deep_spread": 0.030726256983240274
+    }
+  },
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "g4": true,
+  "verdict": "NEITHER RESOLVES",
+  "why": "both references resolve at most one adjacent pair (1 and 1 of 3). The coordinate does not transport to this deposit at all, which is a montage or population finding rather than a verdict on either reference, and must not be read as the two being equivalent"
+}

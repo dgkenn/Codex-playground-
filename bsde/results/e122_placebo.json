@@ -1,0 +1,63 @@
+{
+ "draws": 100,
+ "reps": 60,
+ "n_recordings": 94,
+ "rungs": {
+  "L0": {
+   "real_mean": -0.26824506369761586,
+   "real_lo": -0.42153136447243006,
+   "real_hi": -0.12797139801945098,
+   "placebo_n": 100,
+   "placebo_mean": 0.0029620669461805555,
+   "placebo_p2.5": -0.026067864246345718,
+   "placebo_p97.5": 0.028053001555226696,
+   "frac_placebo_at_least_as_helpful": 0.0,
+   "beats_placebo": true
+  },
+  "L1": {
+   "real_mean": -0.2959593983285556,
+   "real_lo": -0.41156507017225263,
+   "real_hi": -0.18030854561254464,
+   "placebo_n": 100,
+   "placebo_mean": -0.016787726087684928,
+   "placebo_p2.5": -0.04706913695107103,
+   "placebo_p97.5": 0.010356776838882809,
+   "frac_placebo_at_least_as_helpful": 0.0,
+   "beats_placebo": true
+  },
+  "L2": {
+   "real_mean": -0.11451589854850079,
+   "real_lo": -0.18266430034693779,
+   "real_hi": -0.03569958138778498,
+   "placebo_n": 100,
+   "placebo_mean": -0.007074776544517468,
+   "placebo_p2.5": -0.01668219808107647,
+   "placebo_p97.5": 0.0015037528420972046,
+   "frac_placebo_at_least_as_helpful": 0.0,
+   "beats_placebo": true
+  },
+  "L3": {
+   "real_mean": -0.12167703213356318,
+   "real_lo": -0.18607784823647197,
+   "real_hi": -0.04889212350225913,
+   "placebo_n": 100,
+   "placebo_mean": -0.00888182038318384,
+   "placebo_p2.5": -0.018087990663661627,
+   "placebo_p97.5": -0.0006852437037112991,
+   "frac_placebo_at_least_as_helpful": 0.0,
+   "beats_placebo": true
+  },
+  "L4": {
+   "real_mean": -0.0951944895592484,
+   "real_lo": -0.14905621868083577,
+   "real_hi": -0.03645757138641421,
+   "placebo_n": 100,
+   "placebo_mean": -0.006157402302053786,
+   "placebo_p2.5": -0.013027088566452778,
+   "placebo_p97.5": -8.11315293522752e-06,
+   "frac_placebo_at_least_as_helpful": 0.0,
+   "beats_placebo": true
+  }
+ },
+ "verdict": "ADDS -- the deposit's own EEG index carries sedation depth that a complete propofol exposure model cannot predict, at EVERY rung of the ladder, and a circular within-recording time shift does not reproduce it. The alternative the placebo was built to kill -- that a misfitted trajectory leaves a time trend any drifting measure would track -- is refuted."
+}

@@ -1,0 +1,71 @@
+{
+  "experiment": "E210",
+  "n_cases": 115,
+  "n_propofol": 44,
+  "n_sevo": 71,
+  "features": [
+    "lempel_ziv",
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "exponent_low",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "relative_delta_power",
+    "exponent_high"
+  ],
+  "n_draws": 200,
+  "g1": true,
+  "g3": {
+    "knn": 0.45934699103713184,
+    "floor": 0.13556338028169013,
+    "pass": true
+  },
+  "g2": {
+    "within": {
+      "propofol": {
+        "deep_above_light": 0.6818181818181819,
+        "floor": 0.2272727272727273,
+        "n": 44
+      },
+      "sevoflurane": {
+        "deep_above_light": 0.6619718309859155,
+        "floor": 0.21126760563380276,
+        "n": 71
+      }
+    },
+    "pass": true
+  },
+  "transport": {
+    "propofol -> sevoflurane": {
+      "cross_mean": -0.1930524671726647,
+      "within_mean": 0.8318926818638691,
+      "diff": -1.0249451490365338,
+      "diff_ci": [
+        -1.2818750815606381,
+        -0.7675768583008986
+      ],
+      "n_train": 44,
+      "n_cases": 71,
+      "sizes_equal": true,
+      "n_draws": 20
+    },
+    "sevoflurane -> propofol": {
+      "cross_mean": 0.13434715494909424,
+      "within_mean": 0.5927000157024819,
+      "diff": -0.45835286075338766,
+      "diff_ci": [
+        -0.7228835000766836,
+        -0.21351401604820636
+      ],
+      "n_train": 43,
+      "n_cases": 44,
+      "sizes_equal": true,
+      "n_draws": 20
+    }
+  },
+  "g4": true,
+  "verdict": "DOES NOT TRANSPORT",
+  "why": "both directions' paired differences exclude zero from BELOW: {'propofol -> sevoflurane': [-1.2819, -0.7676], 'sevoflurane -> propofol': [-0.7229, -0.2135]}. A depth axis learned on one agent is measurably worse on the other, and the concealment framing was asking the wrong question"
+}

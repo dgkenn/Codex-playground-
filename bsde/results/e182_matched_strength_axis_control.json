@@ -1,0 +1,70 @@
+{
+  "experiment": "E182",
+  "n_cases": 115,
+  "n_sevoflurane": 71,
+  "n_propofol": 44,
+  "features": [
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent",
+    "exponent_low",
+    "exponent_high",
+    "lempel_ziv"
+  ],
+  "state_tol": 0.03,
+  "G1_pass": true,
+  "depth_axis": {
+    "state": 0.23058601134215506,
+    "agent": 0.03137003841229191
+  },
+  "G2": {
+    "floor_p95": 0.061591682419659705,
+    "pass": true
+  },
+  "G3": {
+    "knn_agent": 0.45934699103713184,
+    "floor_p95": 0.14436619718309862,
+    "null_mean": 0.05906586107554418,
+    "n": 2000,
+    "pass": true
+  },
+  "gateM": {
+    "n_matched": 2000,
+    "n_tries": 28080,
+    "pass": true
+  },
+  "matched_pool": {
+    "agent_mean": 0.1746919014084507,
+    "agent_p05": 0.019494238156209955,
+    "agent_median": 0.17589628681177977,
+    "state_mean": 0.21365992438563328,
+    "fraction_below_depth": 0.078,
+    "fraction_below_depth_mean_over_seeds": 0.08183333333333333
+  },
+  "seed_stability": [
+    {
+      "seed": 11,
+      "n": 2000,
+      "frac_below": 0.081,
+      "agent_mean": 0.1738793213828425
+    },
+    {
+      "seed": 22,
+      "n": 2000,
+      "frac_below": 0.078,
+      "agent_mean": 0.17128665172855312
+    },
+    {
+      "seed": 33,
+      "n": 2000,
+      "frac_below": 0.0865,
+      "agent_mean": 0.17406033930857873
+    }
+  ],
+  "verdict": "JUST-WEAKNESS",
+  "why": "0.0818 of matched-strength random directions leak less than the depth axis, so its cleanliness is not specific to depth. **E176's orthogonality reading is withdrawn**: the axis is clean because it is weak, and Challenge A gets nothing from it"
+}

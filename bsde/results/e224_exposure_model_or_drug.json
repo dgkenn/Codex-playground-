@@ -1,0 +1,161 @@
+{
+  "arm_means": {
+    "propofol": {
+      "best": 0.3430792682817449,
+      "incumbent": 0.24661897254138934,
+      "n": 44
+    },
+    "sevoflurane": {
+      "best": 0.4183382594257763,
+      "incumbent": 0.36633371358713523,
+      "n": 86
+    }
+  },
+  "candidates": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_gamma",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spatial_participation_ratio",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent",
+    "wpli_alpha"
+  ],
+  "capability": {
+    "noise_score": 0.46176470588235297,
+    "recoverable_hl_recovered": 16.0,
+    "recoverable_hl_true": 16.0,
+    "recoverable_score": 0.9882352941176471
+  },
+  "chosen_half_lives": {
+    "propofol": [
+      [
+        0.5,
+        2
+      ],
+      [
+        1.0,
+        1
+      ],
+      [
+        2.0,
+        1
+      ],
+      [
+        4.0,
+        1
+      ],
+      [
+        8.0,
+        5
+      ],
+      [
+        16.0,
+        14
+      ],
+      [
+        32.0,
+        12
+      ],
+      [
+        64.0,
+        8
+      ]
+    ],
+    "sevoflurane": [
+      [
+        0.5,
+        10
+      ],
+      [
+        1.0,
+        3
+      ],
+      [
+        2.0,
+        12
+      ],
+      [
+        4.0,
+        19
+      ],
+      [
+        8.0,
+        12
+      ],
+      [
+        16.0,
+        11
+      ],
+      [
+        32.0,
+        8
+      ],
+      [
+        64.0,
+        11
+      ]
+    ]
+  },
+  "exclusions": {
+    "both_techniques": 101,
+    "constant_exposure": 3,
+    "few_windows": 1,
+    "neither": 15,
+    "no_family": 0,
+    "no_pk": 0
+  },
+  "gates": {
+    "G1_aliveness": true,
+    "G2_symmetry": true,
+    "G3_capability": true,
+    "G4_coverage": true
+  },
+  "p1": {
+    "est": 0.09646029574035549,
+    "hi": 0.12153240011180652,
+    "lo": 0.07079026430099586,
+    "n_cases": 44,
+    "noise_floor": 0.1155320277889849,
+    "noise_floor_p95": 0.33653602454437015
+  },
+  "p2": {
+    "est": -0.023254445305390337,
+    "hi": 0.014913749333334846,
+    "lo": -0.06080651492079851
+  },
+  "p3": {
+    "propofol_disp": 0.22165149553102936,
+    "ratio": 0.8866059821241172,
+    "sevo_disp": 0.25000000000000006
+  },
+  "placebo": {
+    "propofol": {
+      "beaten": false,
+      "donor_case_mean": 0.22555652846388552,
+      "donor_mean_p95": 0.24828313067545116,
+      "n": 198,
+      "p_donor_mean_reaches_real": 0.065,
+      "real": 0.24661897254138934
+    },
+    "sevoflurane": {
+      "beaten": true,
+      "donor_case_mean": 0.24296481383440188,
+      "donor_mean_p95": 0.26016891174141976,
+      "n": 197,
+      "p_donor_mean_reaches_real": 0.0,
+      "real": 0.36633371358713523
+    }
+  },
+  "seed": 20260802,
+  "verdict": "NOT INTERPRETABLE -- donor placebo not beaten in: ['propofol']"
+}

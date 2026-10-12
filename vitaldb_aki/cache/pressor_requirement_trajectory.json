@@ -1,0 +1,191 @@
+{
+  "seed": 20260628,
+  "primary_drug": "NEPI",
+  "min_epochs_per_case": 3,
+  "map_floor": 65.0,
+  "target_band": [
+    55.0,
+    80.0
+  ],
+  "n_epochs_total": 891,
+  "n_nepi_only_epochs": 327,
+  "n_cases_nepi_only": 51,
+  "n_cases_ge3_epochs": 39,
+  "trend": {
+    "n_cases": 39,
+    "n_rising": 21,
+    "frac_rising": 0.538,
+    "median_total_dose_change_frac": 0.319,
+    "median_dose_change_frac_rising": 2.6,
+    "interpretation": "fraction of cases whose dose_per_kg trends UP over time (requirement rising = controller working harder to hold MAP)."
+  },
+  "lead_time": {
+    "n_cases_with_map_drop": 7,
+    "n_dose_rose_before_drop": 4,
+    "frac_dose_rose_before_drop": 0.571,
+    "median_lead_time_s": 669.1,
+    "lead_times_s": [
+      384.2,
+      635.6,
+      702.7,
+      7076.8
+    ],
+    "per_case": [
+      {
+        "caseid": "1172",
+        "pre_drop_dose_slope": -7.3812746581852945e-06,
+        "dose_rose_before_drop": 0,
+        "t_drop": 5763.4,
+        "lead_time_s": null,
+        "n_pre_epochs": 6
+      },
+      {
+        "caseid": "1820",
+        "pre_drop_dose_slope": 0.0005579948612514411,
+        "dose_rose_before_drop": 1,
+        "t_drop": 7861.5,
+        "lead_time_s": 384.1999999999998,
+        "n_pre_epochs": 2
+      },
+      {
+        "caseid": "3136",
+        "pre_drop_dose_slope": 0.0002093769666456891,
+        "dose_rose_before_drop": 1,
+        "t_drop": 638.4,
+        "lead_time_s": 635.6,
+        "n_pre_epochs": 1
+      },
+      {
+        "caseid": "3142",
+        "pre_drop_dose_slope": -6.444789922855983e-05,
+        "dose_rose_before_drop": 0,
+        "t_drop": 9913.0,
+        "lead_time_s": null,
+        "n_pre_epochs": 8
+      },
+      {
+        "caseid": "3273",
+        "pre_drop_dose_slope": 2.5053365589867667e-05,
+        "dose_rose_before_drop": 1,
+        "t_drop": 15596.3,
+        "lead_time_s": 702.6999999999989,
+        "n_pre_epochs": 1
+      },
+      {
+        "caseid": "409",
+        "pre_drop_dose_slope": -0.0005789217624509624,
+        "dose_rose_before_drop": 0,
+        "t_drop": 11629.8,
+        "lead_time_s": null,
+        "n_pre_epochs": 4
+      },
+      {
+        "caseid": "703",
+        "pre_drop_dose_slope": 1.5254989955221044e-05,
+        "dose_rose_before_drop": 1,
+        "t_drop": 7706.4,
+        "lead_time_s": 7076.799999999999,
+        "n_pre_epochs": 2
+      }
+    ]
+  },
+  "outcome": {
+    "composite": {
+      "label": "composite",
+      "n_rising": 16,
+      "n_stable": 12,
+      "n_missing_outcome": 11,
+      "event_rate_rising": 0.75,
+      "event_rate_stable": 0.583,
+      "risk_difference": 0.167,
+      "rd_boot_ci": [
+        -0.188,
+        0.521
+      ],
+      "fisher_p": 0.4319
+    },
+    "organ_renal": {
+      "label": "organ_renal",
+      "n_rising": 15,
+      "n_stable": 11,
+      "n_missing_outcome": 13,
+      "event_rate_rising": 0.133,
+      "event_rate_stable": 0.273,
+      "risk_difference": -0.139,
+      "rd_boot_ci": [
+        -0.479,
+        0.176
+      ],
+      "fisher_p": 0.6196
+    },
+    "aki": {
+      "label": "aki",
+      "n_rising": 15,
+      "n_stable": 11,
+      "n_missing_outcome": 13,
+      "event_rate_rising": 0.133,
+      "event_rate_stable": 0.273,
+      "risk_difference": -0.139,
+      "rd_boot_ci": [
+        -0.479,
+        0.176
+      ],
+      "fisher_p": 0.6196
+    },
+    "confounding_note": "CONFOUNDING-BY-SEVERITY: rising-requirement cases are, by construction, the sicker/more-vasoplegic patients, who are independently more likely to suffer organ injury. A positive RD is therefore expected even if the trajectory adds no predictive value beyond baseline severity; with this N no severity adjustment is possible. Treat any association as hypothesis-generating, NOT causal."
+  },
+  "falsification_svr": {
+    "n_cases_with_svr_trend": 7,
+    "spearman_dose_slope_vs_svr_slope": -0.607,
+    "spearman_p": 0.1482,
+    "n_rising_with_svr": 3,
+    "frac_rising_with_falling_svr": 0.333,
+    "per_case_dose_svr_slopes": [
+      {
+        "caseid": "1165",
+        "dose_slope": 5.6392e-05,
+        "svr_slope": -0.0882,
+        "rising": 1
+      },
+      {
+        "caseid": "1652",
+        "dose_slope": -1.297e-05,
+        "svr_slope": 0.1968,
+        "rising": 0
+      },
+      {
+        "caseid": "17",
+        "dose_slope": 2.486e-06,
+        "svr_slope": 0.3506,
+        "rising": 1
+      },
+      {
+        "caseid": "1820",
+        "dose_slope": -4.689e-06,
+        "svr_slope": -0.0197,
+        "rising": 0
+      },
+      {
+        "caseid": "2738",
+        "dose_slope": -1.1192e-05,
+        "svr_slope": 0.0288,
+        "rising": 0
+      },
+      {
+        "caseid": "397",
+        "dose_slope": 3.54e-07,
+        "svr_slope": 0.0163,
+        "rising": 1
+      },
+      {
+        "caseid": "409",
+        "dose_slope": -0.000578922,
+        "svr_slope": 0.668,
+        "rising": 0
+      }
+    ],
+    "expectation": "vasoplegia falsification: rising DOSE should track FALLING SVR -> dose-slope vs svr-slope NEGATIVE, and rising cases should mostly show svr_slope<0."
+  },
+  "verdict_flag": "PARTIAL",
+  "verdict": "PARTIAL -- the rising-requirement phenomenon is REAL and common, but the lead-time and/or SVR-falsification tests are underpowered at this N; the early-warning CLAIM is not yet confirmed. A rising norepinephrine REQUIREMENT exists and is common: 21/39 (54%) of NEPI-only cases with >=3 stable epochs show a positive dose_per_kg trend over time. LEAD-TIME is UNDERPOWERED: only 7 case(s) had a sustained MAP<65 drop with a prior epoch, too few to estimate a reliable lead time (observed leads [384.2, 635.6, 702.7, 7076.8]). FALSIFICATION (SVR, n=7): dose-slope vs svr-slope Spearman -0.607, frac rising-with-falling-SVR 0.333. OUTCOME (composite): rising RD 0.167 (CI [-0.188, 0.521], Fisher p 0.4319, n_rising=16, n_stable=12) -- CONFOUNDED BY SEVERITY, hypothesis-generating only."
+}

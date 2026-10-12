@@ -1,0 +1,250 @@
+{
+ "G1": {
+  "false_positive_rate": 0.0,
+  "pass": true
+ },
+ "P1": "CONFIRMED -- the out-of-bag increment is far more conservative than assumed",
+ "P2": "CONFIRMED -- the effect is large by any ordinary standard",
+ "P3": "REFUTED -- clustering does not degrade the instrument relative to the oracle",
+ "cells": {
+  "100|1|0.15": {
+   "n_subj": 100,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.0,
+   "oracle": 0.4,
+   "retained": 0.0,
+   "rho": 0.15,
+   "rows_per": 1
+  },
+  "100|1|0.25": {
+   "n_subj": 100,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.0,
+   "oracle": 0.8166666666666667,
+   "retained": 0.0,
+   "rho": 0.25,
+   "rows_per": 1
+  },
+  "100|1|0.35": {
+   "n_subj": 100,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.016666666666666666,
+   "oracle": 0.9833333333333333,
+   "retained": 0.01694915254237288,
+   "rho": 0.35,
+   "rows_per": 1
+  },
+  "100|1|0.5": {
+   "n_subj": 100,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.38333333333333336,
+   "oracle": 1.0,
+   "retained": 0.38333333333333336,
+   "rho": 0.5,
+   "rows_per": 1
+  },
+  "100|3|0.15": {
+   "n_subj": 100,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.016666666666666666,
+   "oracle": 0.9,
+   "retained": 0.018518518518518517,
+   "rho": 0.15,
+   "rows_per": 3
+  },
+  "100|3|0.25": {
+   "n_subj": 100,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.13333333333333333,
+   "oracle": 1.0,
+   "retained": 0.13333333333333333,
+   "rho": 0.25,
+   "rows_per": 3
+  },
+  "100|3|0.35": {
+   "n_subj": 100,
+   "oob_corrected": 0.03333333333333333,
+   "oob_uncorrected": 0.6666666666666666,
+   "oracle": 1.0,
+   "retained": 0.6666666666666666,
+   "rho": 0.35,
+   "rows_per": 3
+  },
+  "100|3|0.5": {
+   "n_subj": 100,
+   "oob_corrected": 0.23333333333333334,
+   "oob_uncorrected": 0.9833333333333333,
+   "oracle": 1.0,
+   "retained": 0.9833333333333333,
+   "rho": 0.5,
+   "rows_per": 3
+  },
+  "200|1|0.15": {
+   "n_subj": 200,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.0,
+   "oracle": 0.6166666666666667,
+   "retained": 0.0,
+   "rho": 0.15,
+   "rows_per": 1
+  },
+  "200|1|0.25": {
+   "n_subj": 200,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.05,
+   "oracle": 1.0,
+   "retained": 0.05,
+   "rho": 0.25,
+   "rows_per": 1
+  },
+  "200|1|0.35": {
+   "n_subj": 200,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.2833333333333333,
+   "oracle": 1.0,
+   "retained": 0.2833333333333333,
+   "rho": 0.35,
+   "rows_per": 1
+  },
+  "200|1|0.5": {
+   "n_subj": 200,
+   "oob_corrected": 0.03333333333333333,
+   "oob_uncorrected": 0.9333333333333333,
+   "oracle": 1.0,
+   "retained": 0.9333333333333333,
+   "rho": 0.5,
+   "rows_per": 1
+  },
+  "200|3|0.15": {
+   "n_subj": 200,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.06666666666666667,
+   "oracle": 0.9666666666666667,
+   "retained": 0.06896551724137931,
+   "rho": 0.15,
+   "rows_per": 3
+  },
+  "200|3|0.25": {
+   "n_subj": 200,
+   "oob_corrected": 0.016666666666666666,
+   "oob_uncorrected": 0.4666666666666667,
+   "oracle": 1.0,
+   "retained": 0.4666666666666667,
+   "rho": 0.25,
+   "rows_per": 3
+  },
+  "200|3|0.35": {
+   "n_subj": 200,
+   "oob_corrected": 0.26666666666666666,
+   "oob_uncorrected": 0.95,
+   "oracle": 1.0,
+   "retained": 0.95,
+   "rho": 0.35,
+   "rows_per": 3
+  },
+  "200|3|0.5": {
+   "n_subj": 200,
+   "oob_corrected": 0.95,
+   "oob_uncorrected": 1.0,
+   "oracle": 1.0,
+   "retained": 1.0,
+   "rho": 0.5,
+   "rows_per": 3
+  },
+  "60|1|0.15": {
+   "n_subj": 60,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.0,
+   "oracle": 0.38333333333333336,
+   "retained": 0.0,
+   "rho": 0.15,
+   "rows_per": 1
+  },
+  "60|1|0.25": {
+   "n_subj": 60,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.0,
+   "oracle": 0.6166666666666667,
+   "retained": 0.0,
+   "rho": 0.25,
+   "rows_per": 1
+  },
+  "60|1|0.35": {
+   "n_subj": 60,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.0,
+   "oracle": 0.8833333333333333,
+   "retained": 0.0,
+   "rho": 0.35,
+   "rows_per": 1
+  },
+  "60|1|0.5": {
+   "n_subj": 60,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.1,
+   "oracle": 1.0,
+   "retained": 0.1,
+   "rho": 0.5,
+   "rows_per": 1
+  },
+  "60|3|0.15": {
+   "n_subj": 60,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.0,
+   "oracle": 0.65,
+   "retained": 0.0,
+   "rho": 0.15,
+   "rows_per": 3
+  },
+  "60|3|0.25": {
+   "n_subj": 60,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.03333333333333333,
+   "oracle": 0.9833333333333333,
+   "retained": 0.03389830508474576,
+   "rho": 0.25,
+   "rows_per": 3
+  },
+  "60|3|0.35": {
+   "n_subj": 60,
+   "oob_corrected": 0.0,
+   "oob_uncorrected": 0.23333333333333334,
+   "oracle": 1.0,
+   "retained": 0.23333333333333334,
+   "rho": 0.35,
+   "rows_per": 3
+  },
+  "60|3|0.5": {
+   "n_subj": 60,
+   "oob_corrected": 0.03333333333333333,
+   "oob_uncorrected": 0.7333333333333333,
+   "oracle": 1.0,
+   "retained": 0.7333333333333333,
+   "rho": 0.5,
+   "rows_per": 3
+  }
+ },
+ "corrected_bar": 0.0016666666666666668,
+ "draws": 60,
+ "experiment": "E146",
+ "n_subj": [
+  60,
+  100,
+  200
+ ],
+ "reps": 1000,
+ "retained_mean": {
+  "rows_per_1": 0.1472457627118644,
+  "rows_per_3": 0.44067075062594246
+ },
+ "rhos": [
+  0.15,
+  0.25,
+  0.35,
+  0.5
+ ],
+ "rows_per": [
+  1,
+  3
+ ]
+}

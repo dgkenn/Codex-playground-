@@ -1,0 +1,10 @@
+{
+  "experiment": "E17",
+  "gate_passed": false,
+  "gate_feature": "spectral_entropy",
+  "gate_fraction": 0.5661764705882353,
+  "n_paired": 136,
+  "primary_finite_frac": 1.0,
+  "primary_never_computed": true,
+  "no_further_gates": true
+}

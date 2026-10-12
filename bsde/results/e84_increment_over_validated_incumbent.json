@@ -1,0 +1,183 @@
+{
+  "gates": {
+    "G1_overlap": [],
+    "G1_pass": true,
+    "G2_recordings": 42,
+    "G2_pass": true,
+    "G3_baseline_oob_rho": 0.33104555905429484,
+    "G3_pass": true,
+    "G4_pass": true
+  },
+  "candidates": {
+    "critical_slowing_ar1": {
+      "increment": 0.013637590934345776,
+      "lo": -0.019720045719057593,
+      "hi": 0.09074587165794445,
+      "verdict": "NO INCREMENT"
+    },
+    "emg_beta_gamma_fraction": {
+      "increment": -0.0053723826327068255,
+      "lo": -0.028356226729565673,
+      "hi": 0.0321597234629521,
+      "verdict": "NO INCREMENT"
+    },
+    "emg_index": {
+      "increment": -0.0374972766542593,
+      "lo": -0.08278767573776177,
+      "hi": 0.02465697842629607,
+      "verdict": "NO INCREMENT"
+    },
+    "emg_kurtosis": {
+      "increment": -0.016184871864762477,
+      "lo": -0.03443675610829761,
+      "hi": 0.017938158944736438,
+      "verdict": "NO INCREMENT"
+    },
+    "exponent_gamma": {
+      "increment": -0.00036492590715083177,
+      "lo": -0.005799674554904313,
+      "hi": 0.010429682840896664,
+      "verdict": "NO INCREMENT"
+    },
+    "exponent_high": {
+      "increment": 0.00843240048301641,
+      "lo": -0.005287894607470261,
+      "hi": 0.048709647244188796,
+      "verdict": "NO INCREMENT"
+    },
+    "exponent_low": {
+      "increment": 0.009794338667178569,
+      "lo": -0.012535145009652257,
+      "hi": 0.07890904038712294,
+      "verdict": "NO INCREMENT"
+    },
+    "lempel_ziv": {
+      "increment": -0.0031073365697612933,
+      "lo": -0.02094731031892488,
+      "hi": 0.02751277380176758,
+      "verdict": "NO INCREMENT"
+    },
+    "multiscale_entropy_slope": {
+      "increment": -0.04554557557687854,
+      "lo": -0.09678120943301045,
+      "hi": 0.0333094239213209,
+      "verdict": "NO INCREMENT"
+    },
+    "pac_slow_alpha": {
+      "increment": -0.011847296932284335,
+      "lo": -0.028331108692806684,
+      "hi": 0.01100462421782653,
+      "verdict": "NO INCREMENT"
+    },
+    "relative_alpha_power": {
+      "increment": -0.030782880249259605,
+      "lo": -0.07091166761981,
+      "hi": 0.020117933296635773,
+      "verdict": "NO INCREMENT"
+    },
+    "relative_delta_power": {
+      "increment": 0.007780109005703394,
+      "lo": -0.006784092120035242,
+      "hi": 0.05709165618898204,
+      "verdict": "NO INCREMENT"
+    },
+    "spectral_edge_95": {
+      "increment": 0.00908341444633833,
+      "lo": -0.0017962423355840141,
+      "hi": 0.044534365507382746,
+      "verdict": "NO INCREMENT"
+    },
+    "spectral_entropy": {
+      "increment": 0.008464150905291496,
+      "lo": -0.0035675260883918035,
+      "hi": 0.04535573588164379,
+      "verdict": "NO INCREMENT"
+    },
+    "whole_head_exponent": {
+      "increment": -0.01369039365389298,
+      "lo": -0.04361391503895317,
+      "hi": 0.03454100624672295,
+      "verdict": "NO INCREMENT"
+    },
+    "bis_rbr": {
+      "increment": -0.024807727327186974,
+      "lo": -0.05697952466104152,
+      "hi": 0.01839967493733344,
+      "verdict": "NO INCREMENT"
+    },
+    "bis_bsr": {
+      "increment": 9.53549806961912e-06,
+      "lo": -0.0020809170900791844,
+      "hi": 0.0031429610639433954,
+      "verdict": "NO INCREMENT"
+    },
+    "bis_quazi": {
+      "increment": 0.00020233734399755703,
+      "lo": -0.003639756400279706,
+      "hi": 0.007049903822279776,
+      "verdict": "NO INCREMENT"
+    },
+    "bis_sfs": {
+      "increment": 0.0038579667191640144,
+      "lo": -0.00643696155336026,
+      "hi": 0.02554551759040756,
+      "verdict": "NO INCREMENT"
+    },
+    "coherence_delta": {
+      "increment": 0.001476622789135485,
+      "lo": -0.02256550693694005,
+      "hi": 0.04364109708503352,
+      "verdict": "NO INCREMENT"
+    },
+    "coherence_theta": {
+      "increment": 0.014405357129888583,
+      "lo": -0.0021174556116824055,
+      "hi": 0.08004544852375035,
+      "verdict": "NO INCREMENT"
+    },
+    "coherence_alpha": {
+      "increment": 0.018788570507621023,
+      "lo": -0.0071172834108067405,
+      "hi": 0.10557100064342598,
+      "verdict": "NO INCREMENT"
+    },
+    "coherence_beta": {
+      "increment": 0.0007952601842396468,
+      "lo": -0.016001216290528555,
+      "hi": 0.03147678502777251,
+      "verdict": "NO INCREMENT"
+    },
+    "wpli_delta": {
+      "increment": -0.003304140672113023,
+      "lo": -0.016332045058476966,
+      "hi": 0.017163663173351277,
+      "verdict": "NO INCREMENT"
+    },
+    "wpli_theta": {
+      "increment": -0.013874290523058325,
+      "lo": -0.03522874998516663,
+      "hi": 0.014811973859866285,
+      "verdict": "NO INCREMENT"
+    },
+    "wpli_alpha_2ch": {
+      "increment": 0.00031394436244609443,
+      "lo": -0.011202371119575512,
+      "hi": 0.02018859721239576,
+      "verdict": "NO INCREMENT"
+    },
+    "wpli_beta": {
+      "increment": 2.551481097164854e-05,
+      "lo": -0.006313380603599907,
+      "hi": 0.010493206358399445,
+      "verdict": "NO INCREMENT"
+    },
+    "_CTRL_noise": {
+      "increment": 0.0002797158863057772,
+      "lo": -0.0005343874912217966,
+      "hi": 0.002566280486974448,
+      "verdict": "NO INCREMENT"
+    }
+  },
+  "n_candidates": 27,
+  "verdict": "ADDS []; HURTS []; of 27 candidates tested against a baseline of the deposit's own PE31 and SEF95 (baseline out-of-bag rho +0.3310). Negative control: NO INCREMENT."
+}

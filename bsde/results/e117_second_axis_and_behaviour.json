@@ -1,0 +1,37 @@
+{
+  "n_rows": 80,
+  "n_subjects": 20,
+  "dropped_constant_behaviour": 0,
+  "gates": {
+    "G1_pass": true,
+    "G2_dropped": 0,
+    "G5_rho_comp1_comp2": 0.03931082981715893,
+    "G5_pass": true,
+    "G6_rho_comp1_vs_lower_propofol": -0.3646038443506798,
+    "G6_rho_comp1_vs_level_index": -0.23961556493202063,
+    "G6_pass": false,
+    "G3": {
+      "rho": -0.023960929372401435,
+      "lo": -0.19534567420339274,
+      "hi": 0.08342466908540085,
+      "pass": false
+    },
+    "G4": {
+      "rho": -0.05911522508070048,
+      "lo": -0.21580676128371237,
+      "hi": 0.164475942822472,
+      "pass": false
+    }
+  },
+  "primary": {
+    "rho": -0.213297933904693,
+    "lo": -0.3766050614701906,
+    "hi": -0.025358427602822507
+  },
+  "placebo": {
+    "lo": -0.17994883973379672,
+    "hi": 0.1577279544089448,
+    "inside": false
+  },
+  "verdict": "ABSENT -- a precondition failed: coverage, the two scores being the same score, or the sleep-derived signs failing to transfer to this deposit. Nothing was tested (rule 31)."
+}

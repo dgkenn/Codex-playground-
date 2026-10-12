@@ -1,0 +1,15 @@
+{
+ "status": "PROBE \u2014 answers the ceiling objection to E133 and E136",
+ "sleep_edfx_spectral_incumbent_depth_ordinal": 0.9293,
+ "chennu_spectral_incumbent": {
+  "reaction_time": 0.5583,
+  "n_correct": 0.4003,
+  "sedation_level": 0.1077
+ },
+ "n": {
+  "reaction_time": 78,
+  "n_correct": 80,
+  "sedation_level": 80
+ },
+ "verdict": "E133 (irreversibility subsumed) and E136 (submental EMG subsumed) both carried the same unresolved caveat: the spectral incumbent sat at out-of-bag rho +0.9293, leaving almost no headroom, so neither null could distinguish 'nothing to add' from 'nowhere to add it'. CHENNU RESOLVES THAT, and it is the deposit to move to: the identical 16-column spectral block reaches only +0.5583 for reaction time, +0.4003 for n-correct and +0.1077 for the sedation level. All three leave substantial headroom, and the sedation level in particular is nearly unpredicted by the spectrum. WHAT IS MISSING: chennu has no irreversibility columns and no submental EMG channel, so the subsumption tests cannot be re-run there without a new extraction. That extraction is the concrete next step for Challenge A, and it is cheap -- irreversibility needs only the raw EEG already used for chennu_features_v3. NOTE ALSO that the outcomes here are BEHAVIOURAL (reaction time, n-correct) rather than a scorer-defined label read off the same signal, which removes the circularity caveat sleep staging carries as well."
+}

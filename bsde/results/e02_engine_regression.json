@@ -1,0 +1,15 @@
+{
+  "experiment": "E02",
+  "n_recordings_usable": 96,
+  "abs_spearman_uce_vs_baseline": 0.9895822029300055,
+  "e01_pearson_reference": 0.9952,
+  "p1_engine_demotes_uce": true,
+  "p2_reproduces_e01": true,
+  "p3_baseline_passes": true,
+  "verdicts": {
+    "uce_v1": "REJECT",
+    "whole_head_exponent": "INCOMPLETE"
+  },
+  "dataset_doi": "10.6084/m9.figshare.23552964",
+  "labels_available": false
+}

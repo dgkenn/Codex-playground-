@@ -1,0 +1,155 @@
+{
+  "experiment": "E186",
+  "n_cases": 115,
+  "n_sevoflurane": 71,
+  "n_propofol": 44,
+  "nonleak": [
+    "spectral_entropy",
+    "relative_delta_power",
+    "exponent_high"
+  ],
+  "leak": [
+    "lempel_ziv",
+    "relative_theta_power",
+    "alpha_peak_hz",
+    "exponent_low",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "spectral_edge_95"
+  ],
+  "G1_pass": true,
+  "G3": {
+    "knn_agent": 0.45934699103713184,
+    "floor_p95": 0.14436619718309862,
+    "pass": true
+  },
+  "arms": {
+    "ALL": {
+      "features": [
+        "lempel_ziv",
+        "relative_theta_power",
+        "alpha_peak_hz",
+        "exponent_low",
+        "whole_head_exponent",
+        "relative_alpha_power",
+        "spectral_edge_95",
+        "spectral_entropy",
+        "relative_delta_power",
+        "exponent_high"
+      ],
+      "state": 0.23194706994328929,
+      "agent": 0.035531370038412335,
+      "state_floor_p95": 0.0629603024574669,
+      "state_alive": true,
+      "pipeline_floor_p95": 0.11512483994878364,
+      "pipeline_n": 100,
+      "below_pipeline_floor": true,
+      "matched_seeds": [
+        {
+          "seed": 11,
+          "n": 2000,
+          "frac_below": 0.091,
+          "agent_mean": 0.17159234955185662
+        },
+        {
+          "seed": 22,
+          "n": 2000,
+          "frac_below": 0.0885,
+          "agent_mean": 0.1719380601792574
+        },
+        {
+          "seed": 33,
+          "n": 2000,
+          "frac_below": 0.087,
+          "agent_mean": 0.17393117797695262
+        }
+      ],
+      "matched_frac_below": 0.08883333333333332,
+      "matched_n_tries": 92364,
+      "matched_pool_mean": 0.17248719590268888,
+      "matchable": true
+    },
+    "LEAK": {
+      "features": [
+        "lempel_ziv",
+        "relative_theta_power",
+        "alpha_peak_hz",
+        "exponent_low",
+        "whole_head_exponent",
+        "relative_alpha_power",
+        "spectral_edge_95"
+      ],
+      "state": 0.2331568998109641,
+      "agent": 0.028169014084507005,
+      "state_floor_p95": 0.061361058601134166,
+      "state_alive": true,
+      "pipeline_floor_p95": 0.12389564660691423,
+      "pipeline_n": 100,
+      "below_pipeline_floor": true,
+      "matched_seeds": [
+        {
+          "seed": 11,
+          "n": 2000,
+          "frac_below": 0.074,
+          "agent_mean": 0.17133354673495518
+        },
+        {
+          "seed": 22,
+          "n": 2000,
+          "frac_below": 0.081,
+          "agent_mean": 0.168434218950064
+        },
+        {
+          "seed": 33,
+          "n": 2000,
+          "frac_below": 0.0805,
+          "agent_mean": 0.16749343790012805
+        }
+      ],
+      "matched_frac_below": 0.0785,
+      "matched_n_tries": 85452,
+      "matched_pool_mean": 0.16908706786171576,
+      "matchable": true
+    },
+    "NONLEAK": {
+      "features": [
+        "spectral_entropy",
+        "relative_delta_power",
+        "exponent_high"
+      ],
+      "state": 0.1706238185255199,
+      "agent": 0.08194622279129327,
+      "state_floor_p95": 0.06060491493383746,
+      "state_alive": true,
+      "pipeline_floor_p95": 0.1110915492957746,
+      "pipeline_n": 100,
+      "below_pipeline_floor": true,
+      "matched_seeds": [
+        {
+          "seed": 11,
+          "n": 2000,
+          "frac_below": 0.602,
+          "agent_mean": 0.07276680537772086
+        },
+        {
+          "seed": 22,
+          "n": 2000,
+          "frac_below": 0.615,
+          "agent_mean": 0.07133658770806658
+        },
+        {
+          "seed": 33,
+          "n": 2000,
+          "frac_below": 0.6105,
+          "agent_mean": 0.07157842509603073
+        }
+      ],
+      "matched_frac_below": 0.6091666666666667,
+      "matched_n_tries": 13389,
+      "matched_pool_mean": 0.0718939393939394,
+      "matchable": true
+    }
+  },
+  "verdict": "LEAKS-MORE",
+  "why": "NONLEAK leaks +0.0819 against ALL's +0.0355 -- the subset selected for not leaking individually leaks more in combination"
+}

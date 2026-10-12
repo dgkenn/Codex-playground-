@@ -1,0 +1,96 @@
+{
+  "agents": {
+    "desflurane": 7,
+    "sevoflurane": 10
+  },
+  "aliveness": {
+    "null95": {
+      "critical_slowing_ar1": 0.21105481149300648,
+      "emg_beta_gamma_fraction": 0.20986308425021252,
+      "emg_index": 0.2067153087489426,
+      "exponent_low": 0.21178836090103625,
+      "lempel_ziv": 0.21087016082972207,
+      "multiscale_entropy_slope": 0.20541407623290647,
+      "relative_alpha_power": 0.21273514803509075,
+      "relative_delta_power": 0.20804605305826498,
+      "spectral_entropy": 0.2081847129249303,
+      "whole_head_exponent": 0.21182026206242321
+    },
+    "obs": {
+      "critical_slowing_ar1": 0.1951618016980003,
+      "emg_beta_gamma_fraction": 0.24601632463658085,
+      "emg_index": 0.25822797827953997,
+      "exponent_low": 0.1928675078068545,
+      "lempel_ziv": 0.24612460465657293,
+      "multiscale_entropy_slope": 0.25323793676891515,
+      "relative_alpha_power": 0.24836766752275205,
+      "relative_delta_power": 0.19725351625945176,
+      "spectral_entropy": 0.22255865700010044,
+      "whole_head_exponent": 0.2550619514132267
+    }
+  },
+  "capability": {
+    "noise": {
+      "n": 17,
+      "opposite_sign_rate": 0.29411764705882354
+    },
+    "plus_minus": {
+      "n": 17,
+      "opposite_sign_rate": 1.0
+    },
+    "plus_plus": {
+      "n": 17,
+      "opposite_sign_rate": 0.058823529411764705
+    }
+  },
+  "exclusions": {
+    "collinear": 0,
+    "exposure_constant": 84,
+    "few_windows": 0,
+    "no_partial": 0
+  },
+  "gates": {
+    "G1": false,
+    "G2": true,
+    "G3": false,
+    "G4": false
+  },
+  "n_cases": 17,
+  "p1": {
+    "alpha_rate": 0.5294117647058824,
+    "n": 17
+  },
+  "p2": {
+    "control_mean": 0.4509803921568627,
+    "controls": {
+      "critical_slowing_ar1": 0.5882352941176471,
+      "emg_beta_gamma_fraction": 0.47058823529411764,
+      "emg_index": 0.5294117647058824,
+      "exponent_low": 0.5294117647058824,
+      "lempel_ziv": 0.29411764705882354,
+      "multiscale_entropy_slope": 0.4117647058823529,
+      "relative_delta_power": 0.4117647058823529,
+      "spectral_entropy": 0.4117647058823529,
+      "whole_head_exponent": 0.4117647058823529
+    },
+    "est": 0.07843137254901966,
+    "hi": 0.28104575163398693,
+    "lo": -0.10457516339869277
+  },
+  "p3": {
+    "frac_predicted_direction": 0.7777777777777778,
+    "n_discordant": 9
+  },
+  "placebo": {
+    "beaten": false,
+    "mean": 0.5217789802789803,
+    "p": 0.5,
+    "p95": 0.75
+  },
+  "rho_exposure_exposure": {
+    "frac_positive": 0.47058823529411764,
+    "median": -0.10466575860656666
+  },
+  "seed": 20260802,
+  "verdict": "NOT INTERPRETABLE -- G3 capability failed; the opposite-sign statistic is not trustworthy"
+}

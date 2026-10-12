@@ -1,0 +1,89 @@
+{
+  "arms": {
+    "propofol": 114,
+    "sevoflurane": 85
+  },
+  "balance": {
+    "meta_age": {
+      "after": -0.019129074792062203,
+      "before": 0.13832290956825666
+    },
+    "meta_asa": {
+      "after": 0.0,
+      "before": -0.21048663652141733
+    },
+    "meta_bmi": {
+      "after": 0.029759912745128205,
+      "before": 0.07029493258091858
+    },
+    "meta_emop": {
+      "after": 0.0,
+      "before": -0.011228158124130857
+    },
+    "remifentanil_NOT_MATCHED_ON": {
+      "after": 1.2104959583990627,
+      "before": 1.104095304719706
+    }
+  },
+  "caliper": 0.15187018302096994,
+  "capability": {
+    "identical": 0.005657255975305864,
+    "reversing": 0.27097405831030497
+  },
+  "discarded": 43,
+  "exclusions": {
+    "exposure_flat": 1,
+    "few_windows": 0,
+    "no_covariates": 2
+  },
+  "g3": {
+    "donor_mean": 0.25959489727234525,
+    "p": 0.0,
+    "sev_alpha": 0.38565626741818754
+  },
+  "gates": {
+    "G1_balance": true,
+    "G2_coverage": true,
+    "G3_aliveness": true,
+    "G4_capability": true
+  },
+  "n_pairs": 42,
+  "p1": {
+    "e229_unmatched": 0.3671,
+    "est": 0.37989347284293074,
+    "hi": 0.5009799733531234,
+    "lo": 0.24503165194021315
+  },
+  "p2": {
+    "control_mean_abs": 0.17231608798303105,
+    "controls": {
+      "critical_slowing_ar1": -0.3225856723007917,
+      "emg_beta_gamma_fraction": 0.20317442949069606,
+      "emg_index": -0.009025765125596441,
+      "exponent_low": -0.3175288454694753,
+      "lempel_ziv": 0.0036026197907882973,
+      "multiscale_entropy_slope": -0.2241442492174303,
+      "relative_delta_power": -0.14806877953213368,
+      "spectral_edge_95": 0.252719764453615,
+      "spectral_entropy": 0.17482801149737395,
+      "whole_head_exponent": -0.06748274295240964
+    },
+    "est": 0.20757738485989968,
+    "hi": 0.34054469660384706,
+    "lo": 0.043691760818869066
+  },
+  "placebo": {
+    "beaten": false,
+    "mean": 0.37726191467276454,
+    "n": 300,
+    "p": 0.4766666666666667,
+    "p95": 0.47727856751056746
+  },
+  "seed": 20260802,
+  "sensitivity_q75": {
+    "caliper": 0.4590698273555224,
+    "contrast": 0.3825502299050919,
+    "n_pairs": 62
+  },
+  "verdict": "NOT INTERPRETABLE -- matching on permuted covariates reproduces the contrast"
+}

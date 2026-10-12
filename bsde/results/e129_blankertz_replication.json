@@ -1,0 +1,58 @@
+{
+  "n_subjects": 87,
+  "gates": {
+    "G1_pass": true,
+    "G2_median_accuracy": 56.25,
+    "G2_threshold_pct": 56.50243343872123,
+    "G2_frac_above": 0.4942528735632184,
+    "G2_pass": true,
+    "G3_smr_median_db": 5.7656,
+    "G3_smr_sd": 4.62473904132811,
+    "G3_frac_positive": 0.9885057471264368,
+    "G3_pass": true
+  },
+  "primary": {
+    "rho": 0.4440475322592404,
+    "lo": 0.24800703506597652,
+    "hi": 0.6103899358460305,
+    "n": 87,
+    "published_r": 0.53,
+    "attenuated_expectation": 0.4183109707971587
+  },
+  "secondaries": {
+    "smr_C3_db": {
+      "rho": 0.4248924691988044,
+      "lo": 0.22227801268498942,
+      "hi": 0.605805751986586,
+      "n": 87
+    },
+    "smr_C4_db": {
+      "rho": 0.42815484435372164,
+      "lo": 0.2379328570387111,
+      "hi": 0.6015710432310272,
+      "n": 87
+    },
+    "alpha_prom": {
+      "rho": 0.37099948968433333,
+      "lo": 0.17093296639206826,
+      "hi": 0.5512024312896406,
+      "n": 87
+    },
+    "ge_norm": {
+      "rho": -0.20653204053364438,
+      "lo": -0.3933440256615878,
+      "hi": -0.005969782022307989,
+      "n": 87
+    }
+  },
+  "placebo": {
+    "p2.5": -0.21081686957789605,
+    "p97.5": 0.21892633228840125,
+    "real_inside": false
+  },
+  "seed_stability": {
+    "n_seeds": 5,
+    "n_excluding_zero": 5
+  },
+  "verdict": "(c) REPLICATED -- +0.4440 [+0.2480, +0.6104], beating the permutation placebo, against a published +0.53 (attenuated +0.4183). Resting EEG DOES predict BCI performance in an independent cohort; ge_norm is simply the wrong measure, and Challenge B has a live incumbent to improve on."
+}

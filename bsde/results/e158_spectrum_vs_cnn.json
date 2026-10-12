@@ -1,0 +1,49 @@
+{
+ "G1": {
+  "cnn_windows": 46948,
+  "matched": 46948,
+  "pass": true
+ },
+ "G2": {
+  "pass": false,
+  "permuted_auc": 0.44000907540259815
+ },
+ "G3": {
+  "increment": -0.2969962668936783,
+  "p": 0.0,
+  "pass": true
+ },
+ "auc": {
+  "both": 0.940954366016724,
+  "cnn_10pc": 0.811721931381992,
+  "spectral_11": 0.9458219648136643
+ },
+ "auc_full": 0.9469452558664859,
+ "experiment": "E158",
+ "leave_one_out": {
+  "alpha_peak_hz": -0.002091464546796651,
+  "alpha_prom_db": -0.0028957891074591346,
+  "exponent_1_40": 0.04914634063277634,
+  "rel_alpha": -0.003861180394604813,
+  "rel_beta": 0.004155460926363319,
+  "rel_delta": -0.00026664176606672196,
+  "rel_gamma": -0.006017886148905971,
+  "rel_theta": 0.0022332572768488657,
+  "spectral_edge_95": -0.005535493589834517,
+  "spectral_entropy": -0.0011032929203665942,
+  "total_power_db": -0.0055898001618873705
+ },
+ "n_pc": 10,
+ "perms": 300,
+ "primary": {
+  "cnn_over_spectrum": {
+   "increment": -0.004255556851519127,
+   "p": 0.0
+  },
+  "spectrum_over_cnn": {
+   "increment": -0.13570926875835032,
+   "p": 0.0
+  }
+ },
+ "verdict": "NO VERDICT -- a gate failed"
+}

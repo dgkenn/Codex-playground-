@@ -1,0 +1,58 @@
+{
+ "G1": true,
+ "G2": {
+  "frac_varying": 0.93625,
+  "pass": true
+ },
+ "G3": {
+  "pass": true,
+  "rho": -0.001930802406382382
+ },
+ "G4": true,
+ "dosei": {
+  "L0": 0.1755,
+  "L2": 0.4263,
+  "full": 0.4595,
+  "gain": 0.2508
+ },
+ "experiment": "E160",
+ "goal": {
+  "alone": {
+   "ci": [
+    0.5889321394708041,
+    0.63787624526176
+   ],
+   "rho": 0.6138589395189559
+  },
+  "n_rows": 109003,
+  "with_pharmacology": {
+   "ci": [
+    0.5433281296389648,
+    0.5968647373311393
+   ],
+   "rho": 0.5706590109047983
+  }
+ },
+ "ladder": {
+  "L0": {
+   "ci": [
+    0.13924908293893484,
+    0.2289633206025516
+   ],
+   "rho": 0.1871921918389081
+  },
+  "L2": {
+   "ci": [
+    0.40228685490788596,
+    0.4579803643858648
+   ],
+   "rho": 0.4293016584248064
+  },
+  "gain": 0.2421094665858983
+ },
+ "n_rows": 123728,
+ "n_stays": 4000,
+ "reps": 300,
+ "secondary_prediction": "REFUTED",
+ "verdict": "THE RULE IS WRONG -- out-of-bag rho +0.4293 against RASS, essentially intact transport across five mismatched axes. The construct-match rule this programme has been building on does not predict, and Challenge D's central claim collapses. This is outcome 1 of the pre-registration, the one listed first because it costs most."
+}

@@ -1,0 +1,102 @@
+{
+  "results": {
+    "exponent_low": {
+      "d_z": -1.2140629162750398,
+      "ci": [
+        -1.3772893243449944,
+        -1.0694947098087004
+      ],
+      "n": 607,
+      "placebo_d_z": 0.24753177872476298,
+      "placebo_n": 339
+    },
+    "lempel_ziv": {
+      "d_z": -0.4770022838530011,
+      "ci": [
+        -0.5566657799769873,
+        -0.40091786712722516
+      ],
+      "n": 607,
+      "placebo_d_z": -0.9337576940359827,
+      "placebo_n": 339
+    },
+    "whole_head_exponent": {
+      "d_z": -0.2018061664358115,
+      "ci": [
+        -0.28310592977374827,
+        -0.12209954531678767
+      ],
+      "n": 607,
+      "placebo_d_z": 0.09484821366809991,
+      "placebo_n": 339
+    },
+    "exponent_low_robust": {
+      "d_z": -1.1948845498572573,
+      "ci": [
+        -1.319524712365174,
+        -1.081961279996386
+      ],
+      "n": 607,
+      "placebo_d_z": 0.23897224199463338,
+      "placebo_n": 339
+    },
+    "whole_head_robust": {
+      "d_z": -0.012190070830235595,
+      "ci": [
+        -0.0940003445037313,
+        0.06621192159698193
+      ],
+      "n": 607,
+      "placebo_d_z": 0.12674856989288122,
+      "placebo_n": 339
+    },
+    "rel_alpha": {
+      "d_z": 1.156067269911268,
+      "ci": [
+        1.0486065444111994,
+        1.2669937927360126
+      ],
+      "n": 607,
+      "placebo_d_z": -0.223059597758971,
+      "placebo_n": 339
+    },
+    "alpha_peak_hz": {
+      "d_z": 0.10509364888644876,
+      "ci": [
+        0.02728725731863702,
+        0.18078452311572127
+      ],
+      "n": 602,
+      "placebo_d_z": 0.1666624495188304,
+      "placebo_n": 337
+    },
+    "exponent_high": {
+      "d_z": 0.5360833901226753,
+      "ci": [
+        0.4452581436618953,
+        0.6330209823816095
+      ],
+      "n": 607,
+      "placebo_d_z": -0.15068297762851984,
+      "placebo_n": 339
+    },
+    "lrtc_alpha": {
+      "d_z": 0.24084437678432058,
+      "ci": [
+        0.179163884654688,
+        0.3323460433120311
+      ],
+      "n": 607,
+      "placebo_d_z": -0.3978299993030821,
+      "placebo_n": 339
+    }
+  },
+  "verdict": "FIRST-ORDER -- eye state must be resolved in-signal and frozen into the reference alongside the wake detector. The promotion out of 'known unknowns' was correct.",
+  "placebo": {
+    "exponent_low": "PASSED (1.214 > placebo 0.248)",
+    "lempel_ziv": "FAILED -- placebo 0.934 matches or exceeds the primary 0.477; this measure's contrast is NOT specific to eye state"
+  },
+  "n": 607,
+  "reps": 20000,
+  "seed": 20260731
+}

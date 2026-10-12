@@ -1,0 +1,158 @@
+{
+  "experiment": "E25",
+  "emg_max": 35.0,
+  "p1": {
+    "arms": {
+      "volatile": {
+        "dose_column": "mac",
+        "n_any": 203,
+        "n_dose_varies": 115,
+        "n_after_emg_filter": 110
+      },
+      "propofol": {
+        "dose_column": "ppf_ce",
+        "n_any": 44,
+        "n_dose_varies": 44,
+        "n_after_emg_filter": 44
+      }
+    },
+    "passed": true
+  },
+  "p2": {
+    "per_arm": {
+      "volatile": {
+        "rho": -0.12623122937771897,
+        "ci": [
+          -0.17365956877894326,
+          -0.07761449226047457
+        ],
+        "n_patients": 110,
+        "n_rows": 4379,
+        "dose_column": "mac"
+      },
+      "propofol": {
+        "rho": -0.08229811093030126,
+        "ci": [
+          -0.1559154426220381,
+          -0.0045508530281080685
+        ],
+        "n_patients": 44,
+        "n_rows": 960,
+        "dose_column": "ppf_ce"
+      }
+    },
+    "passed": true
+  },
+  "p3": {
+    "rhos": {
+      "volatile": -0.12623122937771897,
+      "propofol": -0.08229811093030126
+    },
+    "signs": {
+      "volatile": -1,
+      "propofol": -1
+    },
+    "ratio": 0.6519631578968657,
+    "passed": true
+  },
+  "p4": {
+    "probe_auc": 0.5055796055796056,
+    "probe_ci": [
+      0.5020766078143365,
+      0.6099188746021499
+    ],
+    "probe_abs": 0.005579605579605573,
+    "depth_abs": 0.06311561468885948,
+    "n_sevo": 95,
+    "n_des": 35,
+    "passed": true
+  },
+  "p5": {
+    "per_arm": {
+      "volatile": {
+        "rho": -0.11065796214590966,
+        "ratio_to_primary": 0.876629045691936,
+        "n_patients": 146
+      },
+      "propofol": {
+        "rho": -0.13879879349858998,
+        "ratio_to_primary": 1.6865368102572789,
+        "n_patients": 42
+      }
+    },
+    "passed": false
+  },
+  "p6": {
+    "volatile": {
+      "tercile_1": {
+        "rho": -0.20033011903875808,
+        "n_patients": 48
+      },
+      "tercile_2": {
+        "rho": -0.20306673465742237,
+        "n_patients": 33
+      }
+    },
+    "propofol": {
+      "tercile_1": {
+        "rho": 0.1541038826238822,
+        "n_patients": 27
+      },
+      "tercile_2": {
+        "rho": 0.013249379550218817,
+        "n_patients": 28
+      },
+      "tercile_3": {
+        "rho": -0.24156002402444662,
+        "n_patients": 24
+      }
+    }
+  },
+  "context": {
+    "exponent_high": {
+      "volatile": -0.12623122937771897,
+      "propofol": -0.08229811093030126
+    },
+    "exponent_low": {
+      "volatile": 0.38760999335721685,
+      "propofol": 0.031101098383891423
+    },
+    "whole_head_exponent": {
+      "volatile": 0.22257997128811005,
+      "propofol": -0.1101433802143794
+    },
+    "relative_delta_power": {
+      "volatile": 0.24983809008839436,
+      "propofol": 0.1052138658830229
+    },
+    "relative_alpha_power": {
+      "volatile": -0.33875844961653906,
+      "propofol": -0.14699958799081006
+    },
+    "lempel_ziv": {
+      "volatile": -0.2640092311732403,
+      "propofol": -0.2588400565992353
+    },
+    "spectral_entropy": {
+      "volatile": -0.26176899822126504,
+      "propofol": -0.05876457727562089
+    },
+    "spectral_edge_95": {
+      "volatile": -0.32838669258666175,
+      "propofol": 0.07405920054127613
+    },
+    "multiscale_entropy_slope": {
+      "volatile": 0.33392383545850646,
+      "propofol": -0.0489730497678456
+    },
+    "pac_slow_alpha": {
+      "volatile": 0.04908157979274388,
+      "propofol": 0.11578510927491363
+    },
+    "critical_slowing_ar1": {
+      "volatile": 0.4517281284770852,
+      "propofol": 0.06020254091976305
+    }
+  },
+  "verdict": "withdrawn_by_placebo"
+}

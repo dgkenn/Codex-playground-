@@ -1,0 +1,40 @@
+{
+  "definitions": {
+    "emg_beta_gamma_fraction": "7242d1f137c7e7a9:1a9f529d4aae51eb",
+    "emg_index": "76b2b73df21b8090:1a9f529d4aae51eb",
+    "emg_kurtosis": "97a2cfdd6dcfbc6a:1a9f529d4aae51eb",
+    "lempel_ziv": "114da337762fe077:1a9f529d4aae51eb",
+    "relative_alpha_power": "39c1b3941cfb99cf:1a9f529d4aae51eb",
+    "relative_delta_power": "3d9b91d5a615f80c:1a9f529d4aae51eb",
+    "spectral_edge_95": "08d3e3889c7f93ba:1a9f529d4aae51eb",
+    "spectral_entropy": "9fe3676d9333c7be:1a9f529d4aae51eb",
+    "uce_v1": "fe342a557be8b8fa:1a9f529d4aae51eb",
+    "whole_head_exponent": "75e6a2b0b5c70683:1a9f529d4aae51eb",
+    "wpli_alpha": "8ddebb740c943a76:1a9f529d4aae51eb"
+  },
+  "fields": [
+    "recording_id",
+    "dataset",
+    "subject",
+    "status",
+    "error",
+    "n_channels",
+    "sfreq",
+    "n_samples",
+    "meta_sedation_level",
+    "meta_plasma_propofol_ug_per_L",
+    "meta_mean_reaction_time_ms",
+    "meta_n_correct_of_40",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "lempel_ziv",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "uce_v1",
+    "whole_head_exponent",
+    "wpli_alpha"
+  ]
+}

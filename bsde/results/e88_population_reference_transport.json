@@ -1,0 +1,99 @@
+{
+  "gates": {
+    "G1_adult_cohorts": [
+      "lemon",
+      "eegmmidb",
+      "ds005620"
+    ],
+    "G1_pass": true,
+    "G3_pass": true,
+    "G4_pass": true
+  },
+  "cohorts": {
+    "lemon": {
+      "n_awake": 215,
+      "n_dropped_for_channels": 0,
+      "adult": true,
+      "mean_frontal": 1.2528941115624186,
+      "sd_frontal": 0.43943266034046796,
+      "mean_posterior": 1.4234065151734885,
+      "sd_posterior": 0.24943960268745421
+    },
+    "eegmmidb": {
+      "n_awake": 210,
+      "n_dropped_for_channels": 0,
+      "adult": true,
+      "mean_frontal": 0.963564998587,
+      "sd_frontal": 0.9538490524872261,
+      "mean_posterior": 1.2480649235425714,
+      "sd_posterior": 0.2585925093013586
+    },
+    "ds004541": {
+      "n_awake": 2,
+      "n_dropped_for_channels": 0,
+      "adult": true,
+      "mean_frontal": 1.3780832025,
+      "sd_frontal": 0.13027693405148824,
+      "mean_posterior": 1.3891123835,
+      "sd_posterior": 0.12263743724036245
+    },
+    "ds005620": {
+      "n_awake": 164,
+      "n_dropped_for_channels": 0,
+      "adult": true,
+      "mean_frontal": 1.5267747684577437,
+      "sd_frontal": 0.6699532114826456,
+      "mean_posterior": 1.6939029842216038,
+      "sd_posterior": 0.6606982027607364
+    },
+    "hbn": {
+      "n_awake": 0,
+      "n_dropped_for_channels": 272,
+      "adult": false,
+      "mean_frontal": null,
+      "sd_frontal": null,
+      "mean_posterior": null,
+      "sd_posterior": null
+    }
+  },
+  "pairs": {
+    "lemon->eegmmidb": {
+      "mean": -0.9629693408076074,
+      "lo": -1.2414718316329054,
+      "hi": -0.6760218789460932,
+      "verdict": "FAILS"
+    },
+    "lemon->ds005620": {
+      "mean": 1.212399919096046,
+      "lo": 0.7568225259253201,
+      "hi": 1.6471121076205666,
+      "verdict": "FAILS"
+    },
+    "eegmmidb->lemon": {
+      "mean": 0.6979643439939827,
+      "lo": 0.5754963498810443,
+      "hi": 0.8180706665071045,
+      "verdict": "FAILS"
+    },
+    "eegmmidb->ds005620": {
+      "mean": 1.6488604357671526,
+      "lo": 1.2898769199629398,
+      "hi": 1.990378499391328,
+      "verdict": "FAILS"
+    },
+    "ds005620->lemon": {
+      "mean": -0.5784851305636016,
+      "lo": -0.665545264974203,
+      "hi": -0.4934433830101668,
+      "verdict": "UNDETERMINED"
+    },
+    "ds005620->eegmmidb": {
+      "mean": -1.0696117507093206,
+      "lo": -1.230709838132428,
+      "hi": -0.9050985357560543,
+      "verdict": "FAILS"
+    }
+  },
+  "children_block": {},
+  "verdict": "0 of 6 adult awake pairs TRANSPORT within +-0.5 weighted-SD units; 5 FAIL; 1 UNDETERMINED. A single FAIL is sufficient to withdraw the sentence 'UCE = 0 means the awake reference', because that sentence is a claim about every cohort, not most of them."
+}

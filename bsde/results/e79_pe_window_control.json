@@ -1,0 +1,83 @@
+{
+  "gates": {
+    "G1_overlap": [],
+    "G1_pass": true,
+    "G2_recordings": 62,
+    "G2_pass": true,
+    "G3": {
+      "pe_8_vs_pe_30": {
+        "median_rho": 0.8834389067397643,
+        "differ": true
+      },
+      "pe31_vs_smooth30": {
+        "median_rho": 0.8531511014374565,
+        "differ": true
+      }
+    }
+  },
+  "primaries": {
+    "P1": {
+      "contrast": "shorten ours to 8 s",
+      "per_seed": {
+        "31": {
+          "D": 0.006654854337196593,
+          "lo": -0.02316837280220324,
+          "hi": 0.03793401118412552,
+          "frac_wrong_side": 0.34235,
+          "verdict": "WINDOW-EXPLAINED"
+        },
+        "32": {
+          "D": 0.006654854337196593,
+          "lo": -0.022724341688600564,
+          "hi": 0.03878779328920775,
+          "frac_wrong_side": 0.34595,
+          "verdict": "WINDOW-EXPLAINED"
+        },
+        "33": {
+          "D": 0.006654854337196593,
+          "lo": -0.022321426931986573,
+          "hi": 0.03833026227085432,
+          "frac_wrong_side": 0.3419,
+          "verdict": "WINDOW-EXPLAINED"
+        }
+      },
+      "verdict": "WINDOW-EXPLAINED"
+    },
+    "P2": {
+      "contrast": "smooth theirs to 30 s",
+      "per_seed": {
+        "31": {
+          "D": 0.038104633611278436,
+          "lo": 0.002950623873854018,
+          "hi": 0.0754823891226405,
+          "frac_wrong_side": 0.0157,
+          "verdict": "SURVIVES"
+        },
+        "32": {
+          "D": 0.038104633611278436,
+          "lo": 0.003336075150656741,
+          "hi": 0.07690800140542621,
+          "frac_wrong_side": 0.0149,
+          "verdict": "SURVIVES"
+        },
+        "33": {
+          "D": 0.038104633611278436,
+          "lo": 0.004038831775590634,
+          "hi": 0.0761834392730777,
+          "frac_wrong_side": 0.0144,
+          "verdict": "SURVIVES"
+        }
+      },
+      "verdict": "SURVIVES"
+    }
+  },
+  "descriptive": {
+    "median_rho_pe_8": 0.4260570411064998,
+    "median_rho_pe_16": 0.45324184341915574,
+    "median_rho_pe_30": 0.46861481259489224,
+    "median_rho_their_pe31": 0.43547072726530395,
+    "median_rho_their_pe31_smooth30": 0.4672150220741974,
+    "monotone_in_window": true
+  },
+  "verdict": "PARTIAL -- not established; the conservative rule requires both co-primaries"
+}

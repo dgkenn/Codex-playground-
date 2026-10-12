@@ -1,0 +1,38 @@
+{
+  "experiment": "E176",
+  "n_cases": 115,
+  "n_sevoflurane": 71,
+  "n_propofol": 44,
+  "k": 7,
+  "G1_pass": true,
+  "G3": {
+    "depth_legibility": 0.23058601134215506,
+    "floor_p95": 0.061591682419659705,
+    "pass": true
+  },
+  "G2": {
+    "agent_legibility": 0.45934699103713184,
+    "floor_p95": 0.14436619718309862,
+    "null_mean": 0.05906586107554418,
+    "n_null": 2000,
+    "pass": true
+  },
+  "G4": {
+    "agent_from_depth_score": 0.0028809218950064386,
+    "floor_p95": 0.14379001280409723,
+    "over_adjusted": false
+  },
+  "adjusted": {
+    "agent_legibility": 0.4739116517285531,
+    "floor_p95": 0.14390204865556977,
+    "drop_fraction": -0.031707317073170746
+  },
+  "placebo": {
+    "mean_drop": 0.12291149825783963,
+    "p95_drop": 0.41585365853658524,
+    "fraction_at_or_above_real": 0.988,
+    "n": 500
+  },
+  "verdict": "ARITHMETIC",
+  "why": "0.9880 of random scores of matched variance remove as much agent legibility as the depth score does, so the drop is a property of residualising eleven features and not of entanglement"
+}

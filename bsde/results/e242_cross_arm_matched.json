@@ -1,0 +1,68 @@
+{
+  "N_retained": 0,
+  "caliper": 0.00335160000000001,
+  "capability": {
+    "pure_noise": {
+      "C": 0.020245672607606718,
+      "mean_signed": 0.0036198564492954327
+    },
+    "tracks_exposure": {
+      "C": 1.0,
+      "mean_signed": 1.0
+    }
+  },
+  "gates": {
+    "G1": true,
+    "G2": true,
+    "G3": true,
+    "G4": true
+  },
+  "n_discarded": 133,
+  "n_pairs": 33,
+  "p3": {
+    "est": 0.3325705812618802,
+    "hi": 0.46158044841260776,
+    "lo": 0.1944702863768054,
+    "placebo_p": 0.0
+  },
+  "prominence_gap": {
+    "restricted": -0.002048650999999957,
+    "restricted_p": 1.0,
+    "unrestricted": 0.2231413444999999,
+    "unrestricted_p": 0.0
+  },
+  "restricted": {
+    "propofol": {
+      "C": 0.1752208795923939,
+      "clears": false,
+      "mean_signed": -0.03973467169073089,
+      "n": 33,
+      "null95": 0.43724658547075756
+    },
+    "sevoflurane": {
+      "C": 0.9511817656451914,
+      "clears": true,
+      "mean_signed": -0.3723052529526111,
+      "n": 33,
+      "null95": 0.40163234203369813
+    }
+  },
+  "seed": 20260802,
+  "unrestricted": {
+    "propofol": {
+      "C": 0.09703759085749299,
+      "clears": false,
+      "mean_signed": -0.02263771348221835,
+      "n": 113,
+      "null95": 0.318123735998455
+    },
+    "sevoflurane": {
+      "C": 0.8203716493605732,
+      "clears": true,
+      "mean_signed": -0.32963255830916977,
+      "n": 86,
+      "null95": 0.2665828839847467
+    }
+  },
+  "verdict": "ASYMMETRY RESTORED -- propofol's peak still fails to track its exposure among the windows where propofol's own alpha is strongest, while sevoflurane's still clears; the null survives the prominence confound raised against it"
+}

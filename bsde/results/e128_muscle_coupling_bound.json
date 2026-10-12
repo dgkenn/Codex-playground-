@@ -1,0 +1,73 @@
+{
+ "gates": {
+  "G1_blocks": 487,
+  "G1_subjects": 141,
+  "G1_pass": true,
+  "G3_labels": [
+   "N2",
+   "N3",
+   "REM",
+   "W"
+  ],
+  "G3_pass": true,
+  "G2_ceiling": {
+   "emg_median": {
+    "n_blocks": 470,
+    "median": 0.8857142857142858,
+    "lo": 0.8857142857142858,
+    "hi": 0.942857142857143,
+    "bound": 0.942857142857143
+   },
+   "emg_p90": {
+    "n_blocks": 486,
+    "median": 0.8285714285714285,
+    "lo": 0.8285714285714285,
+    "hi": 0.8857142857142858,
+    "bound": 0.8857142857142858
+   }
+  },
+  "G2_pass": true
+ },
+ "ceiling_value": 0.9142857142857144,
+ "P1_bounds": {
+  "irr3": {
+   "n_blocks": 486,
+   "median": 0.02857142857142857,
+   "lo": -0.08571428571428572,
+   "hi": 0.08571428571428572,
+   "bound": 0.08571428571428572,
+   "fraction_of_ceiling": 0.09374999999999999
+  },
+  "irr4": {
+   "n_blocks": 486,
+   "median": 0.0,
+   "lo": -0.08571428571428572,
+   "hi": 0.08571428571428572,
+   "bound": 0.08571428571428572,
+   "fraction_of_ceiling": 0.09374999999999999
+  },
+  "incr_asym": {
+   "n_blocks": 486,
+   "median": -0.02857142857142857,
+   "lo": -0.08571428571428572,
+   "hi": 0.08571428571428572,
+   "bound": 0.08571428571428572,
+   "fraction_of_ceiling": 0.09374999999999999
+  },
+  "exponent_high": {
+   "n_blocks": 486,
+   "median": -0.02857142857142857,
+   "lo": -0.14285714285714288,
+   "hi": 0.02857142857142857,
+   "bound": 0.14285714285714288,
+   "fraction_of_ceiling": 0.15625
+  }
+ },
+ "floor": {
+  "n": 500,
+  "p2.5": -0.08571428571428572,
+  "p97.5": 0.08571428571428572
+ },
+ "floor_fraction_of_ceiling": 0.09374999999999999,
+ "verdict": "(b) WITHIN-STAGE COUPLING IS BOUNDED SMALL -- the largest coupling the data does not exclude, for any irreversibility estimator, is 9.4% of the 0.9143 ceiling demonstrated on the SAME blocks with a second summary of the SAME submental channel. With the sleep stage held fixed, submental tone varies enough to be read at that ceiling and irreversibility does not follow it. CONSEQUENCE: E107's across-stage EMG association cannot have been contamination in these derivations, so it was state co-variation -- which converts E111's over-adjustment diagnosis from an inference into a measurement. This does NOT show irreversibility is muscle-free in a frontal montage; see scope."
+}

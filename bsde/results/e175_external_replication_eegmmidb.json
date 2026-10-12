@@ -1,0 +1,10 @@
+{
+  "experiment": "E175",
+  "n_trial_rows": 4678,
+  "e172_primary": 0.5176,
+  "n_subjects": 8,
+  "total_pairs": 162,
+  "median_pairs": 20.0,
+  "G1_pass": false,
+  "verdict": "NOT-INTERPRETABLE"
+}

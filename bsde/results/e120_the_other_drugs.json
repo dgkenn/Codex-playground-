@@ -1,0 +1,86 @@
+{
+  "cohort_facts": {
+    "vecuronium_cases": 0,
+    "midazolam_cases": 0,
+    "rocuronium_cases_of_250": 248,
+    "note": "no benzodiazepine, no vecuronium; paralysis essentially universal so NMB cannot be stratified and EMG is suppressed cohort-wide"
+  },
+  "arms": {
+    "volatile": {
+      "n": 50,
+      "P1_bis_vs_opioid": [
+        0.20417459776937177
+      ],
+      "P1_exp_vs_opioid": [
+        0.04532777902440053
+      ],
+      "P2_marginal": [
+        0.24420164019414398,
+        0.1650470863495248,
+        0.3205543092479487
+      ],
+      "P2_partial": [
+        0.21070330725269001,
+        0.13232092668003997,
+        0.2870189283151369
+      ],
+      "P2_change": [
+        -0.03349833294145396,
+        -0.06696108053414487,
+        -0.004692093258083794
+      ]
+    },
+    "tiva": {
+      "n": 132,
+      "P1_bis_vs_opioid": [
+        0.11052314242986658
+      ],
+      "P1_exp_vs_opioid": [
+        0.02131464139242809
+      ],
+      "P2_marginal": [
+        -0.03407176601966339,
+        -0.07971387665254857,
+        0.010585887908141503
+      ],
+      "P2_partial": [
+        -0.025275401474206743,
+        -0.07024547703780501,
+        0.019324787017940496
+      ],
+      "P2_change": [
+        0.008796364545456656,
+        -0.012865813506999921,
+        0.02939572380451304
+      ]
+    }
+  },
+  "gates": {
+    "G2_dropped_constant_opioid": 0,
+    "G1_pass": true,
+    "G3": {
+      "unadjusted": 0.19541618602392083,
+      "lo": 0.04819511059842552,
+      "hi": 0.3363573351142412,
+      "pass": true
+    }
+  },
+  "P3": {
+    "partial": 0.20341382765531218,
+    "lo": 0.04577405033720982,
+    "hi": 0.34614289781180996,
+    "placebo": [
+      -0.15474161581017512,
+      0.15585702396793838
+    ],
+    "inside": false,
+    "survives": true
+  },
+  "P4": {
+    "rho": -0.12429927347054419,
+    "lo": -0.268343553315929,
+    "hi": 0.028762471414405133,
+    "association": false
+  },
+  "verdict": "NOT CONFOUNDED BY THE OPIOID -- the precondition fails. Mean remifentanil Ce and age are not associated (-0.1243 [-0.2683, +0.0288]), so no opioid-exposure difference can generate an age gradient. E109 stands against a second independent confound after E113 cleared it of hypnotic class. It ALSO survives adjustment: +0.2034 [+0.0458, +0.3461]."
+}

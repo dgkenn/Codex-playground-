@@ -1,0 +1,15 @@
+{
+  "experiment": "E33",
+  "n_recordings": 85,
+  "n_windows": 10285,
+  "p1": {
+    "base_rate": 0.5041322314049587,
+    "incumbent_auc": 0.4527575813944657,
+    "incumbent_ci": [
+      0.40554491378349156,
+      0.5006455720695375
+    ],
+    "incumbent_alive": false,
+    "passed": false
+  }
+}

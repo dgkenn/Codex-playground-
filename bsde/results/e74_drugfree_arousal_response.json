@@ -1,0 +1,315 @@
+{
+  "n_subjects": 68,
+  "anchors": {
+    "KSS": {
+      "d_z": 0.9692233691951198,
+      "lo": 0.6034998110651719,
+      "hi": 1.5020928849214736,
+      "n": 32,
+      "mean_delta": 2.0
+    },
+    "SSS": {
+      "d_z": 0.782061887005775,
+      "lo": 0.4019939279108645,
+      "hi": 1.36833304906413,
+      "n": 33,
+      "mean_delta": 1.6666666666666667
+    },
+    "PVT_lapses": {
+      "d_z": -0.007606119460326554,
+      "lo": -0.44038140045331686,
+      "hi": 0.3369763951529156,
+      "n": 30,
+      "mean_delta": -0.03333333333333333
+    }
+  },
+  "gate_g1": true,
+  "features": {
+    "abs_alpha": {
+      "d_z": 0.1535237588733064,
+      "lo": -0.0876647700007621,
+      "hi": 0.4139020264502175,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "abs_beta": {
+      "d_z": 0.3672312139937902,
+      "lo": 0.13348486794761566,
+      "hi": 0.6135533080348549,
+      "n": 68,
+      "responds": true,
+      "drug_dz": null
+    },
+    "abs_delta": {
+      "d_z": 0.28123002299226957,
+      "lo": 0.05892784460687407,
+      "hi": 0.4980843635666072,
+      "n": 68,
+      "responds": true,
+      "drug_dz": null
+    },
+    "abs_theta": {
+      "d_z": 0.6308228834230416,
+      "lo": 0.4582139099551166,
+      "hi": 0.8401439174436061,
+      "n": 68,
+      "responds": true,
+      "drug_dz": null
+    },
+    "alpha_peak_hz": {
+      "d_z": -0.10896275433188346,
+      "lo": -0.34328204826464676,
+      "hi": 0.13314701403367132,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "aperiodic_offset": {
+      "d_z": 0.35276541538423917,
+      "lo": 0.12847176653873574,
+      "hi": 0.5726860490804343,
+      "n": 68,
+      "responds": true,
+      "drug_dz": null
+    },
+    "aperiodic_r2": {
+      "d_z": 0.05709400999556493,
+      "lo": -0.20247110345344238,
+      "hi": 0.28477075152645276,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "dfa_exponent": {
+      "d_z": 0.35657064132873767,
+      "lo": 0.13672113844649272,
+      "hi": 0.6053103488838377,
+      "n": 68,
+      "responds": true,
+      "drug_dz": null
+    },
+    "emg_beta_gamma_fraction": {
+      "d_z": -0.02136281959438258,
+      "lo": -0.22759965627611561,
+      "hi": 0.25586014668572044,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "emg_index": {
+      "d_z": -0.21913788496554043,
+      "lo": -0.4904055744390791,
+      "hi": 0.01791952470255453,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "emg_kurtosis": {
+      "d_z": -0.21311513474214347,
+      "lo": -0.37819429948968497,
+      "hi": 0.0024684361987060074,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "exponent_high": {
+      "d_z": 0.08117631665683042,
+      "lo": -0.17249694617380404,
+      "hi": 0.3147107752728485,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "exponent_low": {
+      "d_z": 0.0914777773520456,
+      "lo": -0.1490557604426271,
+      "hi": 0.34644286641680566,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "exponent_low_robust": {
+      "d_z": 0.014001159456938743,
+      "lo": -0.2198343000539804,
+      "hi": 0.2791157411821963,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "lempel_ziv": {
+      "d_z": -0.3242764582575076,
+      "lo": -0.5831548661393414,
+      "hi": -0.0892693471756482,
+      "n": 68,
+      "responds": true,
+      "drug_dz": [
+        1.551,
+        0.947
+      ]
+    },
+    "lrtc_alpha": {
+      "d_z": -0.0001981823149236191,
+      "lo": -0.23211466404033004,
+      "hi": 0.26540796480158774,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "median_freq": {
+      "d_z": -0.051665701441275386,
+      "lo": -0.2707644337910424,
+      "hi": 0.2055029691473494,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "perm_entropy": {
+      "d_z": 0.09871508164885094,
+      "lo": -0.14516040629713822,
+      "hi": 0.333221306434394,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "rel_alpha": {
+      "d_z": -0.0893350391614469,
+      "lo": -0.3034157811737624,
+      "hi": 0.1544280833891772,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "rel_beta": {
+      "d_z": 0.04835804055753574,
+      "lo": -0.19430018635866037,
+      "hi": 0.2903587140604487,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "rel_delta": {
+      "d_z": -0.00940894802842065,
+      "lo": -0.26004799211656404,
+      "hi": 0.22225159051063142,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "rel_theta": {
+      "d_z": 0.2887503408977536,
+      "lo": 0.05287561034475333,
+      "hi": 0.5406059645741854,
+      "n": 68,
+      "responds": true,
+      "drug_dz": null
+    },
+    "resid_alpha": {
+      "d_z": -0.014901630324851223,
+      "lo": -0.2494934199693565,
+      "hi": 0.23449874311456984,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "resid_beta": {
+      "d_z": 0.050941065680032614,
+      "lo": -0.1919904575640061,
+      "hi": 0.29431586287007877,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "resid_delta": {
+      "d_z": -0.2051658599251411,
+      "lo": -0.4427112197588783,
+      "hi": 0.029260580624723167,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "resid_theta": {
+      "d_z": 0.19999723764539043,
+      "lo": -0.03922900336565448,
+      "hi": 0.4307074855516642,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "sef95": {
+      "d_z": -0.026618899023622064,
+      "lo": -0.25986609222881446,
+      "hi": 0.23177785217443025,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    },
+    "whole_head_exponent": {
+      "d_z": 0.033635278615151754,
+      "lo": -0.23100206167623716,
+      "hi": 0.258406182557064,
+      "n": 68,
+      "responds": false,
+      "drug_dz": [
+        1.11,
+        0.937
+      ]
+    },
+    "whole_head_robust": {
+      "d_z": 0.14936583858773642,
+      "lo": -0.09449625888747931,
+      "hi": 0.368308733141132,
+      "n": 68,
+      "responds": false,
+      "drug_dz": null
+    }
+  },
+  "responders": [
+    "abs_beta",
+    "abs_delta",
+    "abs_theta",
+    "aperiodic_offset",
+    "dfa_exponent",
+    "lempel_ziv",
+    "rel_theta"
+  ],
+  "placebo_mean_responders": 1.975,
+  "s2_anchor_correlation": {
+    "abs_beta": {
+      "rho": 0.19645032388223577,
+      "n": 32,
+      "anchor": "KSS"
+    },
+    "abs_delta": {
+      "rho": 0.007627332650730744,
+      "n": 32,
+      "anchor": "KSS"
+    },
+    "abs_theta": {
+      "rho": 0.32072003633804397,
+      "n": 32,
+      "anchor": "KSS"
+    },
+    "aperiodic_offset": {
+      "rho": 0.2870481531726229,
+      "n": 32,
+      "anchor": "KSS"
+    },
+    "dfa_exponent": {
+      "rho": 0.018045152856606884,
+      "n": 32,
+      "anchor": "KSS"
+    },
+    "lempel_ziv": {
+      "rho": -0.12296748493007371,
+      "n": 32,
+      "anchor": "KSS"
+    },
+    "rel_theta": {
+      "rho": -0.08836543924627081,
+      "n": 32,
+      "anchor": "KSS"
+    }
+  },
+  "verdict": "RESPONDS -- ['abs_beta', 'abs_delta', 'abs_theta', 'aperiodic_offset', 'dfa_exponent', 'lempel_ziv', 'rel_theta'] move under a drug-free arousal change. Placed against E67's drug arms the RANKING is the claim and not the ratio: the arms are different deposits and anaesthesia is a far larger state change than one night of deprivation, so a feature moving for a drug and NOT without one is carrying pharmacology, while one moving in both is carrying state."
+}

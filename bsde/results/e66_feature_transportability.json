@@ -1,0 +1,262 @@
+{
+  "gate_g1": true,
+  "features": {
+    "exponent_low": {
+      "R": 0.9866570139950254,
+      "between_iqr": 0.45474639390000005,
+      "within_iqr": 0.460896124438125,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.5760329083,
+        "eegmmidb": 1.1785426947,
+        "hbn": 1.74052213225,
+        "vitaldb": 1.39670814525
+      }
+    },
+    "exponent_high": {
+      "R": 2.205529536576922,
+      "between_iqr": 2.608929821625,
+      "within_iqr": 1.1829040501874997,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 5.366786302,
+        "eegmmidb": 2.3101287425,
+        "hbn": 2.20777128925,
+        "vitaldb": 4.73569683375
+      }
+    },
+    "whole_head_exponent": {
+      "R": 1.6072373843917398,
+      "between_iqr": 0.46514595131250003,
+      "within_iqr": 0.28940712543750025,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 1.5360024435,
+        "eegmmidb": 1.3521868255,
+        "hbn": 1.8621977395,
+        "vitaldb": 2.23418474275
+      }
+    },
+    "exponent_gamma": {
+      "R": NaN,
+      "n_deposits": 3
+    },
+    "spectral_edge_95": {
+      "R": 1.7472861424610169,
+      "between_iqr": 8.486467648124998,
+      "within_iqr": 4.856942112625,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 22.83931448,
+        "eegmmidb": 24.786577915,
+        "hbn": 11.48797837,
+        "vitaldb": 15.9568907975
+      }
+    },
+    "relative_alpha_power": {
+      "R": 0.842133981239906,
+      "between_iqr": 0.10287354443250002,
+      "within_iqr": 0.1221581680875,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.424440332175,
+        "eegmmidb": 0.192419606795,
+        "hbn": 0.051848330804999995,
+        "vitaldb": 0.179452214675
+      }
+    },
+    "relative_delta_power": {
+      "R": 1.2169075845592823,
+      "between_iqr": 0.15888946411874988,
+      "within_iqr": 0.13056822566875004,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.216797021875,
+        "eegmmidb": 0.46852934025000004,
+        "hbn": 0.7732706390499999,
+        "vitaldb": 0.49489075335
+      }
+    },
+    "spectral_entropy": {
+      "R": 1.4472792584000995,
+      "between_iqr": 0.09622208374374996,
+      "within_iqr": 0.06648480808750001,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.79067407875,
+        "eegmmidb": 0.7685906247500001,
+        "hbn": 0.5766178954250001,
+        "vitaldb": 0.7116465742
+      }
+    },
+    "lempel_ziv": {
+      "R": 2.3416675393427533,
+      "between_iqr": 0.26692208973125,
+      "within_iqr": 0.11398803854374999,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.74856318565,
+        "eegmmidb": 0.6234376647,
+        "hbn": 0.22822995710000002,
+        "vitaldb": 0.440985954575
+      }
+    },
+    "pac_slow_alpha": {
+      "R": 2.5613690097901722,
+      "between_iqr": 0.001785873812675,
+      "within_iqr": 0.0006972340985812502,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.0012424952567499999,
+        "eegmmidb": 0.00090832875655,
+        "hbn": 0.00602658086175,
+        "vitaldb": 0.00191757630525
+      }
+    },
+    "emg_index": {
+      "R": 1.3739321263919564,
+      "between_iqr": 0.15515908082437505,
+      "within_iqr": 0.11293067382581251,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.18190486487500002,
+        "eegmmidb": 0.23239938842500002,
+        "hbn": -0.165200186825,
+        "vitaldb": 0.1075592821925
+      }
+    },
+    "critical_slowing_ar1": {
+      "R": 1.7956772024289396,
+      "between_iqr": 0.16460326989374996,
+      "within_iqr": 0.09166640288749994,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.9683653017,
+        "eegmmidb": 0.5252548540499999,
+        "hbn": 0.6754249601,
+        "vitaldb": 0.603657416125
+      }
+    },
+    "multiscale_entropy_slope": {
+      "R": 1.67285188239588,
+      "between_iqr": 0.160403158706875,
+      "within_iqr": 0.0958860496825,
+      "n_deposits": 4,
+      "n_subjects": {
+        "chennu": 20,
+        "eegmmidb": 105,
+        "hbn": 136,
+        "vitaldb": 250
+      },
+      "medians": {
+        "chennu": 0.25994781645,
+        "eegmmidb": 0.039474167399999996,
+        "hbn": -0.0033342294775000002,
+        "vitaldb": 0.16558436370000001
+      }
+    }
+  },
+  "null_R": {
+    "exponent_low": 0.058638620237100716,
+    "exponent_high": 0.11190224648609345,
+    "whole_head_exponent": 0.08630484589752918,
+    "spectral_edge_95": 0.06806842510577216,
+    "relative_alpha_power": 0.09772542872745228,
+    "relative_delta_power": 0.0876007389933285,
+    "spectral_entropy": 0.09229152403720384,
+    "lempel_ziv": 0.10947646124340321,
+    "pac_slow_alpha": 0.041292346271499636,
+    "emg_index": 0.08317296718944195,
+    "critical_slowing_ar1": 0.06394319277744437,
+    "multiscale_entropy_slope": 0.07779962530783116
+  },
+  "lowest_nyquist_hz": 62.5,
+  "band_hi": {
+    "exponent_low": 20.0,
+    "exponent_high": 40.0,
+    "whole_head_exponent": 40.0,
+    "exponent_gamma": 90.0,
+    "spectral_edge_95": 40.0,
+    "relative_alpha_power": 13.0,
+    "relative_delta_power": 4.0,
+    "spectral_entropy": 40.0,
+    "lempel_ziv": 45.0,
+    "pac_slow_alpha": 13.0,
+    "emg_index": 45.0,
+    "critical_slowing_ar1": 45.0,
+    "multiscale_entropy_slope": 45.0
+  },
+  "h1": {
+    "rho": 0.3668727205532719,
+    "lo": -0.3504198010261765,
+    "hi": 0.8660641527510636,
+    "n_features": 12
+  },
+  "verdict": "H1 ABSENT -- the band-edge correlation includes zero. The usability ranking below stands; the mechanism does not, and the transport failures are not explained by where a feature's band sits."
+}

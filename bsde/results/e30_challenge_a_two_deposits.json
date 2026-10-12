@@ -1,0 +1,89 @@
+{
+  "experiment": "E30",
+  "p1": {
+    "n_propofol": 20,
+    "n_volatile": 110,
+    "opioid_column_present": false,
+    "passed": true
+  },
+  "p2": {
+    "per_arm": {
+      "propofol (Chennu, no opioid)": {
+        "rho": 0.7099999999999997,
+        "ci": [
+          0.6142857142857141,
+          0.82
+        ],
+        "n_subjects": 20,
+        "n_rows": 80
+      },
+      "volatile (VitalDB, MAC)": {
+        "rho": -0.12623122937771897,
+        "ci": [
+          -0.17519165859103833,
+          -0.076119184512599
+        ],
+        "n_subjects": 110,
+        "n_rows": 4379
+      }
+    },
+    "passed": true
+  },
+  "p3": {
+    "signs": {
+      "propofol (Chennu, no opioid)": 1,
+      "volatile (VitalDB, MAC)": -1
+    },
+    "passed": false
+  },
+  "p4": {
+    "rho": 0.7099999999999997,
+    "ci": [
+      0.6142857142857141,
+      0.82
+    ],
+    "passed": true
+  },
+  "p5": {
+    "rt_rho": 0.23500000000000001,
+    "ratio": 0.33098591549295786,
+    "passed": true
+  },
+  "context": {
+    "exponent_high": {
+      "propofol": 0.7099999999999997,
+      "volatile": -0.12623122937771897
+    },
+    "whole_head_exponent": {
+      "propofol": -0.12999999999999995,
+      "volatile": 0.22257997128811005
+    },
+    "relative_delta_power": {
+      "propofol": -0.2599999999999999,
+      "volatile": 0.24983809008839436
+    },
+    "relative_alpha_power": {
+      "propofol": -0.21999999999999997,
+      "volatile": -0.33875844961653906
+    },
+    "lempel_ziv": {
+      "propofol": 0.52,
+      "volatile": -0.2640092311732403
+    },
+    "spectral_entropy": {
+      "propofol": 0.37999999999999995,
+      "volatile": -0.26176899822126504
+    },
+    "spectral_edge_95": {
+      "propofol": 0.15999999999999998,
+      "volatile": -0.32838669258666175
+    },
+    "wpli_alpha": {
+      "propofol": -0.12999999999999995
+    },
+    "uce_v1": {
+      "propofol": -0.10999999999999996
+    }
+  },
+  "verdict": "propofol_only"
+}

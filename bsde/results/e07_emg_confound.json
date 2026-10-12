@@ -1,0 +1,115 @@
+{
+  "experiment": "E07",
+  "emg_monotonicity": {
+    "emg_index": 0.35,
+    "emg_beta_gamma_fraction": 0.75,
+    "emg_kurtosis": 0.3
+  },
+  "partials": {
+    "lempel_ziv": {
+      "raw": 0.693060910708181,
+      "partial": {
+        "emg_index": 0.7371492081133648,
+        "emg_beta_gamma_fraction": 0.7103639899972214,
+        "emg_kurtosis": 0.6792442345095859
+      },
+      "retained_fraction_emg_index": 1.063613885481052,
+      "n_subjects": 20
+    },
+    "spectral_entropy": {
+      "raw": 0.5032942327761791,
+      "partial": {
+        "emg_index": 0.6106140594609614,
+        "emg_beta_gamma_fraction": 0.2800777993887191,
+        "emg_kurtosis": 0.5528757988330091
+      },
+      "retained_fraction_emg_index": 1.2132347634758387,
+      "n_subjects": 20
+    },
+    "spectral_edge_95": {
+      "raw": 0.23219897858760488,
+      "partial": {
+        "emg_index": 0.3119199777716032,
+        "emg_beta_gamma_fraction": -0.281133648235621,
+        "emg_kurtosis": 0.2617949430397332
+      },
+      "retained_fraction_emg_index": 1.3433305334455676,
+      "n_subjects": 20
+    },
+    "whole_head_exponent": {
+      "raw": -0.27934597931605254,
+      "partial": {
+        "emg_index": -0.3003612114476243,
+        "emg_beta_gamma_fraction": 0.010225062517365935,
+        "emg_kurtosis": -0.25590441789385937
+      },
+      "retained_fraction_emg_index": 1.0752301220981422,
+      "n_subjects": 20
+    },
+    "relative_alpha_power": {
+      "raw": -0.3335650301537674,
+      "partial": {
+        "emg_index": -0.42450680744651287,
+        "emg_beta_gamma_fraction": -0.2839677688246735,
+        "emg_kurtosis": -0.4252292303417616
+      },
+      "retained_fraction_emg_index": 1.2726358253166496,
+      "n_subjects": 20
+    },
+    "relative_delta_power": {
+      "raw": -0.4090002313192837,
+      "partial": {
+        "emg_index": -0.3580994720755765,
+        "emg_beta_gamma_fraction": -0.3094192831342039,
+        "emg_kurtosis": -0.320755765490414
+      },
+      "retained_fraction_emg_index": 0.8755483362942849,
+      "n_subjects": 20
+    },
+    "uce_v1": {
+      "raw": -0.21098282825980338,
+      "partial": {
+        "emg_index": -0.21728257849402613,
+        "emg_beta_gamma_fraction": 0.06646290636287858,
+        "emg_kurtosis": -0.18705195887746595
+      },
+      "retained_fraction_emg_index": 1.0298590661912317,
+      "n_subjects": 20
+    },
+    "wpli_alpha": {
+      "raw": -0.18858800291379074,
+      "partial": {
+        "emg_index": -0.26901917199222003,
+        "emg_beta_gamma_fraction": -0.23989997221450401,
+        "emg_kurtosis": -0.30597388163378714
+      },
+      "retained_fraction_emg_index": 1.4264914407900953,
+      "n_subjects": 20
+    }
+  },
+  "engine": {
+    "lempel_ziv": {
+      "verdict": "INCOMPLETE",
+      "failed": [
+        "directional_discrimination"
+      ]
+    },
+    "whole_head_exponent": {
+      "verdict": "REJECT",
+      "failed": [
+        "directional_discrimination",
+        "probe:emg_beta_gamma_fraction",
+        "probe:emg_index"
+      ]
+    }
+  },
+  "gates": {
+    "P1_emg_tracks_dose": false,
+    "P4_shuffle_harmless": true
+  },
+  "predictions": {
+    "P2_lz_explained": false,
+    "P3_exponent_unaffected": true
+  },
+  "search_space_size": 11
+}

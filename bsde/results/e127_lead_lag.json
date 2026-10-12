@@ -1,0 +1,37 @@
+{
+ "gates": {
+  "G1_recordings": 69,
+  "G1_pass": true,
+  "G3_stride_s": 5.0,
+  "G3_k_max_windows": 12,
+  "G3_span_s": 60.0,
+  "G1_oob_rho": 0.3884552485422128,
+  "G1_pharmacology_alive": true,
+  "G2_injection": {
+   "injected_lag_-4": -0.06870708098436414,
+   "injected_lag_+0": -0.007905256858088926,
+   "injected_lag_+4": 0.08306347829170528
+  },
+  "G2_pass": true,
+  "G2_direction_leads_sign": 1.0
+ },
+ "P1_asymmetry": {
+  "coef": -0.04578185078973021,
+  "lo": -0.06895511251779357,
+  "hi": -0.022069797911806896,
+  "n_recordings": 69
+ },
+ "P2_peak_lag": {
+  "median_windows": 1.0,
+  "median_seconds": 5.0,
+  "frac_positive": 0.6666666666666666
+ },
+ "placebo": {
+  "n": 120,
+  "mean": 0.0007675985846244896,
+  "p2.5": -0.020383144936532867,
+  "p97.5": 0.02211015812424735,
+  "frac_at_least_as_extreme_same_side": 0.0
+ },
+ "verdict": "(a) INDICATION -- asymmetry -0.0458 [-0.0690, -0.0221], which by G2's injection calibration (direction-leads = +1) means the RESIDUAL LEADS the direction: patients who look deeper than the pharmacology predicts subsequently have their drug withheld. E126's direction dependence is CONFOUNDING BY INDICATION and must be WITHDRAWN as evidence of hysteresis."
+}

@@ -1,0 +1,24 @@
+{
+  "definitions": {
+    "aperiodic_frontal": "14d4e59c08b6fb44:91e17c7696753377",
+    "aperiodic_posterior": "f9fd56f4c391c7e6:91e17c7696753377",
+    "aperiodic_wholehead": "ac9b32a4abaafb4c:91e17c7696753377",
+    "n_frontal": "4b1148eeffe75ff1:91e17c7696753377",
+    "n_posterior": "52124363c2282edd:91e17c7696753377"
+  },
+  "fields": [
+    "recording_id",
+    "dataset",
+    "subject",
+    "status",
+    "error",
+    "n_channels",
+    "sfreq",
+    "n_samples",
+    "aperiodic_frontal",
+    "aperiodic_posterior",
+    "aperiodic_wholehead",
+    "n_frontal",
+    "n_posterior"
+  ]
+}

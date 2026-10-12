@@ -1,0 +1,37 @@
+{
+  "seed": 20260628,
+  "n_axes_cases": 656,
+  "n_both_axes": 558,
+  "orthogonality_ppv_vs_tone": {
+    "r": 0.226,
+    "ci": [
+      0.147,
+      0.304
+    ],
+    "n": 558
+  },
+  "lever_quadrants": {
+    "fluid_indicated": 158,
+    "pressor_indicated": 159,
+    "mixed_ambiguous": 241
+  },
+  "frac_decision_relevant": 0.57,
+  "n_concordance": 558,
+  "concordant_vs_discordant_composite_RD": 0.091,
+  "_n_composite": [
+    68,
+    54
+  ],
+  "concordant_vs_discordant_organ_renal_RD": -0.041,
+  "_n_organ_renal": [
+    63,
+    53
+  ],
+  "concordant_vs_discordant_organ_hypoperfusion_RD": 0.25,
+  "_n_organ_hypoperfusion": [
+    12,
+    10
+  ],
+  "concordance_note": "negative RD (concordant LOWER injury) = recoverable benefit from following the A-line lever. Confounded: clinicians may already act on PPV/tone -> null expected; a clear negative RD is the strong signal.",
+  "verdict": "Lever axes CORRELATED (NOT independent -- CI excludes 0) (PPV vs real-tone[diastolic/MAP] r=0.226 [0.147, 0.304], n=558); 0.57 of patients have a clear single A-line lever. Concordance->outcome: composite RD 0.091 (n=[68, 54])."
+}

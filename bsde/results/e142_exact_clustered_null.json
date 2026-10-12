@@ -1,0 +1,113 @@
+{
+ "P1": "CONFIRMED -- the phase family's low leakage is absence of power, not measured absence",
+ "P2": "CONFIRMED -- the family contrast does not survive the exact patient-level null",
+ "experiment": "E142",
+ "gap_null_mean": 0.003195651763295748,
+ "gap_null_p95": 0.1080137274673679,
+ "gap_obs": 0.09125732583094873,
+ "gap_p_exact": 0.09137529137529138,
+ "mean_exact_null_p95": 0.27905102600440623,
+ "mean_p_inflation": 177.9863980505626,
+ "n_assignments": 6435,
+ "n_blocks": 115,
+ "n_patients": 15,
+ "n_phase_at_null": 3,
+ "per_feature": {
+  "AvgAlpha": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.12089239639116939,
+   "null_p95": 0.29035787019997533,
+   "obs": 0.099273607748184,
+   "p_exact": 0.5202797202797202,
+   "p_row": 0.06755
+  },
+  "AvgDelta": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.11667545936102615,
+   "null_p95": 0.27517929461744733,
+   "obs": 0.17705811138014527,
+   "p_exact": 0.23356643356643356,
+   "p_row": 0.001
+  },
+  "AvgGamma": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.11331650405019088,
+   "null_p95": 0.2727410101817957,
+   "obs": 0.14255447941888622,
+   "p_exact": 0.32074592074592073,
+   "p_row": 0.00825
+  },
+  "EffDim": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.118825681746075,
+   "null_p95": 0.28118688631392796,
+   "obs": 0.2699757869249395,
+   "p_exact": 0.06184926184926185,
+   "p_row": 0.0
+  },
+  "NmlzCmplx": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.11164922004884505,
+   "null_p95": 0.26673991073979053,
+   "obs": 0.3477602905569007,
+   "p_exact": 0.00574980574980575,
+   "p_row": 0.0
+  },
+  "allEnvCorr": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.10603945912167079,
+   "null_p95": 0.2550561479128855,
+   "obs": 0.3532082324455206,
+   "p_exact": 0.003108003108003108,
+   "p_row": 0.0
+  },
+  "allwPLI": {
+   "family": "PHASE",
+   "null_mean": 0.11753784014028883,
+   "null_p95": 0.2814754587732528,
+   "obs": 0.07899515738498791,
+   "p_exact": 0.5937839937839938,
+   "p_row": 0.1481
+  },
+  "backwPLI": {
+   "family": "PHASE",
+   "null_mean": 0.11134880946021024,
+   "null_p95": 0.26680650822034796,
+   "obs": 0.1930992736077482,
+   "p_exact": 0.16767676767676767,
+   "p_row": 0.0004
+  },
+  "frontalAlpha": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.12121923763273956,
+   "null_p95": 0.29270507698665754,
+   "obs": 0.09456168831168832,
+   "p_exact": 0.544055944055944,
+   "p_row": 0.1062
+  },
+  "frontalDelta": {
+   "family": "AMPLITUDE",
+   "null_mean": 0.13306267157303253,
+   "null_p95": 0.3128979476405943,
+   "obs": 0.09009740259740262,
+   "p_exact": 0.6077700077700078,
+   "p_row": 0.1233
+  },
+  "frontwPLI": {
+   "family": "PHASE",
+   "null_mean": 0.11738155913402717,
+   "null_p95": 0.28433333333333316,
+   "obs": 0.058414043583535136,
+   "p_exact": 0.696969696969697,
+   "p_row": 0.2821
+  },
+  "longwPLI": {
+   "family": "PHASE",
+   "null_mean": 0.1117894991746654,
+   "null_p95": 0.26913286713286705,
+   "obs": 0.09170702179176754,
+   "p_exact": 0.5177933177933178,
+   "p_row": 0.0889
+  }
+ }
+}

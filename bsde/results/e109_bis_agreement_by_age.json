@@ -1,0 +1,44 @@
+{
+  "n_cases_seen": 247,
+  "n_cases": 240,
+  "gates": {
+    "G1_pass": true,
+    "G2_median_agreement": -0.28215994531784006,
+    "G2_gaussian_2.5pct": -0.1549305264442444,
+    "G2_pass": true,
+    "G3": {
+      "rho_sdBIS_age": 0.05551919304154586,
+      "rho_sdExp_age": -0.0655853400232643,
+      "rho_nwindows_age": 0.010903835136026668,
+      "partial": 0.2490481504868158,
+      "lo": 0.12344363715165337,
+      "hi": 0.3684279901104122,
+      "pass": true
+    },
+    "G4": {
+      "rho_sqi_age": -0.13227399781246202,
+      "rho_emg_age": 0.017075817288494593,
+      "median_sqi": 92.32000000000002
+    },
+    "G5": {
+      "n_adults": 236,
+      "n_children": 4,
+      "rho": 0.2409345086206503,
+      "lo": 0.11868791283032132,
+      "hi": 0.3578121077113394,
+      "pass": true
+    }
+  },
+  "primary": {
+    "rho": 0.2591919998611087,
+    "lo": 0.1367273737391274,
+    "hi": 0.3761044245559819,
+    "n_cases": 240
+  },
+  "placebo": {
+    "lo": -0.1292154377680168,
+    "hi": 0.12100166669560213,
+    "inside": false
+  },
+  "verdict": "AGREEMENT DEGRADES WITH AGE -- the vendor's index and an exponent computed from the raw waveform diverge more in older patients, surviving adjustment for range restriction. THIS IS A STATEMENT ABOUT DISCORDANCE AND NOT ABOUT WHICH READING IS CORRECT: this deposit contains no ground-truth depth, and nothing here shows the exponent is right where BIS is not."
+}

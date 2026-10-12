@@ -1,0 +1,71 @@
+{
+  "n_subjects_all_stages": 141,
+  "gates": {
+    "G1_pass": true,
+    "G4_real_median": 0.00029217808,
+    "G4_surrogate_median": 0.00022740496,
+    "G4_paired_mean": 0.00028088127549234044,
+    "G4_lo": 0.00020613084581384754,
+    "G4_hi": 0.00036367334501850006,
+    "G4_pass": true,
+    "G3_W_to_N3_dz": -0.3285773362459799,
+    "G3_noise95": 0.1621576389626969,
+    "G3_pass": true,
+    "G2_dropped": {
+      "primary": 77,
+      "incumbent": 0
+    },
+    "G5": {
+      "emg_median_position": 0.988623624000382,
+      "d_z_after_emg": -0.08113315648051597,
+      "lo": -0.22550540147661455,
+      "hi": 0.2036699761588448,
+      "n": 77
+    }
+  },
+  "primary": {
+    "d_z": 0.3803945099624356,
+    "lo": 0.1530669725372143,
+    "hi": 0.6594078099873597,
+    "n": 63,
+    "median_pos_primary": 0.9187197998579317,
+    "median_pos_incumbent": 0.4658133906740245
+  },
+  "secondary": {
+    "frontal_irr4_net": {
+      "d_z": 0.2849397862502166,
+      "lo": 0.07121783184699404,
+      "hi": 0.5602114992985338,
+      "n": 91,
+      "median_pos": 0.8455775828574077
+    },
+    "posterior_irr3_net": {
+      "d_z": 0.04916177473329324,
+      "lo": -0.1435405232570991,
+      "hi": 0.27791469489272336,
+      "n": 95,
+      "median_pos": 0.41400105157815853
+    },
+    "posterior_irr4_net": {
+      "d_z": 0.09538159492779004,
+      "lo": -0.09433381839895706,
+      "hi": 0.26984120223483277,
+      "n": 106,
+      "median_pos": 0.5183074949444534
+    },
+    "frontal_incr_net": {
+      "d_z": 0.6767208520806459,
+      "lo": 0.36449028206006184,
+      "hi": 1.1639341942538282,
+      "n": 75,
+      "median_pos": 0.9672637915902226
+    }
+  },
+  "placebo": {
+    "lo": -0.259595000942084,
+    "hi": 0.2307158834861248,
+    "inside": false,
+    "n_draws": 500
+  },
+  "verdict": "WORSE THAN THE EXPONENT -- irreversibility places REM even further from wake than the spectral measure does. The single-axis reading survives its sharpest test and is strengthened."
+}

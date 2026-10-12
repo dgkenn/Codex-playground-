@@ -1,0 +1,82 @@
+{
+  "arms": {
+    "propofol": 114,
+    "sevoflurane": 85
+  },
+  "balance": {
+    "meta_age": {
+      "after": 0.10444734672950559,
+      "before": 0.13832290956825666
+    },
+    "meta_asa": {
+      "after": -0.18283670888474562,
+      "before": -0.21048663652141733
+    },
+    "meta_bmi": {
+      "after": 0.00805431406932771,
+      "before": 0.07029493258091858
+    },
+    "meta_emop": {
+      "after": 0.06972923539464283,
+      "before": -0.011228158124130857
+    },
+    "remifentanil_NOT_MATCHED_ON": {
+      "after": 1.078057396715897,
+      "before": 1.104095304719706
+    }
+  },
+  "capability": {
+    "identical": 0.0035134437210830594,
+    "reversing": 0.4416917176608329
+  },
+  "exclusions": {
+    "exposure_flat": 1,
+    "few_windows": 0,
+    "no_covariates": 2
+  },
+  "g3": {
+    "donor_mean": 0.25589694584902917,
+    "p": 0.0,
+    "sev_alpha": 0.3626982207771442
+  },
+  "gates": {
+    "G1_balance": false,
+    "G2_coverage": true,
+    "G3_aliveness": true,
+    "G4_capability": true
+  },
+  "n_pairs": 85,
+  "p1": {
+    "e229_unmatched": 0.3671,
+    "est": 0.35299989759699396,
+    "hi": 0.43671292344578105,
+    "lo": 0.2601398449149006
+  },
+  "p2": {
+    "control_mean_abs": 0.17189102960536182,
+    "controls": {
+      "critical_slowing_ar1": -0.29656879045391304,
+      "emg_beta_gamma_fraction": 0.2082070611354498,
+      "emg_index": -0.029720916286132937,
+      "exponent_low": -0.29361151453566686,
+      "lempel_ziv": 0.04527282452913889,
+      "multiscale_entropy_slope": -0.19888189692215957,
+      "relative_delta_power": -0.13529560722283548,
+      "spectral_edge_95": 0.252445907504434,
+      "spectral_entropy": 0.1532218168245032,
+      "whole_head_exponent": -0.10568396063938468
+    },
+    "est": 0.18110886799163214,
+    "hi": 0.26173281181755226,
+    "lo": 0.08756615206540061
+  },
+  "placebo": {
+    "beaten": false,
+    "mean": 0.37013985586214676,
+    "n": 300,
+    "p": 0.87,
+    "p95": 0.39502897923281316
+  },
+  "seed": 20260802,
+  "verdict": "NOT INTERPRETABLE -- matching on permuted covariates reproduces the contrast | BALANCE NOT ACHIEVED: P1 stands as an unadjusted subset, not a matched estimate"
+}

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bsde"
+version = "0.1.0"
+description = "Brain-State Discovery Engine: register a candidate EEG measure, then try to kill it."
+requires-python = ">=3.10"
+# numpy only for the core. mne is needed by the local BrainVision adapter and is imported lazily inside
+# the loader, so the engine, the registry and the verifier all import and test with numpy alone.
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+# h5py is required by the Chennu adapter: every one of the 80 EEGLAB .set files in that deposit is
+# MATLAB v7.3 (HDF5), read from an in-memory buffer so the no-disk-write invariant holds.
+io = ["mne>=1.5", "scipy>=1.10", "h5py>=3.8"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+bsde-stream = "bsde.ingestion.runner:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

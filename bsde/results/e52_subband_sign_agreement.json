@@ -1,0 +1,46 @@
+{
+  "features": {
+    "exponent_low": {
+      "delta_chennu": -1.386599082433982,
+      "delta_ds005620": -2.149536004756758,
+      "same_sign": true,
+      "p_sign_disagreement": 0.0,
+      "floor": 0.762936922322776,
+      "floor_hi": 3.1501478706918196,
+      "R": 2.3174491781213766,
+      "n": [
+        20,
+        20
+      ]
+    },
+    "exponent_high": {
+      "delta_chennu": 1.5763203642218926,
+      "delta_ds005620": 1.5699569539344767,
+      "same_sign": true,
+      "p_sign_disagreement": 0.0,
+      "floor": 0.006363410287415938,
+      "floor_hi": 1.3609907083881403,
+      "R": 247.21628624028372,
+      "n": [
+        20,
+        20
+      ]
+    },
+    "whole_head_exponent": {
+      "delta_chennu": -0.35074179382703785,
+      "delta_ds005620": 0.13151633097843832,
+      "same_sign": false,
+      "p_sign_disagreement": 0.7071,
+      "floor": 0.48225812480547614,
+      "floor_hi": 1.2125321931612667,
+      "R": 0.5,
+      "n": [
+        20,
+        20
+      ]
+    }
+  },
+  "verdict": "CONFIRMED -- sub-bands agree in sign where the broadband flips, and resolve better.",
+  "reps": 20000,
+  "seed": 20260731
+}

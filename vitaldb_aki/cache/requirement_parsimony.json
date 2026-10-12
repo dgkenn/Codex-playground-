@@ -1,0 +1,226 @@
+{
+  "seed": 20260628,
+  "part_a_necessity": {
+    "n_norepi_only_epochs": 474,
+    "n_cases": 75,
+    "n_cases_with_phenotype": 52,
+    "metrics": {
+      "phenotype": {
+        "spread": {
+          "n": 52,
+          "median": 0.16318,
+          "p10_p90": [
+            0.07096,
+            0.39731
+          ],
+          "fold_range_p90_p10": 5.6
+        },
+        "reliability": {
+          "n": 41,
+          "splithalf_spearman": 0.81
+        },
+        "early_late": {
+          "n": 39,
+          "early_late_spearman": 0.482
+        },
+        "construct_vs_SVR": {
+          "n_overlap": 15,
+          "spearman": 0.182
+        }
+      },
+      "peak": {
+        "spread": {
+          "n": 75,
+          "median": 0.25,
+          "p10_p90": [
+            0.06757,
+            0.60171
+          ],
+          "fold_range_p90_p10": 8.9
+        },
+        "reliability": {
+          "n": 52,
+          "splithalf_spearman": 0.79
+        },
+        "early_late": {
+          "n": 52,
+          "early_late_spearman": 0.622
+        },
+        "construct_vs_SVR": {
+          "n_overlap": 16,
+          "spearman": 0.279
+        }
+      },
+      "total": {
+        "spread": {
+          "n": 75,
+          "median": 889.24234,
+          "p10_p90": [
+            194.67207,
+            3465.99363
+          ],
+          "fold_range_p90_p10": 17.8
+        },
+        "reliability": {
+          "n": 52,
+          "splithalf_spearman": 0.725
+        },
+        "early_late": {
+          "n": 52,
+          "early_late_spearman": 0.566
+        },
+        "construct_vs_SVR": {
+          "n_overlap": 16,
+          "spearman": 0.044
+        }
+      },
+      "twm": {
+        "spread": {
+          "n": 75,
+          "median": 0.14034,
+          "p10_p90": [
+            0.04721,
+            0.37681
+          ],
+          "fold_range_p90_p10": 7.98
+        },
+        "reliability": {
+          "n": 52,
+          "splithalf_spearman": 0.798
+        },
+        "early_late": {
+          "n": 52,
+          "early_late_spearman": 0.49
+        },
+        "construct_vs_SVR": {
+          "n_overlap": 16,
+          "spearman": 0.385
+        }
+      },
+      "fraction_on": {
+        "spread": {
+          "n": 75,
+          "median": 0.79139,
+          "p10_p90": [
+            0.13147,
+            1.0
+          ],
+          "fold_range_p90_p10": 7.61
+        },
+        "reliability": {
+          "note": "fraction-on-pressor is a composition metric; split-half not meaningful per-epoch"
+        },
+        "early_late": {
+          "note": "n/a"
+        },
+        "construct_vs_SVR": {
+          "n_overlap": 16,
+          "spearman": -0.344
+        }
+      }
+    },
+    "alt_vs_phenotype_correlation": {
+      "peak": {
+        "n": 52,
+        "spearman_vs_phenotype": 0.875
+      },
+      "total": {
+        "n": 52,
+        "spearman_vs_phenotype": 0.604
+      },
+      "twm": {
+        "n": 52,
+        "spearman_vs_phenotype": 0.899
+      },
+      "fraction_on": {
+        "n": 52,
+        "spearman_vs_phenotype": 0.378
+      }
+    },
+    "verdict": {
+      "machinery_needed": false,
+      "phenotype": {
+        "reliability": 0.81,
+        "spread_fold": 5.6,
+        "construct_vs_SVR": 0.182,
+        "early_late": 0.482
+      },
+      "best_simpler": {
+        "reliability": 0.798,
+        "early_late": 0.622,
+        "construct_vs_SVR_most_neg": -0.344
+      },
+      "near_perfect_proxies_rho_ge_0.85": [
+        "peak",
+        "twm"
+      ],
+      "reasons": [
+        "phenotype reliability 0.81 is at/above the best simpler metric (0.798)",
+        "simpler metric(s) ['peak', 'twm'] reproduce the phenotype (rho>=0.85) AND it has no construct edge -- machinery NOT necessary"
+      ]
+    }
+  },
+  "part_b_norepi_equivalents": {
+    "nee_ratios_used": {
+      "NEPI": 1.0,
+      "PHEN": 0.1,
+      "DOPA": 0.01
+    },
+    "baseline_NEPI_only": {
+      "label": "NEPI-only (NEE=identity)",
+      "n_epochs": 474,
+      "n_cases_with_phenotype": 52,
+      "drug_composition_of_phenotype_cases": {
+        "NEPI": 52
+      },
+      "spread": {
+        "n": 52,
+        "median": 0.16318,
+        "p10_p90": [
+          0.07096,
+          0.39731
+        ],
+        "fold_range_p90_p10": 5.6
+      },
+      "reliability": {
+        "n": 41,
+        "splithalf_spearman": 0.81
+      },
+      "early_late": {
+        "n": 39,
+        "early_late_spearman": 0.482
+      }
+    },
+    "expanded_NEPI_PHEN_DOPA": {
+      "label": "NEPI+PHEN+DOPA norepi-equivalent",
+      "n_epochs": 1371,
+      "n_cases_with_phenotype": 154,
+      "drug_composition_of_phenotype_cases": {
+        "PHEN": 81,
+        "DOPA": 21,
+        "NEPI": 51,
+        "NEPI,PHEN": 1
+      },
+      "spread": {
+        "n": 154,
+        "median": 0.02454,
+        "p10_p90": [
+          0.00343,
+          0.23286
+        ],
+        "fold_range_p90_p10": 67.98
+      },
+      "reliability": {
+        "n": 118,
+        "splithalf_spearman": 0.909
+      },
+      "early_late": {
+        "n": 113,
+        "early_late_spearman": 0.769
+      }
+    },
+    "expansion_holds": true,
+    "n_gain": 102
+  },
+  "overall_verdict": "MACHINERY NOT CLEARLY NECESSARY; EXPANSION HOLDS (assumption-laden -- see caveat)"
+}

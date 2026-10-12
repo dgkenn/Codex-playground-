@@ -1,0 +1,55 @@
+{
+  "gates": {
+    "G1_subjects": 62,
+    "G1_pass": true,
+    "G2_pass": true
+  },
+  "icc": {
+    "ge_norm": {
+      "icc": 0.42876155038440755,
+      "lo": 0.24855819175224864,
+      "hi": 0.5438468180850106
+    },
+    "cl_norm": {
+      "icc": 0.46662979345765104,
+      "lo": 0.3292136139689348,
+      "hi": 0.555501709506141
+    },
+    "modularity": {
+      "icc": 0.4557612332935879,
+      "lo": 0.2960827331137366,
+      "hi": 0.5704344258119378
+    },
+    "iaf": {
+      "icc": 0.6038640501719604,
+      "lo": 0.4919657074676705,
+      "hi": 0.6869738413562111
+    },
+    "alpha_prom": {
+      "icc": 0.8411006813449958,
+      "lo": 0.6757502056893615,
+      "hi": 0.9244432918123388
+    },
+    "ge": {
+      "icc": 0.7829614035815818,
+      "lo": 0.5906962614001934,
+      "hi": 0.882484645551087
+    },
+    "deg": {
+      "icc": 0.7846739976128023,
+      "lo": 0.5974024668662433,
+      "hi": 0.8835566663122211
+    },
+    "smallworld": {
+      "icc": 0.4801353292450304,
+      "lo": 0.3168588579051571,
+      "hi": 0.5647054319866402
+    },
+    "_CTRL_noise": {
+      "icc": 0.05587887814491211,
+      "lo": -0.0976353769562153,
+      "hi": 0.21022301302253538
+    }
+  },
+  "verdict": "TRAIT-LIKE -- `ge_norm` ICC +0.4288 lies closer to the trait control (+0.6039) than to the noise control (+0.0559). **D2's null in E86 is expected by construction** -- a measure that does not vary within a person cannot produce a positive change-score correlation -- so E86's qualification 3 DISSOLVES. The reciprocal obligation written into this registration applies: E73's refusal of `wpli_alpha_clustering` on the same D1-only grounds must be revisited, not left standing because it suited us."
+}

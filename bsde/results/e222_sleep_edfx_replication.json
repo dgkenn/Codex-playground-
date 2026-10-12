@@ -1,0 +1,115 @@
+{
+  "experiment": "E222",
+  "n_points": 567,
+  "n_subjects": 142,
+  "n_rem": 142,
+  "incumbent_rho": -0.8460568705605813,
+  "incumbent_floor": 0.09224202564098158,
+  "artefact_rho": -0.6542479327569506,
+  "results": {
+    "multiscale_entropy_slope": {
+      "plain": {
+        "increment": 0.032708271321133076,
+        "ci": [
+          0.010475406017096501,
+          0.06126905131334671
+        ]
+      },
+      "muscle_adjusted": {
+        "increment": 0.02800952368516152,
+        "ci": [
+          0.010512320611598111,
+          0.04903367359374663
+        ]
+      },
+      "call": "REPLICATES"
+    },
+    "whole_head_exponent": {
+      "plain": {
+        "increment": 0.058700350256285505,
+        "ci": [
+          0.03161826281171963,
+          0.09352376414423173
+        ]
+      },
+      "muscle_adjusted": {
+        "increment": 0.054182423053801165,
+        "ci": [
+          0.030154568380881062,
+          0.08237708874832715
+        ]
+      },
+      "call": "REPLICATES"
+    },
+    "relative_alpha_power": {
+      "plain": {
+        "increment": -0.004141158474464501,
+        "ci": [
+          -0.008551867855370404,
+          0.0008746976338386477
+        ]
+      },
+      "muscle_adjusted": {
+        "increment": -0.0036114453715132555,
+        "ci": [
+          -0.008414832169950445,
+          0.0018252087201961835
+        ]
+      },
+      "call": "absent"
+    },
+    "pac_slow_alpha": {
+      "plain": {
+        "increment": 0.011329714072196406,
+        "ci": [
+          -0.0016820660685740424,
+          0.032139950466258844
+        ]
+      },
+      "muscle_adjusted": {
+        "increment": 0.009453655331375876,
+        "ci": [
+          -0.0002609521531650061,
+          0.02679102588792629
+        ]
+      },
+      "call": "absent"
+    },
+    "NOISE_CONTROL": {
+      "plain": {
+        "increment": -0.0013194214447275199,
+        "ci": [
+          -0.004187122804915053,
+          0.0024798170954596957
+        ]
+      },
+      "muscle_adjusted": {
+        "increment": 0.0008399532375638064,
+        "ci": [
+          -0.0027267720664828467,
+          0.0040753089163222634
+        ]
+      },
+      "call": "absent"
+    }
+  },
+  "rem_rung": {
+    "spectral_edge_95": 1.35633912080328,
+    "emg_index": 1.1310625603271962,
+    "multiscale_entropy_slope": 1.4710687806967608,
+    "whole_head_exponent": 1.2380122800231963,
+    "relative_alpha_power": 1.3581909189614187,
+    "pac_slow_alpha": 1.0
+  },
+  "rem_flagged": [
+    "multiscale_entropy_slope",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "pac_slow_alpha"
+  ],
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "verdict": "REPLICATES",
+  "why": "['multiscale_entropy_slope', 'whole_head_exponent'] add to the incumbent WITH muscle already in the baseline"
+}

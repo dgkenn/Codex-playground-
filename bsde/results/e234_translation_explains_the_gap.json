@@ -1,0 +1,141 @@
+{
+  "advantage": {
+    "critical_slowing_ar1": 0.31792946194644633,
+    "emg_beta_gamma_fraction": 0.21832072626816795,
+    "emg_index": -0.032961331988140496,
+    "emg_kurtosis": -0.0205106412390203,
+    "exponent_gamma": -0.062296080223858886,
+    "exponent_high": -0.19049757705656642,
+    "exponent_low": 0.32138135532751144,
+    "lempel_ziv": 0.02590375059125416,
+    "multiscale_entropy_slope": 0.20967259586884285,
+    "pac_slow_alpha": 0.009841840282044961,
+    "relative_alpha_power": 0.12931009453254705,
+    "relative_delta_power": 0.15825816367417983,
+    "spectral_edge_95": 0.262260542008137,
+    "spectral_entropy": 0.16894608133808126,
+    "whole_head_exponent": 0.11316188761734786
+  },
+  "arms": {
+    "propofol": 114,
+    "sevoflurane": 87
+  },
+  "capability": {
+    "fixed_box": 0.06838913062935625,
+    "total_power": 0.00017049929603775446
+  },
+  "gates": {
+    "G1": true,
+    "G2": true,
+    "G3": false,
+    "G4": true
+  },
+  "mean_signed": {
+    "critical_slowing_ar1": [
+      0.15562989995314847,
+      0.4735593618995948
+    ],
+    "emg_beta_gamma_fraction": [
+      -0.10566413311269625,
+      -0.3239848593808642
+    ],
+    "emg_index": [
+      -0.16479205864097482,
+      -0.13183072665283432
+    ],
+    "emg_kurtosis": [
+      -0.06367542412036652,
+      -0.04316478288134622
+    ],
+    "exponent_gamma": [
+      -0.06443351322632926,
+      -0.0021374330024703735
+    ],
+    "exponent_high": [
+      0.24799465697402964,
+      0.057497079917463216
+    ],
+    "exponent_low": [
+      0.10568476030919452,
+      0.427066115636706
+    ],
+    "lempel_ziv": [
+      -0.31610568458394783,
+      -0.342009435175202
+    ],
+    "multiscale_entropy_slope": [
+      0.21668992126694814,
+      0.426362517135791
+    ],
+    "pac_slow_alpha": [
+      0.05796775261597227,
+      0.06780959289801723
+    ],
+    "relative_alpha_power": [
+      0.11889396141170804,
+      -0.24820405594425507
+    ],
+    "relative_delta_power": [
+      0.16149653988593227,
+      0.3197547035601121
+    ],
+    "spectral_edge_95": [
+      -0.11394727591699115,
+      -0.37620781792512814
+    ],
+    "spectral_entropy": [
+      -0.16087361156027252,
+      -0.3298196928983538
+    ],
+    "whole_head_exponent": [
+      0.17697309010146256,
+      0.2901349777188104
+    ]
+  },
+  "measures": [
+    "critical_slowing_ar1",
+    "emg_beta_gamma_fraction",
+    "emg_index",
+    "emg_kurtosis",
+    "exponent_gamma",
+    "exponent_high",
+    "exponent_low",
+    "lempel_ziv",
+    "multiscale_entropy_slope",
+    "pac_slow_alpha",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "whole_head_exponent"
+  ],
+  "p1": {
+    "n_measures": 15,
+    "p_hi": 0.0012,
+    "p_lo": 0.9989,
+    "perm_2p5": -0.5249999999999999,
+    "perm_97p5": 0.5285714285714285,
+    "perm_mean": 0.00021464285714285793,
+    "rho": 0.7607142857142855
+  },
+  "resolution_floor": 0.07981606405834618,
+  "seed": 20260802,
+  "sensitivity": {
+    "critical_slowing_ar1": 5.3929235772665605,
+    "emg_beta_gamma_fraction": 0.23149792326629182,
+    "emg_index": 0.005746598126335858,
+    "emg_kurtosis": 0.005564814346606175,
+    "exponent_gamma": 9.936308397464966e-08,
+    "exponent_high": 9.078574012445937e-07,
+    "exponent_low": 0.8643338513657298,
+    "lempel_ziv": 0.2563809507062451,
+    "multiscale_entropy_slope": 0.2965143275814204,
+    "pac_slow_alpha": 0.8687428628065222,
+    "relative_alpha_power": 0.38051534763947453,
+    "relative_delta_power": 0.2314319242993452,
+    "spectral_edge_95": 4.023340204071343,
+    "spectral_entropy": 0.3380794894139788,
+    "whole_head_exponent": 0.21551281153655566
+  },
+  "verdict": "NOT INTERPRETABLE -- G3 failed; the sensitivity measure cannot separate a fixed box from total power"
+}

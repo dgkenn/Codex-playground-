@@ -1,0 +1,138 @@
+{
+  "experiment": "E198",
+  "null_draws": 500,
+  "ladder": [
+    "W",
+    "N1",
+    "N2",
+    "N3"
+  ],
+  "references": {
+    "R_AWAKE": {
+      "n_reference": 215,
+      "landmark": 0.5023255813953489,
+      "medians": {
+        "W": 0.4651162790697674,
+        "N1": -0.30232558139534893,
+        "N2": -0.5023255813953489,
+        "N3": -0.5023255813953489
+      },
+      "ci": {
+        "W": [
+          0.4372093023255813,
+          0.4790697674418605
+        ],
+        "N1": [
+          -0.38604651162790704,
+          -0.11162790697674418
+        ],
+        "N2": [
+          -0.5023255813953489,
+          -0.5023255813953489
+        ],
+        "N3": [
+          -0.5023255813953489,
+          -0.5023255813953489
+        ]
+      },
+      "resolved_pairs": [
+        true,
+        true,
+        false
+      ],
+      "n_resolved": 2,
+      "clears_floor": true,
+      "awake_spread": 0.7674418604651163,
+      "deep_spread": 0.0,
+      "transport_eegmmidb": 0.06511627906976747
+    },
+    "R_SPAN": {
+      "n_reference": 358,
+      "landmark": 0.5837988826815643,
+      "medians": {
+        "W": 0.3072625698324022,
+        "N1": -0.2150837988826816,
+        "N2": -0.5279329608938548,
+        "N3": -0.5837988826815643
+      },
+      "ci": {
+        "W": [
+          0.2765363128491619,
+          0.32402234636871496
+        ],
+        "N1": [
+          -0.27094972067039114,
+          -0.07821229050279332
+        ],
+        "N2": [
+          -0.5363128491620113,
+          -0.5139664804469275
+        ],
+        "N3": [
+          -0.5837988826815643,
+          -0.5837988826815643
+        ]
+      },
+      "resolved_pairs": [
+        true,
+        true,
+        true
+      ],
+      "n_resolved": 3,
+      "clears_floor": true,
+      "awake_spread": 0.5223463687150838,
+      "deep_spread": 0.05586592178770955,
+      "transport_eegmmidb": 0.04189944134078205
+    },
+    "R_SPAN_DEEP": {
+      "n_reference": 394,
+      "landmark": 0.6218274111675126,
+      "medians": {
+        "W": 0.2791878172588833,
+        "N1": -0.19543147208121825,
+        "N2": -0.5025380710659898,
+        "N3": -0.6167512690355329
+      },
+      "ci": {
+        "W": [
+          0.25126903553299496,
+          0.29441624365482244
+        ],
+        "N1": [
+          -0.24619289340101513,
+          -0.07106598984771573
+        ],
+        "N2": [
+          -0.515228426395939,
+          -0.4898477157360406
+        ],
+        "N3": [
+          -0.6192893401015228,
+          -0.6142131979695431
+        ]
+      },
+      "resolved_pairs": [
+        true,
+        true,
+        true
+      ],
+      "n_resolved": 3,
+      "clears_floor": true,
+      "awake_spread": 0.47461928934010156,
+      "deep_spread": 0.1142131979695431,
+      "transport_eegmmidb": 0.038071065989847774
+    }
+  },
+  "g1": true,
+  "g3": true,
+  "floors": {
+    "R_AWAKE": 0.0,
+    "R_SPAN": 0.0,
+    "R_SPAN_DEEP": 0.0
+  },
+  "g4": true,
+  "g5": true,
+  "recommendation": "R_SPAN",
+  "verdict": "DEPTH RESOLVES",
+  "why": "R_SPAN resolves 3 of 3 adjacent pairs against R_AWAKE's 2, at transport 0.0419 vs 0.0651. The recommendation is the SHALLOWEST reference achieving the maximum, because the awake-end spread falls from 0.7674 to 0.5223 as depth is added -- depth is not free"
+}

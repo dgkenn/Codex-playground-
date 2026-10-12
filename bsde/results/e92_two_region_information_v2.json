@@ -1,0 +1,69 @@
+{
+  "deposits": {
+    "ds004541": {
+      "table": "ds004541_regional_aperiodic.csv",
+      "n_rows": 105,
+      "excluded_subjects": [
+        "sub-02"
+      ],
+      "G3b_shared": 107,
+      "G3b_nonreproducible": [
+        "sub-04@loc+30",
+        "sub-04@loc+180"
+      ],
+      "G3b_frac": 0.018691588785046728,
+      "G3b_pass": true,
+      "G3a_n": 104,
+      "G3a_max": 9.979999049392063e-10,
+      "G3a_pass": true,
+      "G1_pass": true,
+      "G2_pass": true,
+      "n_awake": 59,
+      "n_anaesthetised": 34,
+      "unassigned": 12,
+      "per_state": {
+        "awake": {
+          "n": 59,
+          "r_frontal_posterior": 0.7523299064994067,
+          "lo": 0.6186068527214567,
+          "hi": 0.8439000259874073,
+          "implied_pc1_ve": 0.8761649532497033,
+          "r_uce_wholehead": 0.8083985882082961,
+          "mean_frontal_minus_posterior": -0.22932978776101692
+        },
+        "anaesthetised": {
+          "n": 34,
+          "r_frontal_posterior": 0.7315310588016708,
+          "lo": 0.5247648533556544,
+          "hi": 0.8801425011604601,
+          "implied_pc1_ve": 0.8657655294008354,
+          "r_uce_wholehead": 0.8799952664289719,
+          "mean_frontal_minus_posterior": 0.020209546235294088
+        }
+      },
+      "DELTA_R": -0.02079884769773588,
+      "DELTA_R_lo": -0.23949119047765874,
+      "DELTA_R_hi": 0.17971838434594786,
+      "verdict": "NO DECOUPLING"
+    },
+    "ds005620": {
+      "table": "ds005620_regional_aperiodic_w20.csv",
+      "n_rows": 202,
+      "excluded_subjects": [],
+      "G3b_shared": 202,
+      "G3b_nonreproducible": [],
+      "G3b_frac": 0.0,
+      "G3b_pass": true,
+      "G3a_n": 202,
+      "G3a_max": 1.0480003531654347e-09,
+      "G3a_pass": false,
+      "G1_pass": true,
+      "G2_pass": true,
+      "n_awake": 59,
+      "n_anaesthetised": 143,
+      "unassigned": 0,
+      "verdict": "GATE-FAILED"
+    }
+  },
+  "verdict": "ds004541: NO DECOUPLING; ds005620: GATE-FAILED"
+}

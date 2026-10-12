@@ -1,0 +1,391 @@
+{
+  "experiment": "E09",
+  "n_variants": 72,
+  "exponent": {
+    "median_auc": 0.18375,
+    "iqr": [
+      0.094375,
+      0.29
+    ],
+    "min": 0.06,
+    "max": 0.43,
+    "frac_above_half": 0.0,
+    "frac_below_half": 1.0,
+    "median_mono": 0.07500000000000001
+  },
+  "control_rel_delta": {
+    "median_auc": 0.1825,
+    "iqr": [
+      0.18,
+      0.198125
+    ]
+  },
+  "by_variant": {
+    "1-20_loglog_ols_2s": {
+      "auc": 0.0725,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "1-20_loglog_ols_4s": {
+      "auc": 0.0725,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "1-20_loglog_ols_8s": {
+      "auc": 0.0725,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "1-20_loglog_robust_2s": {
+      "auc": 0.0725,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "1-20_loglog_robust_4s": {
+      "auc": 0.0775,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "1-20_loglog_robust_8s": {
+      "auc": 0.07,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "1-30_loglog_ols_2s": {
+      "auc": 0.12,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "1-30_loglog_ols_4s": {
+      "auc": 0.115,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "1-30_loglog_ols_8s": {
+      "auc": 0.125,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "1-30_loglog_robust_2s": {
+      "auc": 0.1425,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-30_loglog_robust_4s": {
+      "auc": 0.14,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-30_loglog_robust_8s": {
+      "auc": 0.145,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-40_loglog_ols_2s": {
+      "auc": 0.2225,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-40_loglog_ols_4s": {
+      "auc": 0.2225,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-40_loglog_ols_8s": {
+      "auc": 0.24,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-40_loglog_robust_2s": {
+      "auc": 0.2325,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-40_loglog_robust_4s": {
+      "auc": 0.24,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-40_loglog_robust_8s": {
+      "auc": 0.2275,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-45_loglog_ols_2s": {
+      "auc": 0.3175,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "1-45_loglog_ols_4s": {
+      "auc": 0.325,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "1-45_loglog_ols_8s": {
+      "auc": 0.335,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "1-45_loglog_robust_2s": {
+      "auc": 0.29,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "1-45_loglog_robust_4s": {
+      "auc": 0.2875,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "1-45_loglog_robust_8s": {
+      "auc": 0.3025,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "2-20_loglog_ols_2s": {
+      "auc": 0.0625,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-20_loglog_ols_4s": {
+      "auc": 0.06,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-20_loglog_ols_8s": {
+      "auc": 0.0625,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-20_loglog_robust_2s": {
+      "auc": 0.0725,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-20_loglog_robust_4s": {
+      "auc": 0.0775,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-20_loglog_robust_8s": {
+      "auc": 0.0725,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-30_loglog_ols_2s": {
+      "auc": 0.1125,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-30_loglog_ols_4s": {
+      "auc": 0.1,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-30_loglog_ols_8s": {
+      "auc": 0.1075,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "2-30_loglog_robust_2s": {
+      "auc": 0.135,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "2-30_loglog_robust_4s": {
+      "auc": 0.135,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "2-30_loglog_robust_8s": {
+      "auc": 0.14,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "2-40_loglog_ols_2s": {
+      "auc": 0.2625,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "2-40_loglog_ols_4s": {
+      "auc": 0.25,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "2-40_loglog_ols_8s": {
+      "auc": 0.26,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "2-40_loglog_robust_2s": {
+      "auc": 0.2325,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "2-40_loglog_robust_4s": {
+      "auc": 0.2375,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "2-40_loglog_robust_8s": {
+      "auc": 0.245,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "2-45_loglog_ols_2s": {
+      "auc": 0.3625,
+      "mono": 0.3,
+      "n_pairs": 20
+    },
+    "2-45_loglog_ols_4s": {
+      "auc": 0.355,
+      "mono": 0.3,
+      "n_pairs": 20
+    },
+    "2-45_loglog_ols_8s": {
+      "auc": 0.3725,
+      "mono": 0.35,
+      "n_pairs": 20
+    },
+    "2-45_loglog_robust_2s": {
+      "auc": 0.3125,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "2-45_loglog_robust_4s": {
+      "auc": 0.31,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "2-45_loglog_robust_8s": {
+      "auc": 0.3175,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "3-20_loglog_ols_2s": {
+      "auc": 0.06,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-20_loglog_ols_4s": {
+      "auc": 0.06,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-20_loglog_ols_8s": {
+      "auc": 0.06,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-20_loglog_robust_2s": {
+      "auc": 0.0675,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-20_loglog_robust_4s": {
+      "auc": 0.0625,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-20_loglog_robust_8s": {
+      "auc": 0.07,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-30_loglog_ols_2s": {
+      "auc": 0.1175,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-30_loglog_ols_4s": {
+      "auc": 0.1175,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-30_loglog_ols_8s": {
+      "auc": 0.1275,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-30_loglog_robust_2s": {
+      "auc": 0.13,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "3-30_loglog_robust_4s": {
+      "auc": 0.13,
+      "mono": 0.05,
+      "n_pairs": 20
+    },
+    "3-30_loglog_robust_8s": {
+      "auc": 0.135,
+      "mono": 0.0,
+      "n_pairs": 20
+    },
+    "3-40_loglog_ols_2s": {
+      "auc": 0.285,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "3-40_loglog_ols_4s": {
+      "auc": 0.29,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "3-40_loglog_ols_8s": {
+      "auc": 0.2925,
+      "mono": 0.2,
+      "n_pairs": 20
+    },
+    "3-40_loglog_robust_2s": {
+      "auc": 0.2525,
+      "mono": 0.1,
+      "n_pairs": 20
+    },
+    "3-40_loglog_robust_4s": {
+      "auc": 0.265,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "3-40_loglog_robust_8s": {
+      "auc": 0.2775,
+      "mono": 0.15,
+      "n_pairs": 20
+    },
+    "3-45_loglog_ols_2s": {
+      "auc": 0.4175,
+      "mono": 0.55,
+      "n_pairs": 20
+    },
+    "3-45_loglog_ols_4s": {
+      "auc": 0.4225,
+      "mono": 0.55,
+      "n_pairs": 20
+    },
+    "3-45_loglog_ols_8s": {
+      "auc": 0.43,
+      "mono": 0.55,
+      "n_pairs": 20
+    },
+    "3-45_loglog_robust_2s": {
+      "auc": 0.3675,
+      "mono": 0.35,
+      "n_pairs": 20
+    },
+    "3-45_loglog_robust_4s": {
+      "auc": 0.3525,
+      "mono": 0.25,
+      "n_pairs": 20
+    },
+    "3-45_loglog_robust_8s": {
+      "auc": 0.3575,
+      "mono": 0.3,
+      "n_pairs": 20
+    }
+  },
+  "predictions": {
+    "P1": false,
+    "P2": true,
+    "P3": true,
+    "P4": true
+  }
+}

@@ -1,0 +1,2 @@
+# Held-out site data is access-gated in code (Sec 0). This directory holds ONLY
+# the frozen-pipeline manifest hashes, never raw signal or held-out data.

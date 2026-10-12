@@ -1,0 +1,248 @@
+{
+  "experiment": "E08",
+  "search_space_size": 17,
+  "analytic_dof": 1,
+  "redundancy": {
+    "spatial_participation_ratio": {
+      "max_abs_rho": 0.742498827941866,
+      "closest": "spectral_entropy",
+      "fatal": false,
+      "all": {
+        "whole_head_exponent": 0.46497890295358646,
+        "lempel_ziv": 0.5233035824256669,
+        "spectral_entropy": 0.742498827941866,
+        "spectral_edge_95": 0.6583684950773558,
+        "relative_alpha_power": 0.6856071261134553,
+        "relative_delta_power": 0.2815518049695265,
+        "wpli_alpha": 0.16772151898734178,
+        "uce_v1": 0.47923112986404126
+      }
+    },
+    "multiscale_entropy_slope": {
+      "max_abs_rho": 0.7414014381364895,
+      "closest": "lempel_ziv",
+      "fatal": false,
+      "all": {
+        "whole_head_exponent": 0.5374824191279888,
+        "lempel_ziv": 0.7414014381364895,
+        "spectral_entropy": 0.6486872948898266,
+        "spectral_edge_95": 0.5884200656352555,
+        "relative_alpha_power": 0.4513361462728552,
+        "relative_delta_power": 0.23037974683544302,
+        "wpli_alpha": 0.20705578996718235,
+        "uce_v1": 0.525855602437881
+      }
+    },
+    "pac_slow_alpha": {
+      "max_abs_rho": 0.3193389592123769,
+      "closest": "spectral_entropy",
+      "fatal": false,
+      "all": {
+        "whole_head_exponent": 0.05625879043600562,
+        "lempel_ziv": 0.18195137102616135,
+        "spectral_entropy": 0.3193389592123769,
+        "spectral_edge_95": 0.12822315986872948,
+        "relative_alpha_power": 0.3086497890295359,
+        "relative_delta_power": 0.1012189404594468,
+        "wpli_alpha": 0.31879981247069855,
+        "uce_v1": 0.099929676511955
+      }
+    },
+    "exponent_low": {
+      "max_abs_rho": 0.8350377112058017,
+      "closest": "lempel_ziv",
+      "fatal": false,
+      "all": {
+        "whole_head_exponent": 0.5793952180028129,
+        "lempel_ziv": 0.8350377112058017,
+        "spectral_entropy": 0.5583216127519925,
+        "spectral_edge_95": 0.30067979371776843,
+        "relative_alpha_power": 0.006563525550867323,
+        "relative_delta_power": 0.71643225503985,
+        "wpli_alpha": 0.22301922175339897,
+        "uce_v1": 0.6010548523206751
+      }
+    },
+    "exponent_high": {
+      "max_abs_rho": 0.6076887013595874,
+      "closest": "relative_delta_power",
+      "fatal": false,
+      "all": {
+        "whole_head_exponent": 0.003820909517112049,
+        "lempel_ziv": 0.40224098829211746,
+        "spectral_entropy": 0.09641350210970465,
+        "spectral_edge_95": 0.1404125644631974,
+        "relative_alpha_power": 0.22076887013595872,
+        "relative_delta_power": 0.6076887013595874,
+        "wpli_alpha": 0.0636193155180497,
+        "uce_v1": 0.060876699484294416
+      }
+    },
+    "critical_slowing_ar1": {
+      "max_abs_rho": 0.8875293014533521,
+      "closest": "spectral_edge_95",
+      "fatal": false,
+      "all": {
+        "whole_head_exponent": 0.5057665260196905,
+        "lempel_ziv": 0.4625202913833019,
+        "spectral_entropy": 0.5845522737927801,
+        "spectral_edge_95": 0.8875293014533521,
+        "relative_alpha_power": 0.6086029067041726,
+        "relative_delta_power": 0.35290670417252695,
+        "wpli_alpha": 0.03844350679793718,
+        "uce_v1": 0.47719174871073605
+      }
+    }
+  },
+  "signed_direction": {
+    "spatial_participation_ratio": {
+      "declared": "lower",
+      "auc": 0.375,
+      "ci": [
+        0.24250000000000005,
+        0.495
+      ],
+      "verdict": "*** OPPOSITE to declaration -- REFUTED",
+      "exotic": true
+    },
+    "multiscale_entropy_slope": {
+      "declared": "higher",
+      "auc": 0.105,
+      "ci": [
+        0.0275,
+        0.19006249999999994
+      ],
+      "verdict": "*** OPPOSITE to declaration -- REFUTED",
+      "exotic": true
+    },
+    "pac_slow_alpha": {
+      "declared": "higher",
+      "auc": 0.3325,
+      "ci": [
+        0.1849375,
+        0.4826874999999998
+      ],
+      "verdict": "*** OPPOSITE to declaration -- REFUTED",
+      "exotic": true
+    },
+    "exponent_low": {
+      "declared": "higher",
+      "auc": 0.1675,
+      "ci": [
+        0.07,
+        0.2425
+      ],
+      "verdict": "*** OPPOSITE to declaration -- REFUTED",
+      "exotic": true
+    },
+    "exponent_high": {
+      "declared": "higher",
+      "auc": 0.8625,
+      "ci": [
+        0.7899375000000001,
+        0.9476249999999999
+      ],
+      "verdict": "SUPPORTS declared direction",
+      "exotic": true
+    },
+    "critical_slowing_ar1": {
+      "declared": "higher",
+      "auc": 0.4225,
+      "ci": [
+        0.2675,
+        0.58
+      ],
+      "verdict": "spans 0.5",
+      "exotic": true
+    },
+    "whole_head_exponent": {
+      "declared": "higher",
+      "auc": 0.3925,
+      "ci": [
+        0.2725,
+        0.5125624999999999
+      ],
+      "verdict": "spans 0.5",
+      "exotic": false
+    },
+    "lempel_ziv": {
+      "declared": "lower",
+      "auc": 0.22250000000000003,
+      "ci": [
+        0.09750000000000003,
+        0.3275625
+      ],
+      "verdict": "*** OPPOSITE to declaration -- REFUTED",
+      "exotic": false
+    },
+    "spectral_entropy": {
+      "declared": "lower",
+      "auc": 0.2925,
+      "ci": [
+        0.17993750000000006,
+        0.39
+      ],
+      "verdict": "*** OPPOSITE to declaration -- REFUTED",
+      "exotic": false
+    },
+    "spectral_edge_95": {
+      "declared": "lower",
+      "auc": 0.39,
+      "ci": [
+        0.24250000000000005,
+        0.5325624999999999
+      ],
+      "verdict": "spans 0.5",
+      "exotic": false
+    },
+    "relative_alpha_power": {
+      "declared": "higher",
+      "auc": 0.3725,
+      "ci": [
+        0.245,
+        0.5075
+      ],
+      "verdict": "spans 0.5",
+      "exotic": false
+    },
+    "relative_delta_power": {
+      "declared": "higher",
+      "auc": 0.32,
+      "ci": [
+        0.1725,
+        0.4675625
+      ],
+      "verdict": "*** OPPOSITE to declaration -- REFUTED",
+      "exotic": false
+    },
+    "wpli_alpha": {
+      "declared": "lower",
+      "auc": 0.635,
+      "ci": [
+        0.48250000000000004,
+        0.8000625
+      ],
+      "verdict": "spans 0.5",
+      "exotic": false
+    },
+    "uce_v1": {
+      "declared": "higher",
+      "auc": 0.445,
+      "ci": [
+        0.3375,
+        0.56
+      ],
+      "verdict": "spans 0.5",
+      "exotic": false
+    }
+  },
+  "predictions": {
+    "P1": false,
+    "P2": true,
+    "P3": true,
+    "P4": true
+  },
+  "non_redundant_and_supported": [
+    "exponent_high"
+  ]
+}

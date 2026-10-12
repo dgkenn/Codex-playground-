@@ -1,0 +1,38 @@
+{
+  "n_subjects": 100,
+  "gates": {
+    "G1_pass": true,
+    "G2_median_auc": 0.6121544999999999,
+    "G2_frac_perm_p_lt_05": 0.36,
+    "G2_auc_spread": 0.706349,
+    "G2_pass": true,
+    "G3_ge_norm_median": 0.8553427285585192,
+    "G3_ge_norm_sd": 0.05462604779441421,
+    "G3_pass": true,
+    "G4": {
+      "rho_ge_norm_iaf": 0.16045604560456045,
+      "iaf_vs_outcome": [
+        0.07516351635163517,
+        -0.11210351035103511,
+        0.3021620162016202
+      ]
+    }
+  },
+  "primary": {
+    "rho": -0.12978097809780978,
+    "lo": -0.3224923492349235,
+    "hi": 0.07345004500450046,
+    "n": 100
+  },
+  "placebo": {
+    "lo": -0.19927422742274228,
+    "hi": 0.20472517251725167,
+    "inside": true
+  },
+  "compatibility": {
+    "E86_point_inside_CI": false,
+    "attenuated_expectation": 0.24222573007103396,
+    "attenuated_inside_CI": false
+  },
+  "verdict": "NOT REPLICATED, and it EXCLUDES an effect of E86's size. The interval [-0.3225, +0.0735] does not contain E86's +0.3069 or its attenuated expectation +0.2422. E86's multiplicity qualification (BH q = 0.0920) therefore STANDS. The placebo is not informative here (rule 48)."
+}

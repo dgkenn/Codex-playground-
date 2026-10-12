@@ -1,0 +1,256 @@
+{
+  "experiment": "E40",
+  "bands": [
+    {
+      "lo": 0.0,
+      "hi": 30.0,
+      "n_band": 14220,
+      "n_patients": 129,
+      "n_control": 27308,
+      "position_auc": 0.05982981911608103,
+      "gate": "position"
+    },
+    {
+      "lo": 30.0,
+      "hi": 60.0,
+      "n_band": 10294,
+      "n_patients": 129,
+      "n_control": 27308,
+      "position_auc": 0.05368048354501858,
+      "gate": "position"
+    },
+    {
+      "lo": 60.0,
+      "hi": 120.0,
+      "n_band": 11450,
+      "n_patients": 122,
+      "n_control": 27308,
+      "position_auc": 0.04315203312304151,
+      "gate": "position"
+    },
+    {
+      "lo": 120.0,
+      "hi": 180.0,
+      "n_band": 5821,
+      "n_patients": 86,
+      "n_control": 27308,
+      "position_auc": 0.032924527214630045,
+      "gate": "position"
+    },
+    {
+      "lo": 180.0,
+      "hi": 240.0,
+      "n_band": 3369,
+      "n_patients": 54,
+      "n_control": 27308,
+      "position_auc": 0.0327958273600061,
+      "gate": "position"
+    },
+    {
+      "lo": 240.0,
+      "hi": 300.0,
+      "n_band": 2272,
+      "n_patients": 39,
+      "n_control": 27308,
+      "position_auc": 0.025532996250905167,
+      "gate": "position"
+    },
+    {
+      "lo": 300.0,
+      "hi": 420.0,
+      "n_band": 2131,
+      "n_patients": 29,
+      "n_control": 27308,
+      "position_auc": 0.03405132318559846,
+      "gate": "position"
+    },
+    {
+      "lo": 420.0,
+      "hi": 600.0,
+      "n_band": 1402,
+      "n_patients": 10,
+      "n_control": 27308,
+      "gate": "coverage"
+    }
+  ],
+  "control_min_s": 900.0,
+  "g1": {
+    "n_recordings": 129,
+    "n_windows": 79429,
+    "n_control": 27308,
+    "passed": true
+  },
+  "horizon_s": null,
+  "furthest_band_above_chance": {
+    "SEF95": null,
+    "PE31": null,
+    "PE32": null,
+    "PE61": null,
+    "MF": null,
+    "WSMF30": null,
+    "WSMF49": null,
+    "rel_alpha": null,
+    "rel_beta1": null,
+    "rel_delta1": null,
+    "rel_gamma": null,
+    "sync_alpha": null,
+    "CFS": null,
+    "PFS": null,
+    "SFS": null
+  },
+  "p3": {
+    "flat": false,
+    "bands": [
+      {
+        "lo": 0.0,
+        "hi": 30.0,
+        "n_band": 7606,
+        "n_patients": 129,
+        "n_control": 3520,
+        "position_auc": 0.3888044053139866,
+        "gate": "passed",
+        "features": {
+          "SEF95": {
+            "auc": 0.23671727463963857,
+            "ci": [
+              0.11503518890514577,
+              0.417549055781135
+            ],
+            "excludes_chance": true,
+            "above_chance": false
+          }
+        }
+      },
+      {
+        "lo": 30.0,
+        "hi": 60.0,
+        "n_band": 7588,
+        "n_patients": 129,
+        "n_control": 3520,
+        "position_auc": 0.39214991074423733,
+        "gate": "passed",
+        "features": {
+          "SEF95": {
+            "auc": 0.2951095779220779,
+            "ci": [
+              0.16861029972861527,
+              0.47173023749708776
+            ],
+            "excludes_chance": true,
+            "above_chance": false
+          }
+        }
+      },
+      {
+        "lo": 60.0,
+        "hi": 120.0,
+        "n_band": 13379,
+        "n_patients": 129,
+        "n_control": 3520,
+        "position_auc": 0.39954890296190093,
+        "gate": "passed",
+        "features": {
+          "SEF95": {
+            "auc": 0.2536378988611732,
+            "ci": [
+              0.15943284410306127,
+              0.4307058734749378
+            ],
+            "excludes_chance": true,
+            "above_chance": false
+          }
+        }
+      },
+      {
+        "lo": 120.0,
+        "hi": 180.0,
+        "n_band": 10640,
+        "n_patients": 126,
+        "n_control": 3520,
+        "position_auc": 0.3982592089242994,
+        "gate": "passed",
+        "features": {
+          "SEF95": {
+            "auc": 0.31158782520933015,
+            "ci": [
+              0.18700286240249264,
+              0.5068564228225755
+            ],
+            "excludes_chance": false,
+            "above_chance": false
+          }
+        }
+      },
+      {
+        "lo": 180.0,
+        "hi": 240.0,
+        "n_band": 7853,
+        "n_patients": 107,
+        "n_control": 3520,
+        "position_auc": 0.3999759248058067,
+        "gate": "passed",
+        "features": {
+          "SEF95": {
+            "auc": 0.266643357199912,
+            "ci": [
+              0.1306915267209312,
+              0.4780982790314786
+            ],
+            "excludes_chance": true,
+            "above_chance": false
+          }
+        }
+      },
+      {
+        "lo": 240.0,
+        "hi": 300.0,
+        "n_band": 5856,
+        "n_patients": 82,
+        "n_control": 3520,
+        "position_auc": 0.37245858462959514,
+        "gate": "passed",
+        "features": {
+          "SEF95": {
+            "auc": 0.3138901583069424,
+            "ci": [
+              0.17173982581881475,
+              0.5248629782453338
+            ],
+            "excludes_chance": false,
+            "above_chance": false
+          }
+        }
+      },
+      {
+        "lo": 300.0,
+        "hi": 420.0,
+        "n_band": 8668,
+        "n_patients": 68,
+        "n_control": 3520,
+        "position_auc": 0.34747407195221713,
+        "gate": "passed",
+        "features": {
+          "SEF95": {
+            "auc": 0.28251269363279774,
+            "ci": [
+              0.187307967555769,
+              0.45383149792197164
+            ],
+            "excludes_chance": true,
+            "above_chance": false
+          }
+        }
+      },
+      {
+        "lo": 420.0,
+        "hi": 600.0,
+        "n_band": 7815,
+        "n_patients": 47,
+        "n_control": 3520,
+        "position_auc": 0.2889598601174897,
+        "gate": "position"
+      }
+    ]
+  },
+  "verdict": "not_interpretable"
+}

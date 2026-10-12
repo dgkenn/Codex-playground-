@@ -1,0 +1,61 @@
+{
+  "experiment": "E204",
+  "features": [
+    "exponent_low",
+    "exponent_high",
+    "whole_head_exponent",
+    "relative_alpha_power",
+    "relative_delta_power",
+    "spectral_edge_95",
+    "spectral_entropy",
+    "lempel_ziv"
+  ],
+  "perms": 500,
+  "n_rows_raw": 5031,
+  "n_rows": 3017,
+  "n_patients": 1694,
+  "obeys_rate": 0.4275770633079218,
+  "minority_fraction": 0.4275770633079218,
+  "g1": true,
+  "g5_minutes_before": [
+    6.0,
+    6.0
+  ],
+  "g2": {
+    "rass_increment": 0.3512773565622656,
+    "ci": [
+      0.32797004090286563,
+      0.37299316976182123
+    ],
+    "null_p95": 0.024713651988104934,
+    "pass": true
+  },
+  "g4": {
+    "noise_increment": -4.3440646520866714e-05,
+    "ci": [
+      -0.0035112599473613197,
+      0.002957260443143353
+    ],
+    "pass": true
+  },
+  "primary": {
+    "increment": 0.00491646857966436,
+    "ci": [
+      -0.0009617339397016031,
+      0.009472099714642248
+    ],
+    "null_p95": 0.019536798306462714,
+    "n_null": 100
+  },
+  "descriptive_intercept_only": {
+    "increment": 0.15501998218614832,
+    "ci": [
+      0.1312179357713451,
+      0.1777149742615337
+    ],
+    "n_rows": 5575,
+    "n_patients": 2907
+  },
+  "verdict": "ABSENT",
+  "why": "the increment interval [-0.0010, +0.0095] includes zero; spontaneous EEG adds nothing to a bedside sedation score for predicting overt command-following"
+}

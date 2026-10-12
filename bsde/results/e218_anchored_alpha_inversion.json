@@ -1,0 +1,57 @@
+{
+  "experiment": "E218",
+  "n_cases": 115,
+  "n_propofol": 44,
+  "n_sevo": 71,
+  "n_windows": 2902,
+  "finite_fraction": {
+    "relative_alpha_power": 1.0,
+    "relative_alpha_power_iaf": 0.9631288766368022,
+    "alpha_peak_hz": 1.0,
+    "alpha_peak_hz_wide": 0.9631288766368022
+  },
+  "G_fixed": -0.3741997439180538,
+  "G_anchored": 0.001600512163892398,
+  "perm_p95_fixed": 0.19014084507042256,
+  "perm_p95_anchored": 0.18565941101152372,
+  "redundancy_rho": 0.5222757042531367,
+  "outside_band_fraction": 0.23935599284436493,
+  "diff": 0.3725992317541614,
+  "ci": [
+    0.03330724070450098,
+    0.47906038798498135
+  ],
+  "peak_shift": {
+    "alpha_peak_hz": {
+      "propofol": 10.0,
+      "sevoflurane": 8.5,
+      "shift": 1.5
+    },
+    "alpha_peak_hz_wide": {
+      "propofol": 10.5,
+      "sevoflurane": 9.125,
+      "shift": 1.375
+    }
+  },
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "g4": true,
+  "g5": false,
+  "anchored_alive": {
+    "propofol": {
+      "deep_above_light": -0.045454545454545414,
+      "floor": 0.2727272727272727,
+      "n": 44,
+      "pass": false
+    },
+    "sevoflurane": {
+      "deep_above_light": -0.04225352112676062,
+      "floor": 0.21126760563380287,
+      "n": 71,
+      "pass": false
+    }
+  },
+  "verdict": "NOT INTERPRETABLE",
+  "why": "a gate failed: G5 anchored measure alive"
+}

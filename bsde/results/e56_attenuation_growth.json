@@ -1,0 +1,38 @@
+{
+  "n_subjects": 104,
+  "rho_full": 0.2918,
+  "results": {
+    "12": {
+      "rho_k": 0.09899747247714202,
+      "pred_ratio": 0.5824644308023488,
+      "r_marker": 0.11320311854067405,
+      "r_incumbent": 0.04054742491059156,
+      "n": 104
+    },
+    "20": {
+      "rho_k": 0.15478053308579764,
+      "pred_ratio": 0.7283087459945197,
+      "r_marker": 0.1809879440947402,
+      "r_incumbent": -0.15929798356982822,
+      "n": 104
+    },
+    "30": {
+      "rho_k": 0.21549368584299539,
+      "pred_ratio": 0.8593590025600468,
+      "r_marker": 0.19646857996372558,
+      "r_incumbent": -0.11569401472314095,
+      "n": 104
+    },
+    "40": {
+      "rho_k": 0.268069176178774,
+      "pred_ratio": 0.9584750142328973,
+      "r_marker": 0.22166862263949644,
+      "r_incumbent": -0.08078523418329243,
+      "n": 104
+    }
+  },
+  "verdict": "REFUTED -- the slope of r on label precision does not exclude zero. The correlation does NOT demonstrably respond to label precision, so the attenuation reading is unsupported and better labels cannot be assumed to rescue Challenge B.",
+  "n_draws": 12,
+  "reps": 8000,
+  "seed": 20260731
+}

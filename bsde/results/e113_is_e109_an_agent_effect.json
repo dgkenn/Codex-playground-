@@ -1,0 +1,49 @@
+{
+  "n_cases": 220,
+  "n_dropped_mixed_or_unassignable": 20,
+  "n_tiva": 129,
+  "n_volatile": 91,
+  "gates": {
+    "G1_pass": true,
+    "G2_pass": true,
+    "G3": {
+      "unadjusted": 0.272310284397311,
+      "lo": 0.14248130596236963,
+      "hi": 0.3897349024867156,
+      "e109": 0.2592,
+      "pass": true
+    }
+  },
+  "P1": {
+    "rho_agentclass_age": 0.0967965153299561,
+    "lo": -0.08640339112941851,
+    "hi": 0.18380887847044175,
+    "association_present": false
+  },
+  "P2": {
+    "partial": 0.2578981492139629,
+    "lo": 0.13338544586985562,
+    "hi": 0.39360821456285844,
+    "placebo": [
+      -0.13708440630786586,
+      0.12813897064768398
+    ],
+    "inside_placebo": false,
+    "survives": true
+  },
+  "P3": {
+    "volatile": {
+      "rho": 0.2518713170887084,
+      "lo": 0.035395763656633224,
+      "hi": 0.441813983118331,
+      "n": 91
+    },
+    "tiva": {
+      "rho": 0.2574183810375671,
+      "lo": 0.08849941301431127,
+      "hi": 0.4196334134615385,
+      "n": 129
+    }
+  },
+  "verdict": "NOT CONFOUNDED BY AGENT -- the precondition fails. Agent class and age are not associated (+0.0968 [-0.0864, +0.1838]), so no agent-composition difference can generate an age gradient. E109 stands as reported, and the cheapest branch of the audit is the one that settled it."
+}

@@ -1,0 +1,59 @@
+{
+  "arms": {
+    "volatile": {
+      "n": 61,
+      "P1": [
+        -0.6818340982636054,
+        -1.0840910057279294,
+        -0.2789679812966271
+      ],
+      "P2_alpha": [
+        -1.1525934128055486,
+        -1.514770969665829,
+        -0.7728598779003517
+      ],
+      "P3_other": [
+        -1.0121438860707082,
+        -1.2601987028219446,
+        -0.7721847260059997
+      ],
+      "raw_comp2": -3.389718147624922,
+      "median_r2": 0.7315247168370064,
+      "G2_pass": true,
+      "G3_pass": true,
+      "placebo_inside": false
+    },
+    "tiva": {
+      "n": 96,
+      "P1": [
+        -0.2062319565114227,
+        -0.44305593093776763,
+        0.02358398997281251
+      ],
+      "P2_alpha": [
+        -1.1294662141270662,
+        -1.2983108285845055,
+        -0.955407125635394
+      ],
+      "P3_other": [
+        -0.7420801622805189,
+        -0.9080404267783035,
+        -0.5762238926835438
+      ],
+      "raw_comp2": -3.14370090930518,
+      "median_r2": 0.8160728407843469,
+      "G2_pass": true,
+      "G3_pass": true,
+      "placebo_inside": false
+    }
+  },
+  "gates": {
+    "G1_pass": true
+  },
+  "P4_sleep_profile_rho": 1.0,
+  "surviving_fraction": {
+    "volatile": 0.20114772632094707,
+    "tiva": 0.06560164674094396
+  },
+  "verdict": "**comp2 IS ALPHA POWER.** On Sleep-EDFx -- the deposit where E116 DISCOVERED the axis -- comp2's stage rank profile correlates with `relative_alpha_power`'s at **+1.0000**. The two order the five stages identically, which is rule 60's failure in its purest form: the axis is that single measure. VitalDB agrees in substance: after removing alpha within case, comp2's inverted U retains 20.1% in volatile, 6.6% in tiva of its size, and in the TIVA arm -- the one that passed E118's uniform-BIS gate -- the residual interval INCLUDES ZERO (-0.2062 [-0.4431, +0.0236]).\n\n**WHAT SURVIVES AND WHAT DOES NOT.** The measured SHAPE survives: there is a real non-monotone component of brain state that peaks at intermediate depth, it is not muscle, and it reproduces across two deposits and two state variables. **The claim that it is a NEW second axis does not survive.** It is the anaesthetic and sleep spindle-alpha oscillation, known since the 1930s, and E116/E118 must be re-described as a careful re-derivation of it -- which is what a counter validated on synthetic data finds when pointed at a real inventory containing a well-known oscillation."
+}

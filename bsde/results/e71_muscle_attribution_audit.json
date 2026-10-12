@@ -1,0 +1,122 @@
+{
+  "n_subjects": 142,
+  "features": {
+    "exponent_low": {
+      "testable": true,
+      "d0": 3.156843333901577,
+      "d1": 1.981132557513107,
+      "d2": 1.951998308933762,
+      "attribution": -0.009228918098807756,
+      "hi_fraction": 0.0
+    },
+    "exponent_high": {
+      "testable": true,
+      "d0": 1.1429097824952537,
+      "d1": 0.6508116671993244,
+      "d2": 0.9046435984421616,
+      "attribution": 0.22209271031757166,
+      "hi_fraction": 1.0
+    },
+    "whole_head_exponent": {
+      "testable": true,
+      "d0": 4.008442378042586,
+      "d1": 2.0896124436989827,
+      "d2": 2.2368601411875773,
+      "attribution": 0.03673439296400687,
+      "hi_fraction": 0.513
+    },
+    "relative_alpha_power": {
+      "testable": true,
+      "d0": -0.5008632622670822,
+      "d1": -0.5893473184507063,
+      "d2": 0.430034899570569,
+      "attribution": -0.31807567230831346,
+      "hi_fraction": 0.0
+    },
+    "relative_delta_power": {
+      "testable": true,
+      "d0": 1.509657990631264,
+      "d1": 1.3194272986378093,
+      "d2": 1.1579944374865363,
+      "attribution": -0.10693339958659762,
+      "hi_fraction": 0.0
+    },
+    "spectral_edge_95": {
+      "testable": true,
+      "d0": -2.867701158125397,
+      "d1": -1.7621100376772396,
+      "d2": 1.8703611843706793,
+      "attribution": 0.037748405682621056,
+      "hi_fraction": 0.513
+    },
+    "spectral_entropy": {
+      "testable": true,
+      "d0": -2.185744818774727,
+      "d1": -1.749203730586678,
+      "d2": 1.5433684367616265,
+      "attribution": -0.09417169472712632,
+      "hi_fraction": 0.513
+    },
+    "lempel_ziv": {
+      "testable": true,
+      "d0": -2.2811419899607634,
+      "d1": -1.8062058190875654,
+      "d2": 1.6617543534284698,
+      "attribution": -0.06332418862781103,
+      "hi_fraction": 0.562
+    },
+    "critical_slowing_ar1": {
+      "testable": true,
+      "d0": 3.25574250953781,
+      "d1": 1.7821614813366968,
+      "d2": 1.9751673067631816,
+      "attribution": 0.059281661513792196,
+      "hi_fraction": 0.562
+    },
+    "multiscale_entropy_slope": {
+      "testable": true,
+      "d0": 3.6119802880423704,
+      "d1": 1.9187114581541975,
+      "d2": 2.1119982105032915,
+      "attribution": 0.05351268194596156,
+      "hi_fraction": 0.562
+    },
+    "pac_slow_alpha": {
+      "testable": true,
+      "d0": -0.3601687599372629,
+      "d1": -0.19449909434826163,
+      "d2": 0.3143045810769357,
+      "attribution": 0.33263708587480706,
+      "hi_fraction": 0.0
+    },
+    "emg_index": {
+      "testable": true,
+      "d0": -2.071130732391682,
+      "d1": -1.439430233374992,
+      "d2": 1.4953181036583938,
+      "attribution": 0.026984231081764745,
+      "hi_fraction": 1.0
+    }
+  },
+  "ranking": [
+    "pac_slow_alpha",
+    "exponent_high",
+    "critical_slowing_ar1",
+    "multiscale_entropy_slope",
+    "spectral_edge_95",
+    "whole_head_exponent",
+    "emg_index",
+    "exponent_low",
+    "lempel_ziv",
+    "spectral_entropy",
+    "relative_delta_power",
+    "relative_alpha_power"
+  ],
+  "gate_g2_positive_control": false,
+  "h1": {
+    "rho": 0.387208721170919,
+    "lo": -0.26382084127831396,
+    "hi": 0.9110631869288884
+  },
+  "verdict": "METHOD FAILS -- emg_index is a muscle proxy by construction and does not rank among the most muscle-attributable features. The procedure cannot recover muscle where muscle is known to be, so no other row is readable."
+}

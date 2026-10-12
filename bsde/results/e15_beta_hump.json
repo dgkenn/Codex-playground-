@@ -1,0 +1,171 @@
+{
+  "experiment": "E15",
+  "gate_passed": true,
+  "search_space_size": 18,
+  "finite_frac_gamma": 1.0,
+  "matched_acq": "tms",
+  "contrasts": {
+    "acq-MATCHED (tms only)": {
+      "n": 55,
+      "n_subjects": 17,
+      "scores": {
+        "exponent_high": {
+          "declared": "higher",
+          "auc": 0.7616099071207431,
+          "ci": [
+            0.6483056265984655,
+            0.8853736089030206
+          ],
+          "abs": 0.26160990712074306,
+          "n_finite": 55
+        },
+        "exponent_gamma": {
+          "declared": "higher",
+          "auc": 0.6362229102167183,
+          "ci": [
+            0.47377450980392155,
+            0.776228769099613
+          ],
+          "abs": 0.13622291021671828,
+          "n_finite": 55
+        },
+        "emg_beta_gamma_fraction": {
+          "declared": "lower",
+          "auc": 0.6718266253869969,
+          "ci": [
+            0.5355330882352941,
+            0.8051796726755217
+          ],
+          "abs": 0.1718266253869969,
+          "n_finite": 55
+        },
+        "emg_kurtosis": {
+          "declared": "lower",
+          "auc": 0.5278637770897833,
+          "ci": [
+            0.3668641343176947,
+            0.6834385813148786
+          ],
+          "abs": 0.02786377708978327,
+          "n_finite": 55
+        },
+        "emg_index": {
+          "declared": "lower",
+          "auc": 0.6718266253869969,
+          "ci": [
+            0.5261984835514247,
+            0.8028741766977061
+          ],
+          "abs": 0.1718266253869969,
+          "n_finite": 55
+        },
+        "exponent_low": {
+          "declared": "higher",
+          "auc": 0.43188854489164086,
+          "ci": [
+            0.25539440032305827,
+            0.6280783629929735
+          ],
+          "abs": 0.06811145510835914,
+          "n_finite": 55
+        },
+        "whole_head_exponent": {
+          "declared": "higher",
+          "auc": 0.7445820433436533,
+          "ci": [
+            0.6687236138474528,
+            0.8411764705882353
+          ],
+          "abs": 0.2445820433436533,
+          "n_finite": 55
+        },
+        "relative_delta_power": {
+          "declared": "higher",
+          "auc": 0.6594427244582043,
+          "ci": [
+            0.4757563929445523,
+            0.8356401384083045
+          ],
+          "abs": 0.1594427244582043,
+          "n_finite": 55
+        },
+        "relative_alpha_power": {
+          "declared": "higher",
+          "auc": 0.718266253869969,
+          "ci": [
+            0.5721891711229946,
+            0.8522596843615493
+          ],
+          "abs": 0.218266253869969,
+          "n_finite": 55
+        },
+        "lempel_ziv": {
+          "declared": "lower",
+          "auc": 0.24148606811145512,
+          "ci": [
+            0.12653562653562656,
+            0.37928840944272435
+          ],
+          "abs": 0.2585139318885449,
+          "n_finite": 55
+        },
+        "spectral_entropy": {
+          "declared": "lower",
+          "auc": 0.6888544891640866,
+          "ci": [
+            0.5107120743034056,
+            0.8644273618538322
+          ],
+          "abs": 0.18885448916408665,
+          "n_finite": 55
+        },
+        "spectral_edge_95": {
+          "declared": "lower",
+          "auc": 0.71671826625387,
+          "ci": [
+            0.5568449197860963,
+            0.8716800356506237
+          ],
+          "abs": 0.21671826625387003,
+          "n_finite": 55
+        },
+        "uce_v1": {
+          "declared": "higher",
+          "auc": 0.7321981424148607,
+          "ci": [
+            0.6297409650134563,
+            0.8450502152080345
+          ],
+          "abs": 0.2321981424148607,
+          "n_finite": 55
+        },
+        "wpli_alpha": {
+          "declared": "lower",
+          "auc": 0.4117647058823529,
+          "ci": [
+            0.2403232062055592,
+            0.5722349028303115
+          ],
+          "abs": 0.08823529411764708,
+          "n_finite": 55
+        }
+      }
+    }
+  },
+  "emg_gate_failures": [],
+  "gap": 0.12538699690402477,
+  "gap_ci": [
+    -0.03475935828877008,
+    0.3088340336134454
+  ],
+  "bands_distinguishable": false,
+  "discriminator_association_established": false,
+  "split_vs_wholehead": "+0.017 [-0.082, +0.103]",
+  "predictions": {
+    "P1": true,
+    "P2": true,
+    "P3": false,
+    "P4": true
+  },
+  "verdict": "UNDETERMINED_BANDS_NOT_DISTINGUISHABLE"
+}

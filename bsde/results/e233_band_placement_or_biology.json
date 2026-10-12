@@ -1,0 +1,273 @@
+{
+  "a1_peak": {
+    "est": 0.30699484482695144,
+    "hi": 0.3937955142489407,
+    "lo": 0.21487013623914034
+  },
+  "a3_fixed": {
+    "est": 0.3672693524135834,
+    "hi": 0.4583909555978462,
+    "lo": 0.27536109415148513
+  },
+  "arms": {
+    "propofol": 114,
+    "sevoflurane": 87
+  },
+  "detectability": {
+    "diff": 0.0031444011028296526,
+    "perm_p95": 0.023934421622698602,
+    "propofol": 0.9304408030416874,
+    "sevoflurane": 0.9272964019388578
+  },
+  "exclusions": {
+    "exposure_flat": 1,
+    "few_windows": 0
+  },
+  "gates": {
+    "G2": true,
+    "G3": true,
+    "G4": true
+  },
+  "p1_anchored": {
+    "est": 0.0729591312136551,
+    "hi": 0.1584171743121465,
+    "lo": -0.01073757185095558
+  },
+  "p2_agreement": {
+    "agree": 10,
+    "features": [
+      "critical_slowing_ar1",
+      "emg_beta_gamma_fraction",
+      "emg_index",
+      "exponent_low",
+      "lempel_ziv",
+      "multiscale_entropy_slope",
+      "relative_delta_power",
+      "spectral_edge_95",
+      "spectral_entropy",
+      "whole_head_exponent"
+    ],
+    "n": 10
+  },
+  "per_feature": {
+    "propofol": {
+      "alpha_peak_hz_wide": {
+        "C": 0.09703759085749299,
+        "C_null95": 0.3162588885837899,
+        "C_pass": false,
+        "S": 0.23328808230063683,
+        "mean_signed": -0.02263771348221835,
+        "n": 113
+      },
+      "critical_slowing_ar1": {
+        "C": 0.5889532691681536,
+        "C_null95": 0.20810479581488098,
+        "C_pass": true,
+        "S": 0.2646593221657356,
+        "mean_signed": 0.15587197300533756,
+        "n": 113
+      },
+      "emg_beta_gamma_fraction": {
+        "C": 0.45636168472178995,
+        "C_null95": 0.2213259713387512,
+        "C_pass": true,
+        "S": 0.23240088388108313,
+        "mean_signed": -0.10605885889880418,
+        "n": 113
+      },
+      "emg_index": {
+        "C": 0.6611668473233288,
+        "C_null95": 0.24373459776043152,
+        "C_pass": true,
+        "S": 0.24923515203971253,
+        "mean_signed": -0.16478601971624723,
+        "n": 113
+      },
+      "exponent_low": {
+        "C": 0.4187263584254154,
+        "C_null95": 0.25045525443299754,
+        "C_pass": true,
+        "S": 0.25305312233740845,
+        "mean_signed": 0.10596001240452418,
+        "n": 113
+      },
+      "lempel_ziv": {
+        "C": 0.9029450648703362,
+        "C_null95": 0.44597721602050916,
+        "C_pass": true,
+        "S": 0.3503545824435093,
+        "mean_signed": -0.3163509411720741,
+        "n": 113
+      },
+      "multiscale_entropy_slope": {
+        "C": 0.7180342307475394,
+        "C_null95": 0.23407086902341473,
+        "C_pass": true,
+        "S": 0.30217340459150127,
+        "mean_signed": 0.2169708481182236,
+        "n": 113
+      },
+      "relative_alpha_power": {
+        "C": 0.4789378994418092,
+        "C_null95": 0.2468299503831068,
+        "C_pass": true,
+        "S": 0.24860278672474265,
+        "mean_signed": 0.11906529646932833,
+        "n": 113
+      },
+      "relative_alpha_power_iaf": {
+        "C": 0.3284625275228424,
+        "C_null95": 0.27973087137270575,
+        "C_pass": true,
+        "S": 0.24482883926583554,
+        "mean_signed": 0.08041709935574005,
+        "n": 113
+      },
+      "relative_delta_power": {
+        "C": 0.6563326465149321,
+        "C_null95": 0.3976798712345543,
+        "C_pass": true,
+        "S": 0.24643140913128353,
+        "mean_signed": 0.16174097893953931,
+        "n": 113
+      },
+      "spectral_edge_95": {
+        "C": 0.43907882916363433,
+        "C_null95": 0.23814003453578675,
+        "C_pass": true,
+        "S": 0.26033175780534595,
+        "mean_signed": -0.11430616341128212,
+        "n": 113
+      },
+      "spectral_entropy": {
+        "C": 0.601395381093083,
+        "C_null95": 0.3577801984142606,
+        "C_pass": true,
+        "S": 0.26802249413915047,
+        "mean_signed": -0.161187490004333,
+        "n": 113
+      },
+      "whole_head_exponent": {
+        "C": 0.6693536266056948,
+        "C_null95": 0.22237072834052962,
+        "C_pass": true,
+        "S": 0.26490253921184503,
+        "mean_signed": 0.17731347531850572,
+        "n": 113
+      }
+    },
+    "sevoflurane": {
+      "alpha_peak_hz_wide": {
+        "C": 0.8203716493605732,
+        "C_null95": 0.2770361354504307,
+        "C_pass": true,
+        "S": 0.4018088125864626,
+        "mean_signed": -0.32963255830916977,
+        "n": 86
+      },
+      "critical_slowing_ar1": {
+        "C": 0.8821100790871578,
+        "C_null95": 0.27902886712433894,
+        "C_pass": true,
+        "S": 0.5368483742864073,
+        "mean_signed": 0.4735593618995948,
+        "n": 86
+      },
+      "emg_beta_gamma_fraction": {
+        "C": 0.7808451827980125,
+        "C_null95": 0.28590762435499756,
+        "C_pass": true,
+        "S": 0.41491561517985565,
+        "mean_signed": -0.3239848593808642,
+        "n": 86
+      },
+      "emg_index": {
+        "C": 0.45841615465606506,
+        "C_null95": 0.2780048259483964,
+        "C_pass": true,
+        "S": 0.2875787105533894,
+        "mean_signed": -0.13183072665283432,
+        "n": 86
+      },
+      "exponent_low": {
+        "C": 0.8529914026109289,
+        "C_null95": 0.2820572059218226,
+        "C_pass": true,
+        "S": 0.5006687222514735,
+        "mean_signed": 0.427066115636706,
+        "n": 86
+      },
+      "lempel_ziv": {
+        "C": 0.8808873755286096,
+        "C_null95": 0.24074453956495798,
+        "C_pass": true,
+        "S": 0.388255575770928,
+        "mean_signed": -0.342009435175202,
+        "n": 86
+      },
+      "multiscale_entropy_slope": {
+        "C": 0.877896323868096,
+        "C_null95": 0.2793251322904432,
+        "C_pass": true,
+        "S": 0.48566385977924653,
+        "mean_signed": 0.426362517135791,
+        "n": 86
+      },
+      "relative_alpha_power": {
+        "C": 0.695805474649545,
+        "C_null95": 0.23538572674287522,
+        "C_pass": true,
+        "S": 0.35671472126497356,
+        "mean_signed": -0.24820405594425507,
+        "n": 86
+      },
+      "relative_alpha_power_iaf": {
+        "C": 0.027585547226236396,
+        "C_null95": 0.2714554742719584,
+        "C_pass": false,
+        "S": 0.27035781023012445,
+        "mean_signed": 0.0074579681420849555,
+        "n": 86
+      },
+      "relative_delta_power": {
+        "C": 0.814562411842322,
+        "C_null95": 0.24404990030484167,
+        "C_pass": true,
+        "S": 0.39254782557043433,
+        "mean_signed": 0.3197547035601121,
+        "n": 86
+      },
+      "spectral_edge_95": {
+        "C": 0.823343870285388,
+        "C_null95": 0.26496918994790314,
+        "C_pass": true,
+        "S": 0.45692672466818357,
+        "mean_signed": -0.37620781792512814,
+        "n": 86
+      },
+      "spectral_entropy": {
+        "C": 0.8136481602631791,
+        "C_null95": 0.25497320407984747,
+        "C_pass": true,
+        "S": 0.40535910852630913,
+        "mean_signed": -0.3298196928983538,
+        "n": 86
+      },
+      "whole_head_exponent": {
+        "C": 0.7824195470767931,
+        "C_null95": 0.2813278383996752,
+        "C_pass": true,
+        "S": 0.3708176499459748,
+        "mean_signed": 0.2901349777188104,
+        "n": 86
+      }
+    }
+  },
+  "placebo_arm_label": {
+    "beaten": false,
+    "mean": -0.00080256891040274,
+    "p": 0.10333333333333333
+  },
+  "seed": 20260802,
+  "verdict": "BAND PLACEMENT -- the fixed band reverses on these cases and the peak-anchored measure does not. Every alpha claim in this project, E229 and E232 included, must be restated as a statement about where the peak sits relative to a fixed window rather than about the drug | the arm-label placebo on the null primary is NOT INFORMATIVE by rule 48 (|p| = 0.1033 against P1 = +0.0730, whose interval includes zero); it is reported and does not gate"
+}

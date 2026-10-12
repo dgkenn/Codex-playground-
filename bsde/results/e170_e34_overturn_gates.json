@@ -1,0 +1,143 @@
+{
+  "experiment": "E170",
+  "n_recordings": 129,
+  "n_rows": 79429,
+  "horizon_s": 60,
+  "incumbent": "SEF95",
+  "G1_pass": true,
+  "G2": {
+    "increment": -0.1426653890742457,
+    "p": 0.0,
+    "pass": true
+  },
+  "G3_ladder": [
+    {
+      "rho": 0.0,
+      "p": [
+        0.0033333333333333335,
+        0.5533333333333333,
+        0.13
+      ],
+      "hits": 1
+    },
+    {
+      "rho": 0.02,
+      "p": [
+        0.27666666666666667,
+        0.0,
+        0.006666666666666667
+      ],
+      "hits": 2
+    }
+  ],
+  "floor": 0.02,
+  "table": {
+    "PE31": {
+      "increment": -0.02179783713171901,
+      "p": 0.0,
+      "null_mean": 0.0021808365872060475,
+      "n_null": 500
+    },
+    "PE32": {
+      "increment": -0.051073662039408885,
+      "p": 0.0,
+      "null_mean": 0.0018871376467891232,
+      "n_null": 500
+    },
+    "PE61": {
+      "increment": -0.039241435197511776,
+      "p": 0.0,
+      "null_mean": 0.0022815957601115826,
+      "n_null": 500
+    },
+    "MF": {
+      "increment": 0.0058707536408102445,
+      "p": 0.984,
+      "null_mean": 0.0016983270026486332,
+      "n_null": 500
+    },
+    "WSMF30": {
+      "increment": -0.07109607296735565,
+      "p": 0.0,
+      "null_mean": 0.002042197820056667,
+      "n_null": 500
+    },
+    "WSMF49": {
+      "increment": -0.05321338660252217,
+      "p": 0.0,
+      "null_mean": 0.0020038506273294004,
+      "n_null": 500
+    },
+    "rel_alpha": {
+      "increment": -0.012494704982452087,
+      "p": 0.0,
+      "null_mean": 0.0016808255814743539,
+      "n_null": 500
+    },
+    "rel_beta1": {
+      "increment": -0.0012379550231259584,
+      "p": 0.016,
+      "null_mean": 0.0019366136518141842,
+      "n_null": 500
+    },
+    "rel_delta1": {
+      "increment": -0.0007518488469810958,
+      "p": 0.0,
+      "null_mean": 0.0007782628526512494,
+      "n_null": 500
+    },
+    "rel_gamma": {
+      "increment": -0.019854235475382898,
+      "p": 0.0,
+      "null_mean": 0.0017952233727233304,
+      "n_null": 500
+    },
+    "sync_alpha": {
+      "increment": -0.005518918697191011,
+      "p": 0.0,
+      "null_mean": 0.002413243730185605,
+      "n_null": 500
+    },
+    "CFS": {
+      "increment": 0.005862706673395723,
+      "p": 1.0,
+      "null_mean": 0.0006967272317037328,
+      "n_null": 500
+    },
+    "PFS": {
+      "increment": -0.021351430755901846,
+      "p": 0.0,
+      "null_mean": 0.0021595123517512537,
+      "n_null": 500
+    },
+    "SFS": {
+      "increment": -0.006369729869230234,
+      "p": 0.0,
+      "null_mean": 0.0017759653620357647,
+      "n_null": 500
+    }
+  },
+  "survivors_bh": [
+    "PE31",
+    "PE32",
+    "PE61",
+    "WSMF30",
+    "WSMF49",
+    "rel_alpha",
+    "rel_beta1",
+    "rel_delta1",
+    "rel_gamma",
+    "sync_alpha",
+    "PFS",
+    "SFS"
+  ],
+  "placebo": {
+    "real": -0.02179783713171901,
+    "n_fake": 200,
+    "fake_mean": -0.048436028263304044,
+    "fake_p05": -0.10476058334106686,
+    "fraction_at_or_below_real": 0.83
+  },
+  "verdict": "WITHDRAWN-BY-PLACEBO",
+  "why": "0.8300 of fake landmarks reach the real increment, so the label's shape rather than the transition explains it; E34's recorded null stands"
+}

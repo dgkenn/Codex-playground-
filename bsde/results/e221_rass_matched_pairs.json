@@ -1,0 +1,141 @@
+{
+  "experiment": "E221",
+  "n_pairs": 125,
+  "n_rows": 4545,
+  "rass_distribution": {
+    "1.0": 11,
+    "-1.0": 24,
+    "-4.0": 12,
+    "-2.0": 22,
+    "-3.0": 23,
+    "0.0": 20,
+    "3.0": 3,
+    "2.0": 9,
+    "-5.0": 1
+  },
+  "obey_first_fraction": 0.376,
+  "results": {
+    "whole_head_exponent": {
+      "sign_rate": 0.472,
+      "n": 125,
+      "ci": [
+        0.384,
+        0.56
+      ],
+      "p": 0.5907,
+      "earlier": 0.48936170212765956,
+      "later": 0.46153846153846156,
+      "orientations_agree": true,
+      "call": "absent"
+    },
+    "exponent_low": {
+      "sign_rate": 0.472,
+      "n": 125,
+      "ci": [
+        0.384,
+        0.56
+      ],
+      "p": 0.58925,
+      "earlier": 0.5531914893617021,
+      "later": 0.4230769230769231,
+      "orientations_agree": false,
+      "call": "absent"
+    },
+    "exponent_high": {
+      "sign_rate": 0.496,
+      "n": 125,
+      "ci": [
+        0.408,
+        0.584
+      ],
+      "p": 1.0,
+      "earlier": 0.48936170212765956,
+      "later": 0.5,
+      "orientations_agree": false,
+      "call": "absent"
+    },
+    "relative_alpha_power": {
+      "sign_rate": 0.432,
+      "n": 125,
+      "ci": [
+        0.344,
+        0.52
+      ],
+      "p": 0.12785,
+      "earlier": 0.46808510638297873,
+      "later": 0.41025641025641024,
+      "orientations_agree": true,
+      "call": "absent"
+    },
+    "relative_delta_power": {
+      "sign_rate": 0.504,
+      "n": 125,
+      "ci": [
+        0.416,
+        0.592
+      ],
+      "p": 1.0,
+      "earlier": 0.5319148936170213,
+      "later": 0.48717948717948717,
+      "orientations_agree": false,
+      "call": "absent"
+    },
+    "spectral_edge_95": {
+      "sign_rate": 0.52,
+      "n": 125,
+      "ci": [
+        0.432,
+        0.608
+      ],
+      "p": 0.7192,
+      "earlier": 0.44680851063829785,
+      "later": 0.5641025641025641,
+      "orientations_agree": false,
+      "call": "absent"
+    },
+    "spectral_entropy": {
+      "sign_rate": 0.528,
+      "n": 125,
+      "ci": [
+        0.44,
+        0.616
+      ],
+      "p": 0.58925,
+      "earlier": 0.46808510638297873,
+      "later": 0.5641025641025641,
+      "orientations_agree": false,
+      "call": "absent"
+    },
+    "lempel_ziv": {
+      "sign_rate": 0.496,
+      "n": 125,
+      "ci": [
+        0.408,
+        0.584
+      ],
+      "p": 1.0,
+      "earlier": 0.5106382978723404,
+      "later": 0.48717948717948717,
+      "orientations_agree": false,
+      "call": "absent"
+    },
+    "NOISE_CONTROL": {
+      "sign_rate": 0.552,
+      "n": 125,
+      "ci": [
+        0.464,
+        0.64
+      ],
+      "p": 0.24435,
+      "earlier": 0.6170212765957447,
+      "later": 0.5128205128205128,
+      "orientations_agree": true,
+      "call": "absent"
+    }
+  },
+  "g1": true,
+  "g2": true,
+  "g3": true,
+  "verdict": "ABSENT",
+  "why": "no candidate separates the two assessments once the bedside sedation score is matched"
+}

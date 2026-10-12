@@ -1,0 +1,56 @@
+{
+ "G2": {
+  "distinct_first_goals": [
+   -5.0,
+   -4.0,
+   -3.0,
+   -2.0,
+   -1.0,
+   0.0
+  ],
+  "pass": true
+ },
+ "G3": {
+  "gain": -0.04514653972414448,
+  "pass": true
+ },
+ "G4_collider_rho": 0.5549065193680364,
+ "arms": {
+  "A_unadjusted": {
+   "L0": 0.18527851879401933,
+   "L2": 0.4288022276447602,
+   "L2_ci": [
+    0.4023286365500744,
+    0.4602844194016492
+   ],
+   "gain": 0.2435237088507409,
+   "n": 123728
+  },
+  "B_recent_goal": {
+   "L0": 0.551728410945941,
+   "L2": 0.5693794226415072,
+   "L2_ci": [
+    0.5456913937856978,
+    0.5926793386098739
+   ],
+   "gain": 0.017651011695566154,
+   "n": 109003
+  },
+  "C_first_goal": {
+   "L0": 0.19585405447550322,
+   "L2": 0.4288905481031607,
+   "L2_ci": [
+    0.39404784932529846,
+    0.4588831978688654
+   ],
+   "gain": 0.23303649362765746,
+   "n": 109346
+  }
+ },
+ "e160_gain": 0.2421,
+ "experiment": "E162",
+ "n_rows": 123728,
+ "n_stays": 4000,
+ "reps": 200,
+ "verdict": "THE GAIN SURVIVES -- the kinetic elaboration is worth +0.2330 even with the stay's FIRST sedation target adjusted for, against E160's unadjusted +0.2421 and DOSE-I's +0.2508. A care-process confound inflates how strongly any exposure summary orders RASS; it does not explain why knowing WHEN the drug was given helps as much in an ICU over days as in an endoscopy suite over minutes. **That shape is the transport finding, and the construct-match rule does not predict it.**"
+}

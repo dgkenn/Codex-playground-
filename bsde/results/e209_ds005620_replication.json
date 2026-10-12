@@ -1,0 +1,73 @@
+{
+  "experiment": "E209",
+  "n_rows": 202,
+  "n_subjects": 21,
+  "dosei_survivors": {
+    "multiscale_entropy_slope": -0.02769,
+    "relative_alpha_power": -0.03331,
+    "whole_head_exponent": -0.01664,
+    "wpli_theta": -0.00828,
+    "pac_slow_alpha": -0.00157
+  },
+  "primary_incumbent": "spectral_edge_95",
+  "tested": [
+    "multiscale_entropy_slope",
+    "relative_alpha_power",
+    "whole_head_exponent"
+  ],
+  "not_in_deposit": [
+    "wpli_theta",
+    "pac_slow_alpha"
+  ],
+  "g1": true,
+  "g2": {
+    "incumbent_rho": 0.21186454860090592,
+    "null_p95": 0.07229512000622387,
+    "pass": true
+  },
+  "g3": {
+    "increment": -0.0051696049074930195,
+    "ci": [
+      -0.031795280677390084,
+      0.0702020416503185
+    ],
+    "pass": true
+  },
+  "arm_primary": {
+    "multiscale_entropy_slope": {
+      "increment": 0.23465058240791448,
+      "ci": [
+        0.11390839136668869,
+        0.37044426391898466
+      ],
+      "base_rho": 0.21186454860090592,
+      "with_rho": 0.4465151310088204,
+      "call": "replicates",
+      "dosei": -0.02769
+    },
+    "relative_alpha_power": {
+      "increment": 0.09784042945395982,
+      "ci": [
+        -0.040451403375251264,
+        0.2333754507523586
+      ],
+      "base_rho": 0.21186454860090592,
+      "with_rho": 0.30970497805486574,
+      "call": "absent",
+      "dosei": -0.03331
+    },
+    "whole_head_exponent": {
+      "increment": 0.21329650488983593,
+      "ci": [
+        0.09756963336505955,
+        0.3363355557913137
+      ],
+      "base_rho": 0.21186454860090592,
+      "with_rho": 0.42516105349074185,
+      "call": "replicates",
+      "dosei": -0.01664
+    }
+  },
+  "verdict": "PARTIAL",
+  "why": "2 of 3 tested survivors replicate: ['multiscale_entropy_slope', 'whole_head_exponent']; the rest are absent"
+}

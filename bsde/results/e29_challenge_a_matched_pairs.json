@@ -1,0 +1,28 @@
+{
+  "experiment": "E29",
+  "p1": {
+    "arms": {
+      "volatile": {
+        "n_patients": 79,
+        "n_pairs": 494,
+        "median_dt": 600.0,
+        "median_ddose": 0.35000000000000003,
+        "median_dremi_in_pairs": 0.6621666689713797,
+        "median_dremi_any": 0.6348593316047021,
+        "ratio": 1.0430132093949918,
+        "frac_higher_dose_later": 0.4230769230769231
+      },
+      "propofol": {
+        "n_patients": 15,
+        "n_pairs": 76,
+        "median_dt": 600.0,
+        "median_ddose": 1.4297833244005838,
+        "median_dremi_in_pairs": 1.357533363501231,
+        "median_dremi_any": 0.5072438542435806,
+        "ratio": 2.6762933688484627,
+        "frac_higher_dose_later": 0.21052631578947367
+      }
+    },
+    "passed": false
+  }
+}

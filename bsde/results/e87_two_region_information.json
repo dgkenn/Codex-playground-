@@ -1,0 +1,83 @@
+{
+  "deposits": {
+    "ds004541": {
+      "n_rows": 107,
+      "excluded_subjects": [
+        "sub-02"
+      ],
+      "n_awake": 2,
+      "n_anaesthetised": 72,
+      "states_seen": [
+        "(unassigned)",
+        "anaesthetised",
+        "awake"
+      ],
+      "min_n_frontal": 14.0,
+      "min_n_posterior": 17.0,
+      "G1_pass": true,
+      "G3_shared": 106,
+      "G3_max_abs_diff": 0.12295779757799963,
+      "G3_pass": false,
+      "per_state": {
+        "awake": {
+          "n": 2,
+          "status": "TOO FEW"
+        },
+        "anaesthetised": {
+          "n": 72,
+          "r_frontal_posterior": 0.8488625951484001,
+          "lo": 0.7856762812870061,
+          "hi": 0.8977939663586377,
+          "implied_pc1_ve": 0.9244312975742001,
+          "r_uce_wholehead": 0.8845722276712513,
+          "mean_frontal_minus_posterior": -0.10867228214861112,
+          "sd_frontal_minus_posterior": 0.27962377561570345
+        }
+      }
+    },
+    "ds005620": {
+      "n_rows": 202,
+      "excluded_subjects": [],
+      "n_awake": 164,
+      "n_anaesthetised": 38,
+      "states_seen": [
+        "anaesthetised",
+        "awake"
+      ],
+      "min_n_frontal": 14.0,
+      "min_n_posterior": 17.0,
+      "G1_pass": true,
+      "G3_shared": 202,
+      "G3_max_abs_diff": 2.49102676361432,
+      "G3_pass": false,
+      "per_state": {
+        "awake": {
+          "n": 164,
+          "r_frontal_posterior": 0.9123193717245595,
+          "lo": 0.8758809753340543,
+          "hi": 0.9429419984729969,
+          "implied_pc1_ve": 0.9561596858622797,
+          "r_uce_wholehead": 0.9967485009138302,
+          "mean_frontal_minus_posterior": -0.16712821576385978,
+          "sd_frontal_minus_posterior": 0.27790860346523766
+        },
+        "anaesthetised": {
+          "n": 38,
+          "r_frontal_posterior": 0.37322491086031107,
+          "lo": 0.1417728391948868,
+          "hi": 0.6934103004474279,
+          "implied_pc1_ve": 0.6866124554301556,
+          "r_uce_wholehead": 0.936296164639804,
+          "mean_frontal_minus_posterior": 0.09565209123436844,
+          "sd_frontal_minus_posterior": 0.29498100001632394
+        }
+      },
+      "DELTA_R": -0.5390944608642484,
+      "DELTA_R_lo": -0.7760489900530717,
+      "DELTA_R_hi": -0.22470131768790425,
+      "verdict": "DECOUPLES"
+    }
+  },
+  "gates": {},
+  "verdict": "ds005620: DECOUPLES"
+}

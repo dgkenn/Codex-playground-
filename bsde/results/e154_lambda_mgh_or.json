@@ -1,0 +1,125 @@
+{
+ "G1": true,
+ "G2": {
+  "median_feature": 0.09999999999999998,
+  "nuisance": {
+   "duration_s": 0.3771428571428571,
+   "frac_good_quality": 0.0685714285714285,
+   "n_epochs": 0.3771428571428571
+  },
+  "pass": false
+ },
+ "G3": {
+  "n_alive": 11,
+  "pass": true
+ },
+ "experiment": "E154",
+ "krause_null_mean_q95": 0.2791,
+ "n_cases": 39,
+ "n_mixed": 14,
+ "n_propofol": 25,
+ "null_mean_q95": 0.19038961038961036,
+ "per_feature": {
+  "alpha_peak_hz": {
+   "clears": true,
+   "drug_leg": 0.39428571428571424,
+   "lambda": -0.2528331550204099,
+   "null_p95": 0.18999999999999995,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "state_leg": 0.14145255926530428
+  },
+  "alpha_prom_db": {
+   "clears": false,
+   "drug_leg": 0.1657142857142857,
+   "lambda": -0.021425481047838008,
+   "null_p95": 0.1914285714285714,
+   "p": 0.09055,
+   "p_holm": 0.7244,
+   "state_leg": 0.1442888046664477
+  },
+  "exponent_1_40": {
+   "clears": false,
+   "drug_leg": 0.12857142857142856,
+   "lambda": 0.013754882077517905,
+   "null_p95": 0.1885714285714286,
+   "p": 0.1941,
+   "p_holm": 1.0,
+   "state_leg": 0.14232631064894646
+  },
+  "rel_alpha": {
+   "clears": false,
+   "drug_leg": 0.005714285714285672,
+   "lambda": 0.24003393085358443,
+   "null_p95": 0.1885714285714286,
+   "p": 0.96545,
+   "p_holm": 1.0,
+   "state_leg": 0.2457482165678701
+  },
+  "rel_beta": {
+   "clears": false,
+   "drug_leg": 0.09999999999999998,
+   "lambda": 0.05744127140844815,
+   "null_p95": 0.1914285714285714,
+   "p": 0.3151,
+   "p_holm": 1.0,
+   "state_leg": 0.15744127140844813
+  },
+  "rel_delta": {
+   "clears": false,
+   "drug_leg": 0.05142857142857138,
+   "lambda": 0.13975286719551827,
+   "null_p95": 0.1914285714285714,
+   "p": 0.6157,
+   "p_holm": 1.0,
+   "state_leg": 0.19118143862408965
+  },
+  "rel_gamma": {
+   "clears": false,
+   "drug_leg": 0.008571428571428563,
+   "lambda": 0.12235787471439136,
+   "null_p95": 0.1914285714285714,
+   "p": 0.9418,
+   "p_holm": 1.0,
+   "state_leg": 0.13092930328581992
+  },
+  "rel_theta": {
+   "clears": true,
+   "drug_leg": 0.4771428571428571,
+   "lambda": -0.3335366386165918,
+   "null_p95": 0.1914285714285714,
+   "p": 0.0,
+   "p_holm": 0.0,
+   "state_leg": 0.14360621852626534
+  },
+  "spectral_edge_95": {
+   "clears": false,
+   "drug_leg": 0.0485714285714286,
+   "lambda": 0.08527639232830178,
+   "null_p95": 0.18999999999999995,
+   "p": 0.6277,
+   "p_holm": 1.0,
+   "state_leg": 0.13384782089973038
+  },
+  "spectral_entropy": {
+   "clears": false,
+   "drug_leg": 0.05428571428571427,
+   "lambda": 0.10735249022946866,
+   "null_p95": 0.1914285714285714,
+   "p": 0.59285,
+   "p_holm": 1.0,
+   "state_leg": 0.16163820451518293
+  },
+  "total_power_db": {
+   "clears": false,
+   "drug_leg": 0.17999999999999994,
+   "lambda": 0.0034749462114800622,
+   "null_p95": 0.1885714285714286,
+   "p": 0.06555,
+   "p_holm": 0.58995,
+   "state_leg": 0.18347494621148
+  }
+ },
+ "perms": 20000,
+ "verdict": "NO VERDICT -- a gate failed"
+}
