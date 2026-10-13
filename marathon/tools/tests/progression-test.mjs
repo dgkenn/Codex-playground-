@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
          DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION,
          talkTestOffset, talkTestApplies, TALK_LIMIT_BPM,
-         stepLadder, QUALIFYING_TO_ADVANCE, MIN_DAYS_BETWEEN_STEPS } from '../progression.js';
+         stepLadder, QUALIFYING_TO_ADVANCE, MIN_DAYS_BETWEEN_STEPS, demonstratedRung } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -286,6 +286,27 @@ const hrSummary = (over = {}) => ({
   f = stepLadder(f, ADVANCE, { ladderLength: L, now: day(11) });
   assert.equal(f.rung, 1);
   console.log(`  ok  the ladder needs ${QUALIFYING_TO_ADVANCE} good runs in a row and ${MIN_DAYS_BETWEEN_STEPS} days between steps up (${trail.join(' ')})`);
+}
+
+{
+  const L = [[1, 8], [2, 7], [3, 6], [4, 5], [5, 4], [6, 4], [8, 3], [10, 3], [15, 2], [30, 1]]
+    .map(([run_min, reps]) => ({ run_min, reps }));
+  const now = new Date(Date.UTC(2026, 9, 13, 21));
+  // 13 October as Polar recorded it: 11.2 min continuous, ~15.7 min of running in the session.
+  const r = demonstratedRung([{ at: '2026-10-13T20:09:00Z', longestRunS: 672, runningS: 942 }], L, { now });
+  assert.equal(r, 2, `3 x 6: block <= half of 11.2 min, total 18 <= 1.15 x 15.7: got ${r}`);
+  // Old sessions do not count.
+  assert.equal(demonstratedRung([{ at: '2026-08-01T00:00:00Z', longestRunS: 1800, runningS: 1800 }], L, { now }), null);
+  // Catching up: one good run, no wait.
+  const day = d => new Date(Date.UTC(2026, 9, d, 18));
+  let st = { rung: 1, qualifying: 0, changedAt: day(12).toISOString() };
+  st = stepLadder(st, ADVANCE, { ladderLength: 10, now: day(14), catchUpRung: 2 });
+  assert.equal(st.rung, 2); assert.match(st.why, /catching up/);
+  st = stepLadder(st, ADVANCE, { ladderLength: 10, now: day(15), catchUpRung: 2 });
+  assert.equal(st.rung, 2, 'at the demonstrated rung the ordinary rule applies again');
+  // A repeat is still a repeat while catching up.
+  assert.equal(stepLadder({ rung: 1 }, REPEAT, { ladderLength: 10, now: day(14), catchUpRung: 4 }).rung, 1);
+  console.log('  ok  stepping up to what recent sessions already covered needs one good run and no wait');
 }
 
 console.log('\nAll progression tests passed.');

@@ -327,10 +327,11 @@ export function recoveryBaseline(history) {
  * The ceiling is meant to sit at the first ventilatory threshold, and the talk test is the field
  * marker for exactly that point: below it you can speak in full sentences, at it speech starts to
  * break up. Everything else the ceiling is built from is indirect -- 80% of an age-predicted maximum
- * (good to about +/-10 bpm), and an efficiency roll-off read off one early session. On 9 October he
- * held 175-178 bpm for two and a half minutes and "could keep going", which is hard to square with a
- * 187 maximum and says the formula may well be low for him. His own answer to "could you talk at the
- * moment the ceiling called the walk" is the direct measurement, so it moves the ceiling:
+ * (good to about +/-10 bpm), and an efficiency roll-off read off one early session. (The maximum
+ * itself looks about right: 9 and 13 October both topped out at 178, the second at the end of an
+ * eleven-minute run to his limit, which puts his true maximum around 180-188.) His own answer to
+ * "could you talk at the moment the ceiling called the walk" is the direct measurement, so it moves
+ * the ceiling:
  *
  *   'easy' -> +3 bpm      'just' -> 0      'hard' -> -5 bpm
  *
@@ -384,7 +385,8 @@ export const MIN_DAYS_BETWEEN_STEPS = 6;
  * `state` is `{rung, qualifying, changedAt}` or null; `now` is a Date. Returns the new state plus
  * `{moved, from, to, why}` for the athlete.
  */
-export function stepLadder(state, verdict, { ladderLength, now = new Date(), painHold = false } = {}) {
+export function stepLadder(state, verdict, { ladderLength, now = new Date(), painHold = false,
+                                           catchUpRung = null } = {}) {
   const from = Math.max(0, Math.min((state && state.rung) | 0, ladderLength - 1));
   const changedAt = state && state.changedAt ? new Date(state.changedAt) : null;
   const days = changedAt ? (now - changedAt) / 86400000 : Infinity;
@@ -407,6 +409,12 @@ export function stepLadder(state, verdict, { ladderLength, now = new Date(), pai
   if (painHold) {
     return { ...base, qualifying, moved: false, from, to: from, why: 'holding while the niggle settles' };
   }
+  // Catching up to what he has already shown he can do (see demonstratedRung): one good run is enough
+  // and there is no wait, because the load is not new -- the tissue has already taken it.
+  if (catchUpRung != null && from < catchUpRung) {
+    return { rung: from + 1, qualifying: 0, changedAt: now.toISOString(),
+             moved: true, from, to: from + 1, why: 'catching up to what you have already run' };
+  }
   if (qualifying < QUALIFYING_TO_ADVANCE) {
     return { ...base, qualifying, moved: false, from, to: from,
              why: `${qualifying} of ${QUALIFYING_TO_ADVANCE} good runs on this rung` };
@@ -418,4 +426,31 @@ export function stepLadder(state, verdict, { ladderLength, now = new Date(), pai
   }
   return { rung: from + 1, qualifying: 0, changedAt: now.toISOString(),
            moved: true, from, to: from + 1, why: `${qualifying} good runs in a row on this rung` };
+}
+
+/**
+ * The highest rung his own recent running already covers -- below which stepping up is catching up,
+ * not adding load.
+ *
+ * Two limits, both from sessions in the last 30 days, and the rung must satisfy both:
+ *   * its block is no more than HALF the longest continuous run (the same margin the plan's entry
+ *     rule uses: one effort is not the same as the block repeated, aerobically);
+ *   * its total running is no more than 15% over the most running done in one session. Single
+ *     sessions much longer than the longest recent one are where novice injuries cluster
+ *     (Frandsen et al. 2025), and that is tissue, which the heart rate cannot see.
+ *
+ * `sessions` are `[{at, longestRunS, runningS}]`; `ladder` is `[{run_min, reps}]`. Returns a rung
+ * index, or null with no qualifying history.
+ */
+export function demonstratedRung(sessions, ladder, { now = new Date(), days = 30 } = {}) {
+  const since = now.getTime() - days * 86400000;
+  const recent = (sessions || []).filter(x => x && x.at && new Date(x.at).getTime() >= since);
+  if (!recent.length || !(ladder && ladder.length)) return null;
+  const longest = Math.max(0, ...recent.map(x => x.longestRunS || 0));
+  const most = Math.max(0, ...recent.map(x => x.runningS || 0));
+  let best = null;
+  ladder.forEach((r, i) => {
+    if (r.run_min * 60 <= longest / 2 && r.run_min * r.reps * 60 <= most * 1.15) best = i;
+  });
+  return best;
 }

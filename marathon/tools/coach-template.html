@@ -585,6 +585,13 @@
           </div>
         </div>
         <p class="note" id="gatenote" style="margin-top:.7rem"></p>
+        <div class="row" style="margin-top:.7rem">
+          <label for="stepset">Your run/walk step</label>
+          <select id="stepset"></select>
+        </div>
+        <p class="note" id="stepsetnote" style="margin-top:.3rem">Sets the step directly — for when you have
+          shown more (or less) than the app has recorded, such as a run recorded only on another device.
+          From there the app moves it on evidence as usual.</p>
         <div id="arc" style="margin-top:.9rem"></div>
       </section>
     </div>
@@ -1200,7 +1207,10 @@ const hrMaxFor = age => Math.round(208 - 0.7 * age);
 
 /// Where per-session threshold estimates accumulate. See threshold.js for why a single session is
 /// not enough and why the median is taken rather than the latest.
-const THRESHOLD_KEY = 'band.threshold';
+// v2: everything filed before 13 October came from run/walk sessions, which threshold.js now refuses
+// to read -- 6 and 9 October had filed 129 and 114, and their median was the ceiling. Dropped, not
+// migrated: there is nothing in them worth keeping.
+const THRESHOLD_KEY = 'band.threshold.v2';
 
 const RUNG_KEY = 'band.rung';
 /// Run-block minutes of the eight-rung ladder before 10 October, by index: what a stored `{rung}`
@@ -1304,6 +1314,11 @@ function stepText() {
     return `${head} — thirty minutes continuous. One good run here completes Foundation.`;
   }
   const next = L[i + 1];
+  const shown = demonstratedRung(recentRunning(), L);
+  if (shown != null && i < shown) {
+    return `${head} · your recent runs already cover more: one good run moves you to `
+         + `${fmtMin(next.run_min)} min × ${next.reps}`;
+  }
   const q = Math.min(st.qualifying || 0, QUALIFYING_TO_ADVANCE);
   let when = '';
   if (st.changedAt) {
@@ -1346,6 +1361,7 @@ function renderPlan() {
     + (wk.focus ? ` · ${wk.focus}` : '');
 
   focusDay();                       // fills in the default the first time; see defaultDay
+  renderStepSet();
   $('strip').replaceChildren(...dayButtons());
 
   const s = sessionFor(selectedDay);
@@ -1399,6 +1415,18 @@ function renderPlan() {
         + 'this week\'s days; the app runs your step.';
   }
 }
+
+function renderStepSet() {
+  const L = ladder(), cur = currentRung();
+  const sel = $('stepset');
+  sel.replaceChildren(...L.map((r, i) => Object.assign(document.createElement('option'), {
+    value: String(i), selected: i === cur,
+    textContent: `Step ${i + 1}: ${r.walk_min ? `${fmtMin(r.run_min)} min × ${r.reps}`
+                                              : `${fmtMin(r.run_min)} min continuous`}`
+                 + ` (${fmtMin(r.run_min * r.reps)} min running)`,
+  })));
+}
+$('stepset').onchange = e => setStep(Number(e.target.value));
 
 $('donesess').onclick = () => {
   const k = doneKey(selectedDay);
@@ -2850,6 +2878,28 @@ function rungState() {
   return st;
 }
 
+/** What each saved session showed, for demonstratedRung: longest continuous run and total running. */
+function recentRunning() {
+  return sessions.index().filter(e => e.stats)
+    .map(e => ({ at: e.at, longestRunS: e.stats.longestRunBlockS || 0, runningS: e.stats.runningS || 0 }));
+}
+
+/** Put him on a step by hand. The rate limit starts from here. */
+function setStep(i) {
+  const L = ladder();
+  if (!L[i]) return;
+  const from = currentRung();
+  try {
+    localStorage.setItem(RUNG_KEY, JSON.stringify({
+      rung: i, run_min: L[i].run_min, reps: L[i].reps, qualifying: 0,
+      changedAt: new Date().toISOString(), verdict: 'set', at: new Date().toISOString(),
+    }));
+  } catch { /* blocked */ }
+  log(`step set by hand: ${fmtMin(L[from].run_min)} min × ${L[from].reps} → `
+      + `${fmtMin(L[i].run_min)} min × ${L[i].reps}`, 'on');
+  renderPlan(); renderToday();
+}
+
 /** The run/walk prescription for the rung the athlete is on. */
 function rungSession() {
   const L = ladder();
@@ -2881,7 +2931,8 @@ function applyVerdict(judged, stats) {
   const held = painHolds(painTrend(painLog()));
   const before = rungState() || {};
   const st = stepLadder({ ...before, rung: currentRung() }, judged.verdict,
-                        { ladderLength: L.length, painHold: !!(held && held.hold) });
+                        { ladderLength: L.length, painHold: !!(held && held.hold),
+                          catchUpRung: demonstratedRung(recentRunning(), L) });
   try {
     localStorage.setItem(RUNG_KEY, JSON.stringify({
       rung: st.rung, run_min: L[st.rung].run_min, reps: L[st.rung].reps,
@@ -3029,10 +3080,17 @@ function ceilingInForceBpm() {
 
 /** The measured ceiling, or null while the age formula is still the best available answer. */
 function measuredCeiling() {
+  let m = null;
   try {
-    return ceilingFrom(thresholdHistory(),
+    m = ceilingFrom(thresholdHistory(),
       { currentBpm: ceilingInForceBpm(), maxBpm: ceilingRaiseCapBpm() });
   } catch { return null; }
+  // A measurement may refine the formula; it may not overturn it. More than 10 bpm under 80% of max is
+  // far more likely a bad reading than a physiology -- 122 was -- so it is held at the bound, and the
+  // talk test is what moves the ceiling from there.
+  const floor = formulaCeilingBpm() - 10;
+  if (m && m.bpm < floor) m = { ...m, bpm: floor, source: `${m.source}, held at ${floor}` };
+  return m;
 }
 
 /**
@@ -3094,7 +3152,9 @@ function talkAnswers() {
  */
 function renderTalkQuestion(stats, startedAt) {
   const box = $('talkq');
-  if (!stats.hrBlocks || !talkTestApplies(stats.hrBlocks)) { box.classList.add('hide'); return; }
+  if (!stats.hrBlocks || !talkTestApplies(stats.hrBlocks) || (stats.pausedS || 0) > 120) {
+    box.classList.add('hide'); return;
+  }
   const at = new Date(startedAt).toISOString();
   const already = talkAnswers().find(a => a.session === at);
   const before = aerobicCeilingBpm().bpm;
@@ -3307,11 +3367,31 @@ function tickRehearse() {
   $('dist').textContent = U.dist(S.simDist).toFixed(2);
 }
 
+/**
+ * The page was frozen and has just come back.
+ *
+ * On 13 October Polar Flow was opened about ten minutes in and this page stopped -- iOS freezes a web
+ * page as soon as another app is in front, Bluefy included -- for the sixteen minutes that turned out
+ * to be the most informative running of the month. On waking it carried on as if that time had been
+ * one long walk, called "run", and the session went into the record as 1144 s of walking. Now: say
+ * what happened, keep the gap out of the block timings, and do not judge the session.
+ */
+function onResumeAfterPause(gapS) {
+  S.pausedS = (S.pausedS || 0) + gapS;
+  if (S.hrBlocks) S.hrBlocks.shift(gapS);
+  const mins = Math.round(gapS / 60);
+  log(`the app was paused for ${mins || '<1'} min — another app was in front or the screen locked. `
+      + 'That time is not recorded, and this session will not move the ladder.', 'stop');
+  say('The app was paused. Keep it on screen to record.');
+}
+
 function tick() {
   if (!S.running) return;
   if (S.mode === 'rehearse') return tickRehearse();
 
   const t = Math.round((Date.now() - S.startedAt) / 1000);
+  if (S.lastTickT != null && t - S.lastTickT > 20) onResumeAfterPause(t - S.lastTickT);
+  S.lastTickT = t;
   $('elapsed').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
   $('dist').textContent = U.dist(S.track.distanceFromSpeedM).toFixed(2);
   // What you are ACTUALLY doing, in every mode, always.
@@ -3699,7 +3779,7 @@ $('go').onclick = () => {
                      governedBy: 'pace', batteryWarned: false, hrLostAnnounced: false,
                      track: new GpsTrack(), trackState: [],
                      grades: new GradeTrack(), hillCues: new HillCues(), gradeAt: null, gradeDistM: 0,
-                     walkRun: null, ranInWalksS: 0,
+                     walkRun: null, ranInWalksS: 0, lastTickT: null, pausedS: 0,
                      ivPhase: null, ivRep: 0, ivUntil: 0,
                      // NOT `ramp`: the loaded protocol is a selection the athlete made, like the
                      // target pace, and clearing it here wiped the runner one line after it was
@@ -3708,6 +3788,9 @@ $('go').onclick = () => {
   $('log').replaceChildren();
   if (S.hrBlocksNote) log(S.hrBlocksNote, 'on');
   lastLogMsg = null; lastLogRow = null; lastLogCount = 1;
+  if (S.mode !== 'rehearse') {
+    log('keep this screen in front — opening another app (Polar Flow included) pauses the recording', 'dim');
+  }
 
   if (S.mode !== 'rehearse' && navigator.geolocation) {
     S.watchId = navigator.geolocation.watchPosition(pos => {
@@ -3945,7 +4028,9 @@ function showStats(stats, prevStats) {
   // (`plannedSession` still set). Both read as "a fraction of the running was done" -> ease back. So:
   // run/walk mode only; HR-governed sessions are judged by heart rate or not at all; and a clock
   // session must have got past the warm-up and lasted ten minutes before it counts as evidence.
-  const rw = S.mode === 'intervals' && S.plannedSession && S.plannedSession.runWalk;
+  // A session the phone was not recording for minutes of is not evidence about anything.
+  const interrupted = (stats.pausedS || 0) > 120;
+  const rw = !interrupted && S.mode === 'intervals' && S.plannedSession && S.plannedSession.runWalk;
   const clockEvidence = stats.durationS >= 600 && (stats.runningS || 0) >= 60;
   const judged = !rw ? null
     : stats.hrBlocks
@@ -3976,6 +4061,12 @@ function showStats(stats, prevStats) {
         : 'Next one repeats this.'} ${judged.reason} ${judged.next}${where}${ended}`;
     $('statsverdict').style.color = judged.verdict === ADVANCE ? 'var(--on)'
       : judged.verdict === EASE_BACK ? 'var(--slow)' : 'var(--dim)';
+    $('statsverdict').classList.remove('hide');
+  } else if (interrupted) {
+    $('statsverdict').textContent = `The app was paused for ${Math.round(stats.pausedS / 60)} min `
+      + '(another app in front, or the screen locked), so this session does not move the ladder. '
+      + 'If you record with Polar Flow too, start it first, then come back here and leave this on screen.';
+    $('statsverdict').style.color = 'var(--dim)';
     $('statsverdict').classList.remove('hide');
   } else {
     $('statsverdict').classList.add('hide');
@@ -4040,6 +4131,7 @@ function finish(msg) {
       stats.hrBlocks.comfortPaceSecKm = comfortableRunPace(S.samples, S.hrBlocks.ceilingBpm);
       stats.hrBlocks.ranInWalksS = S.ranInWalksS || 0;
     }
+    stats.pausedS = S.pausedS || 0;
     // Stored WITH the session, not recomputed on demand: the zones and the profile can change
     // afterwards, and a statistic that silently restates itself when the settings move is not a
     // record of anything.

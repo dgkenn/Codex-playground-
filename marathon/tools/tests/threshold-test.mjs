@@ -169,6 +169,14 @@ function synth({ vt1 = 150, driftFrac = 0, seconds = 1800, seed = 5,
             + `(uncapped ${uncapped.bpm}, capped ${capped.bpm})`);
 }
 
+{
+  // A run/walk is not a threshold measurement. Labelled run/walk samples -- however the bands fall --
+  // must return null: 6 and 9 October read as 129 and 114, and became a 122 bpm ceiling.
+  const rw = synth({ vt1: 150 }).map((x, i) => ({ ...x, label: (i % 240) < 120 ? 'run' : 'walk' }));
+  assert.equal(estimateThreshold(rw), null, 'run/walk sessions are not threshold measurements');
+  console.log('  ok  a run/walk session is never read as a threshold measurement');
+}
+
 // --- the real recording -----------------------------------------------------------------------
 
 const POLAR = '/root/.claude/uploads/59977dd4-f843-5237-9878-b2f2ff901059/'

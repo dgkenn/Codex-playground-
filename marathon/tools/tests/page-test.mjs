@@ -486,6 +486,47 @@ async function openAll(page) {
   console.log(`  ok  the step line explains the ladder ("${step.slice(0, 60)}…"), old steps migrate, and Foundation ends on its gate`);
 }
 
+// --- a frozen page says so, and the session is not judged -----------------------------------------
+
+{
+  // 13 October: Polar Flow was opened ten minutes in and iOS froze this page for sixteen minutes. The
+  // fake clock reproduces that: timers stop, then time jumps.
+  const fp = await browser.newPage();
+  fp.on('pageerror', e => errors.push('pageerror (pause): ' + e.message));
+  await fp.clock.install({ time: new Date(2026, 9, 13, 16, 0, 0) });
+  await fp.goto('file://' + APP, { waitUntil: 'load' });
+  await fp.waitForSelector('#todaystrip button');
+  await fp.click('#starttoday');
+  await fp.clock.runFor(8000);
+  await fp.clock.fastForward('16:00');
+  await fp.clock.runFor(2000);
+  const lines = await fp.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /paused for 16 min/.test(l)), `the gap is named: ${JSON.stringify(lines.slice(0, 4))}`);
+  await fp.click('#starttoday');
+  await fp.clock.runFor(500);
+  await fp.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; }));
+  const verdict = (await fp.textContent('#statsverdict')).replace(/\s+/g, ' ');
+  assert.match(verdict, /paused for 16 min .* does not move the ladder/, `and not judged: "${verdict}"`);
+  await fp.close();
+  console.log('  ok  a page frozen by another app says so on waking, and that session does not move the ladder');
+}
+
+// --- the step can be set by hand --------------------------------------------------------------------
+
+{
+  await page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; }));
+  await page.selectOption('#stepset', '2');
+  await page.waitForTimeout(120);
+  const st = await page.evaluate(() => JSON.parse(localStorage.getItem('band.rung')));
+  assert.equal(st.rung, 2); assert.equal(st.run_min, 3); assert.equal(st.reps, 6); assert.equal(st.qualifying, 0);
+  const step = (await page.textContent('#stepnote')).trim();
+  if (step) assert.match(step, /^Step 3 of 10/, `the card follows: "${step}"`);
+  await page.evaluate(() => localStorage.removeItem('band.rung'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  console.log('  ok  "Your run/walk step" sets the step directly (3 min × 6)');
+}
+
 // --- today, in one tap ---------------------------------------------------------------------------
 
 {

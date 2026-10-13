@@ -236,6 +236,7 @@ export class HrBlocks {
     this._trace = null;          // [secondsIntoWalk, hr] for the walk in progress
     this._runGrades = [];        // [t, grade] for the run block in progress
     this._heldS = 0;             // seconds of the current walk held on a steep descent
+    this._pausedS = 0;           // seconds the page was frozen (see shift)
     this.stalls = 0;
     this._peakHr = null;
     this._lastFreshT = null;
@@ -361,6 +362,18 @@ export class HrBlocks {
     }
     if (this.fallbackWalkS && walkEl >= this.fallbackWalkS) return this._to(BlockPhase.RUN, tS, 'time', false);
     return null;
+  }
+
+  /**
+   * The page was frozen for `gapS` seconds (iOS stops a web page the moment another app is in front).
+   * Nothing happened as far as this controller can know, so the clock of the phase in progress is moved
+   * past the gap: a walk that was frozen for sixteen minutes is not a sixteen-minute unrecovered walk.
+   */
+  shift(gapS) {
+    if (!(gapS > 0)) return;
+    if (this.phaseStartT != null) this.phaseStartT += gapS;
+    if (this._trace) this._trace.startT += gapS;
+    this._pausedS += gapS;
   }
 
   /** End the session wherever it is, closing the open block. */
@@ -528,6 +541,7 @@ export class HrBlocks {
       // one that spent half its length over it.
       runningUnderCeilingS: this._runUnderCeilingS,
       runningOverCeilingS: this._runOverCeilingS,
+      pausedS: this._pausedS,
     };
   }
 }

@@ -81,6 +81,12 @@ const meanOf = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
 export function estimateThreshold(samples, { lagS = HR_LAG_S } = {}) {
   const ss = (samples || []).filter(s => s && s.t_s != null).slice().sort((a, b) => a.t_s - b.t_s);
   if (ss.length < 300) return null;
+  // Not from a run/walk. Its blocks are shorter than heart rate needs to settle and every band is
+  // mostly walking -- slow, with a heart rate still carrying the last block -- so "metres per beat
+  // falls with heart rate" is guaranteed and means nothing. That is exactly what happened: 6 October
+  // read as 129 bpm, 9 October as 114, their median (122) quietly replaced the 150 ceiling, and on
+  // 13 October every block was cut at 120-127. Thresholds come from continuous runs only.
+  if (ss.some(s => s.label === 'run' || s.label === 'walk')) return null;
 
   // First half only. See the module note: drift is indistinguishable from a threshold in a whole
   // session, and the first half is where fatigue cannot be the explanation.

@@ -393,6 +393,23 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0, gradeAt = () 
   console.log(`  ok  the comfortable run pace is learned from settled, under-ceiling jogging (${Math.round(p)} s/km)`);
 }
 
+{
+  // 13 October: the page froze for ~16 minutes in a walk (Polar Flow was opened). On waking, the
+  // controller must not see a 16-minute unrecovered walk -- shift() moves the phase clock past the gap.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 7 });
+  drive(b, 330, () => 120);                  // warm-up, then into the first block (HR under the ceiling)
+  drive(b, 100, () => 140, { from: 330 });   // the first block ends at the rung length; now walking
+  assert.equal(b.phase, Phase.WALK);
+  const walkStart = b.phaseStartT;
+  b.shift(980);
+  const ev = b.update(430 + 980, 140, { hrFresh: true });
+  assert.equal(ev, null, `a frozen walk must not end as unrecovered on waking: ${JSON.stringify(ev)}`);
+  assert.equal(b.phaseStartT, walkStart + 980);
+  assert.equal(b.summary().pausedS, 980);
+  assert.equal(b.stalls, 0);
+  console.log('  ok  a frozen page shifts the phase clock instead of counting the gap as a walk');
+}
+
 // --- against the real session ---------------------------------------------------------------------
 
 const POLAR = '/root/.claude/uploads/59977dd4-f843-5237-9878-b2f2ff901059/'
