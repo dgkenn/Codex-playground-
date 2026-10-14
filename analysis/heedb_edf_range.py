@@ -104,7 +104,7 @@ def bs_burden(x, fs, thresh_uv=10.0, frame_s=0.1, min_run_s=0.5):
     return float(out.mean())
 if __name__ == "__main__":
     import sys
-    key = sys.argv[1] if len(sys.argv) > 1 else "EEG/bids/S0001/sub-S0001111189188/ses-1/eeg/sub-S0001111189188_ses-1_task-EEG_eeg.edf"
+    key = sys.argv[1] if len(sys.argv) > 1 else "EEG/bids/S0001/sub-S0001900000187/ses-1/eeg/sub-S0001900000187_ses-1_task-EEG_eeg.edf"
     X, fs, names, meta = read_edf_window(key, max_seconds=300)
     print(f"key={key.split('/')[-1]}")
     print(f"  meta={meta}  fs={fs}  n_ch={len(names)}")
