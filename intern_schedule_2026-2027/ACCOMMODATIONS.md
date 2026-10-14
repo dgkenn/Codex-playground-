@@ -108,6 +108,22 @@ Chiasson would have gone 10/30 long call straight into nights 11/1–6; instead 
 gets the free weekend and starts nights 11/8. That is the only structural
 consequence, and it lands as a benefit rather than a burden.
 
+## 📌 Policy: requests override the march; errors don't
+
+A specific request may override the Q4 march. A deviation that serves no request
+is an error and gets fixed. Applied to every swap in `swaps.txt`:
+
+| Deviation | Serves a request? | Verdict |
+|---|---|---|
+| Dec 28–31 left on the unswapped march (Bronson denied his Monday long call, two Q4 gaps) | No | **Error — fixed** |
+| Nov 15 Sunday long call put on Chiasson straight off nights | No (side effect) | **Fixed** — Kennedy absorbs it |
+| **Jan 31** Sunday long call → Juyal, straight off his Friday night; Mon 2/1 → Li | **Yes** — Oghenesume's firm wedding | **Kept.** Only Juyal can cover: Ahn did the Saturday 24h and must be off Sunday, Zaidi is on nights |
+| **Apr 11** Sunday long call → Rivera, straight off his Friday night; Rivera also long call Mon 4/12 | **Yes** — Oghenesume's 4/10–11 weekend | **Kept.** Only Rivera can cover (Almadhoob did the 24h). Tested the Monday alternatives: giving 4/12 to Oghenesume or Almadhoob only moves the flag and costs more |
+
+The two kept exceptions are the audit's `post-nf-weekend` / `nf-to-mon-LC` hits
+in the swaps layer (plus Rivera's repeat long call 4/11–12 and Li's Q4 gap
+2/1→2/3). They are the price of the accommodation, not mistakes.
+
 ## 🔧 Night-float balance fixes (from the scheduler's review)
 
 Root cause found: in a month spanning **5 night-float week-starts**, the 4-slot
