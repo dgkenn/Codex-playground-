@@ -39,36 +39,36 @@ _CATALOG_CSV = (
     "DurationInSeconds,EEGFolder,ServiceName,HasXLTEKAnnotations,HasPersystAnnotations,"
     "AgeAtVisit,DateOfDeath,SexDSC,BidsFlag\n"
     # patient ALPHA: will be joined -> age=40, sex=F  (adult, should pass)
-    "S0001,111200001,sub-S0001111200001,SES001,2021-01-01,,,"
+    "S0001,900011000,sub-S0001900011000,SES001,2021-01-01,,,"
     "600.0,eeg_folder,Routine,0,0,,,, 1\n"
     # patient BETA: will be joined -> age=15, sex=M  (minor, should be filtered)
-    "S0001,111200002,sub-S0001111200002,SES002,2021-01-02,,,"
+    "S0001,900011001,sub-S0001900011001,SES002,2021-01-02,,,"
     "600.0,eeg_folder,Routine,0,0,,,, 1\n"
     # patient GAMMA: NOT in patients.csv -> age=None, sex=None  (kept; None not filtered)
-    "S0001,111200003,sub-S0001111200003,SES003,2021-01-03,,,"
+    "S0001,900011002,sub-S0001900011002,SES003,2021-01-03,,,"
     "600.0,eeg_folder,Routine,0,0,,,, 1\n"
 )
 
 # patients CSV: supplies demographics for ALPHA and BETA only (GAMMA is absent)
 _PATIENTS_CSV = (
     "SiteID,BDSPPatientID,Sex,AgeAtVisitAvg,RaceAndEthnicity,ICD10Count,MedicationCount\n"
-    "S0001,111200001,F,40.0,Unknown,3,5\n"
-    "S0001,111200002,M,15.0,Unknown,1,0\n"
+    "S0001,900011000,F,40.0,Unknown,3,5\n"
+    "S0001,900011001,M,15.0,Unknown,1,0\n"
 )
 
 # EDF keys resolvable for all three sessions
 _EDF_KEYS = {
-    "EEG/bids/S0001/sub-S0001111200001/ses-SES001/eeg/": [
-        "EEG/bids/S0001/sub-S0001111200001/ses-SES001/eeg/"
-        "sub-S0001111200001_ses-SES001_task-Routine_eeg.edf"
+    "EEG/bids/S0001/sub-S0001900011000/ses-SES001/eeg/": [
+        "EEG/bids/S0001/sub-S0001900011000/ses-SES001/eeg/"
+        "sub-S0001900011000_ses-SES001_task-Routine_eeg.edf"
     ],
-    "EEG/bids/S0001/sub-S0001111200002/ses-SES002/eeg/": [
-        "EEG/bids/S0001/sub-S0001111200002/ses-SES002/eeg/"
-        "sub-S0001111200002_ses-SES002_task-Routine_eeg.edf"
+    "EEG/bids/S0001/sub-S0001900011001/ses-SES002/eeg/": [
+        "EEG/bids/S0001/sub-S0001900011001/ses-SES002/eeg/"
+        "sub-S0001900011001_ses-SES002_task-Routine_eeg.edf"
     ],
-    "EEG/bids/S0001/sub-S0001111200003/ses-SES003/eeg/": [
-        "EEG/bids/S0001/sub-S0001111200003/ses-SES003/eeg/"
-        "sub-S0001111200003_ses-SES003_task-Routine_eeg.edf"
+    "EEG/bids/S0001/sub-S0001900011002/ses-SES003/eeg/": [
+        "EEG/bids/S0001/sub-S0001900011002/ses-SES003/eeg/"
+        "sub-S0001900011002_ses-SES003_task-Routine_eeg.edf"
     ],
 }
 
@@ -161,32 +161,32 @@ class TestPatientsJoinPopulatesAge(unittest.TestCase):
 
     def test_alpha_age_from_patients_csv(self):
         """ALPHA: catalog has no AgeAtVisit; patients CSV supplies 40.0."""
-        ref = self._ref("111200001")
+        ref = self._ref("900011000")
         self.assertAlmostEqual(ref.age, 40.0)
 
     def test_alpha_sex_from_patients_csv(self):
         """ALPHA: catalog has no SexDSC; patients CSV supplies 'F'."""
-        ref = self._ref("111200001")
+        ref = self._ref("900011000")
         self.assertEqual(ref.sex, "F")
 
     def test_beta_age_from_patients_csv(self):
         """BETA: catalog has no AgeAtVisit; patients CSV supplies 15.0."""
-        ref = self._ref("111200002")
+        ref = self._ref("900011001")
         self.assertAlmostEqual(ref.age, 15.0)
 
     def test_beta_sex_from_patients_csv(self):
         """BETA: catalog has no SexDSC; patients CSV supplies 'M'."""
-        ref = self._ref("111200002")
+        ref = self._ref("900011001")
         self.assertEqual(ref.sex, "M")
 
     def test_gamma_age_none_when_not_in_patients(self):
         """GAMMA: absent from patients.csv -> age is None (fall back, still None)."""
-        ref = self._ref("111200003")
+        ref = self._ref("900011002")
         self.assertIsNone(ref.age)
 
     def test_gamma_sex_none_when_not_in_patients(self):
         """GAMMA: absent from patients.csv -> sex is None."""
-        ref = self._ref("111200003")
+        ref = self._ref("900011002")
         self.assertIsNone(ref.sex)
 
 
@@ -204,17 +204,17 @@ class TestAgeFilterWithPatientsJoin(unittest.TestCase):
     def test_minor_filtered_out(self):
         """BETA (age=15) must not appear in qualifying recordings."""
         recording_ids = [r.recording_id for r in self.qualifying]
-        self.assertFalse(any("111200002" in rid for rid in recording_ids))
+        self.assertFalse(any("900011001" in rid for rid in recording_ids))
 
     def test_adult_passes(self):
         """ALPHA (age=40) must appear in qualifying recordings."""
         recording_ids = [r.recording_id for r in self.qualifying]
-        self.assertTrue(any("111200001" in rid for rid in recording_ids))
+        self.assertTrue(any("900011000" in rid for rid in recording_ids))
 
     def test_unknown_age_passes(self):
         """GAMMA (age=None) must appear -- unknown age is not filtered out."""
         recording_ids = [r.recording_id for r in self.qualifying]
-        self.assertTrue(any("111200003" in rid for rid in recording_ids))
+        self.assertTrue(any("900011002" in rid for rid in recording_ids))
 
     def test_exactly_two_qualifying(self):
         """Only ALPHA (age=40) and GAMMA (age=None) qualify; BETA (age=15) is excluded."""

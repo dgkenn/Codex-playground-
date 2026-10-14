@@ -31,19 +31,19 @@ _CATALOG_CSV = (
     "DurationInSeconds,EEGFolder,ServiceName,HasXLTEKAnnotations,HasPersystAnnotations,"
     "AgeAtVisit,DateOfDeath,SexDSC,BidsFlag\n"
     # row 1: Routine EEG, 600 s, has age+sex (catalog values intentionally left; patients CSV wins)
-    "S0001,PID001,sub-S0001111189001,SES001,2020-01-01,,,"
+    "S0001,PID001,sub-S0001900000000,SES001,2020-01-01,,,"
     "600.0,eeg_folder,Routine,0,0,55.0,,M,1\n"
     # row 2: Routine EEG, 900 s, missing age+sex
-    "S0001,PID002,sub-S0001111189002,SES002,2020-01-02,,,"
+    "S0001,PID002,sub-S0001900000001,SES002,2020-01-02,,,"
     "900.0,eeg_folder,Routine,0,0,,,F,1\n"
     # row 3: too long (> max_duration_s=1200)
-    "S0001,PID003,sub-S0001111189003,SES003,2020-01-03,,,"
+    "S0001,PID003,sub-S0001900000002,SES003,2020-01-03,,,"
     "2000.0,eeg_folder,Routine,0,0,40.0,,M,1\n"
     # row 4: wrong task (LTM, not in tasks=["Routine"])
-    "S0001,PID004,sub-S0001111189004,SES004,2020-01-04,,,"
+    "S0001,PID004,sub-S0001900000003,SES004,2020-01-04,,,"
     "500.0,eeg_folder,LTM,0,0,30.0,,F,1\n"
     # row 5: EDF key unresolvable (fake S3 returns no keys for this session)
-    "S0001,PID005,sub-S0001111189005,SES005,2020-01-05,,,"
+    "S0001,PID005,sub-S0001900000004,SES005,2020-01-05,,,"
     "400.0,eeg_folder,Routine,0,0,60.0,,M,1\n"
 )
 
@@ -52,19 +52,19 @@ _CATALOG_CSV = (
 # BDSPPatientID is the numeric suffix (patient_id with SiteID prefix stripped).
 _PATIENTS_CSV = (
     "SiteID,BDSPPatientID,Sex,AgeAtVisitAvg,RaceAndEthnicity\n"
-    "S0001,111189001,M,55.0,Unknown\n"
-    "S0001,111189002,F,32.0,Unknown\n"
+    "S0001,900000000,M,55.0,Unknown\n"
+    "S0001,900000001,F,32.0,Unknown\n"
 )
 
 # EDF keys that will be "found" when listing sessions SES001 and SES002
 _EDF_KEYS = {
-    "EEG/bids/S0001/sub-S0001111189001/ses-SES001/eeg/": [
-        "EEG/bids/S0001/sub-S0001111189001/ses-SES001/eeg/"
-        "sub-S0001111189001_ses-SES001_task-EEG_eeg.edf"
+    "EEG/bids/S0001/sub-S0001900000000/ses-SES001/eeg/": [
+        "EEG/bids/S0001/sub-S0001900000000/ses-SES001/eeg/"
+        "sub-S0001900000000_ses-SES001_task-EEG_eeg.edf"
     ],
-    "EEG/bids/S0001/sub-S0001111189002/ses-SES002/eeg/": [
-        "EEG/bids/S0001/sub-S0001111189002/ses-SES002/eeg/"
-        "sub-S0001111189002_ses-SES002_task-EEG_eeg.edf"
+    "EEG/bids/S0001/sub-S0001900000001/ses-SES002/eeg/": [
+        "EEG/bids/S0001/sub-S0001900000001/ses-SES002/eeg/"
+        "sub-S0001900000001_ses-SES002_task-EEG_eeg.edf"
     ],
     # SES003 blocked by duration; SES004 blocked by task; SES005 returns no EDF
 }
@@ -159,12 +159,12 @@ class TestCatalogParsing(unittest.TestCase):
 
     def test_recording_id_format(self):
         ids = {r.recording_id for r in self.refs}
-        self.assertIn("sub-S0001111189001_ses-SES001", ids)
-        self.assertIn("sub-S0001111189002_ses-SES002", ids)
+        self.assertIn("sub-S0001900000000_ses-SES001", ids)
+        self.assertIn("sub-S0001900000001_ses-SES002", ids)
 
     def test_patient_id_strips_sub_prefix(self):
-        r1 = next(r for r in self.refs if "189001" in r.recording_id)
-        self.assertEqual(r1.patient_id, "S0001111189001")
+        r1 = next(r for r in self.refs if "000000" in r.recording_id)
+        self.assertEqual(r1.patient_id, "S0001900000000")
         self.assertFalse(r1.patient_id.startswith("sub-"))
 
     def test_hospital_equals_site_id(self):
@@ -172,21 +172,21 @@ class TestCatalogParsing(unittest.TestCase):
             self.assertEqual(ref.hospital, _SITE)
 
     def test_duration_parsed(self):
-        r1 = next(r for r in self.refs if "189001" in r.recording_id)
+        r1 = next(r for r in self.refs if "000000" in r.recording_id)
         self.assertAlmostEqual(r1.duration_s, 600.0)
 
     def test_age_parsed_when_present(self):
-        r1 = next(r for r in self.refs if "189001" in r.recording_id)
+        r1 = next(r for r in self.refs if "000000" in r.recording_id)
         self.assertAlmostEqual(r1.age, 55.0)
 
     def test_age_from_patients_join_when_catalog_missing(self):
         # Row 2 has no AgeAtVisit in the catalog CSV, but HEEDB_patients.csv
         # supplies age=32.0 for this patient; the join should populate it.
-        r2 = next(r for r in self.refs if "189002" in r.recording_id)
+        r2 = next(r for r in self.refs if "000001" in r.recording_id)
         self.assertAlmostEqual(r2.age, 32.0)
 
     def test_sex_parsed_when_present(self):
-        r1 = next(r for r in self.refs if "189001" in r.recording_id)
+        r1 = next(r for r in self.refs if "000000" in r.recording_id)
         self.assertEqual(r1.sex, "M")
 
     def test_sampling_rate_is_none(self):
@@ -195,7 +195,7 @@ class TestCatalogParsing(unittest.TestCase):
             self.assertIsNone(ref.sampling_rate)
 
     def test_edf_uri_resolved(self):
-        r1 = next(r for r in self.refs if "189001" in r.recording_id)
+        r1 = next(r for r in self.refs if "000000" in r.recording_id)
         self.assertIsNotNone(r1.uri)
         self.assertTrue(r1.uri.endswith("_eeg.edf"))
 
@@ -233,8 +233,8 @@ class TestTaskFilter(unittest.TestCase):
         client = _client(tasks=["Routine"])
         refs = list(client.list_recordings(_SITE))
         for ref in refs:
-            # LTM row patient id would be 189004
-            self.assertNotIn("189004", ref.recording_id)
+            # LTM row patient id would be 000003
+            self.assertNotIn("000003", ref.recording_id)
 
     def test_accept_ltm_when_configured(self):
         # With tasks=["LTM"], only row 4 passes task filter among unresolved ones

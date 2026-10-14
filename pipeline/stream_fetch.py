@@ -535,7 +535,7 @@ class HEEDBBDSPClient(_BDSPClient):
 
             # Join against HEEDB_patients.csv for richer demographics.
             # numeric_patient_id = patient_id with the SiteID prefix removed.
-            # e.g. patient_id "S0001111189001", siteID "S0001" -> "111189001"
+            # e.g. patient_id "S0001900000000", siteID "S0001" -> "900000000"
             numeric_patient_id = patient_id[len(siteID):] if patient_id.startswith(siteID) else patient_id
             patients = self._load_patients()
             demo = patients.get((siteID, numeric_patient_id))
