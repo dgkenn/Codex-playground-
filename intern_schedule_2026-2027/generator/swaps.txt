@@ -8,11 +8,15 @@ swap 2027-02-01 JUYAL LI
 #     10/11-16, so 10/17-18 is his post-nights weekend). No swap needed. ---
 
 # --- MacNeille: NO night float Christmas week -> BRONSON takes it (approved); SC on NYE ---
+# The role exchange must run through the END of the month (12/31). Stopping it at
+# 12/26 left 12/28-29 on the unswapped march, so Bronson - who ends nights Fri 12/25 and
+# is owed Monday 12/28 long call - lost it to MacNeille, and both interns picked up a
+# 2-day long-call gap (MacNeille 12/26->28, Bronson 12/29->31).
 swap 2026-12-01:2026-12-04 MACNEILLE BRONSON
 swap 2026-12-06:2026-12-12 MACNEILLE BRONSON
 swap 2026-12-14:2026-12-18 MACNEILLE BRONSON
 swap 2026-12-20:2026-12-26 MACNEILLE BRONSON
-swap 2026-12-31 MACNEILLE BRONSON
+swap 2026-12-28:2026-12-31 MACNEILLE BRONSON
 
 # --- Kennedy: night shifts the whole first week of November (KEN_SWAP in gen.py
 #     gives him NF 11/1-6 + off the 11/7-8 weekend). PD will arrange the Fri-11/6

@@ -90,6 +90,19 @@ def violations(A):
             sun=dt+timedelta(2)
             if sun in A and A[sun]["NF"] and A[sun]["NF"]!=A[dt]["LC"]:
                 V.add(f"fri-LC-NF: Fri {dt} LC={A[dt]['LC']} but Sun {sun} NF={A[sun]['NF']}")
+    # Night float -> Monday long call, and a clean weekend in between.
+    # (Same two guards as audit.py's nf-to-mon-lc / post-nf-weekend; they must live
+    # here too because swaps are applied AFTER audit.py runs, so a swap that stops
+    # at the wrong date can silently rotate the march — as December 28 did.)
+    for dt in days:
+        if dt.weekday()!=4 or not NF.get(dt): continue
+        p=NF[dt]; mon=dt+timedelta(3)
+        for off,lab in ((1,"Sat 24h"),(2,"Sun LC")):
+            x=dt+timedelta(off)
+            if x in A and p in roster(x) and (A[x]["H24"]==p or (off==2 and A[x]["LC"]==p)):
+                V.add(f"post-nf-weekend: {p} ends nights Fri {dt} then works {lab} {x}")
+        if mon in A and p in roster(mon) and roster(dt)[p]["end"]>=mon and A[mon]["LC"]!=p:
+            V.add(f"nf-to-mon-LC: {p} ends nights Fri {dt} but Mon {mon} LC={A[mon]['LC']} (owed to {p})")
     # NF one person per Sun-Fri block (only flag if both present all week)
     for g in gen.GROUPS:
         labs=[NF.get(dt) for dt in g if NF.get(dt)]
