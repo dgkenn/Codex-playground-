@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { parseHeartRate, parseAccFrame, startCommand, accMagnitude,
          VeritySensor, STALE_HR_MS, withTimeout, PICKER_TIMEOUT_MS,
-         describeError, GATT_ATTEMPTS } from '../sensor.js';
+         describeError, GATT_ATTEMPTS, HR_STALL_MS } from '../sensor.js';
 
 const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
 
@@ -352,6 +352,131 @@ const fakeDevice = ({ failures = 0, connectedAfterReject = false, throwValue = u
   assert.ok(stale.attempts >= GATT_ATTEMPTS, 'and only after genuinely trying it');
   restore();
   console.log('  ok  a stale remembered device falls through to the picker instead of blocking it');
+}
+
+
+// --- making connection easy: one link, heart rate first, find the band without a picker ------------
+
+/** A band that connects after `failLooks` refused attempts; PMD can be made to hang for ever. */
+function fakeBand({ failLooks = 0, hangPmd = false, name = 'Polar Sense 16961D33' } = {}) {
+  const listeners = {};
+  let looks = 0;
+  const hrChar = { async startNotifications() { return this; }, addEventListener() {} };
+  const server = {
+    getPrimaryService: async id => {
+      if (/180d/.test(id)) return { getCharacteristic: async () => hrChar };
+      if (/fb005c80/.test(id) && hangPmd) return new Promise(() => {});
+      throw new Error('not present');
+    },
+  };
+  const gatt = {
+    connected: false,
+    connect() {
+      looks += 1;
+      if (looks <= failLooks) return Promise.reject(new Error('GATT operation failed'));
+      gatt.connected = true; return Promise.resolve(server);
+    },
+    disconnect() { gatt.connected = false; },
+    getPrimaryService: (...a) => server.getPrimaryService(...a),
+  };
+  return {
+    name, gatt, get looks() { return looks; },
+    addEventListener(t, f) { (listeners[t] ||= []).push(f); },
+    removeEventListener(t, f) { listeners[t] = (listeners[t] || []).filter(x => x !== f); },
+    listenerCount: t => (listeners[t] || []).length,
+  };
+}
+
+{
+  // A motion-sensor start that never answers used to fail the whole connect after 20 s, heart rate
+  // included. Heart rate must be streaming regardless.
+  const s = new VeritySensor();
+  s.device = fakeBand({ hangPmd: true });
+  const t0 = Date.now();
+  await s._finishConnect();
+  assert.equal(s.connected, true, 'connected on heart rate alone');
+  assert.ok(Date.now() - t0 < 1000, 'without waiting on the accelerometer');
+  s.dispose();
+  console.log('  ok  a hanging accelerometer cannot fail the connection; heart rate connects first');
+}
+
+{
+  // One disconnect listener per device, however many times the connection is (re)built.
+  const s = new VeritySensor();
+  const band = fakeBand();
+  s.device = band;
+  await s._finishConnect();
+  band.gatt.connected = false;
+  await s._finishConnect();
+  assert.equal(band.listenerCount('gattserverdisconnected'), 1);
+  s.dispose();
+  assert.equal(band.listenerCount('gattserverdisconnected'), 0, 'dispose removes it');
+  assert.equal(band.gatt.connected, false, 'and releases the band');
+  console.log('  ok  one disconnect listener per band, removed on dispose');
+}
+
+{
+  // A disposed sensor stops trying: the old instance's reconnect loop used to run for ever after the
+  // next Connect tap, competing with the new one for the same band.
+  const s = new VeritySensor();
+  const band = fakeBand({ failLooks: 1000 });
+  s.device = band;
+  s._reconnect();
+  await new Promise(r => setTimeout(r, 50));
+  s.dispose();
+  const after = band.looks;
+  await new Promise(r => setTimeout(r, 1300));
+  assert.equal(band.looks, after, `no attempts after dispose (${after} -> ${band.looks})`);
+  console.log('  ok  a replaced sensor stops reaching for the band');
+}
+
+{
+  // Hands-free: the remembered band, switched on a little late, is found and connected without a
+  // picker or a tap. One attempt per look, not a burst.
+  const band = fakeBand({ failLooks: 2 });
+  const restore = fakeBluetooth({ getDevices: async () => [band],
+                                  requestDevice: async () => { throw new Error('picker must not open'); } });
+  const s = new VeritySensor();
+  const ok = await s.autoConnect({ windowMs: 2000, retryMs: 20 });
+  assert.equal(ok, true);
+  assert.equal(s.connected, true);
+  assert.equal(band.looks, 3, 'one connect per look');
+  s.dispose();
+  // Nothing remembered: false straight away, and no picker.
+  const r2 = fakeBluetooth({ getDevices: async () => [], requestDevice: async () => { throw new Error('no picker'); } });
+  assert.equal(await new VeritySensor().autoConnect({ windowMs: 100, retryMs: 10 }), false);
+  r2();
+  // A band that never comes: false at the end of the window.
+  const never = fakeBand({ failLooks: 1e9 });
+  const r3 = fakeBluetooth({ getDevices: async () => [never] });
+  const t0 = Date.now();
+  assert.equal(await new VeritySensor().autoConnect({ windowMs: 150, retryMs: 20 }), false);
+  assert.ok(Date.now() - t0 < 1000);
+  r3(); restore();
+  console.log('  ok  the remembered band is found and connected with no picker, retrying until it appears');
+}
+
+{
+  // A stream that stops while the link claims to be up is rebuilt, not left looking connected.
+  const s = new VeritySensor();
+  const band = fakeBand();
+  s.device = band;
+  await s._finishConnect();
+  s.hrCount = 10; s.hrAt = 1000; s.connectedAt = 500;
+  assert.equal(s.checkStall(1000 + HR_STALL_MS - 1), false, 'not yet');
+  assert.equal(s.checkStall(1000 + HR_STALL_MS + 1), true, 'stalled: reconnect');
+  // Just reconnected: a fresh twenty seconds, not an immediate second teardown.
+  s.connected = true; s.reconnecting = false; s.connectedAt = 1000 + HR_STALL_MS + 2000;
+  assert.equal(s.checkStall(1000 + HR_STALL_MS + 7000), false, 'a rebuilt link is not torn down again at once');
+  s.connected = false;
+  assert.equal(s.connected, false);
+  s.dispose();
+  // Never streamed (band on a table): no churn.
+  const t = new VeritySensor();
+  t.device = fakeBand(); await t._finishConnect();
+  assert.equal(t.checkStall(Date.now() + 60000), false, 'a band that never read is not "stalled"');
+  t.dispose();
+  console.log('  ok  a stalled heart-rate stream is rebuilt; a band that never read is left alone');
 }
 
 console.log('\nAll sensor tests passed.');

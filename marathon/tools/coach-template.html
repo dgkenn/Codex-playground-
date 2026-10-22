@@ -2256,7 +2256,11 @@ function updateSensorUi() {
   const fresh = sn && sn.hrFresh();
   $('hrbig').textContent = fresh ? `${sn.hr}` : '—';
   $('hrtile').textContent = fresh ? `${sn.hr}` : '—';
-  if (!sn || !sn.connected) {
+  if (sn && !sn.connected && (sn.looking || sn.reconnecting)) {
+    // Say what it is doing rather than "not connected" while it is actively finding the band.
+    $('hrstate').textContent = sn.reconnecting ? 'reconnecting to the armband…' : sn.step;
+    $('connect').textContent = 'Looking…';
+  } else if (!sn || !sn.connected) {
     $('hrstate').textContent = bluetoothAvailable() ? 'not connected' : 'no Bluetooth in this browser';
   } else if (!fresh) {
     $('hrstate').textContent = 'connected, waiting for a reading';
@@ -2289,8 +2293,16 @@ function updateSensorUi() {
  * phone there is no console to open — so the panel has to be the console.
  */
 let connecting = false;
+/// True while autoConnectArmband is looking. A tap on Connect takes over from it rather than being
+/// told to wait two minutes.
+let autoLooking = false;
 
 async function connectArmband({ acceptAll = false } = {}) {
+  if (connecting && autoLooking) {
+    autoLooking = false;
+    connecting = false;
+    if (S.sensor) S.sensor.dispose();
+  }
   if (connecting) { log('already trying — give it a moment', 'dim'); return; }
   if (!bluetoothAvailable()) {
     $('hrstate').textContent = 'This browser has no Bluetooth — use Bluefy on iPhone';
@@ -2298,12 +2310,15 @@ async function connectArmband({ acceptAll = false } = {}) {
     return;
   }
   if (S.sensor && S.sensor.connected) {
-    S.sensor.disconnect();
+    S.sensor.dispose();
     $('connect').textContent = 'Connect';
     log('armband disconnected');
     updateSensorUi();
     return;
   }
+  // Whatever the last attempt left behind -- a reconnect loop, a half-open link -- is shut down
+  // before a new one starts. Each tap used to add another instance reaching for the same band.
+  if (S.sensor) S.sensor.dispose();
 
   connecting = true;
   $('connect').textContent = 'Connecting…';
@@ -2374,6 +2389,53 @@ async function connectArmband({ acceptAll = false } = {}) {
 }
 
 $('connect').onclick = () => connectArmband();
+
+/**
+ * Connect to the armband without being asked: on opening the page, on coming back to it, and on
+ * Start. It is the only Bluetooth device this app talks to, so once the browser remembers it there
+ * is nothing to choose -- switch the band on and it connects. Quiet when there is no remembered band
+ * (the Connect button and its picker are the way in, once), and never while another attempt runs.
+ */
+async function autoConnectArmband(why) {
+  if (connecting || !bluetoothAvailable()) return;
+  if (S.sensor && (S.sensor.connected || S.sensor.reconnecting)) return;
+  if (S.sensor) S.sensor.dispose();
+  connecting = true;
+  const sensor = new VeritySensor({
+    onLog: (m, c) => log(m, c),
+    onChange: updateSensorUi,
+    onStep: m => { $('hrstate').textContent = m; },
+  });
+  S.sensor = sensor;
+  autoLooking = true;
+  $('connect').textContent = 'Looking…';
+  try {
+    const ok = await sensor.autoConnect();
+    if (S.sensor !== sensor) return;                 // replaced by a tap meanwhile
+    if (ok) {
+      $('connect').textContent = 'Disconnect';
+      log(`armband connected by itself (${why})`, 'on');
+    } else if (sensor.device) {
+      $('connect').textContent = 'Connect';
+      $('hrstate').textContent = 'armband not found — switch it on, or close Polar Flow if it is '
+                               + 'connected there, then tap Connect';
+    } else {
+      $('connect').textContent = 'Connect';          // nothing remembered yet: first time is a tap
+    }
+  } finally {
+    if (S.sensor === sensor) { connecting = false; autoLooking = false; }
+    updateSensorUi();
+  }
+}
+// Shortly after the first render, so the page is usable while it looks.
+setTimeout(() => autoConnectArmband('on opening'), 800);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) autoConnectArmband('on returning to the app');
+});
+// The band holds only a few connections. A page that goes away without letting go -- a reload to
+// pick up a new build, say -- keeps one, and with Polar Flow holding another the band stops being
+// findable until it is switched off and on. Let go on the way out.
+addEventListener('pagehide', () => { if (S.sensor) S.sensor.dispose(); });
 $('anydevice').onclick = () => connectArmband({ acceptAll: true });
 /**
  * Take an inventory instead of guessing.
@@ -3684,6 +3746,9 @@ addEventListener('resize', () => { if (S.track.path.length > 1) drawMap(); });
 
 $('go').onclick = () => {
   if (S.running) return finish('Stopped.');
+  // Not connected yet: look for the band in the background. The run starts either way, and heart
+  // rate joins it the moment the band is found.
+  autoConnectArmband('on start');
 
   syncTargetFromField();
   const target = targetSecKm;

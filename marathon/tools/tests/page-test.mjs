@@ -1440,6 +1440,55 @@ async function openAll(page) {
             + `(${coaching.length} lines, verdict "${verdict}")`);
 }
 
+// --- the armband connects by itself ----------------------------------------------------------------
+
+{
+  // "I have to turn the armband off and on again a thousand times." It is the only Bluetooth device
+  // this app talks to: once remembered, opening the page must be enough. This band refuses the first
+  // look (still booting), and its accelerometer never answers -- which used to fail the whole connect.
+  const bp = await browser.newPage();
+  bp.on('pageerror', e => errors.push('pageerror (auto-connect): ' + e.message));
+  await bp.addInitScript(() => {
+    const hrL = [];
+    const hrChar = { async startNotifications() { return this; }, addEventListener(t, f) { hrL.push(f); } };
+    let looks = 0;
+    const server = { getPrimaryService: async id => {
+      if (/180d/.test(id)) return { getCharacteristic: async () => hrChar };
+      if (/fb005c80/.test(id)) return new Promise(() => {});
+      throw new Error('not present'); } };
+    const L = {};
+    const gatt = { connected: false,
+      connect() { looks += 1; window.__looks = looks;
+        if (looks < 2) return Promise.reject(new Error('GATT operation failed'));
+        this.connected = true; return Promise.resolve(server); },
+      disconnect() { this.connected = false; window.__released = (window.__released || 0) + 1; } };
+    const band = { name: 'Polar Sense 16961D33', gatt,
+      addEventListener(t, f) { (L[t] ||= []).push(f); },
+      removeEventListener(t, f) { L[t] = (L[t] || []).filter(x => x !== f); } };
+    navigator.bluetooth = { getDevices: async () => [band],
+                            requestDevice: async () => { window.__picker = true; return band; } };
+    window.__hr = v => hrL.forEach(f => f({ target: { value: new DataView(new Uint8Array([0, v]).buffer) } }));
+  });
+  await bp.goto('file://' + APP, { waitUntil: 'load' });
+  await bp.waitForFunction(() => document.getElementById('connect').textContent === 'Disconnect',
+    { timeout: 20000 });
+  await bp.evaluate(() => window.__hr(141));
+  await bp.waitForTimeout(300);
+  assert.match(await bp.textContent('#hrbig'), /141/, 'heart rate flows without a tap');
+  assert.equal(await bp.evaluate(() => !!window.__picker), false, 'and without the picker');
+  assert.equal(await bp.evaluate(() => window.__looks), 2, 'one connect per look');
+  // Leaving the page lets go of the band, so a reload cannot leave it held.
+  const before = await bp.evaluate(() => window.__released || 0);
+  await bp.evaluate(() => addEventListener('pagehide', () => {
+    localStorage.setItem('__released', String(window.__released || 0)); }));
+  await bp.reload({ waitUntil: 'load' });
+  const after = Number(await bp.evaluate(() => localStorage.getItem('__released')));
+  assert.ok(after > before, `the band is released on the way out (${before} -> ${after})`);
+  await bp.evaluate(() => localStorage.removeItem('__released'));
+  await bp.close();
+  console.log('  ok  the remembered armband connects by itself on opening, and is released on reload');
+}
+
 // --- the coach must not go dark the moment an armband is actually connected ------------------------
 
 {

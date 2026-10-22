@@ -88,6 +88,21 @@ export const PICKER_TIMEOUT_MS = 75000;
 export const GATT_ATTEMPTS = 3;
 export const GATT_RETRY_MS = 800;
 
+/// How long the extras (battery, accelerometer) may take, each, before they are given up on. They
+/// run AFTER heart rate is streaming and can never fail the connection: a motion-sensor start that
+/// hung used to take the whole connect down with it, heart rate included.
+export const EXTRA_TIMEOUT_MS = 5000;
+
+/// How long `autoConnect` keeps looking for the armband before handing back to the Connect button.
+export const AUTO_CONNECT_WINDOW_MS = 120000;
+
+/// Between looks, while waiting for the armband to be switched on or to come free.
+export const AUTO_CONNECT_RETRY_MS = 4000;
+
+/// Heart rate that was flowing and has stopped for this long, while the link still says connected,
+/// is a stalled stream: the link is torn down and rebuilt rather than left looking connected.
+export const HR_STALL_MS = 20000;
+
 /**
  * Turn anything that was thrown into something a person can read.
  *
@@ -254,6 +269,8 @@ export class VeritySensor {
     this.accSd = null;
     this.connected = false;
     this.reconnecting = false;
+    /// True while autoConnect is waiting for the band to appear.
+    this.looking = false;
     this.hasAcc = false;
     /// The last thing that went wrong, kept rather than thrown away: on a phone there is no console
     /// and the diagnostics report is the only way a failure reaches anyone who can fix it.
@@ -264,6 +281,19 @@ export class VeritySensor {
     this.rrCount = 0;
     this.accFrames = 0;
     this.connectedAt = 0;
+    /// Set once this instance is finished with. Every background loop checks it, so a replaced
+    /// sensor stops trying to reach the band -- before, each tap of Connect left the previous
+    /// instance's reconnect loop running for ever, all of them competing for the same armband.
+    this._disposed = false;
+    this._listening = null;       // the device the disconnect listener is attached to
+    this._onDisconnect = () => {
+      if (this._disposed) return;
+      this.connected = false;
+      this.onChange();
+      this.onLog('armband disconnected — retrying', 'bad');
+      this._reconnect();
+    };
+    this._stallTimer = null;
   }
 
   /** Everything the diagnostics report needs to tell a silent band from a broken page. */
@@ -408,20 +438,128 @@ export class VeritySensor {
     return this._finishConnect();
   }
 
-  async _finishConnect() {
+  async _finishConnect({ attempts = GATT_ATTEMPTS } = {}) {
     this._at(`selected ${this.device.name || 'device'}`);
-    this.device.addEventListener('gattserverdisconnected', () => {
-      this.connected = false;
-      this.onChange();
-      this.onLog('armband disconnected — retrying', 'bad');
-      this._reconnect();
-    });
-    const server = await this._openGatt();
+    this._listen();
+    const server = await this._openGatt({ attempts });
     this._at('connected, looking for heart rate');
-    await withTimeout(this._attach(server), CONNECT_TIMEOUT_MS, 'setting up heart-rate notifications');
+    await withTimeout(this._attachHr(server), CONNECT_TIMEOUT_MS, 'setting up heart-rate notifications');
     this.connected = true;
     this.connectedAt = Date.now();
     this._at('streaming');
+    this.onChange();
+    // Not awaited: heart rate is what a run needs, and it is already flowing.
+    this._attachExtras(server);
+    this._startStallWatch();
+  }
+
+  /** One disconnect listener, on the current device only. */
+  _listen() {
+    if (this._listening === this.device) return;
+    if (this._listening) {
+      try { this._listening.removeEventListener('gattserverdisconnected', this._onDisconnect); } catch { /* gone */ }
+    }
+    this.device.addEventListener('gattserverdisconnected', this._onDisconnect);
+    this._listening = this.device;
+  }
+
+  /**
+   * Connect to the remembered armband with no picker and no tap, waiting for it to appear.
+   *
+   * It is the only Bluetooth device this app ever talks to, so there is nothing to choose: once the
+   * browser remembers it, switching the band on should be enough. Looks every few seconds for
+   * `windowMs` (using the band's own advertisements to wake up early where the browser offers them),
+   * one connection attempt per look so a band that is still booting is not hammered. Returns true
+   * when streaming, false when there is no remembered band or it never appeared.
+   */
+  async autoConnect({ windowMs = AUTO_CONNECT_WINDOW_MS, retryMs = AUTO_CONNECT_RETRY_MS,
+                      now = () => Date.now() } = {}) {
+    const known = await this.remembered();
+    const match = known.find(d => /polar|verity|sense/i.test(d.name || ''))
+               || (known.length === 1 ? known[0] : null);
+    if (!match) return false;
+    this.device = match;
+    const name = match.name || 'your armband';
+    const until = now() + windowMs;
+    let look = 0;
+    this.looking = true;
+    try {
+      while (!this._disposed && now() < until) {
+        look += 1;
+        try {
+          if (look > 1) this._at(`looking for ${name} — is it switched on?`);
+          await this._finishConnect({ attempts: 1 });
+          return true;
+        } catch (e) {
+          this.lastError = e;
+          try { this.device.gatt.disconnect(); } catch { /* nothing open */ }
+        }
+        if (this._disposed || now() >= until) break;
+        await this._waitForAdvert(retryMs);
+      }
+    } finally {
+      this.looking = false;
+    }
+    if (!this._disposed) this._at(`${name} not found`);
+    return false;
+  }
+
+  /** Wait until the band advertises (where the browser can tell us) or `ms` passes. */
+  async _waitForAdvert(ms) {
+    const d = this.device;
+    if (!d || typeof d.watchAdvertisements !== 'function') {
+      await new Promise(r => setTimeout(r, ms));
+      return;
+    }
+    await new Promise(resolve => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        try { d.removeEventListener('advertisementreceived', finish); } catch { /* fine */ }
+        resolve();
+      };
+      d.addEventListener('advertisementreceived', finish);
+      Promise.resolve().then(() => d.watchAdvertisements()).catch(() => {});
+      setTimeout(finish, ms);
+    });
+  }
+
+  /** A heart-rate stream that stops while the link claims to be up: rebuild the link. */
+  _startStallWatch() {
+    if (this._stallTimer || typeof setInterval !== 'function') return;
+    this._stallTimer = setInterval(() => this.checkStall(), 5000);
+    if (this._stallTimer && this._stallTimer.unref) this._stallTimer.unref();
+  }
+
+  /** Returns true when it acted. Exposed for testing; the interval above calls it. */
+  checkStall(now = Date.now()) {
+    if (this._disposed || !this.connected || this.reconnecting) return false;
+    // Measured from the later of the last reading and the last (re)connect, so a rebuilt link gets a
+    // fresh twenty seconds rather than being torn down again five seconds later.
+    const last = Math.max(this.hrAt, this.connectedAt || 0);
+    if (!this.hrCount || now - last < HR_STALL_MS) return false;
+    this.onLog(`no heart rate for ${Math.round((now - last) / 1000)} s while connected — `
+               + 'reconnecting', 'bad');
+    this.connected = false;
+    this.onChange();
+    try { this.device.gatt.disconnect(); } catch { /* already down */ }
+    this._reconnect();
+    return true;
+  }
+
+  /** Finished with: stop every loop, release the band, forget the device. */
+  dispose() {
+    this._disposed = true;
+    if (this._stallTimer) { clearInterval(this._stallTimer); this._stallTimer = null; }
+    if (this._listening) {
+      try { this._listening.removeEventListener('gattserverdisconnected', this._onDisconnect); } catch { /* gone */ }
+      this._listening = null;
+    }
+    try { this.device?.gatt?.disconnect(); } catch { /* already gone */ }
+    this.device = null;
+    this.connected = false;
+    this.reconnecting = false;
     this.onChange();
   }
 
@@ -435,7 +573,7 @@ export class VeritySensor {
    *   - A failed attempt leaves state behind. Disconnecting before retrying is what makes the second
    *     attempt a fresh one rather than the first one's wreckage.
    */
-  async _openGatt() {
+  async _openGatt({ attempts = GATT_ATTEMPTS } = {}) {
     const gatt = this.device.gatt;
     if (!gatt) {
       throw new Error('the browser gave back a device with no GATT server, which means it cannot '
@@ -447,8 +585,8 @@ export class VeritySensor {
     }
 
     let last = null;
-    for (let attempt = 1; attempt <= GATT_ATTEMPTS; attempt++) {
-      this._at(attempt === 1 ? 'connecting' : `connecting — attempt ${attempt} of ${GATT_ATTEMPTS}`);
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      this._at(attempt === 1 ? 'connecting' : `connecting — attempt ${attempt} of ${attempts}`);
       try {
         return await withTimeout(gatt.connect(), CONNECT_TIMEOUT_MS,
                                  'opening the connection to the band');
@@ -460,14 +598,14 @@ export class VeritySensor {
           this.onLog('the connect call reported an error but the link is up — continuing', 'on');
           return gatt;
         }
-        this.onLog(`attempt ${attempt} of ${GATT_ATTEMPTS} failed: ${describeError(e)}`, 'bad');
+        if (attempts > 1) this.onLog(`attempt ${attempt} of ${attempts} failed: ${describeError(e)}`, 'bad');
         try { gatt.disconnect(); } catch { /* nothing to tear down */ }
-        if (attempt < GATT_ATTEMPTS) {
+        if (attempt < attempts) {
           await new Promise(r => setTimeout(r, GATT_RETRY_MS * attempt));
         }
       }
     }
-    throw new Error(`could not open a connection after ${GATT_ATTEMPTS} attempts. `
+    throw new Error(`could not open a connection after ${attempts} attempt${attempts === 1 ? '' : 's'}. `
                   + `Last: ${describeError(last)}. `
                   + 'The usual cause is another app holding the band — force-quit Polar Flow. '
                   + 'Otherwise press the band\'s button once to wake it and try again.');
@@ -477,15 +615,18 @@ export class VeritySensor {
     if (this.reconnecting || !this.device) return;
     this.reconnecting = true;
     let delay = 1000;
-    while (this.device && !this.device.gatt.connected) {
+    while (!this._disposed && this.device && !this.device.gatt.connected) {
       await new Promise(r => setTimeout(r, delay));
+      if (this._disposed || !this.device) break;
       try {
         // Timed out here too, or one hung attempt ends the retry loop permanently.
         const server = await this._openGatt();
-        await withTimeout(this._attach(server), CONNECT_TIMEOUT_MS, 'resubscribing');
+        await withTimeout(this._attachHr(server), CONNECT_TIMEOUT_MS, 'resubscribing');
         this.connected = true;
+        this.connectedAt = Date.now();
         this.onChange();
         this.onLog('armband reconnected', 'on');
+        this._attachExtras(server);
         break;
       } catch {
         // Backs off to 8 s and stays there. Retrying every second for an hour drains the battery
@@ -496,7 +637,7 @@ export class VeritySensor {
     this.reconnecting = false;
   }
 
-  async _attach(server) {
+  async _attachHr(server) {
     let hrService;
     try {
       hrService = await server.getPrimaryService(HR_SERVICE);
@@ -517,43 +658,53 @@ export class VeritySensor {
       if (rr.length) { this.rr.push(...rr); this.rrCount += rr.length; }
       this.onChange();
     });
+  }
 
+  /**
+   * Battery and accelerometer: best-effort, each with its own short timeout, never able to fail the
+   * connection. Heart rate is already streaming by the time this runs.
+   */
+  async _attachExtras(server) {
     try {
-      const bs = await server.getPrimaryService(BATTERY_SERVICE);
-      // Kept, not discarded after the first read. Re-reading needs the characteristic, and going
-      // back through getPrimaryService every five minutes during a run is work the radio does not
-      // need to do.
-      this.batteryChar = await bs.getCharacteristic(BATTERY_CHAR);
-      await this.readBattery();
-    } catch { /* optional; its absence is not a failure */ }
-
-    // Accelerometer is best-effort. Without it the heart rate still works; what is lost is the
-    // movement evidence the not-worn and frozen detectors need, and the app says so rather than
-    // pretending the check ran.
+      await withTimeout(this._attachBattery(server), EXTRA_TIMEOUT_MS, 'reading the battery');
+    } catch { /* optional */ }
     try {
-      const pmd = await server.getPrimaryService(PMD_SERVICE);
-      const control = await pmd.getCharacteristic(PMD_CONTROL);
-      const data = await pmd.getCharacteristic(PMD_DATA);
-      await control.startNotifications();
-      await data.startNotifications();
-      data.addEventListener('characteristicvaluechanged', e => {
-        const samples = parseAccFrame(e.target.value);
-        if (samples) {
-          this.accFrames += 1;
-          for (const s of samples) this.accWindow.push(accMagnitude(s));
-        }
-      });
-      await control.writeValueWithResponse(startCommand(MEAS_ACC, ACC_SETTINGS));
+      await withTimeout(this._attachAcc(server), EXTRA_TIMEOUT_MS, 'starting the accelerometer');
       this.hasAcc = true;
     } catch {
       this.hasAcc = false;
     }
-  }
-
-  disconnect() {
-    try { this.device?.gatt?.disconnect(); } catch { /* already gone */ }
-    this.device = null;
-    this.connected = false;
     this.onChange();
   }
+
+  async _attachBattery(server) {
+    const bs = await server.getPrimaryService(BATTERY_SERVICE);
+    // Kept, not discarded after the first read. Re-reading needs the characteristic, and going
+    // back through getPrimaryService every five minutes during a run is work the radio does not
+    // need to do.
+    this.batteryChar = await bs.getCharacteristic(BATTERY_CHAR);
+    await this.readBattery();
+  }
+
+  // Accelerometer is best-effort. Without it the heart rate still works; what is lost is the
+  // movement evidence the not-worn and frozen detectors need, and the app says so rather than
+  // pretending the check ran.
+  async _attachAcc(server) {
+    const pmd = await server.getPrimaryService(PMD_SERVICE);
+    const control = await pmd.getCharacteristic(PMD_CONTROL);
+    const data = await pmd.getCharacteristic(PMD_DATA);
+    await control.startNotifications();
+    await data.startNotifications();
+    data.addEventListener('characteristicvaluechanged', e => {
+      const samples = parseAccFrame(e.target.value);
+      if (samples) {
+        this.accFrames += 1;
+        for (const s of samples) this.accWindow.push(accMagnitude(s));
+      }
+    });
+    await control.writeValueWithResponse(startCommand(MEAS_ACC, ACC_SETTINGS));
+  }
+
+  /** The athlete's Disconnect. Same as dispose: nothing should keep trying after it. */
+  disconnect() { this.dispose(); }
 }
