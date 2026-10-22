@@ -116,6 +116,57 @@ GPS drop-out, a stop):
 - With no GPS at a constant 165 spm, steps alone tell 2.95 from 2.18 m/s by how they land (truth: 3.0
   and 2.2).
 
+## Second pass: gaps the literature pointed to
+
+After the first version, a second check against the literature found four more things worth doing.
+
+- **Half-cadence from the arm.** A sensor on the arm can lock onto the arm swing, which happens once
+  per stride, and so count half the steps. Wrist watches are known to do this at easy paces, and a
+  patent on stride biomechanics describes the arm-swing component at half the cadence frequency
+  ([US 11875696](https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/11875696);
+  [Suunto forum reports](https://forum.suunto.com/post/92985)). The suggested fix is a speed
+  sanity check, and that is what the app now does:
+  - A cadence is treated as half-counted when it implies a step length nobody takes at that GPS
+    speed (longer than 0.55 + 0.25·v m), or when it is a steady rhythm under 70 spm.
+  - The correction is a latched mode, switched by 5 s of consistent evidence either way. While the
+    evidence is undecided, that source is held out of the estimate.
+  - Speed evidence comes only from GPS. The filter's own estimate, coasting through a drop-out,
+    would make an honest walking cadence look like half of something.
+- **Robust measurement update.** Huber-type down-weighting of large innovations is the standard
+  defence against GNSS multipath outliers in a Kalman filter
+  ([Tseng, Lin & Jwo, Huber-based CKF for GPS](https://ir.lib.nycu.edu.tw/handle/11536/145378?locale=en);
+  [Kbayer et al., robust EKF for NLOS/multipath](https://tesa.prd.fr/documents/26/enc-2015-kbyaer-nabil-final-version.pdf);
+  [Ruckdeschel, robust Kalman filtering](https://arxiv.org/pdf/1004.3393)). Innovations beyond
+  3 standard deviations now have their influence clipped. A run/walk change is about 2, so it is
+  untouched.
+- **Spikes kept out of the GPS scale.** A Doppler reading that implies more than 2 m/s² of
+  acceleration is bridged with the last good speed in the scale's integral, at most two in a row.
+  Without this, one spike in a 60 s window skews the scale.
+- **Fresh fixes only.** `maximumAge: 0` instead of 1 s, so the phone never hands back a cached
+  position.
+
+**Simulated results for this pass:**
+
+| Fault | Distance error |
+|---|---|
+| Armband counting one step per arm swing while walking, drop-out included | −1.8% |
+| Doppler spikes of +4 m/s every 45 s | −0.8% (−5.3% before the fixes) |
+
+Peak-detection step counting itself is the right choice: a benchmark of step-counting algorithms on
+unconstrained phones found windowed peak detection best, at under 3% error
+([Brajdic & Harle, UbiComp 2013](https://www.cl.cam.ac.uk/~rkh23/site/publication/pub37)).
+
+### Considered and deliberately not done
+
+- **Live map-matching.** It would correct distance on roads, but it means sending the runner's live
+  track to a third-party server, and it fails without a signal. It stays an offline check (it agreed
+  with the recorded trace to 0.7%).
+- **Grade-dependent stride.** Stride shortens uphill, but the routes so far have about 6 m of relief,
+  and the terrain model's 90 m cells cannot resolve the grades that would matter.
+- **Polar SDK mode** (more sensors and rates). It switches off heart rate.
+- **Barometric altitude and Core Motion's pedometer.** Neither is available to a web page. They
+  would need a native app.
+
 ## What to check on the next real run
 
 - The chip under the heart rate should read **"arm motion on"**. If it reads **"no arm motion (…)"**,
@@ -123,5 +174,8 @@ GPS drop-out, a stop):
 - Diagnostics → `fusion` shows:
   - `scale` and `scaleWindows`: the GPS correction and how many straight stretches it came from;
   - `strideSeconds` and `armStrideSeconds`;
-  - `shares`: the seconds each source led the estimate.
+  - `shares`: the seconds each source led the estimate;
+  - `halfCadenceFixes`: seconds a source's cadence was doubled (large for `arm` means the band was
+    counting arm swings);
+  - `outliers`: readings down-weighted by the robust update.
 - Distance should now land within a few percent of the mapped route, not 11–14% short.

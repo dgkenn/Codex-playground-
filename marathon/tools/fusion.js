@@ -54,6 +54,9 @@ export const FusionDefaults = {
   stillAfterS: 3,
   /// Kalman process noise: how fast speed can plausibly change, m/s per sqrt(s).
   processSd: 0.35,
+  /// Innovations beyond this many standard deviations are down-weighted (Huber). A run/walk change
+  /// is about two; a Doppler spike is ten.
+  huberK: 3,
 };
 
 /** Great-circle distance in metres. */
@@ -230,7 +233,7 @@ export class SpeedFusion {
       ? saved.scale : 1;
     this.scaleChord = 150 * prior; this.scaleSpeed = 150;
     this.windows = 0;
-    this.fixes = [];               // recent accepted fixes {t, lat, lon, acc, v, cum}
+    this.fixes = [];               // recent accepted fixes {t, lat, lon, acc, v, vi, subs, cum, gap}
     this.lastFix = null;
     this.x = 0; this.P = 1;        // Kalman state: speed and its variance
     this.lastT = null;
@@ -250,10 +253,18 @@ export class SpeedFusion {
     const prev = this.fixes[this.fixes.length - 1];
     const dt = prev ? t - prev.t : 0;
     if (prev && dt <= 0) return;
+    // A change of speed faster than 2 m/s per second is not running (a sprint start is about that;
+    // run/walk changes are well under half). It is a reading gone wrong -- multipath, a re-acquired
+    // fix -- and is bridged with the last good speed for the scale's integral, so one spike does not
+    // skew the scale for the session. Never more than two in a row: a third is the new truth.
+    let vi = v, subs = 0;
+    if (prev && v != null && prev.vi != null && Math.abs(v - prev.vi) > 2 * Math.max(dt, 1) && prev.subs < 2) {
+      vi = prev.vi; subs = prev.subs + 1;
+    }
     // Integrated phone speed, for the scale; trapezoid over the gap, capped at 10 s (a longer gap is
     // not integrated and so cannot enter a calibration window).
-    const cum = prev ? prev.cum + (v != null && prev.v != null && dt <= 10 ? (v + prev.v) / 2 * dt : 0) : 0;
-    const fix = { t, lat, lon, acc: accuracy, v, cum, gap: !prev || dt > 10 || v == null || prev.v == null };
+    const cum = prev ? prev.cum + (vi != null && prev.vi != null && dt <= 10 ? (vi + prev.vi) / 2 * dt : 0) : 0;
+    const fix = { t, lat, lon, acc: accuracy, v, vi, subs, cum, gap: !prev || dt > 10 || v == null || prev.v == null };
     this.fixes.push(fix);
     while (this.fixes.length && this.fixes[0].t < t - this.cfg.calibWindowS * 2) this.fixes.shift();
     this.lastFix = fix;
@@ -344,14 +355,43 @@ export class SpeedFusion {
     }
     this.motionUnusable = this._unusable.phone;
     const live = srcs.filter(c => c.seen && !this._unusable[c.key]);
-    for (const c of live) { c.cad = c.det.cadence(t); c.inten = c.det.intensity(t); }
+    // Half-cadence guard. A sensor on the arm can lock onto the arm swing, which comes once per
+    // stride -- half the step rate -- and a watch on the wrist is known to do exactly this at easy
+    // paces. The tell is a step length no human takes at that speed: at v m/s nobody steps longer
+    // than about 0.55 + 0.25 v metres (0.9 m walking at 1.4, 1.1 m running at 2.25, 1.55 m at 4),
+    // while a half-counted cadence implies twice the real step. The speed to judge by is the
+    // calibrated GPS.
+    // It is a mode, switched only by five seconds of consistent evidence either way: for a second or
+    // two after a walk turns into a run the GPS already says 2.2 m/s while the cadence is still the
+    // walk's, which looks the same; and once switched on it must not lapse over a missing reading,
+    // or a GPS drop-out lets the speed sag to half, where the halved cadence looks plausible again.
+    // The speed evidence is the GPS's only: the filter's own estimate, coasting through a drop-out
+    // from a run into a walk, would make an honest walking cadence look like half of something.
+    const vRef = gpsV;
+    this.halfCadenceFixes = this.halfCadenceFixes || { phone: 0, arm: 0 };
+    this._half = this._half || { phone: { on: false, run: 0 }, arm: { on: false, run: 0 } };
+    for (const c of live) {
+      c.cad = c.det.cadence(t); c.inten = c.det.intensity(t);
+      // A steady rhythm under 70 a minute is half-counting at any speed: nobody walks that slowly
+      // in step. While the evidence disagrees with the current mode the source is held out of the
+      // estimate (and of learning) rather than trusted either way.
+      const h = this._half[c.key];
+      c.pending = false;
+      if (c.cad != null) {
+        const half = c.cad < 70 || (vRef != null && vRef > 0.5 && vRef * 60 / c.cad > 0.55 + 0.25 * vRef);
+        h.run = half !== h.on ? h.run + 1 : 0;
+        if (h.run >= 5) { h.on = half; h.run = 0; }
+        c.pending = h.run > 0;
+      }
+      if (h.on && c.cad != null) { c.cad *= 2; this.halfCadenceFixes[c.key] += 1; }
+    }
 
     // Learn each source's stride while the GPS is good and the pace has held, against the phone's RAW
     // speed (scaled at use, so a later correction to the scale applies at once).
     if (gpsV != null && fix.acc <= this.cfg.calibAccuracyM && gpsV > 0.8) {
       const steady = this.fixes.filter(f => f.t >= t - 6 && f.v != null).map(f => f.v * this.scale);
       if (steady.length >= 3 && Math.max(...steady) - Math.min(...steady) < 0.35) {
-        for (const c of live) if (c.cad != null) c.model.add(c.cad, c.inten, fix.v / (c.cad / 60));
+        for (const c of live) if (c.cad != null && !c.pending) c.model.add(c.cad, c.inten, fix.v / (c.cad / 60));
       }
     }
 
@@ -364,7 +404,7 @@ export class SpeedFusion {
 
     const sources = [];
     if (still) {
-      this._update(0, 0.05 ** 2); sources.push('still');
+      this._update(0, 0.05 ** 2, false); sources.push('still');
     } else {
       if (gpsV != null) {
         const sd = 0.15 + 0.015 * fix.acc;
@@ -385,7 +425,7 @@ export class SpeedFusion {
       // Either alone is enough; together they cover each other's missed steps.
       let wsum = 0, vsum = 0, best = Infinity;
       for (const c of live) {
-        if (c.cad == null || c.model.seconds < this.cfg.strideTrustS) continue;
+        if (c.cad == null || c.pending || c.model.seconds < this.cfg.strideTrustS) continue;
         const stride = c.model.stride(c.cad, c.inten);
         if (stride == null) continue;
         const w = 1 / c.sd ** 2;
@@ -411,7 +451,18 @@ export class SpeedFusion {
              trusted: this.lastMeasT != null && t - this.lastMeasT <= 6 };
   }
 
-  _update(z, r) {
+  /**
+   * Kalman measurement update, Huber-robust: an innovation beyond `huberK` standard deviations has
+   * its influence clipped at that many (by inflating its variance), so one wild reading -- a Doppler
+   * spike from multipath, a burst of doubled steps -- moves the estimate a bounded amount, while a
+   * real change of pace, which every source keeps reporting, gets through in a second or two.
+   */
+  _update(z, r, robust = true) {
+    const S = this.P + r, e = Math.abs(z - this.x) / Math.sqrt(S);
+    if (robust && e > this.cfg.huberK) {
+      r = S * e / this.cfg.huberK - this.P;
+      this.outliers = (this.outliers || 0) + 1;
+    }
     const k = this.P / (this.P + r);
     this.x += k * (z - this.x);
     this.P *= (1 - k);
@@ -427,6 +478,8 @@ export class SpeedFusion {
       strideSeconds: this.strideModel.seconds, armStrideSeconds: this.armModel.seconds,
       motion: this.motionSeen, motionUnusable: !!this.motionUnusable,
       arm: !!this.armSeen, armUnusable: !!(this._unusable && this._unusable.arm),
+      halfCadenceFixes: this.halfCadenceFixes || { phone: 0, arm: 0 },
+      outliers: this.outliers || 0,
       distanceM: Math.round(this.distanceM),
       distanceGpsM: Math.round(this.distanceGpsM),
       shares: Object.fromEntries(Object.entries(this.shares).map(([k, v]) => [k, Math.round(v)])),

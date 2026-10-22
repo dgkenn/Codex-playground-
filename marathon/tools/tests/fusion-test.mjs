@@ -19,11 +19,12 @@ function posAt(d) {
 }
 
 /** A session: warm-up walk, run/walk blocks, a 60 s stop, a 90 s GPS drop-out. */
-function session({ phoneBias = 0.88, motion = true, arm = false, dropout = true, noDoppler = false } = {}) {
+function session({ phoneBias = 0.88, motion = true, arm = false, armHalfWalking = false, dropout = true,
+                   noDoppler = false, spikes = false } = {}) {
   const f = new SpeedFusion();
   let d = 0, en = 0, ee = 0, naive = 0;
   const cad = v => (v > 1.8 ? 165 : v > 0.5 ? 112 : 0);
-  let stepPhase = 0, armPhase = 0, maxErr = 0, errs = [];
+  let stepPhase = 0, armPhase = 0, armOdd = false, maxErr = 0, errs = [];
   const settle = [];                       // seconds from each change of pace until the estimate is within 0.25 m/s
   let changedAt = null, prevV = null;
   for (let t = 0; t < 2400; t++) {
@@ -52,8 +53,10 @@ function session({ phoneBias = 0.88, motion = true, arm = false, dropout = true,
         let a = 1000 + 30 * gauss();
         if (c) {
           armPhase += c / 60 / 52;
-          if (armPhase >= 1) armPhase -= 1;
-          if (armPhase < 0.14) a += (v > 1.8 ? 700 : 350) * Math.sin(Math.PI * armPhase / 0.14);
+          if (armPhase >= 1) { armPhase -= 1; armOdd = !armOdd; }
+          // Walking, the arm can feel only every other step: the swing, once per stride.
+          const felt = !(armHalfWalking && v < 1.8 && armOdd);
+          if (felt && armPhase < 0.14) a += (v > 1.8 ? 700 : 350) * Math.sin(Math.PI * armPhase / 0.14);
         }
         frame.push(a);
         if (frame.length === 13) { f.arm({ t: t + k / 52, mags: frame.splice(0) }); }
@@ -65,7 +68,8 @@ function session({ phoneBias = 0.88, motion = true, arm = false, dropout = true,
     const p = posAt(d);
     const inDrop = dropout && t >= 900 && t < 990;
     if (!inDrop) {
-      const doppler = v === 0 ? Math.abs(0.25 * gauss()) : v * phoneBias + 0.1 * gauss();
+      let doppler = v === 0 ? Math.abs(0.25 * gauss()) : v * phoneBias + 0.1 * gauss();
+      if (spikes && t % 45 === 17) doppler += 4;          // multipath: a wild reading now and then
       f.gps({ t, lat: p.lat + en / M_LAT, lon: p.lon + ee / M_LON, accuracy: 6, speed: noDoppler ? null : doppler });
       if (t > 0) naive += Math.max(0, doppler);
     }
@@ -112,6 +116,30 @@ function session({ phoneBias = 0.88, motion = true, arm = false, dropout = true,
   // (a different noise draw from the first session: the remaining error is the scale's, not the steps')
   assert.ok(Math.abs(e2) < 0.03, `phone and armband together: ${(e2 * 100).toFixed(1)}%`);
   console.log(`  ok  armband accelerometer alone ${(err * 100).toFixed(1)}%, with the phone's too ${(e2 * 100).toFixed(1)}%`);
+}
+
+{
+  // An arm sensor that feels only every other step while walking (the arm swing, once per stride)
+  // reads half the cadence. The half-cadence guard sees the impossible step length and doubles it.
+  const s = session({ motion: false, arm: true, armHalfWalking: true });
+  const err = s.f.distanceM / s.truth - 1;
+  const st = s.f.state();
+  assert.ok(st.halfCadenceFixes.arm > 300, `half-counting is caught: ${JSON.stringify(st.halfCadenceFixes)}`);
+  assert.ok(Math.abs(err) < 0.03, `and the distance holds, drop-out included: ${(err * 100).toFixed(1)}%`);
+  console.log(`  ok  an armband counting one step per arm swing is caught (${st.halfCadenceFixes.arm} s doubled), distance ${(err * 100).toFixed(1)}%`);
+}
+
+{
+  // Doppler spikes of +4 m/s (multipath) every 45 s: clipped by the robust update, not followed.
+  const clean = session();
+  const s = session({ spikes: true });
+  const err = s.f.distanceM / s.truth - 1;
+  assert.ok(s.f.state().outliers >= 40, `the spikes are recognised: ${s.f.state().outliers}`);
+  assert.ok(Math.abs(err) < 0.025, `distance unmoved by them: ${(err * 100).toFixed(1)}%`);
+  assert.ok(s.p95 < clean.p95 + 0.15, `the worst seconds barely worse: p95 ${s.p95.toFixed(2)} vs ${clean.p95.toFixed(2)} m/s`);
+  assert.ok(s.settleMed <= 3, `and real changes of pace still show at once (${s.settleMed} s)`);
+  console.log(`  ok  Doppler spikes are clipped (${s.f.state().outliers} down-weighted): distance ${(err * 100).toFixed(1)}%, `
+            + `p95 speed error ${s.p95.toFixed(2)} vs ${clean.p95.toFixed(2)} m/s clean`);
 }
 
 {

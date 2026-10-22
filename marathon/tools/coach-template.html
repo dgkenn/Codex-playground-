@@ -4008,7 +4008,9 @@ $('go').onclick = () => {
       log(`GPS: ${explainGeoError(e)}`, 'stop');
       S.geoError = e;
     },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+      // maximumAge 0: never a cached position, only fresh ones -- a reused fix is a second of
+      // pretended travel the fusion has to reject (it does, by timestamp, but then it is a lost second).
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
   }
   // Autosave the COMPACT form, not the full one.
   //
