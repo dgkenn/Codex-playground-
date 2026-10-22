@@ -100,6 +100,11 @@ export const WALK_CHECK_S = 60;
 /** How far heart rate must have fallen by then for the walk to count as recovering. */
 export const WALK_DROP_BPM = 5;
 
+/// A walk whose heart rate climbs this far back up from its lowest reading has turned into a jog.
+/// 22 October: a walk break went 154 -> 139 and then back to 165 at a slow jog (1.6-1.9 m/s, too
+/// slow for the speed check to call it running), hit its time cap unrecovered and ended the running.
+export const WALK_RISE_BPM = 8;
+
 /// Named for this module, not `mean`: every module here inlines into one scope in the built page,
 /// so a bare `mean` collides with run-stats.js and the whole page stops parsing. The build checks
 /// for exactly that, which is how this was caught rather than shipped as a blank screen.
@@ -253,7 +258,17 @@ export class PaceVoice {
    */
   walkUpdate(tS, hr) {
     const w = this.walk;
-    if (!w || w.said || hr == null || w.startHr == null) return null;
+    if (!w || hr == null || w.startHr == null) return null;
+    // Lowest point so far, from the first 30 s on (before that the heart rate is still climbing out
+    // of the block, which says nothing about the walk).
+    if (tS - w.startT >= 30) w.low = w.low == null ? hr : Math.min(w.low, hr);
+    // Second check, for the rest of the walk: it was coming down and has climbed back up. Said once.
+    if (w.said && !w.rose && w.low != null && hr - w.low >= WALK_RISE_BPM) {
+      w.rose = true;
+      return { text: 'That is turning into a jog. Walk, and let it come down.', kind: 'walk', hr,
+               riseBpm: hr - w.low };
+    }
+    if (w.said) return null;
     if (tS - w.startT < WALK_CHECK_S) return null;
     if (w.startHr - hr >= WALK_DROP_BPM) { w.said = true; return null; }   // it is working; stay quiet
     w.said = true;

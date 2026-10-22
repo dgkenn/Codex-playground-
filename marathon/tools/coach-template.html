@@ -2276,7 +2276,9 @@ function updateSensorUi() {
     $('hrstate').textContent = 'connected, waiting for a reading';
   } else {
     const z = (S.hrZones || []).find(x => sn.hr >= x.low && sn.hr < x.high);
-    $('hrstate').textContent = `${z ? 'Zone ' + z.index : 'out of range'}`
+    // Below the first zone is resting, not an error; above the last is unlikely and worth saying.
+    $('hrstate').textContent = `${z ? 'Zone ' + z.index
+                                    : sn.hr < ((S.hrZones || [])[0] || { low: 0 }).low ? 'resting' : 'above your zones'}`
       + (sn.battery != null
           ? ` · battery ${sn.battery}%${sn.battery <= BATTERY_LOW_PCT ? ' — CHARGE IT' : ''}` : '')
       + (sn.hasAcc ? '' : ' · no accelerometer');

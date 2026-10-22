@@ -293,4 +293,19 @@ function session(voice, paceOf, { reps = 7, runS = 120, walkS = 120 } = {}) {
   console.log('  ok  a walk that is not bringing heart rate down gets one line, a working one gets none');
 }
 
+{
+  // 22 October: the walk did its job (154 -> 139) and then turned into a slow jog -- heart rate back up
+  // to 165, too slow for the speed check to call it running. Rising 8 above the walk's low is named,
+  // once.
+  const v = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile });
+  v.beginWalk(1535, 154);
+  assert.equal(v.walkUpdate(1570, 146), null);
+  assert.equal(v.walkUpdate(1600, 139), null, 'coming down: quiet');
+  assert.equal(v.walkUpdate(1620, 144), null, '+5 is noise');
+  const rose = v.walkUpdate(1640, 148);
+  assert.ok(rose && /turning into a jog/.test(rose.text), `climbing back up is named: ${JSON.stringify(rose)}`);
+  assert.equal(v.walkUpdate(1680, 160), null, 'once');
+  console.log('  ok  a walk whose heart rate climbs back up gets one "turning into a jog" line');
+}
+
 console.log('\nAll pace-voice tests passed.');
