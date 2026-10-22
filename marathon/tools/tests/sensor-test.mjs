@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { parseHeartRate, parseAccFrame, startCommand, accMagnitude,
          VeritySensor, STALE_HR_MS, withTimeout, PICKER_TIMEOUT_MS,
-         describeError, GATT_ATTEMPTS, HR_STALL_MS } from '../sensor.js';
+         describeError, GATT_ATTEMPTS, HR_STALL_MS, ARMBAND_KEY } from '../sensor.js';
 
 const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
 
@@ -477,6 +477,84 @@ function fakeBand({ failLooks = 0, hangPmd = false, name = 'Polar Sense 16961D33
   assert.equal(t.checkStall(Date.now() + 60000), false, 'a band that never read is not "stalled"');
   t.dispose();
   console.log('  ok  a stalled heart-rate stream is rebuilt; a band that never read is left alone');
+}
+
+
+// --- redundancy: every route has a second route -----------------------------------------------------
+
+const memStore = () => { const m = new Map(); return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
+
+{
+  // The band that last streamed is tried first, by id, ahead of anything else that looks like one.
+  const store = memStore();
+  store.setItem(ARMBAND_KEY, JSON.stringify({ id: 'B' }));
+  const s = new VeritySensor({ store });
+  const a = { id: 'A', name: 'Polar Sense 1' }, b = { id: 'B', name: 'Polar Sense 2' }, x = { id: 'X', name: 'Speaker' };
+  assert.deepEqual(s.candidates([a, x, b]).map(d => d.id), ['B', 'A']);
+  assert.deepEqual(new VeritySensor().candidates([x]).map(d => d.id), ['X'], 'a single remembered device is tried whatever its name');
+  assert.deepEqual(new VeritySensor().candidates([x, { id: 'Y', name: 'Watch' }]), [], 'never a stranger among several');
+  console.log('  ok  remembered devices are tried best first: last streamed, then Polar-named');
+}
+
+{
+  // A stale remembered entry must not block a good one behind it: both are tried before the picker.
+  const dead = { ...fakeBand({ failLooks: 1e9, name: 'Polar Sense OLD' }), id: 'old' };
+  const good = { ...fakeBand({ name: 'Polar Sense NEW' }), id: 'new' };
+  let picker = false;
+  const restore = fakeBluetooth({ getDevices: async () => [dead, good],
+                                  requestDevice: async () => { picker = true; throw new Error('no'); } });
+  const store = memStore();
+  const s = new VeritySensor({ store });
+  await s.connect();
+  assert.equal(s.connected, true); assert.equal(picker, false);
+  assert.equal(JSON.parse(store.getItem(ARMBAND_KEY)).id, 'new', 'and the one that worked is remembered');
+  s.dispose(); restore();
+  console.log('  ok  every remembered entry is tried before the picker, and the one that streamed is remembered');
+}
+
+{
+  // When the page knows nothing is remembered, Connect goes straight to the picker -- called inside the
+  // tap, before any await, so the tap's permission cannot lapse on the way.
+  let calledSync = false, listed = false;
+  const band = fakeBand();
+  const restore = fakeBluetooth({ getDevices: async () => { listed = true; return []; },
+                                  requestDevice: () => { calledSync = true; return Promise.resolve(band); } });
+  const s = new VeritySensor();
+  const p = s.connect({ skipRemembered: true });
+  assert.equal(calledSync, true, 'the picker is opened synchronously within the call');
+  await p;
+  assert.equal(listed, false, 'and the remembered list was not consulted first');
+  assert.equal(s.connected, true);
+  s.dispose(); restore();
+  console.log('  ok  with nothing remembered, the picker opens inside the tap itself');
+}
+
+{
+  // Looking rotates across the plausible entries: a dead first entry does not stop the second.
+  const dead = { ...fakeBand({ failLooks: 1e9, name: 'Polar Sense OLD' }), id: 'old' };
+  const good = { ...fakeBand({ name: 'Polar Sense NEW' }), id: 'new' };
+  const restore = fakeBluetooth({ getDevices: async () => [dead, good] });
+  const s = new VeritySensor();
+  assert.equal(await s.autoConnect({ windowMs: 2000, retryMs: 10 }), true);
+  assert.equal(s.device.id, 'new');
+  s.dispose(); restore();
+  console.log('  ok  looking for the band rotates across remembered entries');
+}
+
+{
+  // Mid-run: the device object goes stale (connects fail for ever) while the band is fine. After a
+  // few failures the loop asks the browser again, gets a fresh object, and reconnects.
+  const stale = { ...fakeBand({ failLooks: 1e9 }), id: 'band' };
+  const fresh = { ...fakeBand(), id: 'band' };
+  const restore = fakeBluetooth({ getDevices: async () => [fresh] });
+  const s = new VeritySensor();
+  s.device = stale;
+  const t0 = Date.now();
+  await s._reconnect();
+  assert.equal(s.connected, true, 'reconnected through a fresh device object');
+  assert.equal(s.device, fresh);
+  s.dispose(); restore();
+  console.log(`  ok  a reconnect loop re-acquires a stale device object (${Math.round((Date.now() - t0) / 1000)} s)`);
 }
 
 console.log('\nAll sensor tests passed.');

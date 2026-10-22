@@ -99,6 +99,20 @@ export const AUTO_CONNECT_WINDOW_MS = 120000;
 /// Between looks, while waiting for the armband to be switched on or to come free.
 export const AUTO_CONNECT_RETRY_MS = 4000;
 
+/// One look for the band, while waiting for it, gets this long before the next. Shorter than a full
+/// connect budget: a band that is off or held elsewhere never answers, and a 20 s hang per look
+/// would mean six looks in two minutes instead of a dozen.
+export const LOOK_TIMEOUT_MS = 10000;
+
+/// In a reconnect loop, after this many failures on the same device object, ask the browser for the
+/// remembered devices again: an object the bridge has silently invalidated fails for ever, and a
+/// fresh one from getDevices connects.
+export const REACQUIRE_AFTER = 3;
+
+/// Where the last armband that actually streamed is remembered, so it is preferred among several
+/// remembered entries (a band that was reset or re-permitted can appear twice).
+export const ARMBAND_KEY = 'band.armband';
+
 /// Heart rate that was flowing and has stopped for this long, while the link still says connected,
 /// is a stalled stream: the link is torn down and rebuilt rather than left looking connected.
 export const HR_STALL_MS = 20000;
@@ -251,8 +265,13 @@ export const bluetoothAvailable = () =>
  * directly, or a band that has gone out of range keeps reporting its last value forever.
  */
 export class VeritySensor {
-  constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {} } = {}) {
+  constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {}, store = null } = {}) {
     this.onLog = onLog;
+    /// localStorage-like, optional: remembers which band last streamed (see ARMBAND_KEY).
+    this.store = store;
+    /// What the browser last said it remembers. The page reads this to decide whether a Connect tap
+    /// should go straight to the picker -- which has to happen inside the tap, before any await.
+    this.lastKnown = null;
     this.onChange = onChange;
     // Named so a failure can say which step it stopped at. "Nothing happened" is not a diagnosis,
     // and on a phone there is no console to go and look in.
@@ -370,13 +389,40 @@ export class VeritySensor {
    * `getDevices` is not universally implemented, so its absence is a normal outcome, not an error.
    */
   async remembered() {
-    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return [];
+    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) { this.lastKnown = []; return []; }
     try {
-      return await withTimeout(navigator.bluetooth.getDevices(), 5000, 'listing known devices');
+      const list = await withTimeout(navigator.bluetooth.getDevices(), 5000, 'listing known devices');
+      this.lastKnown = list || [];
+      return this.lastKnown;
     } catch (e) {
       this.lastError = e;
+      this.lastKnown = [];
       return [];
     }
+  }
+
+  /**
+   * Remembered devices worth trying, best first: the band that last streamed (by id), then anything
+   * named like a Polar band, then -- if there is exactly one remembered device -- that one.
+   */
+  candidates(known) {
+    let last = null;
+    try { last = JSON.parse((this.store && this.store.getItem(ARMBAND_KEY)) || 'null'); } catch { /* none */ }
+    const out = [];
+    const add = d => { if (d && !out.includes(d)) out.push(d); };
+    if (last && last.id) add((known || []).find(d => d.id && d.id === last.id));
+    for (const d of known || []) if (/polar|verity|sense/i.test(d.name || '')) add(d);
+    if ((known || []).length === 1) add(known[0]);
+    return out;
+  }
+
+  _rememberGood() {
+    if (!this.store || !this.device) return;
+    try {
+      this.store.setItem(ARMBAND_KEY, JSON.stringify({ id: this.device.id || null,
+                                                       name: this.device.name || null,
+                                                       at: new Date().toISOString() }));
+    } catch { /* storage blocked */ }
   }
 
   /**
@@ -405,32 +451,33 @@ export class VeritySensor {
       'waiting for the device picker (it never returned the device you tapped)');
   }
 
-  async connect({ acceptAll = false, usePicker = true } = {}) {
+  async connect({ acceptAll = false, usePicker = true, skipRemembered = false } = {}) {
     this.lastError = null;
     this.device = null;
 
-    // Anything already permitted, first. No picker, no tap, and it survives a reload.
-    const known = await this.remembered();
-    const match = known.find(d => /polar|verity|sense/i.test(d.name || ''))
-               || (known.length === 1 ? known[0] : null);
-
-    if (match) {
-      // A remembered device can be a stale entry — the permission outlives the pairing, and a band
-      // that has since been reset or given to someone else is still in the list. So a failure here
-      // falls through to the picker rather than ending the attempt: otherwise one bad entry blocks
-      // the only other route in, permanently, with no way to clear it from a phone.
-      this.device = match;
-      this._at(`remembered ${match.name || 'device'}`);
-      try {
-        return await this._finishConnect();
-      } catch (e) {
-        this.lastError = e;
-        if (!usePicker) throw e;
-        this.onLog(`the remembered device did not connect (${describeError(e)}) — asking again`,
-                   'bad');
+    // Straight to the picker when the page already knows nothing is remembered. The picker has to be
+    // opened inside the tap: awaiting getDevices first can let the tap's permission lapse, and the
+    // picker then refuses to open at all.
+    if (!skipRemembered) {
+      // Anything already permitted, first. No picker, no tap, and it survives a reload. Every
+      // plausible entry is tried, the one that last streamed first: a stale entry (a band that was
+      // reset, a permission granted twice) must not block a good one behind it.
+      const list = this.candidates(await this.remembered());
+      for (const d of list) {
+        this.device = d;
+        this._at(`remembered ${d.name || 'device'}`);
+        try {
+          return await this._finishConnect();
+        } catch (e) {
+          this.lastError = e;
+          this.onLog(`the remembered device did not connect (${describeError(e)})`, 'bad');
+          try { d.gatt.disconnect(); } catch { /* nothing open */ }
+        }
       }
-    } else if (!usePicker) {
-      throw new Error('no remembered device, and the picker was not allowed');
+      if (!usePicker) {
+        throw this.lastError || new Error('no remembered device, and the picker was not allowed');
+      }
+      if (list.length) this.onLog('asking for the armband again', 'bad');
     }
 
     this.device = await this._ask(acceptAll);
@@ -438,15 +485,16 @@ export class VeritySensor {
     return this._finishConnect();
   }
 
-  async _finishConnect({ attempts = GATT_ATTEMPTS } = {}) {
+  async _finishConnect({ attempts = GATT_ATTEMPTS, timeoutMs = CONNECT_TIMEOUT_MS } = {}) {
     this._at(`selected ${this.device.name || 'device'}`);
     this._listen();
-    const server = await this._openGatt({ attempts });
+    const server = await this._openGatt({ attempts, timeoutMs });
     this._at('connected, looking for heart rate');
     await withTimeout(this._attachHr(server), CONNECT_TIMEOUT_MS, 'setting up heart-rate notifications');
     this.connected = true;
     this.connectedAt = Date.now();
     this._at('streaming');
+    this._rememberGood();
     this.onChange();
     // Not awaited: heart rate is what a run needs, and it is already flowing.
     this._attachExtras(server);
@@ -474,21 +522,26 @@ export class VeritySensor {
    */
   async autoConnect({ windowMs = AUTO_CONNECT_WINDOW_MS, retryMs = AUTO_CONNECT_RETRY_MS,
                       now = () => Date.now() } = {}) {
-    const known = await this.remembered();
-    const match = known.find(d => /polar|verity|sense/i.test(d.name || ''))
-               || (known.length === 1 ? known[0] : null);
-    if (!match) return false;
-    this.device = match;
-    const name = match.name || 'your armband';
+    let list = this.candidates(await this.remembered());
+    if (!list.length) return false;
+    this.device = list[0];
+    const name = list[0].name || 'your armband';
     const until = now() + windowMs;
     let look = 0;
     this.looking = true;
     try {
       while (!this._disposed && now() < until) {
         look += 1;
+        // Rotate through the plausible entries, and every few looks ask the browser again: the
+        // device object itself can go stale while the band is perfectly fine.
+        if (look > 1 && look % REACQUIRE_AFTER === 0) {
+          const fresh = this.candidates(await this.remembered());
+          if (fresh.length) list = fresh;
+        }
+        this.device = list[(look - 1) % list.length];
         try {
           if (look > 1) this._at(`looking for ${name} — is it switched on?`);
-          await this._finishConnect({ attempts: 1 });
+          await this._finishConnect({ attempts: 1, timeoutMs: LOOK_TIMEOUT_MS });
           return true;
         } catch (e) {
           this.lastError = e;
@@ -573,7 +626,7 @@ export class VeritySensor {
    *   - A failed attempt leaves state behind. Disconnecting before retrying is what makes the second
    *     attempt a fresh one rather than the first one's wreckage.
    */
-  async _openGatt({ attempts = GATT_ATTEMPTS } = {}) {
+  async _openGatt({ attempts = GATT_ATTEMPTS, timeoutMs = CONNECT_TIMEOUT_MS } = {}) {
     const gatt = this.device.gatt;
     if (!gatt) {
       throw new Error('the browser gave back a device with no GATT server, which means it cannot '
@@ -588,7 +641,7 @@ export class VeritySensor {
     for (let attempt = 1; attempt <= attempts; attempt++) {
       this._at(attempt === 1 ? 'connecting' : `connecting — attempt ${attempt} of ${attempts}`);
       try {
-        return await withTimeout(gatt.connect(), CONNECT_TIMEOUT_MS,
+        return await withTimeout(gatt.connect(), timeoutMs,
                                  'opening the connection to the band');
       } catch (e) {
         last = e;
@@ -615,9 +668,20 @@ export class VeritySensor {
     if (this.reconnecting || !this.device) return;
     this.reconnecting = true;
     let delay = 1000;
+    let failures = 0;
     while (!this._disposed && this.device && !this.device.gatt.connected) {
       await new Promise(r => setTimeout(r, delay));
       if (this._disposed || !this.device) break;
+      // Every few failures, a fresh device object from the browser's remembered list. The one in
+      // hand can have been invalidated by the bridge while the band itself is fine and in range.
+      if (failures && failures % REACQUIRE_AFTER === 0) {
+        const fresh = this.candidates(await this.remembered())[0];
+        if (fresh && fresh !== this.device && !this._disposed) {
+          this.device = fresh;
+          this._listen();
+          this.onLog('trying the armband afresh', 'dim');
+        }
+      }
       try {
         // Timed out here too, or one hung attempt ends the retry loop permanently.
         const server = await this._openGatt();
@@ -626,9 +690,11 @@ export class VeritySensor {
         this.connectedAt = Date.now();
         this.onChange();
         this.onLog('armband reconnected', 'on');
+        this._rememberGood();
         this._attachExtras(server);
         break;
       } catch {
+        failures += 1;
         // Backs off to 8 s and stays there. Retrying every second for an hour drains the battery
         // for nothing — the band is either back in range or it is not.
         delay = Math.min(delay * 2, 8000);

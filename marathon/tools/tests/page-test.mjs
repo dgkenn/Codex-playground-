@@ -1475,6 +1475,8 @@ async function openAll(page) {
   await bp.evaluate(() => window.__hr(141));
   await bp.waitForTimeout(300);
   assert.match(await bp.textContent('#hrbig'), /141/, 'heart rate flows without a tap');
+  assert.match(await bp.textContent('#todaybt'), /Armband connected · 141 bpm/,
+    'and the Today card says so, next to Start');
   assert.equal(await bp.evaluate(() => !!window.__picker), false, 'and without the picker');
   assert.equal(await bp.evaluate(() => window.__looks), 2, 'one connect per look');
   // Leaving the page lets go of the band, so a reload cannot leave it held.
@@ -1487,6 +1489,43 @@ async function openAll(page) {
   await bp.evaluate(() => localStorage.removeItem('__released'));
   await bp.close();
   console.log('  ok  the remembered armband connects by itself on opening, and is released on reload');
+}
+
+{
+  // First time, nothing remembered: one tap on the armband line under Start opens the picker inside
+  // that tap (no remembered-list lookup first, which could let the tap's permission lapse) and
+  // connects.
+  const bp = await browser.newPage();
+  bp.on('pageerror', e => errors.push('pageerror (first connect): ' + e.message));
+  await bp.addInitScript(() => {
+    const hrChar = { async startNotifications() { return this; }, addEventListener() {} };
+    const server = { getPrimaryService: async id => {
+      if (/180d/.test(id)) return { getCharacteristic: async () => hrChar };
+      throw new Error('not present'); } };
+    const gatt = { connected: false, connect() { this.connected = true; return Promise.resolve(server); },
+                   disconnect() { this.connected = false; } };
+    const band = { id: 'b1', name: 'Polar Sense 16961D33', gatt, addEventListener() {}, removeEventListener() {} };
+    window.__listedAfterTap = 0;
+    navigator.bluetooth = {
+      getDevices: async () => { if (window.__tapped) window.__listedAfterTap += 1; return []; },
+      requestDevice: () => { window.__pickerSync = !!window.__tapped; return Promise.resolve(band); },
+    };
+  });
+  await bp.goto('file://' + APP, { waitUntil: 'load' });
+  await bp.waitForTimeout(1500);                    // the opening look finds nothing remembered
+  assert.match(await bp.textContent('#todaybt'), /tap to connect/);
+  await bp.evaluate(() => { window.__tapped = true; });
+  await bp.click('#todaybt');
+  await bp.waitForFunction(() => /Armband connected/.test(document.getElementById('todaybt').textContent),
+    { timeout: 10000 });
+  assert.equal(await bp.evaluate(() => window.__pickerSync), true, 'the picker opened from the tap');
+  assert.equal(await bp.evaluate(() => window.__listedAfterTap), 0,
+    'with no remembered-list lookup in front of it');
+  const saved = await bp.evaluate(() => JSON.parse(localStorage.getItem('band.armband')));
+  assert.equal(saved && saved.id, 'b1', 'and the band that streamed is remembered for next time');
+  await bp.evaluate(() => localStorage.removeItem('band.armband'));
+  await bp.close();
+  console.log('  ok  first time: one tap on the armband line under Start opens the picker and connects');
 }
 
 // --- the coach must not go dark the moment an armband is actually connected ------------------------

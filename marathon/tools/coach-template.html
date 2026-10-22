@@ -298,6 +298,7 @@
         <button id="w-mill" aria-pressed="false">Treadmill</button>
       </div>
       <button id="starttoday" class="go">Start</button>
+      <button id="todaybt" class="tiny" style="margin-top:.5rem;width:100%">Armband: not connected — tap to connect</button>
     </div>
     <p class="note" style="margin-top:.7rem">
       Runs the session for the day highlighted above, in the right mode — today's by default. Tap
@@ -2254,6 +2255,15 @@ function renderZones(hr) {
 function updateSensorUi() {
   const sn = S.sensor;
   const fresh = sn && sn.hrFresh();
+  // The armband's state on the Today card, next to Start: one glance before a run.
+  const chip = $('todaybt');
+  if (chip) {
+    chip.textContent = sn && sn.connected
+      ? (fresh ? `Armband connected · ${sn.hr} bpm` : 'Armband connected · waiting for a reading')
+      : sn && (sn.looking || sn.reconnecting) ? 'Armband: looking… (tap to choose it)'
+      : bluetoothAvailable() ? 'Armband: not connected — tap to connect' : 'Armband: needs Bluefy';
+    chip.style.color = sn && sn.connected ? 'var(--on)' : '';
+  }
   $('hrbig').textContent = fresh ? `${sn.hr}` : '—';
   $('hrtile').textContent = fresh ? `${sn.hr}` : '—';
   if (sn && !sn.connected && (sn.looking || sn.reconnecting)) {
@@ -2292,6 +2302,12 @@ function updateSensorUi() {
  * Every step is shown where you are already looking. "Nothing happened" is not a diagnosis, and on a
  * phone there is no console to open — so the panel has to be the console.
  */
+/// Storage for the sensor's "which band last streamed" (sensor.js ARMBAND_KEY). Wrapped, because a
+/// blocked localStorage must cost the preference, not the connection.
+const btStore = {
+  getItem: k => { try { return localStorage.getItem(k); } catch { return null; } },
+  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch { /* blocked */ } },
+};
 let connecting = false;
 /// True while autoConnectArmband is looking. A tap on Connect takes over from it rather than being
 /// told to wait two minutes.
@@ -2337,8 +2353,14 @@ async function connectArmband({ acceptAll = false } = {}) {
       onLog: (m, c) => log(m, c),
       onChange: updateSensorUi,
       onStep: m => { since = Date.now(); step(m); },
+      store: btStore,
     });
-    await S.sensor.connect({ acceptAll });
+    // Nothing remembered (known from the last look), or the last tap's permission lapsed before the
+    // picker could open: go straight to the picker, inside this tap.
+    const skipRemembered = S.btKnown === 0 || S.btNextTapPicker;
+    S.btNextTapPicker = false;
+    await S.sensor.connect({ acceptAll, skipRemembered });
+    S.btKnown = 1;
     $('connect').textContent = 'Disconnect';
     log(`connected${S.sensor.hasAcc ? ' with accelerometer' : ' — heart rate only'}`, 'on');
 
@@ -2364,7 +2386,12 @@ async function connectArmband({ acceptAll = false } = {}) {
     const why = describeError(e);
     log(`failed at "${where}": ${why}`, 'stop');
 
-    if (/cancell?ed|NotFoundError/i.test(why)) {
+    if (/gesture|SecurityError|user activation/i.test(why)) {
+      // The tap's permission ran out before the picker opened. The next tap skips straight to it.
+      S.btNextTapPicker = true;
+      log('tap Connect once more to choose the armband', 'fast');
+      $('hrstate').textContent = 'tap Connect once more to choose the armband';
+    } else if (/cancell?ed|NotFoundError/i.test(why)) {
       log('picker dismissed without choosing', 'dim');
     } else if (/device picker/i.test(why)) {
       // The specific failure this whole path exists for. Say what to do next rather than what broke.
@@ -2389,6 +2416,9 @@ async function connectArmband({ acceptAll = false } = {}) {
 }
 
 $('connect').onclick = () => connectArmband();
+// The same, where the run is started from. Connected: does nothing rather than disconnecting by
+// accident on the way to Start.
+$('todaybt').onclick = () => { if (!(S.sensor && S.sensor.connected)) connectArmband(); };
 
 /**
  * Connect to the armband without being asked: on opening the page, on coming back to it, and on
@@ -2405,12 +2435,14 @@ async function autoConnectArmband(why) {
     onLog: (m, c) => log(m, c),
     onChange: updateSensorUi,
     onStep: m => { $('hrstate').textContent = m; },
+    store: btStore,
   });
   S.sensor = sensor;
   autoLooking = true;
   $('connect').textContent = 'Looking…';
   try {
     const ok = await sensor.autoConnect();
+    if (sensor.lastKnown) S.btKnown = sensor.lastKnown.length;
     if (S.sensor !== sensor) return;                 // replaced by a tap meanwhile
     if (ok) {
       $('connect').textContent = 'Disconnect';
@@ -2432,6 +2464,20 @@ setTimeout(() => autoConnectArmband('on opening'), 800);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) autoConnectArmband('on returning to the app');
 });
+// Bluetooth switched back on (Control Centre, airplane mode): look again.
+try {
+  if (navigator.bluetooth && navigator.bluetooth.addEventListener) {
+    navigator.bluetooth.addEventListener('availabilitychanged', e => {
+      if (e.value !== false) autoConnectArmband('when Bluetooth came back');
+    });
+  }
+} catch { /* not offered */ }
+// A slow safety net: every 30 s while the page is open and nothing is connected or looking. The
+// faster routes above should get there first; this is what catches whatever they missed.
+setInterval(() => {
+  if (document.hidden || !S.sensor || S.sensor.connected || S.sensor.looking || S.sensor.reconnecting) return;
+  if (S.btKnown) autoConnectArmband('retrying');
+}, 30000);
 // The band holds only a few connections. A page that goes away without letting go -- a reload to
 // pick up a new build, say -- keeps one, and with Polar Flow holding another the band stops being
 // findable until it is switched off and on. Let go on the way out.
@@ -3747,8 +3793,13 @@ addEventListener('resize', () => { if (S.track.path.length > 1) drawMap(); });
 $('go').onclick = () => {
   if (S.running) return finish('Stopped.');
   // Not connected yet: look for the band in the background. The run starts either way, and heart
-  // rate joins it the moment the band is found.
-  autoConnectArmband('on start');
+  // rate joins it the moment the band is found. If no band has ever been chosen, this tap is the
+  // chance to open the picker (it has to be inside a tap), so it does.
+  if (!(S.sensor && S.sensor.connected) && S.btKnown === 0 && bluetoothAvailable() && $('hrblocks').checked) {
+    connectArmband();
+  } else {
+    autoConnectArmband('on start');
+  }
 
   syncTargetFromField();
   const target = targetSecKm;
