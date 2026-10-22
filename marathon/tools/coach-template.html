@@ -737,6 +737,7 @@
 /*{{PACEVOICE}}*/
 /*{{HRBLOCKS}}*/
 /*{{TERRAIN}}*/
+/*{{FUSION}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -1254,13 +1255,16 @@ const comfortPaceMemo = new Map();
 function comfortPaceOf(e) {
   const hb = e.stats && e.stats.hrBlocks;
   if (!hb || hb.governedBy !== 'hr') return null;
-  if (hb.comfortPaceSecKm) return hb.comfortPaceSecKm;
-  if (comfortPaceMemo.has(e.id)) return comfortPaceMemo.get(e.id);
+  // Sessions recorded before the fusion measured speed with the phone's bias still in it (11-14%
+  // slow); their paces are corrected by the scale the fusion has since learned, so old and new mix.
+  const corr = e.stats.fusion ? 1 : (((loadFusion() || {}).scale) || 1);
+  if (hb.comfortPaceSecKm) return hb.comfortPaceSecKm / corr;
+  if (comfortPaceMemo.has(e.id)) return comfortPaceMemo.get(e.id) && comfortPaceMemo.get(e.id) / corr;
   let v = null;
   const full = expand(sessions.get(e.id));
   if (full) v = comfortableRunPace(full.samples, aerobicCeilingBpm().bpm);
   comfortPaceMemo.set(e.id, v);
-  return v;
+  return v && v / corr;
 }
 function personalRunPace() {
   const xs = sessions.index().map(comfortPaceOf).filter(v => v > 0).slice(0, 3);
@@ -1270,6 +1274,21 @@ function personalRunPace() {
 }
 /** The pace a run/walk's blocks are run at: his own when known, else none (heart rate decides). */
 const runBlockPace = s => (s && s.run_walk ? personalRunPace() : null);
+
+/// The fusion's calibration (GPS speed scale, stride model), carried between sessions. See fusion.js.
+const FUSION_KEY = 'band.fusion';
+function loadFusion() {
+  try { return JSON.parse(localStorage.getItem(FUSION_KEY) || 'null'); } catch { return null; }
+}
+/**
+ * Speed, pace and distance as the app uses them everywhere: from the fused estimate (fusion.js --
+ * GPS speed with its measured bias removed, steps x a learned stride, stillness), falling back to the
+ * GPS track alone when there is no fusion (the rehearsal, a test).
+ */
+const fusedTrusted = () => (S.fusion ? !!(S.fused && S.fused.trusted) : S.track.trustedAt(nowSeconds()));
+const fusedSpeed = () => (S.fusion ? (S.fused && S.fused.trusted ? S.fused.speedMS : null) : S.track.speedMS);
+const fusedPace = () => { const v = fusedSpeed(); return v != null && v > 0.6 ? 1000 / v : null; };
+const fusedDistance = () => (S.fusion ? S.fusion.distanceM : S.track.distanceFromSpeedM);
 
 /** Grade over the last 100 m from the terrain map, or null when it is not known. Never GPS altitude. */
 const currentGrade = () => (S.grades ? S.grades.grade : null);
@@ -2643,7 +2662,7 @@ function recordSample(t, label = '') {
   const fresh = sn && sn.hrFresh();
   S.samples.push({
     t_s: t,
-    speed_m_s: S.track.speedMS,
+    speed_m_s: fusedSpeed(),
     // Absent rather than stale. A heart rate that stopped arriving must never be written as
     // current — the armband logger learned that the hard way, and the result was a flat, plausible,
     // entirely fabricated trace that imported as clean data.
@@ -2726,7 +2745,7 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
     log(`${ev.earcon.replace('_', ' ')}${ev.reason ? ' — ' + ev.reason : ''}`,
         ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast');
   }
-  const line = S.splits.update(t, S.track.distanceFromSpeedM, pace, S.monitor.state);
+  const line = S.splits.update(t, fusedDistance(), pace, S.monitor.state);
   if (line) { play('attend'); sayShortly(line); log(`“${line}”`); }
 
   // The spoken channel, on its own clock rather than on a threshold crossing.
@@ -2814,8 +2833,8 @@ function armRampStage(step) {
 
 /** Pace coaching during an outdoor ramp. Deliberately never heart-rate coaching — see below. */
 function tickRampPace(t) {
-  const trusted = S.track.trustedAt(nowSeconds());
-  const pace = S.track.paceSecKm;
+  const trusted = fusedTrusted();
+  const pace = fusedPace();
   $('pace').textContent = readoutText(pace);
   $('perlabel').textContent = readoutLabel();
   setMarker(pace);
@@ -3331,7 +3350,7 @@ function recoveryHistory({ excludeAt = null } = {}) {
 function walkRunCheck(t) {
   const w = S.walkRun;
   if (!S.hrBlocks || S.ivPhase !== 'walk' || !w) return;
-  const v = S.track.trustedAt(nowSeconds()) ? S.track.speedMS : null;
+  const v = fusedTrusted() ? fusedSpeed() : null;
   const jogging = v != null && v >= 2.0 && t - w.startT >= 15;
   if (jogging) S.ranInWalksS = (S.ranInWalksS || 0) + 1;
   w.fastS = jogging ? w.fastS + 1 : 0;
@@ -3342,6 +3361,36 @@ function walkRunCheck(t) {
     log(`running in a ${done ? 'cool-down' : 'walk break'} — “${text}”`, 'fast');
     if (voiceCoaching) sayShortly(text);
   }
+}
+
+/**
+ * The phone's own accelerometer, for steps (fusion.js). iOS asks permission, and only inside a tap,
+ * so this is called from Start. Unavailable or refused: pace is GPS-only, said once in the log.
+ */
+function enableMotion() {
+  if (S.motionOn || S.motionAsked) return;
+  S.motionAsked = true;
+  const D = window.DeviceMotionEvent;
+  const attach = () => {
+    addEventListener('devicemotion', onMotion);
+    S.motionOn = true;
+    log('motion sensor on — steps add to GPS for pace and distance', 'on');
+  };
+  if (!D) { log('no motion sensor in this browser — pace from GPS alone', 'dim'); return; }
+  if (typeof D.requestPermission === 'function') {
+    try {
+      D.requestPermission()
+        .then(r => (r === 'granted' ? attach() : log('motion permission refused — pace from GPS alone', 'dim')))
+        .catch(e => log(`motion sensor unavailable (${describeError(e)}) — pace from GPS alone`, 'dim'));
+    } catch (e) { log(`motion sensor unavailable (${describeError(e)})`, 'dim'); }
+  } else {
+    attach();
+  }
+}
+function onMotion(e) {
+  const a = e.accelerationIncludingGravity;
+  if (!a || !S.fusion || !S.running) return;
+  S.fusion.motion({ t: (performance.timeOrigin + e.timeStamp) / 1000, ax: a.x, ay: a.y, az: a.z });
 }
 
 /** One line as a climb or a descent begins (see terrain.js HillCues). Quiet with no terrain. */
@@ -3502,15 +3551,16 @@ function tick() {
   const t = Math.round((Date.now() - S.startedAt) / 1000);
   if (S.lastTickT != null && t - S.lastTickT > 20) onResumeAfterPause(t - S.lastTickT);
   S.lastTickT = t;
+  if (S.fusion) S.fused = S.fusion.tick(Date.now() / 1000);
   $('elapsed').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
-  $('dist').textContent = U.dist(S.track.distanceFromSpeedM).toFixed(2);
+  $('dist').textContent = U.dist(fusedDistance()).toFixed(2);
   // What you are ACTUALLY doing, in every mode, always.
   //
   // The big number is taken over by the target in the timed modes — the stage's dial setting during
   // a ramp, RUN or WALK during intervals — so without this there was no measured speed anywhere on
   // screen for the whole session. Which is precisely what it looked like from the outside: an app
   // that was not checking how fast you were running.
-  const measured = S.track.trustedAt(nowSeconds()) ? S.track.paceSecKm : null;
+  const measured = fusedTrusted() ? fusedPace() : null;
   $('pacetile').textContent = measured == null ? '—' : readoutText(measured);
   updateSensorUi();
 
@@ -3536,7 +3586,7 @@ function tick() {
     // called the blocks. Once heart rate calls them it is exactly wrong: the block ends at a heart-rate
     // ceiling, so the cue that matters in the last thirty seconds of a block is the one that says
     // the ceiling is near -- which is the HR monitor's, and this flag was keeping it silent.
-    tickCoach(t, S.track.paceSecKm, S.track.trustedAt(nowSeconds()),
+    tickCoach(t, fusedPace(), fusedTrusted(),
               { running: S.ivPhase === 'run', govern: S.hrBlocks ? null : 'pace' });
     // The walk break has a job -- get heart rate down to the floor -- and the recorded session shows
     // the job not being done: 384 s above threshold while walking. One line, once per walk, only when a
@@ -3562,8 +3612,8 @@ function tick() {
   }
   recordSample(t);
 
-  const trusted = S.track.trustedAt(nowSeconds());
-  const pace = S.track.paceSecKm;
+  const trusted = fusedTrusted();
+  const pace = fusedPace();
   $('pace').textContent = readoutText(pace);
   $('gradetile').textContent = currentGrade() == null ? '—' : `${(currentGrade() * 100).toFixed(0)}%`;
   $('climbtile').textContent = unit === 'mi'
@@ -3794,6 +3844,8 @@ addEventListener('resize', () => { if (S.track.path.length > 1) drawMap(); });
 
 $('go').onclick = () => {
   if (S.running) return finish('Stopped.');
+  // Inside the tap, before anything else: iOS only asks for motion permission from a tap.
+  enableMotion();
   // Not connected yet: look for the band in the background. The run starts either way, and heart
   // rate joins it the moment the band is found. If no band has ever been chosen, this tap is the
   // chance to open the picker (it has to be inside a tap), so it does.
@@ -3898,6 +3950,8 @@ $('go').onclick = () => {
                      track: new GpsTrack(), trackState: [],
                      grades: new GradeTrack(), hillCues: new HillCues(), gradeAt: null, gradeDistM: 0,
                      walkRun: null, ranInWalksS: 0, lastTickT: null, pausedS: 0,
+                     fusion: S.mode === 'rehearse' ? null : new SpeedFusion({ saved: loadFusion() }),
+                     fused: null,
                      ivPhase: null, ivRep: 0, ivUntil: 0,
                      // NOT `ramp`: the loaded protocol is a selection the athlete made, like the
                      // target pace, and clearing it here wiped the runner one line after it was
@@ -3913,6 +3967,10 @@ $('go').onclick = () => {
   if (S.mode !== 'rehearse' && navigator.geolocation) {
     S.watchId = navigator.geolocation.watchPosition(pos => {
       const c = pos.coords;
+      if (S.fusion) {
+        S.fusion.gps({ t: pos.timestamp / 1000, lat: c.latitude, lon: c.longitude,
+                       accuracy: c.accuracy, speed: c.speed });
+      }
       const r = S.track.add({
         lat: c.latitude, lon: c.longitude, alt: c.altitude,
         accuracy: c.accuracy, speed: c.speed, t: pos.timestamp / 1000,
@@ -4250,6 +4308,11 @@ function finish(msg) {
       stats.hrBlocks.ranInWalksS = S.ranInWalksS || 0;
     }
     stats.pausedS = S.pausedS || 0;
+    if (S.fusion) {
+      // The calibration this session learned, kept with it and carried into the next one.
+      stats.fusion = S.fusion.state();
+      try { localStorage.setItem(FUSION_KEY, JSON.stringify(stats.fusion)); } catch { /* full */ }
+    }
     // Stored WITH the session, not recomputed on demand: the zones and the profile can change
     // afterwards, and a statistic that silently restates itself when the settings move is not a
     // record of anything.
@@ -4277,7 +4340,7 @@ function finish(msg) {
   const rehearsing = S.mode === 'rehearse';
   const elapsedS = rehearsing ? S.simT
                  : (S.startedAt ? (Date.now() - S.startedAt) / 1000 : S.samples.length);
-  const metres = rehearsing ? S.simDist : S.track.distanceFromSpeedM;
+  const metres = rehearsing ? S.simDist : fusedDistance();
   const mins = Math.max(1, elapsedS) / 60;
   const hrSamples = S.samples.filter(x => x.hr_bpm != null).length;
   log(`${msg} ${U.dist(metres).toFixed(2)} ${U.name}, ${S.tones} tones `
@@ -4384,6 +4447,9 @@ $('diag').onclick = async () => {
       // shuffle, "the app said it ran Sunday's long run" and "it ran on a Tuesday" are different
       // facts, and the title alone cannot tell them apart.
       plannedDay: S.plannedSession ? DAYS[S.plannedSession.day] : null,
+      // Which speed sources are live and how they are calibrated (fusion.js).
+      fusion: S.fusion ? { ...S.fusion.state(), source: S.fusion.lastSource, motionOn: !!S.motionOn }
+                       : { saved: loadFusion() },
       // Whether grade is known at all, and why not if it is not.
       terrain: terrainOn() ? (terrainGridInst ? terrainGridInst.status() : 'not used yet') : 'off',
       grade: currentGrade(),

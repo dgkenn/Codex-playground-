@@ -325,6 +325,7 @@ export class VeritySensor {
       deviceId: this.device ? String(this.device.id || '').slice(0, 8) : null,
       gattConnected: !!(this.device && this.device.gatt && this.device.gatt.connected),
       hasAcc: this.hasAcc,
+      accError: this.accError || null,
       battery: this.battery,
       batteryAgeS: this.batteryAt ? Math.round((Date.now() - this.batteryAt) / 1000) : null,
       batteryLow: this.battery != null && this.battery <= BATTERY_LOW_PCT,
@@ -737,8 +738,12 @@ export class VeritySensor {
     try {
       await withTimeout(this._attachAcc(server), EXTRA_TIMEOUT_MS, 'starting the accelerometer');
       this.hasAcc = true;
-    } catch {
+      this.accError = null;
+    } catch (e) {
       this.hasAcc = false;
+      // Kept for the diagnostics: "no accelerometer" alone cannot tell a band that refuses raw
+      // motion outside Polar's SDK mode from a bridge that cannot write the start command.
+      this.accError = describeError(e);
     }
     this.onChange();
   }
@@ -768,7 +773,10 @@ export class VeritySensor {
         for (const s of samples) this.accWindow.push(accMagnitude(s));
       }
     });
-    await control.writeValueWithResponse(startCommand(MEAS_ACC, ACC_SETTINGS));
+    // Some Web Bluetooth bridges implement only the older writeValue.
+    const cmd = startCommand(MEAS_ACC, ACC_SETTINGS);
+    if (typeof control.writeValueWithResponse === 'function') await control.writeValueWithResponse(cmd);
+    else await control.writeValue(cmd);
   }
 
   /** The athlete's Disconnect. Same as dispose: nothing should keep trying after it. */
