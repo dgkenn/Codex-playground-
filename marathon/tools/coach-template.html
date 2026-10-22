@@ -756,6 +756,8 @@
 /*{{TERRAIN}}*/
 /*{{FUSION}}*/
 /*{{READINESS}}*/
+/*{{POLAROFFLINE}}*/
+/*{{BACKFILL}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -2408,6 +2410,7 @@ async function connectArmband({ acceptAll = false } = {}) {
     S.btKnown = 1;
     $('connect').textContent = 'Disconnect';
     log(`connected${S.sensor.hasAcc ? ' with accelerometer' : ' — heart rate only'}`, 'on');
+    afterArmbandConnected();
 
     // Connected and silent is a third state, and it looks identical to the other two from the
     // outside. The Verity needs skin contact to produce a reading at all, so a band sitting on a
@@ -2592,6 +2595,119 @@ for (const id of ['chk-sore', 'chk-tired']) {
 }
 $('checkbtn').onclick = startMorningCheck;
 
+// =================================================================================================
+// The band's own memory: a second recording of heart rate (polar-offline.js, backfill.js)
+//
+// iOS freezes this page whenever another app is in front or the screen locks, and a connection can
+// drop. The band records heart rate to its own memory regardless, alongside the live stream; after
+// the run it is read back and fills whatever holes the page's recording has. A session waits in
+// BACKFILL_KEY until that has happened (or a week has passed): the band can take up to five minutes
+// to write the file, and the armband may not be connected again until tomorrow.
+// =================================================================================================
+
+const BACKFILL_KEY = 'band.backfill.v1';
+const BACKFILL_KEEP_MS = 7 * 86400000;
+function loadPending() {
+  try { const xs = JSON.parse(localStorage.getItem(BACKFILL_KEY) || '[]'); return Array.isArray(xs) ? xs : []; }
+  catch { return []; }
+}
+function savePending(xs) { try { localStorage.setItem(BACKFILL_KEY, JSON.stringify(xs)); } catch { /* full */ } }
+
+async function startBandRecording() {
+  if (!S.running || S.bandRecording || !(S.sensor && S.sensor.connected)) return;
+  const startedAt = new Date(S.startedAt).toISOString();
+  try {
+    const r = await withTimeout((async () => startOfflineHr(await S.sensor.pmdPort()))(), 15000,
+                                'starting the band\'s own recording');
+    S.bandRecording = true;
+    savePending([...loadPending().filter(p => p.startedAt !== startedAt), { startedAt, endMs: null, tries: 0 }]);
+    log(r.already ? 'the band was already recording heart rate to its memory — kept'
+                  : 'the band is also recording heart rate to its own memory, to fill any gap afterwards', 'dim');
+  } catch (e) {
+    log(`no second recording in the band's memory: ${describeError(e)}`, 'dim');
+  }
+}
+
+function bandRecordingEnded() {
+  S.bandRecording = false;
+  const startedAt = new Date(S.startedAt).toISOString();
+  savePending(loadPending().map(p => (p.startedAt === startedAt ? { ...p, endMs: Date.now() } : p)));
+  // Straight away (often enough), and again once the band has certainly written its file.
+  setTimeout(() => backfillFromBand(), 15000);
+  setTimeout(() => backfillFromBand(), 6 * 60000);
+}
+
+function afterArmbandConnected() {
+  if (S.running) startBandRecording();
+  else setTimeout(() => backfillFromBand(), 3000);
+}
+
+/** Holes in an archived session: grid points with no heart rate, and grid points never written. */
+function holesIn(c) {
+  const step = c.step_s || 5;
+  let n = c.hr.filter(h => h == null).length;
+  for (let i = 1; i < c.t.length; i++) n += Math.max(0, Math.round((c.t[i] - c.t[i - 1]) / step) - 1);
+  return n;
+}
+
+let backfilling = false;
+async function backfillFromBand() {
+  if (backfilling || S.running || S.check || !(S.sensor && S.sensor.connected)) return;
+  const now = Date.now();
+  // Nothing is running, so a session with no end is one whose page was killed mid-run: it ended.
+  const ready = loadPending().map(p => (p.endMs ? p : { ...p, endMs: now }))
+    .filter(p => p.endMs > now - BACKFILL_KEEP_MS && (p.tries || 0) < 6);
+  savePending(ready);
+  if (!ready.length) return;
+  backfilling = true;
+  try {
+    await withTimeout(backfillPending(ready), 180000, "reading the band's memory");
+  } catch (e) {
+    // Counted, so a band that cannot do this (older firmware, a bridge without the file service)
+    // stops being asked after a few connections rather than for a week.
+    savePending(loadPending().map(p => ({ ...p, tries: (p.tries || 0) + 1 })));
+    log(`band memory not read: ${describeError(e)}`, 'dim');
+  } finally {
+    backfilling = false;
+  }
+}
+
+async function backfillPending(ready) {
+  const port = await S.sensor.pmdPort();
+  // Polar: stop a recording before reading it. One left running (the page was killed mid-run and
+  // never reached Finish) is stopped here, when nothing is running.
+  if (await offlineHrActive(port)) await stopOfflineHr(port);
+  const files = await S.sensor.fileClient();
+  const { samples, entries } = await fetchOfflineHr(files);
+  const keep = [];
+  for (const p of ready) {
+    const c = sessions.get(p.startedAt.replace(/[^0-9A-Za-z]/g, ''));
+    if (!c || !Array.isArray(c.t)) continue;              // evicted, or never filed
+    const holes = holesIn(c);
+    if (!holes) continue;                                  // nothing to fill: done
+    const { session: out, report } = backfillSession(c, samples);
+    if (report.filled || report.inserted) {
+      sessions.archive(out);
+      log(`filled ${Math.round((report.filled + report.inserted) * (c.step_s || 5) / 60)} min of heart rate in `
+          + `"${c.title || 'a session'}" from the band's memory (its clock ${report.offsetS} s off, `
+          + `agreeing within ${report.meanDiffBpm} bpm where both recorded)`, 'on');
+    } else if ((p.tries || 0) < 5) {
+      keep.push({ ...p, tries: (p.tries || 0) + 1 });     // the file may not be written yet
+    } else {
+      log(`the band's memory had nothing that lines up with "${c.title || 'a session'}"`, 'dim');
+    }
+  }
+  savePending(keep);
+  renderSaved();
+  // The band never deletes recordings, and under 2 MB free it will not start one. Once nothing is
+  // waiting, everything read is cleared.
+  if (!keep.length && entries.length) {
+    const res = await removeRecordings(files, entries);
+    const bad = res.filter(r => !r.ok).length;
+    if (bad) log(`${bad} old recording${bad === 1 ? '' : 's'} could not be cleared from the band`, 'dim');
+  }
+}
+
 /**
  * Connect to the armband without being asked: on opening the page, on coming back to it, and on
  * Start. It is the only Bluetooth device this app talks to, so once the browser remembers it there
@@ -2620,6 +2736,7 @@ async function autoConnectArmband(why) {
     if (ok) {
       $('connect').textContent = 'Disconnect';
       log(`armband connected by itself (${why})`, 'on');
+      afterArmbandConnected();
     } else if (sensor.device) {
       $('connect').textContent = 'Connect';
       $('hrstate').textContent = 'armband not found — switch it on, or close Polar Flow if it is '
@@ -4125,6 +4242,8 @@ $('go').onclick = () => {
   lastLogMsg = null; lastLogRow = null; lastLogCount = 1;
   if (S.mode !== 'rehearse') {
     log('keep this screen in front — opening another app (Polar Flow included) pauses the recording', 'dim');
+    S.bandRecording = false;
+    startBandRecording();
   }
 
   if (S.mode !== 'rehearse' && navigator.geolocation) {
@@ -4439,6 +4558,7 @@ function sessionTitle() {
 
 function finish(msg) {
   S.running = false;
+  if (S.bandRecording) bandRecordingEnded();
   clearInterval(S.tickId);
   clearInterval(S.autosaveId);
   clearInterval(S.batteryId);

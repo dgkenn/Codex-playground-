@@ -1573,9 +1573,20 @@ async function openAll(page) {
   const after = await mp.$$eval('#log div', ds => ds.map(d => d.textContent));
   assert.ok(after.some(l => /readiness says (back off today|rest): no extra blocks today/.test(l)),
     `the session says it is dropping the extra blocks: ${JSON.stringify(after.slice(0, 4))}`);
+  assert.ok((await mp.evaluate(() => window.__writes)).some(w => w[0] === 0x02 && w[1] === 0x8E),
+    'Start also starts the band recording heart rate to its own memory');
+  assert.ok(after.some(l => /recording heart rate to its own memory/.test(l)), 'and says so');
   await mp.click('#go');
+  // After the run the band's memory is read back. This fake has no file service, so the attempt
+  // must fail quietly, be counted, and leave the session as it was.
+  await mp.clock.runFor(16000);
+  const end = await mp.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(end.some(l => /band memory not read/.test(l)), `the read-back is attempted: ${JSON.stringify(end.slice(0, 4))}`);
+  const pend = await mp.evaluate(() => JSON.parse(localStorage.getItem('band.backfill.v1')));
+  assert.equal(pend.length, 1);
+  assert.equal(pend[0].tries, 1, 'and counted, so a band that cannot do this stops being asked');
   await mp.close();
-  console.log('  ok  the morning check summarises the still minutes, sets resting HR, and a back-off day drops the extra blocks');
+  console.log('  ok  the morning check summarises the still minutes, sets resting HR, and a back-off day drops the extra blocks; the band\'s memory recording starts and is read back after');
 }
 
 {

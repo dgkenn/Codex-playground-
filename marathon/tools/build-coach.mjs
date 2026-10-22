@@ -63,6 +63,8 @@ const parts = {
   TERRAIN: inline('terrain.js'),
   FUSION: inline('fusion.js'),
   READINESS: inline('readiness.js'),
+  POLAROFFLINE: inline('polar-offline.js'),
+  BACKFILL: inline('backfill.js'),
   THRESHOLD: inline('threshold.js'),
   LOADWATCH: inline('load-watch.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),

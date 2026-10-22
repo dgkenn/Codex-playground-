@@ -22,6 +22,8 @@
 //
 // Bluefy is the only route to the armband from an iPhone, so the canonical form is the correct one
 // to ship. It costs nothing on browsers that accepted the alias.
+import { PSFTP_SERVICE, PsFtpClient } from './polar-offline.js';
+
 export const HR_SERVICE = '0000180d-0000-1000-8000-00805f9b34fb';
 export const HR_CHAR = '00002a37-0000-1000-8000-00805f9b34fb';
 export const BATTERY_SERVICE = '0000180f-0000-1000-8000-00805f9b34fb';
@@ -74,7 +76,9 @@ export function parsePmdResponse(view) {
       settings[id] = vals;
     }
   }
-  return { op, meas, status, statusText: PMD_STATUS[status] || `status ${status}`, settings };
+  // `raw` for callers that parse the answer themselves (polar-offline.js reads its parameters).
+  const raw = new Uint8Array(view.buffer, view.byteOffset, view.byteLength).slice();
+  return { op, meas, status, statusText: PMD_STATUS[status] || `status ${status}`, settings, raw };
 }
 
 /**
@@ -537,7 +541,9 @@ export class VeritySensor {
       // prefix matches, or the reverse; either alone is a picker that shows nothing, or shows a row
       // that cannot be chosen.
       : { filters: [{ namePrefix: 'Polar' }, { services: [HR_SERVICE] }] };
-    options.optionalServices = [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE];
+    // PSFTP: the band's file service, for reading back what it recorded to its own memory
+    // (polar-offline.js). A band remembered before this was added may need picking once more.
+    options.optionalServices = [HR_SERVICE, BATTERY_SERVICE, PMD_SERVICE, PSFTP_SERVICE];
 
     // The picker is a human waiting to tap, so the budget is generous — but not unbounded. An
     // unbounded wait is what produced "asking for the device" and nothing else, for ever.
@@ -711,6 +717,7 @@ export class VeritySensor {
       } catch { /* gone */ }
       this._pmdControl = null;
       this._pmd = null;
+      this._psftp = null;
       this.ppiOn = false;
       this.onPpi = null;
     }
@@ -982,6 +989,26 @@ export class VeritySensor {
     if (!this.ppiOn) return;
     this.ppiOn = false;
     if (this._pmd) await this._pmdRequest(this._pmd.control, [OP_STOP, MEAS_PPI]).catch(() => null);
+  }
+
+  /**
+   * The measurement control point as polar-offline.js wants it: `request(bytes)` resolving with the
+   * band's answer (its `raw` bytes carried). Null when not connected.
+   */
+  async pmdPort() {
+    if (!this.connected || !this.device || !this.device.gatt) return null;
+    const { control } = this._pmd || await this._pmdChannel(this.device.gatt);
+    return { request: bytes => this._pmdRequest(control, bytes, 5000) };
+  }
+
+  /** The band's file service (PSFTP), one client per connection. */
+  async fileClient() {
+    if (!this.connected || !this.device || !this.device.gatt) return null;
+    const server = this._pmd ? this._pmd.server : this.device.gatt;
+    if (!this._psftp || this._psftp.server !== server) {
+      this._psftp = { server, client: await PsFtpClient.fromServer(server) };
+    }
+    return this._psftp.client;
   }
 
   /** The athlete's Disconnect. Same as dispose: nothing should keep trying after it. */
