@@ -1285,6 +1285,11 @@ function loadFusion() {
  * GPS speed with its measured bias removed, steps x a learned stride, stillness), falling back to the
  * GPS track alone when there is no fusion (the rehearsal, a test).
  */
+/// The pace verdict's averaging window when it is fed the fused speed. Twenty seconds was for raw GPS,
+/// whose second-to-second wobble needed it; the fused speed is already filtered, and a run-to-walk
+/// change shows in it within a second or two (fusion-test.mjs), so eight seconds is enough to keep a
+/// single stride's jolt from earning a tone without making the coach a quarter-minute late.
+const FUSED_WINDOW = { smoothingS: 8, minSamples: 4 };
 const fusedTrusted = () => (S.fusion ? !!(S.fused && S.fused.trusted) : S.track.trustedAt(nowSeconds()));
 const fusedSpeed = () => (S.fusion ? (S.fused && S.fused.trusted ? S.fused.speedMS : null) : S.track.speedMS);
 const fusedPace = () => { const v = fusedSpeed(); return v != null && v > 0.6 ? 1000 / v : null; };
@@ -2300,7 +2305,7 @@ function updateSensorUi() {
                                     : sn.hr < ((S.hrZones || [])[0] || { low: 0 }).low ? 'resting' : 'above your zones'}`
       + (sn.battery != null
           ? ` · battery ${sn.battery}%${sn.battery <= BATTERY_LOW_PCT ? ' — CHARGE IT' : ''}` : '')
-      + (sn.hasAcc ? '' : ' · no accelerometer');
+      + (sn.hasAcc ? ' · arm motion on' : ' · no arm motion' + (sn.accError ? ` (${sn.accError})` : ''));
     $('hrstate').style.color = sn.battery != null && sn.battery <= BATTERY_LOW_PCT
       ? 'var(--stop)' : '';
   }
@@ -2374,6 +2379,7 @@ async function connectArmband({ acceptAll = false } = {}) {
       onLog: (m, c) => log(m, c),
       onChange: updateSensorUi,
       onStep: m => { since = Date.now(); step(m); },
+      onAcc: armAcc,
       store: btStore,
     });
     // Nothing remembered (known from the last look), or the last tap's permission lapsed before the
@@ -2456,6 +2462,7 @@ async function autoConnectArmband(why) {
     onLog: (m, c) => log(m, c),
     onChange: updateSensorUi,
     onStep: m => { $('hrstate').textContent = m; },
+    onAcc: armAcc,
     store: btStore,
   });
   S.sensor = sensor;
@@ -2826,7 +2833,7 @@ function armRampStage(step) {
   if (secKm == null) { S.monitor = new PaceBandMonitor({ targetPaceSecKm: null }); return; }
   setTarget(secKm);
   S.monitor = new PaceBandMonitor({
-    targetPaceSecKm: secKm, tolerance: RAMP_TOLERANCE, ceilingOnly: false,
+    targetPaceSecKm: secKm, tolerance: RAMP_TOLERANCE, ceilingOnly: false, ...FUSED_WINDOW,
   });
   refreshBand();
 }
@@ -3387,6 +3394,10 @@ function enableMotion() {
     attach();
   }
 }
+/** The armband's accelerometer (52 Hz magnitudes, its own units): a second, independent step counter. */
+function armAcc(mags, t) {
+  if (S.fusion && S.running) S.fusion.arm({ t, mags });
+}
 function onMotion(e) {
   const a = e.accelerationIncludingGravity;
   if (!a || !S.fusion || !S.running) return;
@@ -3874,6 +3885,7 @@ $('go').onclick = () => {
     targetPaceSecKm: target || 540,
     tolerance: Number($('tol').value) / 100,
     ceilingOnly: $('ceiling').checked,
+    ...(S.mode === 'rehearse' ? {} : FUSED_WINDOW),
   });
   // The split's wording is the athlete's business, not the monitor's, so the formatter and the
   // naming go in rather than a second unit-aware copy of the class living here.

@@ -19,13 +19,17 @@ function posAt(d) {
 }
 
 /** A session: warm-up walk, run/walk blocks, a 60 s stop, a 90 s GPS drop-out. */
-function session({ phoneBias = 0.88, motion = true, dropout = true, noDoppler = false } = {}) {
+function session({ phoneBias = 0.88, motion = true, arm = false, dropout = true, noDoppler = false } = {}) {
   const f = new SpeedFusion();
   let d = 0, en = 0, ee = 0, naive = 0;
   const cad = v => (v > 1.8 ? 165 : v > 0.5 ? 112 : 0);
-  let stepPhase = 0, maxErr = 0, errs = [];
+  let stepPhase = 0, armPhase = 0, maxErr = 0, errs = [];
+  const settle = [];                       // seconds from each change of pace until the estimate is within 0.25 m/s
+  let changedAt = null, prevV = null;
   for (let t = 0; t < 2400; t++) {
     const v = t < 300 ? 1.4 : (t >= 1500 && t < 1560) ? 0 : (Math.floor((t - 300) / 120) % 2 === 0 ? 2.25 : 1.4);
+    if (prevV != null && v !== prevV && t > 400) changedAt = t;
+    prevV = v;
     // accelerometer at 50 Hz: an impact per step
     if (motion) {
       const c = cad(v);
@@ -41,6 +45,20 @@ function session({ phoneBias = 0.88, motion = true, dropout = true, noDoppler = 
         f.motion({ t: tt, ax: 0, ay: 0, az: a });
       }
     }
+    // the armband: 52 Hz magnitudes in its own units (milli-g), delivered in frames of 13
+    if (arm) {
+      const c = cad(v), frame = [];
+      for (let k = 0; k < 52; k++) {
+        let a = 1000 + 30 * gauss();
+        if (c) {
+          armPhase += c / 60 / 52;
+          if (armPhase >= 1) armPhase -= 1;
+          if (armPhase < 0.14) a += (v > 1.8 ? 700 : 350) * Math.sin(Math.PI * armPhase / 0.14);
+        }
+        frame.push(a);
+        if (frame.length === 13) { f.arm({ t: t + k / 52, mags: frame.splice(0) }); }
+      }
+    }
     d += v;
     // GPS at 1 Hz; correlated position error; drop-out from 900 to 990 s
     en += -en / 20 + 1.3 * gauss(); ee += -ee / 20 + 1.3 * gauss();
@@ -53,9 +71,12 @@ function session({ phoneBias = 0.88, motion = true, dropout = true, noDoppler = 
     }
     const out = f.tick(t);
     if (t > 400) { const e = Math.abs(out.speedMS - v); errs.push(e); maxErr = Math.max(maxErr, e); }
+    if (changedAt != null && Math.abs(out.speedMS - v) < 0.25) { settle.push(t - changedAt); changedAt = null; }
   }
   errs.sort((a, b) => a - b);
-  return { f, truth: d, naive, p50: errs[Math.floor(errs.length / 2)], p95: errs[Math.floor(errs.length * 0.95)] };
+  settle.sort((a, b) => a - b);
+  return { f, truth: d, naive, p50: errs[Math.floor(errs.length / 2)], p95: errs[Math.floor(errs.length * 0.95)],
+           settleMed: settle[Math.floor(settle.length / 2)] };
 }
 
 {
@@ -69,8 +90,56 @@ function session({ phoneBias = 0.88, motion = true, dropout = true, noDoppler = 
   assert.ok(st.strideSeconds > 60, 'the stride is learned while the GPS is good');
   assert.ok(st.shares.still >= 50, `the stop is recognised as standing still: ${JSON.stringify(st.shares)}`);
   assert.ok(s.p50 < 0.15, `per-second speed is close to the truth (median error ${s.p50.toFixed(2)} m/s)`);
+  assert.ok(s.settleMed <= 3, `a change of pace shows within a few seconds (median ${s.settleMed} s)`);
   console.log(`  ok  fused distance ${(err * 100).toFixed(1)}% vs truth (phone speed alone ${((s.naive / s.truth - 1) * 100).toFixed(1)}%), `
-            + `scale ${st.scale}, ${st.scaleWindows} windows, per-second median error ${s.p50.toFixed(2)} m/s`);
+            + `scale ${st.scale}, ${st.scaleWindows} windows, per-second median error ${s.p50.toFixed(2)} m/s, `
+            + `run/walk changes settle in ${s.settleMed} s`);
+}
+
+{
+  // The armband alone (phone motion off): its accelerometer, in its own units, carries the drop-out
+  // and the stop just as the phone's does.
+  const s = session({ motion: false, arm: true });
+  const err = s.f.distanceM / s.truth - 1;
+  const st = s.f.state();
+  assert.ok(st.arm && !st.armUnusable, 'the armband channel is live');
+  assert.ok(st.armStrideSeconds > 60, `its stride is learned: ${st.armStrideSeconds} s`);
+  assert.ok(Math.abs(err) < 0.03, `armband steps alone bridge the drop-out: ${(err * 100).toFixed(1)}%`);
+  assert.ok(st.shares.still >= 50, `and see the stop: ${JSON.stringify(st.shares)}`);
+  // Both together: still fine, and neither fights the other.
+  const both = session({ motion: true, arm: true });
+  const e2 = both.f.distanceM / both.truth - 1;
+  // (a different noise draw from the first session: the remaining error is the scale's, not the steps')
+  assert.ok(Math.abs(e2) < 0.03, `phone and armband together: ${(e2 * 100).toFixed(1)}%`);
+  console.log(`  ok  armband accelerometer alone ${(err * 100).toFixed(1)}%, with the phone's too ${(e2 * 100).toFixed(1)}%`);
+}
+
+{
+  // Within running, pace changes through stride more than cadence. A change at a constant 165 spm
+  // must still show with the GPS gone -- through how hard the steps land.
+  const f = new SpeedFusion();
+  let ph = 0, d = 0;
+  const speedAt = t => (Math.floor(t / 60) % 2 === 0 ? 2.2 : 3.0);
+  const feed = (t, v, gps) => {
+    for (let k = 0; k < 50; k++) {
+      ph += 165 / 60 / 50; if (ph >= 1) ph -= 1;
+      const amp = 6 + (v - 2.2) * 6;                     // landings harder at the faster pace
+      f.motion({ t: t + k / 50, ax: 0, ay: 0, az: 9.81 + 0.3 * gauss() + (ph < 0.12 ? amp * Math.sin(Math.PI * ph / 0.12) : 0) });
+    }
+    d += v;
+    if (gps) f.gps({ t, lat: 42.33 + d / 111195, lon: -71.05, accuracy: 5, speed: v * 0.88 + 0.05 * gauss() });
+    return f.tick(t);
+  };
+  for (let t = 0; t < 900; t++) feed(t, speedAt(t), true);
+  const fast = [], slow = [];
+  for (let t = 900; t < 1140; t++) {
+    const v = speedAt(t), out = feed(t, v, false);
+    if (t % 60 >= 10) (v > 2.5 ? fast : slow).push(out.speedMS);
+  }
+  const mean = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+  assert.ok(Math.abs(mean(fast) - 3.0) < 0.25 && Math.abs(mean(slow) - 2.2) < 0.25,
+    `with no GPS, steps alone tell 3.0 from 2.2 m/s at one cadence: ${mean(fast).toFixed(2)} / ${mean(slow).toFixed(2)}`);
+  console.log(`  ok  at a constant cadence, steps alone tell ${mean(fast).toFixed(2)} from ${mean(slow).toFixed(2)} m/s by how they land`);
 }
 
 {
@@ -105,8 +174,8 @@ function session({ phoneBias = 0.88, motion = true, dropout = true, noDoppler = 
   const c = sd.cadence(20);
   assert.ok(Math.abs(c - 165) < 4, `cadence ${c}`);
   const m = new StrideModel();
-  for (let i = 0; i < 50; i++) { m.add(110, 0.75); m.add(165, 0.82); }
-  assert.ok(Math.abs(m.stride(140) - 0.788) < 0.02, `stride is a line in cadence: ${m.stride(140)}`);
+  for (let i = 0; i < 50; i++) { m.add(110, null, 0.75); m.add(165, null, 0.82); }
+  assert.ok(Math.abs(m.stride(140) - 0.788) < 0.02, `stride rises with cadence: ${m.stride(140)}`);
   console.log(`  ok  steps are counted at ${c.toFixed(0)} spm and stride is a line in cadence`);
 }
 

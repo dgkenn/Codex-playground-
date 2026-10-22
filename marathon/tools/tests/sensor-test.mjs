@@ -557,4 +557,81 @@ const memStore = () => { const m = new Map(); return { getItem: k => m.get(k) ??
   console.log(`  ok  a reconnect loop re-acquires a stale device object (${Math.round((Date.now() - t0) / 1000)} s)`);
 }
 
+
+// --- the armband's accelerometer: Polar's own start sequence -----------------------------------------
+
+/** A fake PMD service. `answer(op)` returns a status, or null for a bridge that passes on no answers. */
+function fakePmd({ answer = () => 0, settings = true, frames = true } = {}) {
+  const writes = [];
+  const ctlL = [], dataL = [];
+  const fire = (ls, bytes) => ls.forEach(f => f({ target: { value: new DataView(new Uint8Array(bytes).buffer) } }));
+  const settingsBytes = settings
+    ? [0x00, 1, 52, 0, 0x01, 1, 16, 0, 0x02, 4, 2, 0, 4, 0, 8, 0, 16, 0, 0x04, 1, 3] : [];
+  const control = {
+    async startNotifications() { return this; },
+    addEventListener(t, f) { ctlL.push(f); },
+    async writeValueWithResponse(bytes) {
+      const b = Array.from(bytes); writes.push(b);
+      const st = answer(b[0], writes.length);
+      if (st == null) return;
+      setTimeout(() => {
+        fire(ctlL, [0xF0, b[0], b[1], st, 0, ...(b[0] === 0x01 && st === 0 ? settingsBytes : [])]);
+        if (b[0] === 0x02 && st === 0 && frames) {
+          const frame = [0x02, 0,0,0,0,0,0,0,0, 0x01];
+          for (let i = 0; i < 10; i++) frame.push(0xE8, 0x03, 0, 0, 0, 0);      // 1000, 0, 0
+          setTimeout(() => fire(dataL, frame), 5);
+        }
+      }, 2);
+    },
+  };
+  const data = { async startNotifications() { return this; }, addEventListener(t, f) { dataL.push(f); },
+                 emit: () => fire(dataL, [0x02, 0,0,0,0,0,0,0,0, 0x01, 0xE8, 0x03, 0, 0, 0, 0]) };
+  const server = { getPrimaryService: async () => ({ getCharacteristic: async id => (/5c81/.test(id) ? control : data) }) };
+  return { server, writes, data };
+}
+
+{
+  // Ask, then start with exactly what the band offers -- channels included.
+  const pm = fakePmd();
+  const got = [];
+  const s = new VeritySensor({ onAcc: m => got.push(...m) });
+  await s._attachAcc(pm.server);
+  await new Promise(r => setTimeout(r, 30));
+  assert.deepEqual(pm.writes[0], [0x01, 0x02], 'settings are asked for first');
+  const start = pm.writes[1];
+  assert.equal(start[0], 0x02);
+  assert.ok(start.join(',').includes('4,1,3'), `the start includes CHANNELS=3: ${start}`);
+  assert.ok(start.join(',').includes('0,1,52,0'), '52 Hz');
+  assert.ok(got.length >= 10, 'and the arm motion reaches the consumer');
+  s.dispose();
+  console.log('  ok  the accelerometer is started with the settings the band offers, channels included');
+}
+
+{
+  // "Already in that state": an earlier connection left the stream on. Stop, then start again.
+  const pm = fakePmd({ answer: (op, n) => (op === 0x02 && n === 2 ? 6 : 0) });
+  const s = new VeritySensor();
+  await s._attachAcc(pm.server);
+  assert.deepEqual(pm.writes.map(w => w[0]), [0x01, 0x02, 0x03, 0x02]);
+  s.dispose();
+  console.log('  ok  a stream left on by an earlier connection is stopped and restarted');
+}
+
+{
+  // A refusal is named in the band's own words, for the diagnostics.
+  const pm = fakePmd({ answer: op => (op === 0x02 ? 3 : 0) });
+  const s = new VeritySensor();
+  await assert.rejects(s._attachAcc(pm.server), /refused to start the accelerometer \(not supported\)/);
+  s.dispose();
+  // A bridge that passes on no answers: a blind start, believed only if frames arrive.
+  const quiet = fakePmd({ answer: () => null });
+  const q = new VeritySensor();
+  const p = q._attachAcc(quiet.server);
+  setTimeout(() => quiet.data.emit(), 3200);
+  await p;
+  assert.ok(q.accFrames > 0);
+  q.dispose();
+  console.log('  ok  refusals are named; a silent bridge gets a blind start judged by frames arriving');
+}
+
 console.log('\nAll sensor tests passed.');

@@ -31,6 +31,7 @@ export const PMD_CONTROL = 'fb005c81-02e7-f387-1cad-8acd2d8df0c8';
 export const PMD_DATA = 'fb005c82-02e7-f387-1cad-8acd2d8df0c8';
 
 const MEAS_ACC = 0x02, OP_START = 0x02;
+const OP_GET_SETTINGS = 0x01, OP_STOP = 0x03;
 const SETTING = { sampleRate: 0x00, resolution: 0x01, range: 0x02, channels: 0x04 };
 /// CHANNELS is a ONE-byte setting. Encoding it as uint16 writes an extra byte into every START
 /// command and misaligns the parse of every field after it.
@@ -42,6 +43,55 @@ const ACC_SETTINGS = [[SETTING.range, 8], [SETTING.sampleRate, 52], [SETTING.res
 /// independent raw-layout id, so treating a literal frame type of 0x02 as "delta compressed"
 /// collides with the 24-bit uncompressed layout.
 const COMPRESSED_BIT = 0x80;
+
+/// The band's answers on the PMD control point: [0xF0, op, measurement, status, more, settings...].
+/// Polar's measurement-data specification; the status codes are what make a refusal diagnosable.
+export const PMD_STATUS = ['success', 'invalid op code', 'invalid measurement type', 'not supported',
+  'invalid length', 'invalid parameter', 'already in that state', 'invalid resolution',
+  'invalid sample rate', 'invalid range', 'invalid MTU', 'invalid number of channels',
+  'invalid state', 'device in charger'];
+
+/** Parse one control-point answer, or null if it is not one. */
+export function parsePmdResponse(view) {
+  if (!view || view.byteLength < 4 || view.getUint8(0) !== 0xF0) return null;
+  const op = view.getUint8(1), meas = view.getUint8(2), status = view.getUint8(3);
+  const settings = {};
+  if (op === OP_GET_SETTINGS && status === 0) {
+    let off = 5;                                   // byte 4 says whether more frames follow
+    while (off + 2 <= view.byteLength) {
+      const id = view.getUint8(off), count = view.getUint8(off + 1);
+      off += 2;
+      const w = SETTING_WIDTH[id];
+      if (!w) break;
+      const vals = [];
+      for (let i = 0; i < count && off + w <= view.byteLength; i++) {
+        let v = 0;
+        for (let b = 0; b < w; b++) v += view.getUint8(off + b) * 2 ** (8 * b);
+        vals.push(v); off += w;
+      }
+      settings[id] = vals;
+    }
+  }
+  return { op, meas, status, statusText: PMD_STATUS[status] || `status ${status}`, settings };
+}
+
+/**
+ * The start settings, chosen from what the band says it supports: 52 Hz, 16-bit, +/-8 g, 3 channels
+ * where offered. Every setting the band lists is included -- leaving one out (CHANNELS, which the
+ * first version omitted) is a start the band can refuse.
+ */
+export function chooseAccSettings(settings) {
+  const pick = (id, want) => {
+    const v = settings[id];
+    return v.includes(want) ? want : v[0];
+  };
+  const out = [];
+  if (settings[SETTING.range] && settings[SETTING.range].length) out.push([SETTING.range, pick(SETTING.range, 8)]);
+  if (settings[SETTING.sampleRate] && settings[SETTING.sampleRate].length) out.push([SETTING.sampleRate, pick(SETTING.sampleRate, 52)]);
+  if (settings[SETTING.resolution] && settings[SETTING.resolution].length) out.push([SETTING.resolution, pick(SETTING.resolution, 16)]);
+  if (settings[SETTING.channels] && settings[SETTING.channels].length) out.push([SETTING.channels, pick(SETTING.channels, 3)]);
+  return out.length ? out : [...ACC_SETTINGS, [SETTING.channels, 3]];
+}
 
 /// A heart rate older than this is a memory, not a measurement. The band sends at about 1 Hz, so
 /// five seconds is four missed notifications — comfortably past noise.
@@ -92,6 +142,10 @@ export const GATT_RETRY_MS = 800;
 /// run AFTER heart rate is streaming and can never fail the connection: a motion-sensor start that
 /// hung used to take the whole connect down with it, heart rate included.
 export const EXTRA_TIMEOUT_MS = 5000;
+
+/// The accelerometer is a conversation (ask for settings, start, maybe stop and start again), so it
+/// gets longer than the other extras.
+export const ACC_TIMEOUT_MS = 12000;
 
 /// How long `autoConnect` keeps looking for the armband before handing back to the Connect button.
 export const AUTO_CONNECT_WINDOW_MS = 120000;
@@ -265,8 +319,24 @@ export const bluetoothAvailable = () =>
  * directly, or a band that has gone out of range keeps reporting its last value forever.
  */
 export class VeritySensor {
-  constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {}, store = null } = {}) {
+  constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {}, store = null,
+                onAcc = null } = {}) {
     this.onLog = onLog;
+    /// Called with ([magnitude...], arrivalSeconds) for every accelerometer frame: the arm's motion,
+    /// for counting steps (fusion.js). Magnitudes are in the band's own units; the consumer
+    /// normalises them against gravity.
+    this.onAcc = onAcc;
+    this.accError = null;
+    this.accSettings = null;
+    this._pmdWaiter = null;
+    this._onPmdControl = e => {
+      const r = parsePmdResponse(e.target.value);
+      if (r && this._pmdWaiter && r.op === this._pmdWaiter.op) {
+        const w = this._pmdWaiter;
+        this._pmdWaiter = null;
+        w.resolve(r);
+      }
+    };
     /// localStorage-like, optional: remembers which band last streamed (see ARMBAND_KEY).
     this.store = store;
     /// What the browser last said it remembers. The page reads this to decide whether a Connect tap
@@ -326,6 +396,7 @@ export class VeritySensor {
       gattConnected: !!(this.device && this.device.gatt && this.device.gatt.connected),
       hasAcc: this.hasAcc,
       accError: this.accError || null,
+      accSettings: this.accSettings || null,
       battery: this.battery,
       batteryAgeS: this.batteryAt ? Math.round((Date.now() - this.batteryAt) / 1000) : null,
       batteryLow: this.battery != null && this.battery <= BATTERY_LOW_PCT,
@@ -605,6 +676,15 @@ export class VeritySensor {
   /** Finished with: stop every loop, release the band, forget the device. */
   dispose() {
     this._disposed = true;
+    // Stop the accelerometer stream so the next connection does not find it "already on".
+    if (this._pmdControl) {
+      try {
+        const c = this._pmdControl, cmd = new Uint8Array([OP_STOP, MEAS_ACC]);
+        Promise.resolve(typeof c.writeValueWithResponse === 'function' ? c.writeValueWithResponse(cmd)
+                                                                       : c.writeValue(cmd)).catch(() => {});
+      } catch { /* gone */ }
+      this._pmdControl = null;
+    }
     if (this._stallTimer) { clearInterval(this._stallTimer); this._stallTimer = null; }
     if (this._listening) {
       try { this._listening.removeEventListener('gattserverdisconnected', this._onDisconnect); } catch { /* gone */ }
@@ -736,7 +816,7 @@ export class VeritySensor {
       await withTimeout(this._attachBattery(server), EXTRA_TIMEOUT_MS, 'reading the battery');
     } catch { /* optional */ }
     try {
-      await withTimeout(this._attachAcc(server), EXTRA_TIMEOUT_MS, 'starting the accelerometer');
+      await withTimeout(this._attachAcc(server), ACC_TIMEOUT_MS, 'starting the accelerometer');
       this.hasAcc = true;
       this.accError = null;
     } catch (e) {
@@ -757,26 +837,72 @@ export class VeritySensor {
     await this.readBattery();
   }
 
+  /** Write a PMD request and wait for the band's answer to it. */
+  _pmdRequest(control, bytes, timeoutMs = 3000) {
+    const cmd = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    return withTimeout(new Promise((resolve, reject) => {
+      this._pmdWaiter = { op: cmd[0], resolve };
+      const w = typeof control.writeValueWithResponse === 'function'
+        ? control.writeValueWithResponse(cmd) : control.writeValue(cmd);
+      Promise.resolve(w).catch(reject);
+    }), timeoutMs, `the band's answer to the ${['', 'settings', 'start', 'stop'][cmd[0]] || ''} request`);
+  }
+
   // Accelerometer is best-effort. Without it the heart rate still works; what is lost is the
-  // movement evidence the not-worn and frozen detectors need, and the app says so rather than
-  // pretending the check ran.
+  // movement evidence the not-worn and frozen detectors need, and the arm's step count.
+  //
+  // Normal mode streams it (52 Hz, +/-8 g, per Polar's Verity Sense documentation); SDK mode is NOT
+  // used, because it switches off every on-device algorithm, heart rate included. The sequence is
+  // Polar's own: ask which settings the band supports, start with exactly those, and if the band
+  // says it is already streaming (an earlier connection left it on), stop and start again. A bridge
+  // that passes on no answers at all still gets a blind start, judged by whether frames arrive.
   async _attachAcc(server) {
     const pmd = await server.getPrimaryService(PMD_SERVICE);
     const control = await pmd.getCharacteristic(PMD_CONTROL);
     const data = await pmd.getCharacteristic(PMD_DATA);
     await control.startNotifications();
+    control.addEventListener('characteristicvaluechanged', this._onPmdControl);
     await data.startNotifications();
     data.addEventListener('characteristicvaluechanged', e => {
       const samples = parseAccFrame(e.target.value);
       if (samples) {
         this.accFrames += 1;
-        for (const s of samples) this.accWindow.push(accMagnitude(s));
+        const mags = samples.map(accMagnitude);
+        for (const m of mags) this.accWindow.push(m);
+        if (this.onAcc) { try { this.onAcc(mags, Date.now() / 1000); } catch { /* consumer's problem */ } }
       }
     });
-    // Some Web Bluetooth bridges implement only the older writeValue.
-    const cmd = startCommand(MEAS_ACC, ACC_SETTINGS);
-    if (typeof control.writeValueWithResponse === 'function') await control.writeValueWithResponse(cmd);
-    else await control.writeValue(cmd);
+    this._pmdControl = control;
+
+    let settings, answered = true;
+    try {
+      const r = await this._pmdRequest(control, [OP_GET_SETTINGS, MEAS_ACC]);
+      if (r.status !== 0) throw new Error(`the band refused the accelerometer settings request (${r.statusText})`);
+      settings = chooseAccSettings(r.settings);
+    } catch (e) {
+      if (/refused/.test(e.message)) throw e;
+      answered = false;
+      settings = [...ACC_SETTINGS, [SETTING.channels, 3]];
+    }
+    this.accSettings = settings.map(([id, v]) => `${['rate', 'bits', 'range', '', 'channels'][id] || id}=${v}`).join(' ');
+
+    if (answered) {
+      let r = await this._pmdRequest(control, startCommand(MEAS_ACC, settings));
+      if (r.status === 6) {
+        await this._pmdRequest(control, [OP_STOP, MEAS_ACC]).catch(() => null);
+        r = await this._pmdRequest(control, startCommand(MEAS_ACC, settings));
+      }
+      if (r.status !== 0) throw new Error(`the band refused to start the accelerometer (${r.statusText})`);
+    } else {
+      const cmd = startCommand(MEAS_ACC, settings);
+      if (typeof control.writeValueWithResponse === 'function') await control.writeValueWithResponse(cmd);
+      else await control.writeValue(cmd);
+      const before = this.accFrames;
+      await new Promise(r => setTimeout(r, 3000));
+      if (this.accFrames === before) {
+        throw new Error('the accelerometer was started blind (no answers from the bridge) and sent nothing');
+      }
+    }
   }
 
   /** The athlete's Disconnect. Same as dispose: nothing should keep trying after it. */

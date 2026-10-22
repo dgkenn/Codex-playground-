@@ -19,12 +19,12 @@
 //     wobble of two endpoints is a few metres against a hundred-plus of travel, and averages out),
 //     so  scale = sum(chord) / sum(integrated speed)  over those stretches. Kept between sessions.
 //
-//   Steps x stride, from the phone's own accelerometer (the Verity Sense's raw motion data appears to
-//     need Polar's SDK mode, which is why it reports "no accelerometer"). Cadence is measured every
-//     step and needs no satellites -- under trees, between buildings, in a GPS drop-out it carries on.
-//     Stride is learned against the calibrated GPS speed while the GPS is good and the pace steady,
-//     as a line in cadence (longer strides at higher cadence), the method behind footpods, Garmin's
-//     stride length and AutoGait. Kept between sessions.
+//   Steps x stride, from two accelerometers: the phone's own, and the Verity Sense's (52 Hz in its
+//     normal mode, started over Polar's measurement service -- see sensor.js). Cadence is measured
+//     every step and needs no satellites -- under trees, between buildings, in a GPS drop-out it
+//     carries on. Stride is learned against the GPS speed while the GPS is good and the pace steady,
+//     from cadence and how hard the steps land, the method behind footpods, Garmin's stride length
+//     and AutoGait. Each accelerometer has its own model; either can drop out. Kept between sessions.
 //
 //   Stillness. No steps for three seconds is standing still, which GPS can never be sure of: a
 //     stationary phone's fixes wander a metre or two a second. This pins speed to zero at a crossing.
@@ -76,6 +76,7 @@ export class StepDetector {
   constructor() {
     this.mean = null; this.smooth = 0; this.prev = 0; this.prev2 = 0;
     this.var = 1; this.lastStepT = -Infinity; this.steps = []; // times of steps
+    this.peaks = [];                                            // [t, peak] per step
   }
 
   /** One accelerometer reading (m/s^2, gravity included). Returns true when a step is detected. */
@@ -93,17 +94,34 @@ export class StepDetector {
       step = true;
       this.lastStepT = t;
       this.steps.push(t);
+      this.peaks.push([t, this.prev]);
     }
     this.prev2 = this.prev; this.prev = this.smooth;
     while (this.steps.length && this.steps[0] < t - 10) this.steps.shift();
+    while (this.peaks.length && this.peaks[0][0] < t - 10) this.peaks.shift();
     return step;
   }
 
-  /** Steps per minute over the last `windowS`, or null with fewer than 4 steps in it. */
-  cadence(t, windowS = 6) {
-    const xs = this.steps.filter(s => s > t - windowS);
-    if (xs.length < 4) return null;
-    return 60 * (xs.length - 1) / (xs[xs.length - 1] - xs[0]);
+  /**
+   * Steps per minute from the last four step intervals (median, so one missed or doubled step does
+   * not swing it): about a second and a half of history, where a six-second window was six. Null
+   * with too few steps, or when the last step is too long ago for the rhythm to still hold.
+   */
+  cadence(t) {
+    const xs = this.steps.filter(s => s > t - 6);
+    if (xs.length < 5) return null;
+    const iv = [];
+    for (let i = xs.length - 4; i < xs.length; i++) iv.push(xs[i] - xs[i - 1]);
+    iv.sort((a, b) => a - b);
+    const med = (iv[1] + iv[2]) / 2;
+    if (t - xs[xs.length - 1] > 1.5 * med + 0.5) return null;
+    return 60 / med;
+  }
+
+  /** How hard the recent steps landed (mean peak, in the detector's units), or null. */
+  intensity(t) {
+    const ps = this.peaks.filter(([pt]) => pt > t - 4).map(([, p]) => p);
+    return ps.length >= 3 ? ps.reduce((a, b) => a + b, 0) / ps.length : null;
   }
 
   /** Seconds since the last step. */
@@ -111,39 +129,87 @@ export class StepDetector {
 }
 
 /**
- * Stride as a line in cadence, learned by exponentially-weighted least squares from (cadence, speed)
- * pairs taken while the GPS is good and the pace steady.
+ * Stride from cadence and impact intensity, learned by exponentially-weighted ridge regression from
+ * (cadence, intensity, stride) taken while the GPS is good and the pace steady.
+ *
+ * Intensity is there because the literature is consistent that within running, speed changes mostly
+ * through stride length while step frequency barely moves -- so a stride fixed by cadence alone can
+ * only follow a change of pace as slowly as the GPS teaches it. Harder landings go with longer, faster
+ * strides; the regression learns by how much, per sensor (a phone in a pocket and a band on the arm
+ * feel the same step differently, so each source has its own model).
  */
 export class StrideModel {
   constructor(saved = null) {
-    // Sufficient statistics, decayed so the model follows him as he gets fitter.
-    Object.assign(this, { n: 0, sx: 0, sy: 0, sxx: 0, sxy: 0, seconds: 0 }, saved || {});
+    this.seconds = 0;
+    // Normal-equation sums for features [1, cadence - 160, intensity - i0], decayed.
+    this.A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    this.b = [0, 0, 0];
+    this.i0 = null;
+    if (saved && saved.A && saved.b) Object.assign(this, { A: saved.A, b: saved.b, i0: saved.i0, seconds: saved.seconds || 0 });
   }
 
-  add(cadenceSpm, strideM) {
-    const k = 0.998;
-    this.n = this.n * k + 1;
-    this.sx = this.sx * k + cadenceSpm; this.sy = this.sy * k + strideM;
-    this.sxx = this.sxx * k + cadenceSpm * cadenceSpm; this.sxy = this.sxy * k + cadenceSpm * strideM;
+  _f(cad, inten) {
+    return [1, cad - 160, inten == null || this.i0 == null ? 0 : inten - this.i0];
+  }
+
+  add(cadenceSpm, intensity, strideM) {
+    if (this.i0 == null && intensity != null) this.i0 = intensity;
+    const f = this._f(cadenceSpm, intensity), k = 0.998;
+    for (let i = 0; i < 3; i++) {
+      this.b[i] = this.b[i] * k + f[i] * strideM;
+      for (let j = 0; j < 3; j++) this.A[i][j] = this.A[i][j] * k + f[i] * f[j];
+    }
     this.seconds += 1;
   }
 
-  /** Stride in metres at this cadence, or null before there is anything to go on. */
-  stride(cadenceSpm) {
-    if (this.n < 5) return null;
-    const mx = this.sx / this.n, my = this.sy / this.n;
-    const vx = this.sxx / this.n - mx * mx;
-    // With a narrow spread of cadences the slope is not identifiable; use the mean stride alone.
-    if (vx < 25) return my;
-    let b = (this.sxy / this.n - mx * my) / vx;
-    b = Math.max(0, Math.min(0.02, b));          // longer strides at higher cadence, within reason
-    return Math.max(0.3, my + b * (cadenceSpm - mx));
+  /** Ridge solution; `fixCad` pins the cadence slope and refits the rest around it. */
+  _solve(fixCad = null) {
+    if (this.A[0][0] < 5) return null;
+    // Ridge on the two slopes keeps them at zero until the data actually shows them.
+    let M = this.A.map((r, i) => r.map((v, j) => v + (i === j && i > 0 ? (i === 1 ? 50 : 5) : 0)));
+    let v = this.b.slice();
+    let idx = [0, 1, 2];
+    if (fixCad != null) {
+      idx = [0, 2];
+      v = idx.map(i => v[i] - M[i][1] * fixCad);
+      M = idx.map(i => idx.map(j => M[i][j]));
+    }
+    const n = idx.length;
+    // Gaussian elimination with partial pivoting.
+    for (let c = 0; c < n; c++) {
+      let p = c;
+      for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      [M[c], M[p]] = [M[p], M[c]]; [v[c], v[p]] = [v[p], v[c]];
+      if (Math.abs(M[c][c]) < 1e-9) return null;
+      for (let r = c + 1; r < n; r++) {
+        const m = M[r][c] / M[c][c];
+        for (let k = c; k < n; k++) M[r][k] -= m * M[c][k];
+        v[r] -= m * v[c];
+      }
+    }
+    const y = new Array(n).fill(0);
+    for (let r = n - 1; r >= 0; r--) {
+      let acc = v[r];
+      for (let k = r + 1; k < n; k++) acc -= M[r][k] * y[k];
+      y[r] = acc / M[r][r];
+    }
+    return fixCad == null ? y : [y[0], fixCad, y[1]];
   }
 
-  toJSON() {
-    const { n, sx, sy, sxx, sxy, seconds } = this;
-    return { n, sx, sy, sxx, sxy, seconds };
+  /** Stride in metres at this cadence and landing intensity, or null before there is anything to go on. */
+  stride(cadenceSpm, intensity = null) {
+    let x = this._solve();
+    if (!x) return null;
+    // Keep the cadence slope physical (no shorter stride at a higher cadence, within reason). A slope
+    // outside that is pinned and the rest refitted, so the answer at the cadences actually seen stays
+    // what the data says: clipping it after the fact would move every prediction away from 160 spm.
+    const pinned = Math.max(0, Math.min(0.02, x[1]));
+    if (pinned !== x[1]) x = this._solve(pinned) || x;
+    const f = this._f(cadenceSpm, intensity);
+    return Math.max(0.3, x[0] + x[1] * f[1] + x[2] * f[2]);
   }
+
+  toJSON() { return { A: this.A, b: this.b, i0: this.i0, seconds: this.seconds }; }
 }
 
 export class SpeedFusion {
@@ -153,8 +219,11 @@ export class SpeedFusion {
    */
   constructor({ saved = null, ...opts } = {}) {
     this.cfg = { ...FusionDefaults, ...opts };
-    this.steps = new StepDetector();
+    this.steps = new StepDetector();           // the phone's accelerometer
+    this.armSteps = new StepDetector();        // the armband's (Verity Sense, normal mode, 52 Hz)
     this.strideModel = new StrideModel(saved && saved.stride);
+    this.armModel = new StrideModel(saved && saved.armStride);
+    this.armMean = null;
     // The GPS scale: sum of reference chords and of integrated speed over qualifying windows, with
     // the carried-over value entered as a prior worth a few windows.
     const prior = saved && saved.scale && saved.scale >= this.cfg.scaleMin && saved.scale <= this.cfg.scaleMax
@@ -167,7 +236,7 @@ export class SpeedFusion {
     this.lastT = null;
     this.distanceM = 0;
     this.distanceGpsM = 0;         // calibrated GPS alone, for comparison
-    this.shares = { gps: 0, steps: 0, still: 0, none: 0 };
+    this.shares = { gps: 0, steps: 0, arm: 0, still: 0, none: 0 };
     this.lastSource = 'none';
     this.motionSeen = false;
   }
@@ -220,6 +289,23 @@ export class SpeedFusion {
     this._lastWindowEnd = end.t;
   }
 
+  /**
+   * A frame of the armband's accelerometer magnitudes, in its own units, the last at time `t` and the
+   * rest spaced at 52 Hz before it. Normalised against its own running mean (gravity), so the units
+   * the band happens to report in do not matter.
+   */
+  arm({ t, mags, hz = 52 }) {
+    if (!mags || !mags.length) return;
+    for (let i = 0; i < mags.length; i++) {
+      const m = mags[i];
+      if (!Number.isFinite(m) || m <= 0) continue;
+      this.armMean = this.armMean == null ? m : this.armMean + (m - this.armMean) * 0.005;
+      const tt = t - (mags.length - 1 - i) / hz;
+      this.armSeen = true;
+      if (this.armSteps.add(tt, 0, 0, m / this.armMean * 9.81)) this.armStepsEver = true;
+    }
+  }
+
   /** One accelerometer reading (m/s^2, gravity included). */
   motion({ t, ax, ay, az }) {
     // A browser can fire motion events with nothing in them; those are not a sensor.
@@ -235,39 +321,48 @@ export class SpeedFusion {
   tick(t) {
     const dt = this.lastT == null ? 0 : Math.max(0, Math.min(5, t - this.lastT));
     this.lastT = t;
-    // Predict: speed may have changed.
-    this.P += (this.cfg.processSd ** 2) * Math.max(dt, 1);
+    // Predict: speed may have changed, by as much as the elapsed time allows (fractional ticks are
+    // fine -- the page may ask more often than once a second for a livelier display).
+    this.P += (this.cfg.processSd ** 2) * Math.max(dt, 0.25);
 
     const fix = this.lastFix && t - this.lastFix.t <= 3 ? this.lastFix : null;
     const gpsV = fix && fix.v != null ? fix.v * this.scale : null;
-    // A motion sensor that sees no steps while GPS has said "moving" for twenty seconds is not
-    // seeing this run -- a desktop browser, a phone wedged somewhere that does not jolt -- and its
-    // "no steps" must not pin the speed to zero. It is set aside for the rest of the session.
-    if (this.motionSeen && !this.motionUnusable) {
-      const movingByGps = gpsV != null && gpsV > 1.2 && fix.acc <= this.cfg.calibAccuracyM;
-      this.silentMovingS = movingByGps && this.steps.sinceStep(t) > this.cfg.stillAfterS
-        ? (this.silentMovingS || 0) + 1 : 0;
-      if (this.silentMovingS >= 20) this.motionUnusable = true;
+    // Each step source is checked against GPS: one that sees no steps while GPS has said "moving" for
+    // twenty seconds is not seeing this run -- a desktop browser, a phone wedged somewhere that does
+    // not jolt -- and its "no steps" must not pin the speed to zero. It is set aside for the session.
+    const movingByGps = gpsV != null && gpsV > 1.2 && fix.acc <= this.cfg.calibAccuracyM;
+    const srcs = [
+      { key: 'phone', det: this.steps, model: this.strideModel, seen: this.motionSeen, ever: this.stepsEver, sd: 0.12 },
+      { key: 'arm', det: this.armSteps, model: this.armModel, seen: this.armSeen, ever: this.armStepsEver, sd: 0.15 },
+    ];
+    this._silent = this._silent || { phone: 0, arm: 0 };
+    this._unusable = this._unusable || { phone: false, arm: false };
+    for (const c of srcs) {
+      if (!c.seen || this._unusable[c.key]) continue;
+      this._silent[c.key] = movingByGps && c.det.sinceStep(t) > this.cfg.stillAfterS ? this._silent[c.key] + 1 : 0;
+      if (this._silent[c.key] >= 20) this._unusable[c.key] = true;
     }
-    const motionOk = this.motionSeen && !this.motionUnusable;
-    const cad = motionOk ? this.steps.cadence(t) : null;
-    // Still only on a sensor that has shown it can see steps, and only when GPS does not say moving.
-    const still = motionOk && this.stepsEver && this.steps.sinceStep(t) > this.cfg.stillAfterS
-                  && !(gpsV != null && gpsV > 1.2);
-    const sources = [];
+    this.motionUnusable = this._unusable.phone;
+    const live = srcs.filter(c => c.seen && !this._unusable[c.key]);
+    for (const c of live) { c.cad = c.det.cadence(t); c.inten = c.det.intensity(t); }
 
-    // Learn the stride while the GPS is good and the pace has held (current speed close to the
-    // speed a few seconds ago), so the reference is not a transition.
-    if (gpsV != null && cad != null && fix.acc <= this.cfg.calibAccuracyM && gpsV > 0.8) {
+    // Learn each source's stride while the GPS is good and the pace has held, against the phone's RAW
+    // speed (scaled at use, so a later correction to the scale applies at once).
+    if (gpsV != null && fix.acc <= this.cfg.calibAccuracyM && gpsV > 0.8) {
       const steady = this.fixes.filter(f => f.t >= t - 6 && f.v != null).map(f => f.v * this.scale);
       if (steady.length >= 3 && Math.max(...steady) - Math.min(...steady) < 0.35) {
-        // Learned against the phone's RAW speed, and scaled at use: a correction to the scale later
-        // in the session then applies to the steps channel at once, instead of the stride carrying
-        // whatever the scale was when each second was learned.
-        this.strideModel.add(cad, fix.v / (cad / 60));
+        for (const c of live) if (c.cad != null) c.model.add(c.cad, c.inten, fix.v / (c.cad / 60));
       }
     }
 
+    // Still: every live step source that has shown it can see steps has been quiet for three
+    // seconds, and GPS does not say moving.
+    const proven = live.filter(c => c.ever);
+    const still = proven.length > 0 && proven.every(c => c.det.sinceStep(t) > this.cfg.stillAfterS)
+                  && !(gpsV != null && gpsV > 1.2);
+    const cad = (live.find(c => c.key === 'phone' && c.cad != null) || live.find(c => c.cad != null) || {}).cad ?? null;
+
+    const sources = [];
     if (still) {
       this._update(0, 0.05 ** 2); sources.push('still');
     } else {
@@ -285,11 +380,19 @@ export class SpeedFusion {
           if (v < 8) { this._update(v, sd * sd); sources.push('gps-pos'); }
         }
       }
-      const stride = cad != null && this.strideModel.seconds >= this.cfg.strideTrustS
-        ? this.strideModel.stride(cad) : null;
-      if (stride != null) {
-        this._update(cad / 60 * stride * this.scale, 0.12 ** 2); sources.push('steps');
+      // The two accelerometers are not independent witnesses -- both strides were taught by the same
+      // GPS -- so they enter as ONE measurement: their weighted mean, trusted as much as the better one.
+      // Either alone is enough; together they cover each other's missed steps.
+      let wsum = 0, vsum = 0, best = Infinity;
+      for (const c of live) {
+        if (c.cad == null || c.model.seconds < this.cfg.strideTrustS) continue;
+        const stride = c.model.stride(c.cad, c.inten);
+        if (stride == null) continue;
+        const w = 1 / c.sd ** 2;
+        wsum += w; vsum += w * c.cad / 60 * stride * this.scale; best = Math.min(best, c.sd);
+        sources.push(c.key === 'phone' ? 'steps' : 'arm');
       }
+      if (wsum > 0) this._update(vsum / wsum, best * best);
     }
     if (!sources.length && this.P > 4) this.x = 0;          // nothing for a long time: do not coast
     if (this.x < 0) this.x = 0;
@@ -299,7 +402,7 @@ export class SpeedFusion {
     if (sources.length) this.lastMeasT = t;
     const source = sources.length ? sources.join('+') : 'none';
     const key = sources.includes('still') ? 'still' : sources.includes('steps') ? 'steps'
-              : sources.some(x => x.startsWith('gps')) ? 'gps' : 'none';
+              : sources.includes('arm') ? 'arm' : sources.some(x => x.startsWith('gps')) ? 'gps' : 'none';
     this.shares[key] += dt;
     this.lastSource = source;
     // Trusted for six seconds after any measurement: an iPhone often delivers a fix every two to five
@@ -318,11 +421,12 @@ export class SpeedFusion {
   state() {
     return {
       scale: Math.round(this.scale * 1000) / 1000, scaleWindows: this.windows,
-      stride: this.strideModel.toJSON(),
+      stride: this.strideModel.toJSON(), armStride: this.armModel.toJSON(),
       strideAt170: this.strideModel.stride(170) == null ? null
         : Math.round(this.strideModel.stride(170) * this.scale * 100) / 100,
-      strideSeconds: this.strideModel.seconds,
+      strideSeconds: this.strideModel.seconds, armStrideSeconds: this.armModel.seconds,
       motion: this.motionSeen, motionUnusable: !!this.motionUnusable,
+      arm: !!this.armSeen, armUnusable: !!(this._unusable && this._unusable.arm),
       distanceM: Math.round(this.distanceM),
       distanceGpsM: Math.round(this.distanceGpsM),
       shares: Object.fromEntries(Object.entries(this.shares).map(([k, v]) => [k, Math.round(v)])),

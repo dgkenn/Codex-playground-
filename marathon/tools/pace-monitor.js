@@ -48,8 +48,16 @@ export function gradeAdjustedPaceFactor(grade) {
 }
 
 export class PaceBandMonitor {
-  constructor({ targetPaceSecKm, tolerance = 0.06, ceilingOnly = false, enabled = true }) {
+  /**
+   * `smoothingS` / `minSamples` default to the tuning shared with the Python engine, which is fed raw
+   * GPS speed. A caller feeding an already-filtered speed (fusion.js) can ask for a shorter window,
+   * so a change of pace is judged in seconds rather than after twenty of them.
+   */
+  constructor({ targetPaceSecKm, tolerance = 0.06, ceilingOnly = false, enabled = true,
+                smoothingS = Tuning.smoothingS, minSamples = Tuning.minSamples }) {
     this.targetPaceSecKm = targetPaceSecKm;
+    this.smoothingS = smoothingS;
+    this.minSamples = minSamples;
     this.tolerance = tolerance;
     this.ceilingOnly = ceilingOnly;
     this.enabled = enabled;
@@ -105,7 +113,7 @@ export class PaceBandMonitor {
 
     if (this.windowStartT == null) this.windowStartT = tS;
     this.window.push([tS, paceSecKm]);
-    this.window = this.window.filter(([t]) => t >= tS - Tuning.smoothingS);
+    this.window = this.window.filter(([t]) => t >= tS - this.smoothingS);
     // Eight samples is right when GPS delivers roughly one fix a second, which is an assumption
     // about the RADIO, not a fact about it. iOS commonly delivers watchPosition fixes every two to
     // five seconds depending on signal and power state, and at that rate eight samples inside a
@@ -114,7 +122,7 @@ export class PaceBandMonitor {
     // chose to run it that day. `minSamples` is the guard against deciding off one noisy fix;
     // `smoothingS` of elapsed real time, with whatever samples actually showed up, is the guard
     // against that protection turning into permanent silence.
-    if (this.window.length < Tuning.minSamples && tS - this.windowStartT < Tuning.smoothingS) {
+    if (this.window.length < this.minSamples && tS - this.windowStartT < this.smoothingS) {
       return null;
     }
 
