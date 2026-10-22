@@ -576,7 +576,12 @@ function fakePmd({ answer = () => 0, settings = true, frames = true } = {}) {
       if (st == null) return;
       setTimeout(() => {
         fire(ctlL, [0xF0, b[0], b[1], st, 0, ...(b[0] === 0x01 && st === 0 ? settingsBytes : [])]);
-        if (b[0] === 0x02 && st === 0 && frames) {
+        if (b[0] === 0x02 && b[1] === 0x03 && st === 0) {
+          // PPI: three beats -- 1000 ms clean, 980 ms clean, 1400 ms with the blocker bit
+          const frame = [0x03, 0,0,0,0,0,0,0,0, 0x00,
+                         60, 0xE8, 0x03, 5, 0, 0, 61, 0xD4, 0x03, 6, 0, 0, 43, 0x78, 0x05, 40, 0, 1];
+          setTimeout(() => fire(dataL, frame), 5);
+        } else if (b[0] === 0x02 && st === 0 && frames) {
           const frame = [0x02, 0,0,0,0,0,0,0,0, 0x01];
           for (let i = 0; i < 10; i++) frame.push(0xE8, 0x03, 0, 0, 0, 0);      // 1000, 0, 0
           setTimeout(() => fire(dataL, frame), 5);
@@ -632,6 +637,27 @@ function fakePmd({ answer = () => 0, settings = true, frames = true } = {}) {
   assert.ok(q.accFrames > 0);
   q.dispose();
   console.log('  ok  refusals are named; a silent bridge gets a blind start judged by frames arriving');
+}
+
+{
+  // Beat-to-beat intervals for the resting check: started over the same channel as the
+  // accelerometer, routed by measurement type, the band's movement flag carried through.
+  const pm = fakePmd();
+  const s = new VeritySensor({ onAcc: () => {} });
+  await s._attachAcc(pm.server);
+  s.connected = true; s.device = { gatt: pm.server };
+  const beats = [];
+  await s.startPpi(b => beats.push(...b));
+  await new Promise(r => setTimeout(r, 30));
+  assert.deepEqual(pm.writes.at(-1), [0x02, 0x03], 'PPI is started with no settings');
+  assert.deepEqual(beats.map(b => b.ppiMs), [1000, 980, 1400]);
+  assert.deepEqual(beats.map(b => b.blocker), [false, false, true]);
+  assert.equal(beats[0].errMs, 5);
+  await s.stopPpi();
+  assert.deepEqual(pm.writes.at(-1), [0x03, 0x03], 'and stopped');
+  assert.equal(s.ppiOn, false);
+  s.dispose();
+  console.log('  ok  beat-to-beat intervals start, arrive with the band\'s movement flag, and stop');
 }
 
 console.log('\nAll sensor tests passed.');

@@ -62,6 +62,7 @@ const parts = {
   HRBLOCKS: inline('hr-blocks.js'),
   TERRAIN: inline('terrain.js'),
   FUSION: inline('fusion.js'),
+  READINESS: inline('readiness.js'),
   THRESHOLD: inline('threshold.js'),
   LOADWATCH: inline('load-watch.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),

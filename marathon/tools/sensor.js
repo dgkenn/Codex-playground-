@@ -31,6 +31,8 @@ export const PMD_CONTROL = 'fb005c81-02e7-f387-1cad-8acd2d8df0c8';
 export const PMD_DATA = 'fb005c82-02e7-f387-1cad-8acd2d8df0c8';
 
 const MEAS_ACC = 0x02, OP_START = 0x02;
+/// Pulse-to-pulse intervals: beat-by-beat timing from the optical sensor, computed on the band.
+export const MEAS_PPI = 0x03;
 const OP_GET_SETTINGS = 0x01, OP_STOP = 0x03;
 const SETTING = { sampleRate: 0x00, resolution: 0x01, range: 0x02, channels: 0x04 };
 /// CHANNELS is a ONE-byte setting. Encoding it as uint16 writes an extra byte into every START
@@ -304,6 +306,24 @@ export function parseAccFrame(view) {
   return samples;
 }
 
+/**
+ * One PPI frame (measurement 3, frame type 0, uncompressed): six bytes per beat -- heart rate, the
+ * interval in ms, the band's own error estimate in ms, and flags (bit 0 blocker = movement during
+ * the beat; bit 1 skin contact; bit 2 skin contact supported). The layout is Polar SDK PpiData.kt.
+ * Null for any other measurement or frame type.
+ */
+export function parsePpiFrame(view) {
+  if (view.byteLength < 10 || (view.getUint8(0) & 0x3f) !== MEAS_PPI || view.getUint8(9) !== 0) return null;
+  const out = [];
+  for (let off = 10; off + 6 <= view.byteLength; off += 6) {
+    const flags = view.getUint8(off + 5);
+    out.push({ hr: view.getUint8(off), ppiMs: view.getUint16(off + 1, true),
+               errMs: view.getUint16(off + 3, true), blocker: (flags & 1) === 1,
+               skinContact: (flags & 2) === 2, skinSupported: (flags & 4) === 4 });
+  }
+  return out;
+}
+
 /** Raw counts at +/-8 G, 16-bit, to g. */
 export const accMagnitude = ([x, y, z]) =>
   Math.hypot(x * 8 / 32768, y * 8 / 32768, z * 8 / 32768);
@@ -369,6 +389,9 @@ export class VeritySensor {
     this.hrCount = 0;
     this.rrCount = 0;
     this.accFrames = 0;
+    this.ppiCount = 0;
+    this.ppiOn = false;
+    this.onPpi = null;
     this.connectedAt = 0;
     /// Set once this instance is finished with. Every background loop checks it, so a replaced
     /// sensor stops trying to reach the band -- before, each tap of Connect left the previous
@@ -678,12 +701,18 @@ export class VeritySensor {
     this._disposed = true;
     // Stop the accelerometer stream so the next connection does not find it "already on".
     if (this._pmdControl) {
+      const c = this._pmdControl;
+      const send = cmd => Promise.resolve(typeof c.writeValueWithResponse === 'function'
+        ? c.writeValueWithResponse(cmd) : c.writeValue(cmd));
       try {
-        const c = this._pmdControl, cmd = new Uint8Array([OP_STOP, MEAS_ACC]);
-        Promise.resolve(typeof c.writeValueWithResponse === 'function' ? c.writeValueWithResponse(cmd)
-                                                                       : c.writeValue(cmd)).catch(() => {});
+        // In sequence: a second write before the first is answered is refused as "operation in progress".
+        send(new Uint8Array([OP_STOP, MEAS_ACC])).catch(() => {})
+          .then(() => (this.ppiOn ? send(new Uint8Array([OP_STOP, MEAS_PPI])) : null)).catch(() => {});
       } catch { /* gone */ }
       this._pmdControl = null;
+      this._pmd = null;
+      this.ppiOn = false;
+      this.onPpi = null;
     }
     if (this._stallTimer) { clearInterval(this._stallTimer); this._stallTimer = null; }
     if (this._listening) {
@@ -856,7 +885,12 @@ export class VeritySensor {
   // Polar's own: ask which settings the band supports, start with exactly those, and if the band
   // says it is already streaming (an earlier connection left it on), stop and start again. A bridge
   // that passes on no answers at all still gets a blind start, judged by whether frames arrive.
-  async _attachAcc(server) {
+  /**
+   * The measurement service's two characteristics, subscribed once per connection. Every stream
+   * shares the one data characteristic, so its listener routes each frame by measurement type.
+   */
+  async _pmdChannel(server) {
+    if (this._pmd && this._pmd.server === server) return this._pmd;
     const pmd = await server.getPrimaryService(PMD_SERVICE);
     const control = await pmd.getCharacteristic(PMD_CONTROL);
     const data = await pmd.getCharacteristic(PMD_DATA);
@@ -864,15 +898,29 @@ export class VeritySensor {
     control.addEventListener('characteristicvaluechanged', this._onPmdControl);
     await data.startNotifications();
     data.addEventListener('characteristicvaluechanged', e => {
-      const samples = parseAccFrame(e.target.value);
+      const v = e.target.value;
+      const samples = parseAccFrame(v);
       if (samples) {
         this.accFrames += 1;
         const mags = samples.map(accMagnitude);
         for (const m of mags) this.accWindow.push(m);
         if (this.onAcc) { try { this.onAcc(mags, Date.now() / 1000); } catch { /* consumer's problem */ } }
+        return;
+      }
+      const beats = parsePpiFrame(v);
+      if (beats) {
+        this.ppiCount += beats.length;
+        if (this.onPpi) { try { this.onPpi(beats, Date.now() / 1000); } catch { /* consumer's problem */ } }
       }
     });
     this._pmdControl = control;
+    this._pmd = { server, control, data };
+    return this._pmd;
+  }
+
+  async _attachAcc(server) {
+    this._pmd = null;                                   // a new connection: subscribe afresh
+    const { control } = await this._pmdChannel(server);
 
     let settings, answered = true;
     try {
@@ -903,6 +951,37 @@ export class VeritySensor {
         throw new Error('the accelerometer was started blind (no answers from the bridge) and sent nothing');
       }
     }
+  }
+
+  /**
+   * Beat-to-beat intervals, for a resting HRV check. Polar is explicit that PPI "cannot be measured
+   * accurately during activity" and "should only be used at complete rest", and while it streams the
+   * band updates its heart rate only every five seconds -- so this is for lying still, never for a
+   * run. The first beats arrive about 25 s after the start. `onPpi(beats, arrivalSeconds)`.
+   */
+  async startPpi(onPpi) {
+    if (!this.connected || !this.device || !this.device.gatt) throw new Error('the armband is not connected');
+    // The channel the accelerometer opened on this connection when there is one (it is subscribed
+    // already); otherwise open it now.
+    const { control } = this._pmd || await this._pmdChannel(this.device.gatt);
+    this.onPpi = onPpi;
+    let r = await this._pmdRequest(control, [OP_START, MEAS_PPI]);
+    if (r.status === 6) {                               // left on by an earlier check
+      await this._pmdRequest(control, [OP_STOP, MEAS_PPI]).catch(() => null);
+      r = await this._pmdRequest(control, [OP_START, MEAS_PPI]);
+    }
+    if (r.status !== 0) {
+      this.onPpi = null;
+      throw new Error(`the band refused to start beat-to-beat intervals (${r.statusText})`);
+    }
+    this.ppiOn = true;
+  }
+
+  async stopPpi() {
+    this.onPpi = null;
+    if (!this.ppiOn) return;
+    this.ppiOn = false;
+    if (this._pmd) await this._pmdRequest(this._pmd.control, [OP_STOP, MEAS_PPI]).catch(() => null);
   }
 
   /** The athlete's Disconnect. Same as dispose: nothing should keep trying after it. */

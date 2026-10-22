@@ -1492,6 +1492,93 @@ async function openAll(page) {
 }
 
 {
+  // The morning check: five minutes of beat-to-beat intervals lying still, summarised into resting
+  // heart rate and HRV, and the readiness band it feeds -- which takes the extra blocks away on a
+  // back-off day. A fake band with the measurement service; a fake clock so five minutes take one.
+  const mp = await browser.newPage();
+  mp.on('pageerror', e => errors.push('pageerror (morning check): ' + e.message));
+  await mp.clock.install({ time: new Date(2026, 9, 23, 6, 30, 0) });
+  await mp.addInitScript(() => {
+    if (!localStorage.getItem('band.checks.v1')) {
+      // Twenty mornings around 50 ms, the last six down near 30: a suppressed 7-day mean.
+      const xs = [];
+      for (let i = 26; i >= 1; i--) {
+        const d = new Date(2026, 9, 23 - i), day = d.toISOString().slice(0, 10);
+        if (i % 4 === 0) continue;
+        xs.push({ day, hrvMs: i <= 6 ? 30 + (i % 3) : 48 + (i % 5), restingHr: 58 + (i % 3), cleanCount: 280,
+                  artifactFraction: 0.02, source: 'verity_ppi_rmssd', posture: 'supine' });
+      }
+      localStorage.setItem('band.checks.v1', JSON.stringify(xs));
+    }
+    const fire = (ls, bytes) => ls.forEach(f => f({ target: { value: new DataView(new Uint8Array(bytes).buffer) } }));
+    const hrL = [], ctlL = [], dataL = [];
+    window.__writes = [];
+    const hrChar = { async startNotifications() { return this; }, addEventListener(t, f) { hrL.push(f); } };
+    const control = { async startNotifications() { return this; }, addEventListener(t, f) { ctlL.push(f); },
+      async writeValueWithResponse(b) {
+        b = Array.from(b); window.__writes.push(b);
+        // The accelerometer is refused (not this test's business); PPI start and stop succeed.
+        const st = b[0] === 0x01 ? 3 : 0;
+        setTimeout(() => fire(ctlL, [0xF0, b[0], b[1], st, 0]), 1);
+      } };
+    const data = { async startNotifications() { return this; }, addEventListener(t, f) { dataL.push(f); } };
+    const server = { getPrimaryService: async id => {
+      if (/180d/.test(id)) return { getCharacteristic: async () => hrChar };
+      if (/fb005c80/.test(id)) return { getCharacteristic: async c => (/5c81/.test(c) ? control : data) };
+      throw new Error('not present'); } };
+    const gatt = { connected: false, connect() { this.connected = true; return Promise.resolve(server); },
+                   disconnect() { this.connected = false; } };
+    const band = { name: 'Polar Sense 16961D33', gatt, addEventListener() {}, removeEventListener() {} };
+    navigator.bluetooth = { getDevices: async () => [band], requestDevice: async () => band };
+    window.__hr = v => fire(hrL, [0, v]);
+    // n beats alternating 980/1020 ms (RMSSD 40, 60 bpm), one in fifty flagged as moved.
+    let k = 0;
+    window.__beats = n => {
+      const frame = [0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0x00];
+      for (let i = 0; i < n; i++, k++) {
+        const ms = k % 2 ? 1020 : 980;
+        frame.push(60, ms & 0xff, ms >> 8, 4, 0, k % 50 === 49 ? 1 : 0);
+      }
+      fire(dataL, frame);
+    };
+  });
+  await mp.goto('file://' + APP, { waitUntil: 'load' });
+  await mp.clock.runFor(3000);
+  await mp.waitForFunction(() => document.getElementById('connect').textContent === 'Disconnect', { timeout: 20000 });
+  assert.match(await mp.textContent('#readyhead'), /Back off today|Rest/, 'a suppressed week reads as back off or rest');
+
+  await mp.click('#checkbtn');
+  await mp.clock.runFor(500);
+  assert.deepEqual((await mp.evaluate(() => window.__writes)).at(-1), [0x02, 0x03], 'PPI is started');
+  // At 60 bpm the 240 clean beats come at about five and a half minutes; the check stops by itself.
+  for (let s = 0; s < 40 && await mp.evaluate(() => /Cancel/.test(document.getElementById('checkbtn').textContent)); s++) {
+    await mp.evaluate(() => { window.__hr(60); window.__beats(10); });
+    await mp.clock.runFor(10000);
+  }
+  const status = await mp.textContent('#readydetail');
+  assert.match(status, /Today: resting 60 bpm, HRV 4\d ms/, `the check is summarised: "${status}"`);
+  assert.deepEqual((await mp.evaluate(() => window.__writes)).at(-1), [0x03, 0x03], 'and PPI is stopped');
+  const lines = await mp.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /morning check: resting 60 bpm/.test(l)), JSON.stringify(lines.slice(0, 4)));
+  assert.ok(lines.some(l => /resting heart rate \d+ → [56]\d, the median of your last/.test(l)),
+    'three agreeing checks set the resting heart rate the zones are built from');
+
+  // Start a run/walk under heart-rate governance: the back-off day keeps the rung, drops the extras.
+  await openAll(mp);
+  await mp.click('#m-intervals');
+  await mp.check('#hrblocks');
+  await mp.evaluate(() => window.__hr(100));
+  await mp.click('#go');
+  await mp.clock.runFor(1500);
+  const after = await mp.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(after.some(l => /readiness says (back off today|rest): no extra blocks today/.test(l)),
+    `the session says it is dropping the extra blocks: ${JSON.stringify(after.slice(0, 4))}`);
+  await mp.click('#go');
+  await mp.close();
+  console.log('  ok  the morning check summarises the still minutes, sets resting HR, and a back-off day drops the extra blocks');
+}
+
+{
   // First time, nothing remembered: one tap on the armband line under Start opens the picker inside
   // that tap (no remembered-list lookup first, which could let the tap's permission lapse) and
   // connects.

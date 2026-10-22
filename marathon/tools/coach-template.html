@@ -299,6 +299,23 @@
       </div>
       <button id="starttoday" class="go">Start</button>
       <button id="todaybt" class="tiny" style="margin-top:.5rem;width:100%">Armband: not connected — tap to connect</button>
+      <!-- Morning readiness: five minutes lying still on waking, the armband's beat-to-beat
+           intervals. Decides whether today keeps its extra blocks. See readiness.js. -->
+      <div id="readiness" style="display:grid;gap:.4rem">
+        <div><strong id="readyhead">Morning check</strong>
+          <span class="note" id="readydetail"></span></div>
+        <button id="checkbtn" class="tiny" style="width:100%">Morning check — 5–8 min lying still</button>
+        <div id="checkpanel" class="hide" style="display:grid;gap:.4rem">
+          <div class="note" id="checkstatus"></div>
+          <div class="row">
+            <label>slept (h) <input id="chk-sleep" type="number" min="0" max="14" step="0.5"
+                                    inputmode="decimal" style="width:4.2rem"></label>
+            <label>sore <select id="chk-sore"><option value="">–</option></select></label>
+            <label>tired <select id="chk-tired"><option value="">–</option></select></label>
+          </div>
+          <label class="check"><input type="checkbox" id="chk-ill"><span>feeling ill</span></label>
+        </div>
+      </div>
     </div>
     <p class="note" style="margin-top:.7rem">
       Runs the session for the day highlighted above, in the right mode — today's by default. Tap
@@ -738,6 +755,7 @@
 /*{{HRBLOCKS}}*/
 /*{{TERRAIN}}*/
 /*{{FUSION}}*/
+/*{{READINESS}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -2447,6 +2465,133 @@ $('connect').onclick = () => connectArmband();
 // accident on the way to Start.
 $('todaybt').onclick = () => { if (!(S.sensor && S.sensor.connected)) connectArmband(); };
 
+// =================================================================================================
+// Morning check: resting HRV and heart rate, for the readiness band (readiness.js)
+//
+// Lying down on waking, before standing, the band snug: the first minute settles and is not used,
+// then it runs until it has the 240 clean beats a check needs to count (readiness.js) -- at least
+// five minutes, longer for a slow resting heart (at 52 bpm that is five and a half), never more
+// than eight. Beat-to-beat intervals are only trustworthy at complete rest (Polar's own
+// documentation), so this never runs during a session.
+// =================================================================================================
+
+const CHECKS_KEY = 'band.checks.v1';
+const CHECK_MIN_S = 300, CHECK_MAX_S = 480;
+function loadChecks() {
+  try { const xs = JSON.parse(localStorage.getItem(CHECKS_KEY) || '[]'); return Array.isArray(xs) ? xs : []; }
+  catch { return []; }
+}
+function saveChecks(xs) {
+  try { localStorage.setItem(CHECKS_KEY, JSON.stringify(xs.slice(-120))); } catch { /* full */ }
+}
+const localDay = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function todayReadiness() { return dailyReadiness(loadChecks(), { asOf: localDay() }); }
+
+function renderReadiness() {
+  const r = todayReadiness();
+  const txt = readinessText(r);
+  const mine = loadChecks().find(c => c.day === localDay());
+  $('readyhead').textContent = txt.headline;
+  $('readydetail').textContent = (mine
+    ? `Today: resting ${Math.round(mine.restingHr)} bpm, HRV ${Math.round(mine.hrvMs)} ms`
+      + `${mine.artifactFraction != null ? `, ${Math.round(mine.artifactFraction * 100)}% of beats rejected` : ''}`
+      + `${usableHrv(mine) ? '' : ' (not counted: too few clean beats)'}. `
+    : 'No check yet today. ') + txt.detail;
+  $('readyhead').style.color = r.band === 'suppressed' || r.band === 'strained' ? 'var(--stop)' : '';
+}
+
+/**
+ * Resting heart rate is what every zone boundary is built from, and the Verity Sense measures it
+ * well lying still. Once three checks agree, their median (last seven) replaces the typed-in value.
+ */
+function adoptRestingHr() {
+  const rs = loadChecks().filter(c => c.restingHr && c.cleanCount >= 120).slice(-7).map(c => c.restingHr)
+    .sort((a, b) => a - b);
+  if (rs.length < 3) return;
+  const med = Math.round(rs.length % 2 ? rs[(rs.length - 1) / 2] : (rs[rs.length / 2 - 1] + rs[rs.length / 2]) / 2);
+  if (Math.abs(med - profile.hrRest) < 2) return;
+  log(`resting heart rate ${profile.hrRest} → ${med}, the median of your last ${rs.length} morning checks; `
+      + 'the zones move with it', 'on');
+  profile.hrRest = med;
+  $('hrrest').value = String(med);
+  saveProfile();
+}
+
+async function startMorningCheck() {
+  if (S.running) return;
+  if (S.check) return endMorningCheck(false);
+  if (!(S.sensor && S.sensor.connected)) {
+    log('Connect the armband first, then start the morning check.', 'stop');
+    connectArmband();
+    return;
+  }
+  const beats = [], started = Date.now();
+  S.check = { beats, started, timer: null };
+  $('checkbtn').textContent = 'Cancel the check';
+  $('checkpanel').classList.remove('hide');
+  $('checkstatus').textContent = 'Starting…';
+  try {
+    await S.sensor.startPpi(b => beats.push(...b));
+  } catch (e) {
+    log(`morning check: ${describeError(e)}`, 'stop');
+    endMorningCheck(false);
+    return;
+  }
+  keepAwake(true);
+  S.check.timer = setInterval(() => {
+    const el = (Date.now() - started) / 1000;
+    const clean = summariseCheck(beats).cleanCount;
+    const moved = beats.filter(b => b.blocker).length;
+    const left = Math.max(0, Math.ceil(CHECK_MIN_S - el));
+    $('checkstatus').textContent = !beats.length
+      ? `Lie still, screen on. The first beats take about 25 s (${Math.round(el)} s).`
+      : (left ? `at least ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} more · ` : 'nearly there · ')
+        + `${clean} of ${MIN_CLEAN_BEATS} clean beats` + (moved ? ` · ${moved} moved — keep still` : '');
+    if ((el >= CHECK_MIN_S && clean >= MIN_CLEAN_BEATS) || el >= CHECK_MAX_S) endMorningCheck(true);
+  }, 1000);
+}
+
+async function endMorningCheck(complete) {
+  const c = S.check;
+  if (!c) return;
+  S.check = null;
+  if (c.timer) clearInterval(c.timer);
+  if (S.sensor) await S.sensor.stopPpi().catch(() => null);
+  if (!S.running) keepAwake(false);
+  $('checkbtn').textContent = 'Morning check — 5–8 min lying still';
+  $('checkpanel').classList.add('hide');
+  if (!complete) { log('morning check cancelled', 'dim'); return; }
+  const sum = summariseCheck(c.beats);
+  const num = id => ($(id).value === '' ? null : Number($(id).value));
+  const rec = {
+    day: localDay(), at: new Date().toISOString(), source: 'verity_ppi_rmssd', posture: 'supine',
+    hrvMs: sum.hrvMs, restingHr: sum.restingHr, cleanCount: sum.cleanCount,
+    artifactFraction: sum.artifactFraction,
+    sleepMin: num('chk-sleep') == null ? null : num('chk-sleep') * 60,
+    soreness: num('chk-sore'), fatigue: num('chk-tired'), illness: $('chk-ill').checked,
+  };
+  saveChecks([...loadChecks().filter(x => x.day !== rec.day), rec]);
+  log(usableHrv(rec)
+    ? `morning check: resting ${Math.round(rec.restingHr)} bpm, HRV ${Math.round(rec.hrvMs)} ms `
+      + `(${sum.cleanCount} clean beats, ${Math.round(rec.artifactFraction * 100)}% rejected)`
+    : `morning check not counted for HRV: ${sum.cleanCount} clean beats, `
+      + `${rec.artifactFraction == null ? '?' : Math.round(rec.artifactFraction * 100)}% rejected `
+      + '(needs 240 and under 5%). Lie still with the band snug and try again tomorrow.', usableHrv(rec) ? 'on' : 'stop');
+  adoptRestingHr();
+  renderReadiness();
+}
+
+for (const id of ['chk-sore', 'chk-tired']) {
+  for (let v = 1; v <= 7; v++) {
+    const o = document.createElement('option');
+    o.value = String(v);
+    o.textContent = v === 1 ? '1 none' : v === 7 ? '7 very' : String(v);
+    $(id).append(o);
+  }
+}
+$('checkbtn').onclick = startMorningCheck;
+
 /**
  * Connect to the armband without being asked: on opening the page, on coming back to it, and on
  * Start. It is the only Bluetooth device this app talks to, so once the browser remembers it there
@@ -3932,6 +4077,9 @@ $('go').onclick = () => {
       reps: Number($('reps').value),
       // The rung's running, made up in up to three short extra blocks when the ceiling cuts some.
       runningTargetS: Number($('runmin').value) * Number($('reps').value) * 60,
+      // ...unless this morning's readiness says back off: then the rung's blocks and no more
+      // (readiness.js -- the HRV-guided rule replaces extra work with easy work, never the reverse).
+      extraBlocks: ['suppressed', 'strained'].includes(todayReadiness().band) ? 0 : HrBlockDefaults.extraBlocks,
       // Walk steep descents while bone is still catching up; see hr-blocks.js steepDownGrade.
       steepDownGrade: inBoneWindow() ? HrBlockDefaults.steepDownGrade : null,
     });
@@ -3939,7 +4087,10 @@ $('go').onclick = () => {
     // written and then wiped in the same tap. It is emitted after the clear, so the athlete actually
     // sees which ceiling the session is running to.
     S.hrBlocksNote = `heart rate calls the blocks — each ends at ${ceil.bpm} bpm (${ceil.source}) `
-                   + `or ${fmtMin(Number($('runmin').value))} min, walks down to ${recoveryFloorBpm()}`;
+                   + `or ${fmtMin(Number($('runmin').value))} min, walks down to ${recoveryFloorBpm()}`
+                   + (S.hrBlocks.cfg.extraBlocks === 0
+                     ? ` · readiness says ${readinessText(todayReadiness()).headline.toLowerCase()}: no extra blocks today`
+                     : '');
   }
 
   S.splits = new SplitAnnouncer({
@@ -4658,6 +4809,7 @@ function sessionPayload() {
 // own declaration has run, so calling these from the setup block higher up threw before the footer
 // was ever written — which showed as a page with no build stamp and no capabilities line.
 renderSaved();
+renderReadiness();
 offerRecovery();
 // Storage state before a run has started, so "is it storing?" has an answer at any moment.
 (() => {
@@ -4763,6 +4915,7 @@ $('clearstore').onclick = () => {
   delete $('clearstore').dataset.armed;
   $('clearstore').textContent = 'Clear storage';
   renderSaved();
+  renderReadiness();
   log('storage cleared', 'on');
 };
 
