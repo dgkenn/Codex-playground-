@@ -1590,6 +1590,77 @@ async function openAll(page) {
 }
 
 {
+  // The link drops mid-run, twice -- once announced, once not. Both come back without a tap, the
+  // band's own recording is checked after each, and the session record says what happened.
+  const lp = await browser.newPage();
+  lp.on('pageerror', e => errors.push('pageerror (link drop): ' + e.message));
+  await lp.clock.install({ time: new Date(2026, 9, 25, 7, 0, 0) });
+  await lp.addInitScript(() => {
+    localStorage.removeItem('band.session.index');
+    const fire = (ls, bytes) => ls.forEach(f => f({ target: { value: new DataView(new Uint8Array(bytes).buffer) } }));
+    const hrL = [], ctlL = [], dataL = [], L = {};
+    window.__writes = []; window.__connects = 0;
+    const hrChar = { async startNotifications() { return this; }, async stopNotifications() { return this; },
+                     addEventListener(t, f) { hrL.push(f); } };
+    const control = { async startNotifications() { return this; }, addEventListener(t, f) { ctlL.push(f); },
+      async writeValueWithResponse(b) {
+        b = Array.from(b); window.__writes.push(b);
+        // Status: the band's own HR recording is NOT active (it restarted) -- so it must be restarted.
+        const params = b[0] === 0x05 ? [0x0E] : [];
+        setTimeout(() => fire(ctlL, [0xF0, b[0], b[1] || 0, b[0] === 0x01 ? 3 : 0, 0, ...params]), 1);
+      } };
+    const data = { async startNotifications() { return this; }, addEventListener(t, f) { dataL.push(f); } };
+    const server = { getPrimaryService: async id => {
+      if (/180d/.test(id)) return { getCharacteristic: async () => hrChar };
+      if (/fb005c80/.test(id)) return { getCharacteristic: async c => (/5c81/.test(c) ? control : data) };
+      throw new Error('not present'); } };
+    const gatt = { connected: false, connect() { window.__connects += 1; this.connected = true; return Promise.resolve(server); },
+                   disconnect() { this.connected = false; } };
+    const band = { name: 'Polar Sense 16961D33', id: 'band', gatt,
+      addEventListener(t, f) { (L[t] ||= []).push(f); }, removeEventListener(t, f) { L[t] = (L[t] || []).filter(x => x !== f); } };
+    navigator.bluetooth = { getDevices: async () => [band], requestDevice: async () => band };
+    window.__hr = v => fire(hrL, [0, v]);
+    window.__drop = () => { gatt.connected = false; (L.gattserverdisconnected || []).forEach(f => f()); };
+    window.__dropSilently = () => { gatt.connected = false; };
+  });
+  await lp.goto('file://' + APP, { waitUntil: 'load' });
+  await lp.clock.runFor(3000);
+  await lp.waitForFunction(() => document.getElementById('connect').textContent === 'Disconnect', { timeout: 20000 });
+  await openAll(lp);
+  await lp.click('#m-intervals');
+  await lp.check('#hrblocks');
+  await lp.evaluate(() => window.__hr(110));
+  await lp.click('#go');
+  const beat = async n => { for (let i = 0; i < n; i++) { await lp.evaluate(() => window.__hr(112)); await lp.clock.runFor(1000); } };
+  await beat(20);
+  const before = await lp.evaluate(() => window.__connects);
+  await lp.evaluate(() => window.__drop());
+  await beat(5);
+  await lp.evaluate(() => window.__dropSilently());
+  await beat(8);
+  const after = await lp.evaluate(() => window.__connects);
+  assert.ok(after >= before + 2, `both drops reconnected by themselves (${before} -> ${after})`);
+  const writes = await lp.evaluate(() => window.__writes);
+  assert.ok(writes.filter(w => w[0] === 0x05).length >= 2, 'the band\'s own recording was checked after each');
+  assert.ok(writes.filter(w => w[0] === 0x02 && w[1] === 0x8E).length >= 2, 'and restarted, since it had stopped');
+  const lines = await lp.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /armband reconnected/.test(l)), JSON.stringify(lines.slice(0, 6)));
+  assert.match(await lp.textContent('#todaybt'), /Armband connected/);
+  await lp.click('#go');
+  await lp.clock.runFor(500);
+  const rec = await lp.evaluate(() => {
+    const idx = JSON.parse(localStorage.getItem('band.session.index') || '[]');
+    return idx.length ? JSON.parse(localStorage.getItem('band.session.' + idx[0].id)) : null;
+  });
+  assert.ok(rec && Array.isArray(rec.link), 'the session carries its link record');
+  const kinds = rec.link.map(e => e.kind);
+  assert.ok(kinds.includes('disconnected') && kinds.includes('disconnect-unannounced') && kinds.filter(k => k === 'reconnected').length >= 2,
+    `drops and recoveries recorded: ${JSON.stringify(rec.link)}`);
+  await lp.close();
+  console.log('  ok  link drops mid-run reconnect by themselves, the band\'s recording is re-checked, and the session records it');
+}
+
+{
   // First time, nothing remembered: one tap on the armband line under Start opens the picker inside
   // that tap (no remembered-list lookup first, which could let the tap's permission lapse) and
   // connects.

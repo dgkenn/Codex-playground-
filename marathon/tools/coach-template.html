@@ -2304,9 +2304,10 @@ function updateSensorUi() {
   if (chip) {
     chip.textContent = sn && sn.connected
       ? (fresh ? `Armband connected · ${sn.hr} bpm` : 'Armband connected · waiting for a reading')
-      : sn && (sn.looking || sn.reconnecting) ? 'Armband: looking… (tap to choose it)'
+      : sn && sn.needsTap ? 'Armband lost — tap here to reconnect'
+      : sn && (sn.looking || sn.reconnecting) ? 'Armband: reconnecting… (tap to choose it)'
       : bluetoothAvailable() ? 'Armband: not connected — tap to connect' : 'Armband: needs Bluefy';
-    chip.style.color = sn && sn.connected ? 'var(--on)' : '';
+    chip.style.color = sn && sn.connected ? 'var(--on)' : sn && sn.needsTap ? 'var(--stop)' : '';
   }
   $('hrbig').textContent = fresh ? `${sn.hr}` : '—';
   $('hrtile').textContent = fresh ? `${sn.hr}` : '—';
@@ -2363,7 +2364,7 @@ async function connectArmband({ acceptAll = false } = {}) {
   if (connecting && autoLooking) {
     autoLooking = false;
     connecting = false;
-    if (S.sensor) S.sensor.dispose();
+    if (S.sensor) retireSensor();
   }
   if (connecting) { log('already trying — give it a moment', 'dim'); return; }
   if (!bluetoothAvailable()) {
@@ -2372,7 +2373,7 @@ async function connectArmband({ acceptAll = false } = {}) {
     return;
   }
   if (S.sensor && S.sensor.connected) {
-    S.sensor.dispose();
+    retireSensor();
     $('connect').textContent = 'Connect';
     log('armband disconnected');
     updateSensorUi();
@@ -2380,7 +2381,7 @@ async function connectArmband({ acceptAll = false } = {}) {
   }
   // Whatever the last attempt left behind -- a reconnect loop, a half-open link -- is shut down
   // before a new one starts. Each tap used to add another instance reaching for the same band.
-  if (S.sensor) S.sensor.dispose();
+  if (S.sensor) retireSensor();
 
   connecting = true;
   $('connect').textContent = 'Connecting…';
@@ -2400,8 +2401,11 @@ async function connectArmband({ acceptAll = false } = {}) {
       onChange: updateSensorUi,
       onStep: m => { since = Date.now(); step(m); },
       onAcc: armAcc,
+      onReconnect: onArmbandReconnected,
+      onNeedsTap: armbandNeedsTap,
       store: btStore,
     });
+    S.sensor.urgent = !!(S.running || S.check);
     // Nothing remembered (known from the last look), or the last tap's permission lapsed before the
     // picker could open: go straight to the picker, inside this tap.
     const skipRemembered = S.btKnown === 0 || S.btNextTapPicker;
@@ -2531,6 +2535,7 @@ async function startMorningCheck() {
   }
   const beats = [], started = Date.now();
   S.check = { beats, started, timer: null };
+  S.sensor.urgent = true;
   $('checkbtn').textContent = 'Cancel the check';
   $('checkpanel').classList.remove('hide');
   $('checkstatus').textContent = 'Starting…';
@@ -2560,7 +2565,7 @@ async function endMorningCheck(complete) {
   if (!c) return;
   S.check = null;
   if (c.timer) clearInterval(c.timer);
-  if (S.sensor) await S.sensor.stopPpi().catch(() => null);
+  if (S.sensor) { await S.sensor.stopPpi().catch(() => null); S.sensor.urgent = !!S.running; }
   if (!S.running) keepAwake(false);
   $('checkbtn').textContent = 'Morning check — 5–8 min lying still';
   $('checkpanel').classList.add('hide');
@@ -2727,15 +2732,18 @@ async function backfillPending(ready) {
 async function autoConnectArmband(why) {
   if (connecting || !bluetoothAvailable()) return;
   if (S.sensor && (S.sensor.connected || S.sensor.reconnecting)) return;
-  if (S.sensor) S.sensor.dispose();
+  if (S.sensor) retireSensor();
   connecting = true;
   const sensor = new VeritySensor({
     onLog: (m, c) => log(m, c),
     onChange: updateSensorUi,
     onStep: m => { $('hrstate').textContent = m; },
     onAcc: armAcc,
+    onReconnect: onArmbandReconnected,
+    onNeedsTap: armbandNeedsTap,
     store: btStore,
   });
+  sensor.urgent = !!(S.running || S.check);
   S.sensor = sensor;
   autoLooking = true;
   $('connect').textContent = 'Looking…';
@@ -3666,6 +3674,45 @@ function enableMotion() {
     attach();
   }
 }
+/**
+ * Retire the current sensor instance (a new Connect, a reload). Its link history is kept for the
+ * session record, so a run that needed a tap to recover still shows every drop that led to it.
+ */
+function retireSensor() {
+  if (!S.sensor) return;
+  S.linkHistory = [...(S.linkHistory || []), ...S.sensor.events];
+  S.sensor.events = [];                                 // moved, not copied: linkRecord reads both
+  S.sensor.dispose();
+}
+
+/**
+ * The sensor rebuilt the link by itself and put its own streams back. What only the page knows
+ * about is checked here: a run in progress must still have the band recording heart rate to its own
+ * memory -- a band that restarted (24 October: the pulse came back from 82 after a long gap) has
+ * stopped that recording, and it is the one copy of the heart rate that survives the next drop.
+ */
+async function onArmbandReconnected() {
+  updateSensorUi();
+  if (!S.running || S.mode === 'rehearse') return;
+  if (!S.bandRecording) { startBandRecording(); return; }
+  try {
+    const port = await S.sensor.pmdPort();
+    if (await withTimeout(offlineHrActive(port), 8000, 'checking the band\'s recording')) return;
+    await startOfflineHr(port);
+    log('the band had stopped recording to its memory (it may have restarted) — started again', 'on');
+  } catch (e) {
+    log(`could not check the band's own recording: ${describeError(e)}`, 'dim');
+  }
+}
+
+/** A minute without the band: a tap can do what the automatic attempts cannot (a fresh permission). */
+function armbandNeedsTap() {
+  updateSensorUi();
+  log('the armband has been out of reach for a minute — still trying; tap the armband line under '
+      + 'Start to pick it again', 'stop');
+  if (S.running) say('Armband lost. Tap the armband line to reconnect.');
+}
+
 /** The armband's accelerometer (52 Hz magnitudes, its own units): a second, independent step counter. */
 function armAcc(mags, t) {
   if (S.fusion && S.running) S.fusion.arm({ t, mags });
@@ -3928,13 +3975,13 @@ async function keepAwake(on) {
 // important line for not losing a session.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && S.running && S.samples.length) {
-    sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}),
+    sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode, live: liveContext() }, {}),
                         { force: true });
   }
 });
 addEventListener('pagehide', () => {
   if (S.running && S.samples.length) {
-    sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}),
+    sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode, live: liveContext() }, {}),
                         { force: true });
   }
 });
@@ -4253,6 +4300,8 @@ $('go').onclick = () => {
   if (S.mode !== 'rehearse') {
     log('keep this screen in front — opening another app (Polar Flow included) pauses the recording', 'dim');
     S.bandRecording = false;
+    S.linkHistory = [];
+    if (S.sensor) S.sensor.urgent = true;
     startBandRecording();
   }
 
@@ -4579,6 +4628,7 @@ function sessionTitle() {
 
 function finish(msg) {
   S.running = false;
+  if (S.sensor) S.sensor.urgent = false;
   if (S.bandRecording) bandRecordingEnded();
   clearInterval(S.tickId);
   clearInterval(S.autosaveId);
@@ -4974,7 +5024,7 @@ function liveContext() {
 /** The armband link's events during this session, in session seconds: drops, stalls, recoveries. */
 function linkRecord() {
   if (!S.sensor || !S.startedAt) return [];
-  return S.sensor.events.filter(e => e.at >= S.startedAt)
+  return [...(S.linkHistory || []), ...S.sensor.events].filter(e => e.at >= S.startedAt)
     .map(e => ({ t: Math.round((e.at - S.startedAt) / 1000), kind: e.kind, ...(e.detail || {}) }));
 }
 

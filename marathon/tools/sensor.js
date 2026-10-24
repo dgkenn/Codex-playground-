@@ -189,6 +189,34 @@ export const SHED_AFTER_LOSSES = 2;
 export const RECONNECT_ATTEMPT_MS = 8000;
 
 /**
+ * The link supervisor's clock. Every stream is watched on its own, and each symptom gets the
+ * smallest repair that could fix it before anything bigger is tried:
+ *
+ *   heart rate quiet, link alive   -> re-subscribe heart rate only            (hrQuietMs)
+ *   heart rate still quiet         -> rebuild the link                        (HR_STALL_MS)
+ *   motion quiet, heart rate fine  -> restart the motion stream only          (accQuietMs)
+ *   link down (event, or polled)   -> reconnect at once, then 0.5, 1, 2, 4 s  (backoffMs)
+ *   down for a minute              -> ask for a tap, and keep trying anyway   (needsTapMs)
+ *
+ * Every stream that was on before a drop is put back after it -- heart rate, motion, beat-to-beat
+ * intervals during a morning check -- and the page is told, so it can check what only it knows
+ * about (the band's own memory recording, see polar-offline.js).
+ */
+export const LinkTiming = {
+  superviseMs: 2000,
+  hrQuietMs: 8000,
+  hrStallMs: HR_STALL_MS,
+  accQuietMs: 8000,
+  resubTimeoutMs: 4000,
+  attemptMs: RECONNECT_ATTEMPT_MS,
+  /// Waits before each reconnect attempt; the last repeats. During a run or a check (`urgent`) the
+  /// cap is the last entry; otherwise it backs off further, to idleMaxMs, to spare the battery.
+  backoffMs: [0, 500, 1000, 2000, 4000],
+  idleMaxMs: 8000,
+  needsTapMs: 60000,
+};
+
+/**
  * Turn anything that was thrown into something a person can read.
  *
  * This exists because of a diagnostics line that said, in full: `failed at "connecting": Error —
@@ -355,8 +383,24 @@ export const bluetoothAvailable = () =>
  */
 export class VeritySensor {
   constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {}, store = null,
-                onAcc = null } = {}) {
+                onAcc = null, onReconnect = () => {}, onNeedsTap = () => {}, timing = {} } = {}) {
     this.onLog = onLog;
+    this.timing = { ...LinkTiming, ...timing };
+    /// Called after every automatic reconnect, once the streams are back.
+    this.onReconnect = onReconnect;
+    /// Called once when the link has been down for `needsTapMs`: the page asks for a tap, because a
+    /// fresh permission from the picker is the one repair only a person can make.
+    this.onNeedsTap = onNeedsTap;
+    this.needsTap = false;
+    /// Set by the page during a run or a check: reconnect hard, at most a few seconds apart.
+    this.urgent = false;
+    this.lostAt = 0;
+    this.hrNotifyAt = 0;
+    this.accAt = 0;
+    this._accRestarts = [];
+    this._gattQ = Promise.resolve();
+    this._pmdQ = Promise.resolve();
+    this._ppiWanted = null;
     /// Called with ([magnitude...], arrivalSeconds) for every accelerometer frame: the arm's motion,
     /// for counting steps (fusion.js). Magnitudes are in the band's own units; the consumer
     /// normalises them against gravity.
@@ -456,6 +500,9 @@ export class VeritySensor {
       accShed: this.accShed,
       hrZeros: this.hrZeros,
       linkEvents: this.events.slice(-20),
+      needsTap: this.needsTap,
+      hrQuietMs: this.hrNotifyAt ? Date.now() - this.hrNotifyAt : null,
+      accQuietMs: this.accAt ? Date.now() - this.accAt : null,
       connectedForS: this.connectedAt ? Math.round((Date.now() - this.connectedAt) / 1000) : null,
       lastError: this.lastError ? describeError(this.lastError) : null,
     };
@@ -475,7 +522,7 @@ export class VeritySensor {
     if (!this.batteryChar) return this.battery;
     if (!force && this.batteryAt && now - this.batteryAt < BATTERY_POLL_MS) return this.battery;
     try {
-      const v = await this.batteryChar.readValue();
+      const v = await this._op(() => this.batteryChar.readValue());
       this.battery = v.getUint8(0);
       this.batteryAt = now;
       this.onChange();
@@ -614,6 +661,7 @@ export class VeritySensor {
     this._at(`selected ${this.device.name || 'device'}`);
     this._listen();
     const server = await this._openGatt({ attempts, timeoutMs });
+    this._pmd = null; this._psftp = null;               // handles from an earlier connection are stale
     this._at('connected, looking for heart rate');
     await withTimeout(this._attachHr(server), CONNECT_TIMEOUT_MS, 'setting up heart-rate notifications');
     this.connected = true;
@@ -703,28 +751,132 @@ export class VeritySensor {
     });
   }
 
-  /** A heart-rate stream that stops while the link claims to be up: rebuild the link. */
+  /** The supervisor: one interval for the life of the sensor. */
   _startStallWatch() {
     if (this._stallTimer || typeof setInterval !== 'function') return;
-    this._stallTimer = setInterval(() => this.checkStall(), 5000);
+    this._stallTimer = setInterval(() => this._supervise(), this.timing.superviseMs);
     if (this._stallTimer && this._stallTimer.unref) this._stallTimer.unref();
   }
 
-  /** Returns true when it acted. Exposed for testing; the interval above calls it. */
-  checkStall(now = Date.now()) {
-    if (this._disposed || !this.connected || this.reconnecting) return false;
-    // Measured from the later of the last reading and the last (re)connect, so a rebuilt link gets a
-    // fresh twenty seconds rather than being torn down again five seconds later.
-    const last = Math.max(this.hrAt, this.connectedAt || 0);
-    if (!this.hrCount || now - last < HR_STALL_MS) return false;
-    this.onLog(`no heart rate for ${Math.round((now - last) / 1000)} s while connected — `
-               + 'reconnecting', 'bad');
+  /** One look at every stream; the smallest repair for whatever is wrong. Exposed for testing. */
+  _supervise(now = Date.now()) {
+    if (this._disposed || !this.device) return null;
+    // A disconnect the browser never announced. Seen from bridges that drop the event: the link is
+    // down and nothing would ever say so.
+    if (this.connected && this.device.gatt && this.device.gatt.connected === false) {
+      this._event('disconnect-unannounced', null, now);
+      this._onDisconnect();
+      return 'reconnect';
+    }
+    if (this.reconnecting) {
+      if (!this.needsTap && this.lostAt && now - this.lostAt >= this.timing.needsTapMs) {
+        this.needsTap = true;
+        this._event('needs-tap', null, now);
+        this.onChange();
+        try { this.onNeedsTap(); } catch { /* the page's problem */ }
+      }
+      return null;
+    }
+    if (!this.connected) return null;
+    if (this.checkStall(now)) return 'rebuild';
+    const hrQuiet = now - Math.max(this.hrNotifyAt, this.connectedAt || 0);
+    if (this.hrCount && hrQuiet >= this.timing.hrQuietMs && !this._resubbing
+        && now - (this._resubAt || 0) >= this.timing.hrQuietMs) {
+      this._resubscribeHr(now);
+      return 'resubscribe';
+    }
+    if (this.hasAcc && !this.accShed && this.accAt && hrQuiet < this.timing.hrQuietMs
+        && now - this.accAt >= this.timing.accQuietMs && !this._accRestarting) {
+      this._restartAcc(now);
+      return 'restart-acc';
+    }
+    return null;
+  }
+
+  /**
+   * Heart rate quiet while the link may well be up: switch its notifications off and on. On a
+   * bridge that loses a subscription (it happens after an app switch) this brings the stream back
+   * in a second, where tearing down the link costs ten or more. If the band does not even answer
+   * that, the link is gone after all, and it is rebuilt.
+   */
+  async _resubscribeHr(now = Date.now()) {
+    const c = this._hrChar;
+    if (!c) return;
+    this._resubbing = true;
+    this._resubAt = now;
+    this._event('hr-resubscribe', null, now);
+    try {
+      await withTimeout(this._op(async () => {
+        if (typeof c.stopNotifications === 'function') await c.stopNotifications().catch(() => {});
+        await c.startNotifications();
+      }), this.timing.resubTimeoutMs, 're-subscribing to heart rate');
+    } catch {
+      if (!this._disposed && this.connected && !this.reconnecting) this._rebuild('resubscribe-failed');
+    } finally {
+      this._resubbing = false;
+    }
+  }
+
+  /** Motion quiet while heart rate flows: restart that stream alone. Twice in ten minutes sheds it. */
+  async _restartAcc(now = Date.now()) {
+    this._accRestarts = this._accRestarts.filter(t => now - t < SHED_WINDOW_MS);
+    this._accRestarts.push(now);
+    this._event('acc-restart', null, now);
+    if (this._accRestarts.length > SHED_AFTER_LOSSES) { this._shedAcc('the motion stream kept stopping', now); return; }
+    this._accRestarting = true;
+    try {
+      const server = this._pmd ? this._pmd.server : this.device.gatt;
+      if (this._pmd) await this._pmdRequest(this._pmd.control, [OP_STOP, MEAS_ACC]).catch(() => null);
+      await withTimeout(this._attachAcc(server), ACC_TIMEOUT_MS, 'restarting the accelerometer');
+      this.accAt = Date.now();
+    } catch (e) {
+      this.accError = describeError(e);
+    } finally {
+      this._accRestarting = false;
+    }
+  }
+
+  /** Stop the optional motion stream for the rest of this sensor's life, to protect heart rate. */
+  _shedAcc(why, now = Date.now()) {
+    if (this.accShed) return;
+    this.accShed = true;
+    this.hasAcc = false;
+    this.accError = `stopped: ${why}, to keep heart rate`;
+    this._event('acc-shed', { why }, now);
+    this.onLog(`${why} — stopping the armband's motion stream to keep heart rate`, 'bad');
+    if (this.connected && this._pmd) this._pmdRequest(this._pmd.control, [OP_STOP, MEAS_ACC]).catch(() => null);
+    this.onChange();
+  }
+
+  /** Tear the link down on purpose and rebuild it. */
+  _rebuild(kind, now = Date.now()) {
     this.connected = false;
-    this._linkLost('stalled', now);
+    this._linkLost(kind, now);
     this.onChange();
     try { this.device.gatt.disconnect(); } catch { /* already down */ }
     this._reconnect();
+  }
+
+  /**
+   * Heart rate silent for HR_STALL_MS while the link claims to be up: rebuild it. Returns true when
+   * it acted. Silence means no notification at all -- a 0 bpm "no reading", or a reading inside the
+   * re-acquisition window, still proves the link is alive.
+   */
+  checkStall(now = Date.now()) {
+    if (this._disposed || !this.connected || this.reconnecting) return false;
+    const last = Math.max(this.hrNotifyAt, this.hrAt, this.connectedAt || 0);
+    if (!this.hrCount || now - last < this.timing.hrStallMs) return false;
+    this.onLog(`no heart rate for ${Math.round((now - last) / 1000)} s while connected — `
+               + 'reconnecting', 'bad');
+    this._rebuild('stalled', now);
     return true;
+  }
+
+  /** GATT operations one at a time. Overlapping ones are where bridges report "operation in progress". */
+  _op(fn) {
+    const run = this._gattQ.then(() => fn());
+    this._gattQ = run.catch(() => {});
+    return run;
   }
 
   _event(kind, detail = null, at = Date.now()) {
@@ -742,14 +894,11 @@ export class VeritySensor {
    */
   _linkLost(kind, now = Date.now()) {
     this._event(kind, null, now);
+    if (!this.lostAt) this.lostAt = now;
     this._losses = this._losses.filter(t => now - t < SHED_WINDOW_MS);
     this._losses.push(now);
     if (!this.accShed && this.hasAcc && this._losses.length >= SHED_AFTER_LOSSES) {
-      this.accShed = true;
-      this.hasAcc = false;
-      this.accError = 'stopped after repeated link losses, to keep heart rate';
-      this._event('acc-shed', null, now);
-      this.onLog('the armband link keeps dropping — stopping its motion stream to keep heart rate', 'bad');
+      this._shedAcc('the armband link keeps dropping', now);
     }
   }
 
@@ -832,13 +981,20 @@ export class VeritySensor {
                   + 'Otherwise press the band\'s button once to wake it and try again.');
   }
 
+  /**
+   * Back on the band, and every stream that was on put back. Runs until it succeeds or the sensor
+   * is disposed: a run does not end because the band went out of reach for a while.
+   */
   async _reconnect() {
     if (this.reconnecting || !this.device) return;
     this.reconnecting = true;
-    let delay = 1000;
+    if (!this.lostAt) this.lostAt = Date.now();
     let failures = 0;
+    const T = this.timing;
     while (!this._disposed && this.device && !this.device.gatt.connected) {
-      await new Promise(r => setTimeout(r, delay));
+      const wait = failures < T.backoffMs.length ? T.backoffMs[failures]
+        : this.urgent ? T.backoffMs[T.backoffMs.length - 1] : T.idleMaxMs;
+      if (wait) await new Promise(r => setTimeout(r, wait));
       if (this._disposed || !this.device) break;
       // Every few failures, a fresh device object from the browser's remembered list. The one in
       // hand can have been invalidated by the bridge while the band itself is fine and in range.
@@ -851,28 +1007,39 @@ export class VeritySensor {
         }
       }
       try {
-        // Timed out here too, or one hung attempt ends the retry loop permanently. One short attempt
-        // per turn of this loop: the loop is the retry, and a 20 s x 3 attempt inside it was most of
-        // a 40-second gap.
-        const server = await this._openGatt({ attempts: 1, timeoutMs: RECONNECT_ATTEMPT_MS });
+        // One short attempt per turn of this loop: the loop is the retry, and a 20 s x 3 attempt
+        // inside it was most of a 40-second gap.
+        const server = await this._openGatt({ attempts: 1, timeoutMs: T.attemptMs });
+        this._pmd = null; this._psftp = null;
         await withTimeout(this._attachHr(server), CONNECT_TIMEOUT_MS, 'resubscribing');
         this.connected = true;
         this.connectedAt = Date.now();
-        const lost = [...this.events].reverse().find(e => e.kind === 'disconnected' || e.kind === 'stalled');
-        this._event('reconnected', lost ? { afterMs: this.connectedAt - lost.at, attempts: failures + 1 } : null);
+        this._event('reconnected', { afterMs: this.connectedAt - this.lostAt, attempts: failures + 1 });
+        this.lostAt = 0;
+        this.needsTap = false;
         this.onChange();
         this.onLog('armband reconnected', 'on');
         this._rememberGood();
-        this._attachExtras(server);
+        await this._restoreStreams(server);
         break;
       } catch {
         failures += 1;
-        // Backs off to 8 s and stays there. Retrying every second for an hour drains the battery
-        // for nothing — the band is either back in range or it is not.
-        delay = Math.min(delay * 2, 8000);
+        try { this.device.gatt.disconnect(); } catch { /* nothing open */ }
       }
     }
     this.reconnecting = false;
+  }
+
+  /** After a reconnect: battery and motion, beat-to-beat intervals if a check wanted them, then the page. */
+  async _restoreStreams(server) {
+    await this._attachExtras(server);
+    if (this._ppiWanted && !this._disposed && this.connected) {
+      const want = this._ppiWanted;
+      this.ppiOn = false;
+      try { await this.startPpi(want); this._event('ppi-restored'); }
+      catch (e) { this.onLog(`beat-to-beat intervals did not come back: ${describeError(e)}`, 'bad'); }
+    }
+    try { await this.onReconnect(); } catch { /* the page's problem */ }
   }
 
   async _attachHr(server) {
@@ -887,7 +1054,8 @@ export class VeritySensor {
     }
     const hrChar = await hrService.getCharacteristic(HR_CHAR);
     this._at('subscribing to heart rate');
-    await hrChar.startNotifications();
+    await this._op(() => hrChar.startNotifications());
+    this._hrChar = hrChar;
     if (this._wired.has(hrChar)) return;
     this._wired.add(hrChar);
     hrChar.addEventListener('characteristicvaluechanged', e => this._onHr(parseHeartRate(e.target.value)));
@@ -900,6 +1068,7 @@ export class VeritySensor {
    */
   _onHr({ hr, rr }, now = Date.now()) {
     this.hrCount += 1;
+    this.hrNotifyAt = now;
     if (!(hr > 0)) {
       this.hrZeros += 1;
       if (now >= this.acquiringUntil) this._event('hr-zero', null, now);
@@ -947,14 +1116,20 @@ export class VeritySensor {
   }
 
   /** Write a PMD request and wait for the band's answer to it. */
+  /**
+   * Write a PMD request and wait for the band's answer to it. One at a time, start to answer: there
+   * is one answer slot, and two overlapping requests (the accelerometer starting as the band's own
+   * recording is started) left the first waiting for an answer that went to the second.
+   */
   _pmdRequest(control, bytes, timeoutMs = 3000) {
     const cmd = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-    return withTimeout(new Promise((resolve, reject) => {
+    const run = this._pmdQ.then(() => withTimeout(new Promise((resolve, reject) => {
       this._pmdWaiter = { op: cmd[0], resolve };
-      const w = typeof control.writeValueWithResponse === 'function'
-        ? control.writeValueWithResponse(cmd) : control.writeValue(cmd);
-      Promise.resolve(w).catch(reject);
-    }), timeoutMs, `the band's answer to the ${['', 'settings', 'start', 'stop'][cmd[0]] || ''} request`);
+      this._op(() => (typeof control.writeValueWithResponse === 'function'
+        ? control.writeValueWithResponse(cmd) : control.writeValue(cmd))).catch(reject);
+    }), timeoutMs, `the band's answer to the ${['', 'settings', 'start', 'stop', '', 'status'][cmd[0]] || ''} request`));
+    this._pmdQ = run.catch(() => {});
+    return run;
   }
 
   // Accelerometer is best-effort. Without it the heart rate still works; what is lost is the
@@ -974,9 +1149,9 @@ export class VeritySensor {
     const pmd = await server.getPrimaryService(PMD_SERVICE);
     const control = await pmd.getCharacteristic(PMD_CONTROL);
     const data = await pmd.getCharacteristic(PMD_DATA);
-    await control.startNotifications();
+    await this._op(() => control.startNotifications());
     control.addEventListener('characteristicvaluechanged', this._onPmdControl);
-    await data.startNotifications();
+    await this._op(() => data.startNotifications());
     if (!this._wired.has(data)) {
       this._wired.add(data);
       data.addEventListener('characteristicvaluechanged', e => this._onPmdData(e.target.value));
@@ -990,8 +1165,9 @@ export class VeritySensor {
   _onPmdData(v) {
     const samples = parseAccFrame(v);
     if (samples) {
-      if (this.accShed) return;                         // stopped by _linkLost; stragglers ignored
+      if (this.accShed) return;                         // stopped by _shedAcc; stragglers ignored
       this.accFrames += 1;
+      this.accAt = Date.now();
       const mags = samples.map(accMagnitude);
       for (const m of mags) this.accWindow.push(m);
       if (this.onAcc) { try { this.onAcc(mags, Date.now() / 1000); } catch { /* consumer's problem */ } }
@@ -1029,8 +1205,8 @@ export class VeritySensor {
       if (r.status !== 0) throw new Error(`the band refused to start the accelerometer (${r.statusText})`);
     } else {
       const cmd = startCommand(MEAS_ACC, settings);
-      if (typeof control.writeValueWithResponse === 'function') await control.writeValueWithResponse(cmd);
-      else await control.writeValue(cmd);
+      await this._op(() => (typeof control.writeValueWithResponse === 'function'
+        ? control.writeValueWithResponse(cmd) : control.writeValue(cmd)));
       const before = this.accFrames;
       await new Promise(r => setTimeout(r, 3000));
       if (this.accFrames === before) {
@@ -1061,10 +1237,12 @@ export class VeritySensor {
       throw new Error(`the band refused to start beat-to-beat intervals (${r.statusText})`);
     }
     this.ppiOn = true;
+    this._ppiWanted = onPpi;                            // put back after a reconnect
   }
 
   async stopPpi() {
     this.onPpi = null;
+    this._ppiWanted = null;
     if (!this.ppiOn) return;
     this.ppiOn = false;
     if (this._pmd) await this._pmdRequest(this._pmd.control, [OP_STOP, MEAS_PPI]).catch(() => null);

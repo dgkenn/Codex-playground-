@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { parseHeartRate, parseAccFrame, startCommand, accMagnitude,
          VeritySensor, STALE_HR_MS, withTimeout, PICKER_TIMEOUT_MS,
          describeError, GATT_ATTEMPTS, HR_STALL_MS, ARMBAND_KEY, HR_ACQUIRE_MS,
-         SHED_WINDOW_MS } from '../sensor.js';
+         SHED_WINDOW_MS, LinkTiming } from '../sensor.js';
 
 const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
 
@@ -719,6 +719,198 @@ function fakePmd({ answer = () => 0, settings = true, frames = true } = {}) {
   t._linkLost('disconnected', SHED_WINDOW_MS + 1);
   assert.equal(t.accShed, false, 'two drops far apart do not');
   console.log('  ok  repeated link losses shed the motion stream to protect heart rate; scattered ones do not');
+}
+
+// --- the link supervisor: the smallest repair for each symptom, and everything put back ------------
+
+/**
+ * A band whose every failure can be staged: heart rate that stops while the link stays up, a
+ * subscription that cannot be renewed, a disconnect nobody announces, connects that fail or hang,
+ * a motion stream that goes quiet. PMD answers like fakePmd.
+ */
+function stagedBand() {
+  const fire = (ls, bytes) => ls.forEach(f => f({ target: { value: new DataView(new Uint8Array(bytes).buffer) } }));
+  const L = {}, hrL = [], ctlL = [], dataL = [];
+  const st = { connects: 0, failConnects: 0, hangConnects: false, hrStarts: 0, hrStops: 0,
+               failResub: 0, writes: [] };
+  const hrChar = {
+    async startNotifications() {
+      st.hrStarts += 1;
+      if (st.failResub > 0 && st.hrStarts > 1) { st.failResub -= 1; throw new Error('GATT error'); }
+      return this;
+    },
+    async stopNotifications() { st.hrStops += 1; return this; },
+    addEventListener(t, f) { hrL.push(f); },
+  };
+  const control = { async startNotifications() { return this; }, addEventListener(t, f) { ctlL.push(f); },
+    async writeValueWithResponse(b) {
+      b = Array.from(b); st.writes.push(b);
+      setTimeout(() => fire(ctlL, [0xF0, b[0], b[1], 0, 0, ...(b[0] === 1 ? [0x00, 1, 52, 0, 0x01, 1, 16, 0, 0x02, 1, 8, 0, 0x04, 1, 3] : [])]), 1);
+    } };
+  const data = { async startNotifications() { return this; }, addEventListener(t, f) { dataL.push(f); } };
+  const server = { getPrimaryService: async id => {
+    if (/180d/.test(id)) return { getCharacteristic: async () => hrChar };
+    if (/fb005c80/.test(id)) return { getCharacteristic: async c => (/5c81/.test(c) ? control : data) };
+    throw new Error('not present'); } };
+  const gatt = {
+    connected: false,
+    connect() {
+      st.connects += 1;
+      if (st.hangConnects) return new Promise(() => {});
+      if (st.failConnects > 0) { st.failConnects -= 1; return Promise.reject(new Error('GATT operation failed')); }
+      gatt.connected = true; return Promise.resolve(server);
+    },
+    disconnect() { gatt.connected = false; },
+    getPrimaryService: (...a) => server.getPrimaryService(...a),
+  };
+  const band = { name: 'Polar Sense 16961D33', id: 'band', gatt,
+    addEventListener(t, f) { (L[t] ||= []).push(f); },
+    removeEventListener(t, f) { L[t] = (L[t] || []).filter(x => x !== f); },
+    drop() { gatt.connected = false; (L.gattserverdisconnected || []).forEach(f => f()); },
+    dropSilently() { gatt.connected = false; },
+    hr: v => fire(hrL, [0, v]),
+    acc: () => fire(dataL, [0x02, 0,0,0,0,0,0,0,0, 0x01, 0xE8, 0x03, 0, 0, 0, 0]) };
+  return { band, st };
+}
+const FAST = { backoffMs: [0, 20, 40], idleMaxMs: 50, attemptMs: 100, needsTapMs: 300, resubTimeoutMs: 100 };
+const until = async (cond, ms = 2000) => { const t0 = Date.now(); while (!cond()) { if (Date.now() - t0 > ms) return false; await new Promise(r => setTimeout(r, 5)); } return true; };
+
+{
+  // Heart rate stops while the link is fine (a subscription lost after an app switch): re-subscribed
+  // in place, no teardown.
+  const { band, st } = stagedBand();
+  const s = new VeritySensor({ timing: FAST });
+  s.device = band; await s._finishConnect();
+  band.hr(140);
+  const now = Date.now() + LinkTiming.hrQuietMs + 100;
+  assert.equal(s._supervise(now), 'resubscribe');
+  assert.ok(await until(() => st.hrStops === 1 && st.hrStarts === 2), 'notifications switched off and on');
+  assert.equal(st.connects, 1, 'and the link was not rebuilt');
+  assert.equal(s._supervise(now + 1000), null, 'not again straight away');
+  s.dispose();
+  console.log('  ok  heart rate that goes quiet on a live link is re-subscribed in place, not torn down');
+}
+
+{
+  // The re-subscription itself fails: the link is gone after all, so it is rebuilt -- and put back.
+  const { band, st } = stagedBand();
+  let restored = 0;
+  const s = new VeritySensor({ timing: FAST, onReconnect: () => { restored += 1; } });
+  s.device = band; await s._finishConnect();
+  band.hr(140);
+  st.failResub = 1;
+  s._supervise(Date.now() + LinkTiming.hrQuietMs + 100);
+  assert.ok(await until(() => restored === 1), 'rebuilt and reported');
+  assert.equal(s.connected, true);
+  assert.ok(st.connects >= 2);
+  assert.deepEqual(s.events.map(e => e.kind).filter(k => k !== 'hr-zero').slice(0, 3),
+                   ['hr-resubscribe', 'resubscribe-failed', 'reconnected']);
+  s.dispose();
+  console.log('  ok  a subscription that cannot be renewed rebuilds the link, and the page is told');
+}
+
+{
+  // A disconnect nobody announced: found by looking, reconnected at once, every stream put back --
+  // motion and the morning check's beat-to-beat intervals included.
+  const { band, st } = stagedBand();
+  let restored = 0;
+  const s = new VeritySensor({ timing: FAST, onReconnect: () => { restored += 1; } });
+  s.device = band; await s._finishConnect();
+  assert.ok(await until(() => s.hasAcc), 'motion streaming');
+  await s.startPpi(() => {});
+  const startsBefore = st.writes.filter(w => w[0] === 0x02).length;
+  const t0 = Date.now();
+  band.dropSilently();
+  assert.equal(s._supervise(), 'reconnect');
+  assert.ok(await until(() => restored === 1), 'reconnected');
+  assert.ok(Date.now() - t0 < 500, `straight away, not after a back-off (${Date.now() - t0} ms)`);
+  const starts = st.writes.filter(w => w[0] === 0x02).slice(startsBefore).map(w => w[1]);
+  assert.ok(starts.includes(0x02) && starts.includes(0x03), `motion and PPI restarted: ${JSON.stringify(starts)}`);
+  assert.ok(s.events.some(e => e.kind === 'disconnect-unannounced'));
+  s.dispose();
+  console.log('  ok  an unannounced disconnect is caught by looking, and every stream comes back with the link');
+}
+
+{
+  // Down for a minute: ask for a tap once -- and keep trying meanwhile, so the band coming back in
+  // range reconnects on its own.
+  const { band, st } = stagedBand();
+  let asked = 0;
+  const s = new VeritySensor({ timing: FAST, onNeedsTap: () => { asked += 1; } });
+  s.device = band; await s._finishConnect();
+  st.failConnects = 1e9;
+  band.drop();
+  await new Promise(r => setTimeout(r, FAST.needsTapMs + 50));
+  s._supervise(); s._supervise();
+  assert.equal(asked, 1, 'asked once');
+  assert.equal(s.needsTap, true);
+  st.failConnects = 0;
+  assert.ok(await until(() => s.connected, 3000), 'and reconnected by itself when the band came back');
+  assert.equal(s.needsTap, false);
+  s.dispose();
+  console.log('  ok  a long drop asks for a tap once, keeps trying, and recovers on its own');
+}
+
+{
+  // A connect that hangs is cut at the attempt timeout and tried again, not waited on for ever.
+  const { band, st } = stagedBand();
+  const s = new VeritySensor({ timing: FAST });
+  s.device = band; await s._finishConnect();
+  st.hangConnects = true;
+  band.drop();
+  await new Promise(r => setTimeout(r, FAST.attemptMs * 3 + 100));
+  assert.ok(st.connects >= 3, `several attempts, not one stuck (${st.connects})`);
+  st.hangConnects = false;
+  assert.ok(await until(() => s.connected));
+  s.dispose();
+  console.log('  ok  a hanging connect is cut short and retried');
+}
+
+{
+  // Motion quiet while heart rate flows: that stream alone is restarted. Repeatedly: shed.
+  const { band, st } = stagedBand();
+  const s = new VeritySensor({ timing: FAST });
+  s.device = band; await s._finishConnect();
+  assert.ok(await until(() => s.hasAcc));
+  band.acc();
+  const t = Date.now() + LinkTiming.accQuietMs + 100;
+  s.hrNotifyAt = t;
+  const before = st.writes.length;
+  assert.equal(s._supervise(t), 'restart-acc');
+  assert.ok(await until(() => st.writes.slice(before).some(w => w[0] === 0x02 && w[1] === 0x02)), 'motion restarted');
+  assert.equal(st.connects, 1, 'without touching the link');
+  for (let i = 0; i < 3; i++) { s.accAt = 1; s.hrNotifyAt = t + i; await s._restartAcc(t + i); }
+  assert.equal(s.accShed, true, 'a stream that keeps stopping is shed');
+  s.dispose();
+  console.log('  ok  a quiet motion stream is restarted on its own; one that keeps stopping is shed');
+}
+
+{
+  // Two control-point requests at once: one answer slot, so they must queue, and both get answers.
+  const pm = fakePmd();
+  const s = new VeritySensor();
+  await s._attachAcc(pm.server);
+  const { control } = s._pmd;
+  const [a, b] = await Promise.all([s._pmdRequest(control, [0x05]), s._pmdRequest(control, [0x02, 0x8E])]);
+  assert.equal(a.op, 0x05); assert.equal(b.op, 0x02);
+  s.dispose();
+  console.log('  ok  overlapping control-point requests queue, and each gets its own answer');
+}
+
+{
+  // 0 bpm and the re-acquisition window keep the link counted as alive: a band that is merely
+  // re-finding the pulse must not be torn down by the stall watchdog.
+  const { band } = stagedBand();
+  const s = new VeritySensor({ timing: FAST });
+  s.device = band; await s._finishConnect();
+  const t0 = Date.now();
+  s._onHr({ hr: 140, rr: [] }, t0);
+  s._onHr({ hr: 0, rr: [] }, t0 + 1000);
+  for (let k = 2; k <= 25; k++) s._onHr({ hr: 80 + k, rr: [] }, t0 + k * 1000);
+  assert.equal(s.checkStall(t0 + 26000), false, 'notifications still arriving: not a stall');
+  assert.equal(s._supervise(t0 + 26000), null);
+  s.dispose();
+  console.log('  ok  a band re-acquiring the pulse is not mistaken for a dead link');
 }
 
 console.log('\nAll sensor tests passed.');

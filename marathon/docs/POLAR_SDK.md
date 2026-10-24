@@ -106,6 +106,48 @@ On 13 October that froze 16 minutes of a run. The flow:
 - **Timestamps.** The recording's time stamp (UTC or local) and its 1 Hz spacing are assumed. The
   alignment step makes the first one not matter.
 
+## Keeping the connection, and getting it back (`sensor.js`)
+
+On 24 October the link dropped nine times in 26 minutes and lost a third of the heart rate. The
+connection layer is now built around one rule: **every stream is watched on its own, and each
+symptom gets the smallest repair that could fix it before anything bigger is tried.**
+
+| Symptom | Detected by | Repair |
+|---|---|---|
+| Heart rate quiet 8 s, link alive | Supervisor every 2 s | Re-subscribe heart rate only (notifications off and on) |
+| Heart rate still quiet at 20 s, or re-subscribe fails | Supervisor | Rebuild the link |
+| Link down | The browser's disconnect event, **or** polling `gatt.connected` (bridges miss the event) | Reconnect at once, then after 0.5, 1, 2 and 4 s, repeating at 4 s during a run |
+| A connect that hangs | 8 s per attempt | Cut it and try again; a fresh device object every 3 failures |
+| Down for a minute | Supervisor | Ask for a tap (by voice during a run), and keep trying automatically |
+| Motion stream quiet, heart rate fine | Supervisor | Restart the motion stream only; a third restart in 10 min stops it for good |
+| Two link losses in 10 min with motion streaming | Link-loss record | Stop the optional motion stream to protect heart rate |
+| 0 bpm from the band | Each reading | Not a reading. The next 30 s of readings are ignored while the pulse is re-acquired, but they still count as proof the link is alive |
+
+**After every reconnect, everything that was on is put back:**
+- heart rate;
+- battery;
+- the motion stream (unless it was stopped for good);
+- the morning check's beat-to-beat intervals.
+
+The page then checks the one thing only it knows about. During a run, the band must still be
+recording heart rate to its own memory. A band that restarted has stopped that recording, so the
+page starts it again.
+
+**Plumbing:**
+- Radio operations run one at a time.
+- Control-point requests are queued start-to-answer, because there is one answer slot.
+- Listeners are attached once per characteristic, so a reconnect cannot double every frame.
+
+**Redundancy for the data itself:**
+- **Heart rate:** the live stream, plus the band's own memory recording, read back after the run to
+  fill any gap.
+- **Motion and pace:** the band's accelerometer, plus the phone's own motion, plus GPS. Any one can
+  drop out.
+- **The session:** autosaved every 6 s and again whenever the page is hidden, with enough context to
+  be judged if the page never reaches Stop.
+- **Link history:** every drop, stall, repair and recovery is in the session's `link` record, so the
+  next analysis can see what failed rather than guess.
+
 ## Considered and not done
 
 - **SDK mode at any time.** It switches off heart rate and PPI, and its only gain is sample rates
