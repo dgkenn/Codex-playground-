@@ -23,13 +23,27 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
-/** Strip ES module syntax so the source can sit inside one classic script block. */
+/**
+ * A module, inlined into the one classic script block in its own scope: its body runs inside a
+ * function, and only what it exports comes out as top-level names.
+ *
+ * It used to be pasted in bare, so every helper of every module shared one namespace with every
+ * other and with the page: a `const` clash broke the parse (caught), and a FUNCTION clash silently
+ * replaced one with the other (not caught -- selftest.js's `finish` became the page's session
+ * `finish`). Scoped, a module's private names cannot meet anything; its exports still can, and the
+ * duplicate check below counts those.
+ */
 function inline(path) {
-  return readFileSync(join(here, path), 'utf8')
+  const src = readFileSync(join(here, path), 'utf8');
+  const names = [...src.matchAll(/^export\s+(?:async\s+)?(?:const|let|var|function\*?|class)\s+([A-Za-z_$][\w$]*)/gm)]
+    .map(m => m[1]);
+  const body = src
     .replace(/^export\s+(const|let|var|function|class|async function)\s/gm, '$1 ')
     .replace(/^export\s*\{[^}]*\}\s*;?\s*$/gm, '')
     .replace(/^import\s[^;]+;\s*$/gm, '')
     .trim();
+  return `/*<module ${path}>*/\nconst { ${names.join(', ')} } = (() => {\n${body}\n`
+       + `return { ${names.join(', ')} };\n})();\n/*</module>*/`;
 }
 
 // A build stamp, so "reload and try again" can be verified rather than assumed.
@@ -124,11 +138,17 @@ try {
 // module makes this a standing hazard, so every top-level declaration is counted.
 {
   const seen = new Map();
+  const add = (name, i) => seen.set(name, [...(seen.get(name) || []), i + 1]);
+  let inModule = false;
   body.split('\n').forEach((line, i) => {
+    // A scoped module contributes its exports (the destructuring line) and nothing else.
+    if (line.startsWith('/*<module ')) { inModule = true; return; }
+    if (line.startsWith('/*</module>*/')) { inModule = false; return; }
+    const ex = /^const \{ ([^}]*) \} = \(\(\) => \{$/.exec(line);
+    if (ex) { ex[1].split(',').map(x => x.trim()).filter(Boolean).forEach(n => add(n, i)); return; }
+    if (inModule) return;
     const m = /^(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)\s*\(|^(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)\b/.exec(line);
-    if (!m) return;
-    const name = m[1] || m[2];
-    seen.set(name, [...(seen.get(name) || []), i + 1]);
+    if (m) add(m[1] || m[2], i);
   });
   const dup = [...seen].filter(([, at]) => at.length > 1);
   if (dup.length) {
