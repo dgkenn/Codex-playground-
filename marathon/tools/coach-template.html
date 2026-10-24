@@ -316,6 +316,14 @@
           <label class="check"><input type="checkbox" id="chk-ill"><span>feeling ill</span></label>
         </div>
       </div>
+      <!-- The goal: a continuous 5K, as fast as the body allows. Where he is, which track the body
+           has him on, when it can happen, and the benchmarks on the way. See benchmarks.js. -->
+      <div id="goalcard" style="display:grid;gap:.35rem">
+        <div><strong id="goalhead">Goal: 5K without stopping</strong>
+          <span class="note" id="goaldetail"></span></div>
+        <div class="note" id="goalbench"></div>
+        <button id="trialbtn" class="tiny" style="width:100%">2 km time trial</button>
+      </div>
     </div>
     <p class="note" style="margin-top:.7rem">
       Runs the session for the day highlighted above, in the right mode — today's by default. Tap
@@ -760,6 +768,7 @@
 /*{{READINESS}}*/
 /*{{POLAROFFLINE}}*/
 /*{{BACKFILL}}*/
+/*{{BENCHMARKS}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -1227,7 +1236,17 @@ const profile = Object.assign(
   { age: PLAN.generated_for.age, hrRest: PLAN.generated_for.hr_rest, confirmed: false },
   JSON.parse(localStorage.getItem('band.profile') || '{}'));
 
-const hrMaxFor = age => Math.round(208 - 0.7 * age);
+/// Maximum heart rate: Tanaka's age formula, unless a time trial has measured higher (benchmarks.js).
+/// A maximal 2 km peaks within a few beats of the true maximum, so a peak above the formula means
+/// the formula was low -- and the walk floor, the zones and the automatic ceiling all move with it.
+const hrMaxFor = age => Math.max(Math.round(208 - 0.7 * age), measuredMaxHr(loadBenchmarks()) || 0);
+function loadBenchmarks() {
+  try { const xs = JSON.parse(localStorage.getItem(BENCH_KEY) || '[]'); return Array.isArray(xs) ? xs : []; }
+  catch { return []; }
+}
+function saveBenchmark(b) {
+  try { localStorage.setItem(BENCH_KEY, JSON.stringify([...loadBenchmarks(), b].slice(-40))); } catch { /* full */ }
+}
 
 /// Where per-session threshold estimates accumulate. See threshold.js for why a single session is
 /// not enough and why the median is taken rather than the latest.
@@ -1237,6 +1256,14 @@ const hrMaxFor = age => Math.round(208 - 0.7 * age);
 const THRESHOLD_KEY = 'band.threshold.v2';
 
 const RUNG_KEY = 'band.rung';
+/// Two bridge steps past the plan's top rung to the goal (see ladder()). Declared here, with the other
+/// boot-time state: the Today card reads the ladder during the first render.
+const BRIDGE_RUNGS = [{ run_min: 35, walk_min: 0, reps: 1, bridge: true },
+                      { run_min: 40, walk_min: 0, reps: 1, bridge: true, goal: true }];
+/// Morning checks (readiness.js), read by the goal card during the first render.
+const CHECKS_KEY = 'band.checks.v1';
+/// The niggle log: also read during the first render now (the fast track's light).
+const PAIN_KEY = 'band.pain';
 /// Run-block minutes of the eight-rung ladder before 10 October, by index: what a stored `{rung}`
 /// written then meant, so it can be found again on the ten-rung ladder.
 const OLD_LADDER_RUN_MIN = [1, 2, 3, 5, 8, 12, 15, 30];
@@ -1368,22 +1395,29 @@ function stepText() {
   const st = rungState() || {};
   const head = `Step ${i + 1} of ${L.length}`;
   if (i >= L.length - 1) {
-    return `${head} — thirty minutes continuous. One good run here completes Foundation.`;
+    return `${head} — forty minutes continuous: the 5K step. Five kilometres inside one run completes the goal.`;
   }
   const next = L[i + 1];
+  const lt = currentLight();
+  const tr = TRACKS[lt.light];
+  if (lt.light === 'red') return `${head} · holding: ${lt.why.join('; ')}`;
+  const nextName = next.walk_min ? `${fmtMin(next.run_min)} min × ${next.reps}` : `${fmtMin(next.run_min)} min continuous`;
   const shown = demonstratedRung(recentRunning(), L);
   if (shown != null && i < shown) {
     return `${head} · your recent runs already cover more: one good run moves you to `
          + `${fmtMin(next.run_min)} min × ${next.reps}`;
   }
-  const q = Math.min(st.qualifying || 0, QUALIFYING_TO_ADVANCE);
+  const q = Math.min(st.qualifying || 0, tr.qualifying);
+  const totals = ladderTotals();
+  const load = totals[i + 1] > totals[i];
   let when = '';
   if (st.changedAt) {
-    const ready = new Date(new Date(st.changedAt).getTime() + MIN_DAYS_BETWEEN_STEPS * 86400000);
+    const ready = new Date(new Date(st.changedAt).getTime() + (load ? tr.loadMinDays : tr.minDays) * 86400000);
     if (ready > new Date()) when = `, not before ${ready.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}`;
   }
-  return `${head} · next: ${fmtMin(next.run_min)} min × ${next.reps} after ${QUALIFYING_TO_ADVANCE} good runs `
-       + `in a row here (${q} so far)${when}`;
+  const runs = tr.qualifying === 1 ? 'one good run' : `${tr.qualifying} good runs in a row`;
+  return `${head} · ${tr.label}${lt.why.length ? ` (${lt.why.join('; ')})` : ''} · next: ${nextName} after ${runs} `
+       + `here (${q} so far)${when}`;
 }
 
 /**
@@ -1393,7 +1427,8 @@ function stepText() {
 function foundationGateMet() {
   const L = ladder();
   const st = rungState();
-  return !!(L.length && st && currentRung() === L.length - 1 && (st.qualifying || 0) >= 1);
+  const f = foundationRung(), i = currentRung();
+  return !!(L.length && st && (i > f || (i === f && (st.qualifying || 0) >= 1)));
 }
 
 /** A session's name as it will run. */
@@ -1700,6 +1735,7 @@ function renderToday() {
   if (s.ramp) bits.push(`${s.ramp.steps.filter(x => x.kind === 'stage').length} stages`);
   $('todaydetail').textContent = bits.join(' · ');
   $('stepnote').textContent = s.run_walk ? stepText() : '';
+  renderGoal();
   $('today-where').classList.toggle('hide', !s.ramp);
   $('starttoday').disabled = !runnable(s);
   // The label states which flow is about to run. A one-tap start that silently picks between two
@@ -2500,7 +2536,6 @@ $('todaybt').onclick = () => { if (!(S.sensor && S.sensor.connected)) connectArm
 // documentation), so this never runs during a session.
 // =================================================================================================
 
-const CHECKS_KEY = 'band.checks.v1';
 const CHECK_MIN_S = 300, CHECK_MAX_S = 480;
 function loadChecks() {
   try { const xs = JSON.parse(localStorage.getItem(CHECKS_KEY) || '[]'); return Array.isArray(xs) ? xs : []; }
@@ -2617,6 +2652,99 @@ for (const id of ['chk-sore', 'chk-tired']) {
   }
 }
 $('checkbtn').onclick = startMorningCheck;
+
+// =================================================================================================
+// The 5K goal: where he is, the track the body has him on, when it can happen, and the benchmarks
+// =================================================================================================
+
+function fmtDate(iso) { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); }
+function fmtClock(s) { return `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`; }
+
+function renderGoal() {
+  const L = ladder(), i = currentRung(), B = loadBenchmarks();
+  const goal = B.filter(b => b.kind === 'goal').slice(-1)[0];
+  const trials = B.filter(b => b.kind === 'trial');
+  const lastTrial = trials.slice(-1)[0];
+  if (goal) {
+    $('goalhead').textContent = 'Goal done: 5K without stopping';
+    $('goaldetail').textContent = `${fmtDate(goal.at)}, ${fmtClock(goal.timeS)}. Next: the time trials make it faster.`;
+  } else if (L.length && i != null) {
+    const lt = currentLight();
+    const proj = projectGoal({ step: stepLadder, state: { ...(rungState() || {}), rung: i }, totalsMin: ladderTotals(),
+                               longestRecentS: longestRecentRunningS() });
+    $('goalhead').textContent = 'Goal: 5K without stopping';
+    $('goaldetail').textContent = `Step ${i + 1} of ${L.length}. `
+      + `${TRACKS[lt.light].label[0].toUpperCase()}${TRACKS[lt.light].label.slice(1)}`
+      + (lt.why.length ? ` (${lt.why.join('; ')})` : ' — every signal says go') + '. '
+      + (proj.green ? `Earliest, every run going well: ${fmtDate(proj.green)}` : '')
+      + (proj.amber ? `; on the steady track: ${fmtDate(proj.amber)}` : '') + '.';
+    $('goalhead').style.color = lt.light === 'red' ? 'var(--stop)' : '';
+  }
+  const due = trialDue({ runMin: L[i] ? L[i].run_min : 0, benchmarks: B });
+  $('goalbench').textContent = (lastTrial
+    ? `Last 2 km: ${fmtClock(lastTrial.timeS)}, peak ${lastTrial.peakHr || '—'} bpm → 5K about ${fmtClock(lastTrial.predicted5kS)}. `
+    : '') + (due.due ? `A 2 km time trial is due (${due.why}).`
+           : due.nextAt ? `Next time trial from ${fmtDate(due.nextAt)}.` : `The ${due.why}.`);
+  $('trialbtn').textContent = due.due ? '2 km time trial — due' : '2 km time trial';
+  $('trialbtn').disabled = !!S.running;
+}
+
+/**
+ * The 2 km time trial: as fast as can be held evenly, distance called every 500 m, the run ending
+ * itself at 2 km. Runs as a pace-coach session with no pace band -- nothing to keep inside, only a
+ * distance to cover.
+ */
+$('trialbtn').onclick = () => {
+  if (S.running) return;
+  S.trial = { distM: TRIAL_M, nextCueM: 500, ticks: [] };
+  setMode('coach');
+  $('go').onclick();
+  if (!S.running) { S.trial = null; return; }
+  log('2 km time trial: ten minutes easy first if you have not warmed up, then as fast as you can hold evenly', 'on');
+  say('Two kilometre time trial. As fast as you can hold evenly. Go when ready.');
+};
+
+/** Each second of a trial: call the distance, and end it at 2 km. Returns true when it ended. */
+function trialTick(t) {
+  const tr = S.trial;
+  const d = fusedDistance();
+  tr.ticks.push([t, d]);
+  if (d >= tr.nextCueM && tr.nextCueM < tr.distM) {
+    say(`${tr.nextCueM} metres. ${fmtClock(t)}.`);
+    tr.nextCueM += 500;
+  }
+  if (d < tr.distM) return false;
+  const r = summariseTrial(tr.ticks, S.samples, tr.distM);
+  if (r) {
+    const before = hrMaxFor(profile.age);
+    saveBenchmark({ kind: 'trial', at: new Date().toISOString(), distM: tr.distM, ...r });
+    say(`Two kilometres. ${fmtClock(r.timeS)}.`);
+    log(`2 km time trial: ${fmtClock(r.timeS)}, peak heart rate ${r.peakHr || '—'}, predicted 5K ${fmtClock(r.predicted5kS)}`, 'on');
+    const after = hrMaxFor(profile.age);
+    if (after > before) {
+      log(`maximum heart rate measured at ${after} (the age formula said ${before}) — the walk floor and zones move with it`, 'on');
+      S.hrZones = null;
+    }
+  }
+  S.trial = null;
+  finish('Time trial done.');
+  return true;
+}
+
+/** During a run/walk: the first 5 km inside one running block, said as it happens. */
+function goalTick(t) {
+  const running = S.hrBlocks && S.hrBlocks.phase === 'run';
+  const dt = S.goalT != null ? Math.max(0, Math.min(5, t - S.goalT)) : 0;
+  S.goalT = t;
+  if (!running) { S.contRunM = 0; return; }
+  const v = fusedSpeed();
+  S.contRunM = (S.contRunM || 0) + (v > 0 ? v * dt : 0);
+  if (!S.goalSaid && S.contRunM >= GOAL_M && !loadBenchmarks().some(b => b.kind === 'goal')) {
+    S.goalSaid = true;
+    say('That is five kilometres without stopping. Goal reached.');
+    log('five kilometres without stopping — the goal', 'on');
+  }
+}
 
 // =================================================================================================
 // The band's own memory: a second recording of heart rate (polar-offline.js, backfill.js)
@@ -3261,7 +3389,40 @@ function tickRamp(t) {
  */
 // RUNG_KEY is declared with the other boot-time state, above the first render.
 
-function ladder() { return (PLAN.run_walk_ladder || []); }
+/**
+ * The plan's ladder, and two bridge steps past its top to the goal: thirty continuous minutes is
+ * about 4 km at his pace, and a 5K is about 37. 35 and 40 minutes are each within the 30% session
+ * step the fast track allows (progression.js SPIKE_MAX); 40 minutes holds 5 km with room.
+ */
+function ladder() {
+  const L = PLAN.run_walk_ladder || [];
+  const top = L[L.length - 1];
+  return top && top.run_min === 30 && top.reps === 1 ? [...L, ...BRIDGE_RUNGS] : L;
+}
+/** Where the plan's own ladder ends: thirty continuous minutes, the Foundation gate. */
+function foundationRung() {
+  const L = ladder();
+  const i = L.findIndex(r => r.run_min === 30 && r.reps === 1);
+  return i >= 0 ? i : L.length - 1;
+}
+/** Minutes of running in each step, for the fast track's session-length rule. */
+function ladderTotals() { return ladder().map(r => r.run_min * r.reps); }
+/** The longest session of running in the last 30 days, in seconds. */
+function longestRecentRunningS(now = Date.now()) {
+  return Math.max(0, ...recentRunning().filter(x => now - Date.parse(x.at) < 30 * 86400000).map(x => x.runningS || 0));
+}
+
+/** Green, amber or red for the next step up, from the body's own signals (progression.js). */
+function currentLight() {
+  const weekAgo = Date.now() - 7 * 86400000;
+  const talk = talkAnswers().filter(a => Date.parse(a.at || 0) >= weekAgo).slice(-1)[0];
+  return trafficLight({
+    readiness: todayReadiness().band,
+    painHold: painHolds(painTrend(painLog())),
+    painRecent: painLog().some(e => Date.parse(e.day || 0) >= weekAgo && Number(e.level) >= 2),
+    lastTalk: talk ? talk.answer : null,
+  });
+}
 
 /** The rung index, seeded from whatever the plan prescribes for today the first time it is asked. */
 function currentRung() {
@@ -3364,13 +3525,16 @@ function applyVerdict(judged, stats) {
   // step up (progression.js stepLadder). A pain pattern holds the step up; it never stops a step back.
   const held = painHolds(painTrend(painLog()));
   const before = rungState() || {};
+  const lt = currentLight();
   const st = stepLadder({ ...before, rung: currentRung() }, judged.verdict,
                         { ladderLength: L.length, painHold: !!(held && held.hold),
-                          catchUpRung: demonstratedRung(recentRunning(), L) });
+                          catchUpRung: demonstratedRung(recentRunning(), L),
+                          light: lt.light, totalsMin: ladderTotals(), longestRecentS: longestRecentRunningS() });
+  log(`next step on the ${TRACKS[lt.light].label}${lt.why.length ? ` — ${lt.why.join('; ')}` : ''}`, 'dim');
   try {
     localStorage.setItem(RUNG_KEY, JSON.stringify({
       rung: st.rung, run_min: L[st.rung].run_min, reps: L[st.rung].reps,
-      qualifying: st.qualifying, changedAt: st.changedAt,
+      qualifying: st.qualifying, changedAt: st.changedAt, loadSteps: st.loadSteps || [],
       verdict: judged.verdict, at: new Date().toISOString(),
     }));
   } catch { /* storage full; the verdict is still shown, it just will not stick */ }
@@ -3390,7 +3554,6 @@ function applyVerdict(judged, stats) {
 // beats a fortnight of guessing later.
 // =================================================================================================
 
-const PAIN_KEY = 'band.pain';
 
 function painLog() {
   // The catch is for a corrupt value, and for nothing else. It used to be a bare `catch` around the
@@ -3920,6 +4083,8 @@ function tick() {
   if (S.fusion) S.fused = S.fusion.tick(Date.now() / 1000);
   $('elapsed').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
   $('dist').textContent = U.dist(fusedDistance()).toFixed(2);
+  if (S.trial && trialTick(t)) return;
+  goalTick(t);
   // What you are ACTUALLY doing, in every mode, always.
   //
   // The big number is taken over by the target in the timed modes — the stage's dial setting during
@@ -4245,13 +4410,14 @@ $('go').onclick = () => {
     S.rampStopped = false;
     S.rampTargetSecKm = null;
   }
-  if (S.mode === 'coach' && !target) {
+  if (S.mode === 'coach' && !target && !S.trial) {
     log('Enter a target pace like 9:00 first.', 'stop'); return;
   }
   audio();                                  // must be inside the tap or iOS blocks sound later
 
   S.monitor = new PaceBandMonitor({
-    targetPaceSecKm: target || 540,
+    // A time trial has no band to keep inside: a monitor with no target says nothing.
+    targetPaceSecKm: S.trial ? null : target || 540,
     tolerance: Number($('tol').value) / 100,
     ceilingOnly: $('ceiling').checked,
     ...(S.mode === 'rehearse' ? {} : FUSED_WINDOW),
@@ -4679,6 +4845,16 @@ function sessionTitle() {
 function finish(msg) {
   S.running = false;
   if (S.sensor) S.sensor.urgent = false;
+  if (S.trial) {
+    log('time trial stopped before 2 km — not recorded', 'dim');
+    S.trial = null;
+  }
+  // The goal, from the record: 5 km inside one running block.
+  if (S.samples.length && S.mode === 'intervals' && !loadBenchmarks().some(b => b.kind === 'goal')) {
+    const c = longestContinuous(S.samples);
+    if (c.m >= GOAL_M) saveBenchmark({ kind: 'goal', at: new Date().toISOString(), distM: Math.round(c.m), timeS: Math.round(c.s) });
+  }
+  S.goalSaid = false; S.contRunM = 0; S.goalT = null;
   if (S.bandRecording) bandRecordingEnded();
   clearInterval(S.tickId);
   clearInterval(S.autosaveId);

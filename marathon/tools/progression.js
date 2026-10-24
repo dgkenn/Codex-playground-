@@ -393,6 +393,59 @@ export const QUALIFYING_TO_ADVANCE = 2;
 export const MIN_DAYS_BETWEEN_STEPS = 6;
 
 /**
+ * How fast the ladder may move, set by the body's own signals.
+ *
+ * The fixed rule above (two good runs, six days) is the steady track, and it stays the default. The
+ * athlete asked for the fastest safe route to a continuous 5K "as long as it adapts to my
+ * biofeedback", and the evidence says where the speed can come from: in 5,200 runners followed for
+ * 18 months, injury risk rose with single SESSIONS longer than ~10% beyond the longest of the last
+ * 30 days, and weekly load changes were not associated with it (Frandsen et al., Br J Sports Med
+ * 2025). Most steps on this ladder do not lengthen the session at all -- 4 x 5 -> 5 x 4, 6 x 4 ->
+ * 8 x 3, 10 x 3 -> 15 x 2 -> 30 x 1 keep the running time and only remove walk breaks, which costs
+ * the heart, not the tissue. So:
+ *
+ *   green  -- everything says go: one good run moves a step; a step that keeps the running time can
+ *             come two days after the last, one that adds running three days after, at most two of
+ *             those a week, and never more than 30% over the longest session of the last 30 days.
+ *   amber  -- one signal says wait (HRV below the band, a "hard" talk test, a niggle logged this
+ *             week): the steady track.
+ *   red    -- a pain pattern, or HRV well below for days, or illness: no step up at all.
+ *
+ * The ease-back side is untouched: a session that goes wrong steps back the same day on any track.
+ */
+export const TRACKS = {
+  green: { label: 'fast track', qualifying: 1, minDays: 2, loadMinDays: 3, loadStepsPerWeek: 2 },
+  amber: { label: 'steady track', qualifying: QUALIFYING_TO_ADVANCE, minDays: MIN_DAYS_BETWEEN_STEPS,
+           loadMinDays: MIN_DAYS_BETWEEN_STEPS, loadStepsPerWeek: 1 },
+  red: { label: 'holding', qualifying: Infinity, minDays: Infinity, loadMinDays: Infinity, loadStepsPerWeek: 0 },
+};
+/// A step that adds running may not take a session past this multiple of the longest session of the
+/// last 30 days. Frandsen's lowest-risk band was +10%; 30% is the top of the band above it, and the
+/// aggressive end the athlete chose -- the ladder's own steps are built to fit inside it.
+export const SPIKE_MAX = 1.3;
+
+/**
+ * The light for the next step, from the signals the app has. All inputs optional; with none of them
+ * the light is green (no evidence against). Returns `{light, why: [..]}`.
+ *
+ *   readiness  -- readiness.js band: 'strained' is red, 'suppressed' is amber
+ *   painHold   -- load-watch.js painHolds() result: a hold is red
+ *   painRecent -- a niggle logged in the last 7 days that is not (yet) a pattern: amber
+ *   lastTalk   -- the most recent talk-test answer within a week: 'hard' is amber
+ */
+export function trafficLight({ readiness = null, painHold = null, painRecent = false, lastTalk = null } = {}) {
+  const red = [], amber = [];
+  if (painHold && painHold.hold) red.push(`the ${String(painHold.site || 'niggle').replace(/_/g, ' ')} is a pattern`);
+  if (readiness === 'strained') red.push('morning readiness says rest');
+  if (readiness === 'suppressed') amber.push('morning HRV is below your band');
+  if (painRecent) amber.push('a niggle logged this week');
+  if (lastTalk === 'hard') amber.push('the last talk test was hard');
+  if (red.length) return { light: 'red', why: red };
+  if (amber.length) return { light: 'amber', why: amber };
+  return { light: 'green', why: [] };
+}
+
+/**
  * Move along the ladder, at the pace tissue adapts rather than the pace the heart does.
  *
  * `nextRung` alone advanced on any single ADVANCE, and three sessions a week meant three rungs a week
@@ -408,12 +461,14 @@ export const MIN_DAYS_BETWEEN_STEPS = 6;
  * `{moved, from, to, why}` for the athlete.
  */
 export function stepLadder(state, verdict, { ladderLength, now = new Date(), painHold = false,
-                                           catchUpRung = null } = {}) {
+                                           catchUpRung = null, light = 'amber', totalsMin = null,
+                                           longestRecentS = null } = {}) {
   const from = Math.max(0, Math.min((state && state.rung) | 0, ladderLength - 1));
   const changedAt = state && state.changedAt ? new Date(state.changedAt) : null;
   const days = changedAt ? (now - changedAt) / 86400000 : Infinity;
   const base = { rung: from, qualifying: (state && state.qualifying) || 0,
-                 changedAt: state && state.changedAt ? state.changedAt : null };
+                 changedAt: state && state.changedAt ? state.changedAt : null,
+                 loadSteps: (state && state.loadSteps) || [] };
 
   if (verdict === EASE_BACK) {
     const to = Math.max(0, from - 1);
@@ -437,17 +492,40 @@ export function stepLadder(state, verdict, { ladderLength, now = new Date(), pai
     return { rung: from + 1, qualifying: 0, changedAt: now.toISOString(),
              moved: true, from, to: from + 1, why: 'catching up to what you have already run' };
   }
-  if (qualifying < QUALIFYING_TO_ADVANCE) {
-    return { ...base, qualifying, moved: false, from, to: from,
-             why: `${qualifying} of ${QUALIFYING_TO_ADVANCE} good runs on this rung` };
+  const track = TRACKS[light] || TRACKS.amber;
+  if (light === 'red') {
+    return { ...base, qualifying, moved: false, from, to: from, track: light, why: 'holding: the body says not now' };
   }
-  if (days < MIN_DAYS_BETWEEN_STEPS) {
-    const ready = new Date(changedAt.getTime() + MIN_DAYS_BETWEEN_STEPS * 86400000);
-    return { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(),
+  if (qualifying < track.qualifying) {
+    return { ...base, qualifying, moved: false, from, to: from, track: light,
+             why: `${qualifying} of ${track.qualifying} good runs on this rung` };
+  }
+  // A step that adds running (the session gets longer) is the one the injury evidence is about; a
+  // step that only lengthens the blocks is not.
+  const isLoad = !!(totalsMin && totalsMin[from + 1] > totalsMin[from]);
+  const needDays = isLoad ? track.loadMinDays : track.minDays;
+  if (days < needDays) {
+    const ready = new Date(changedAt.getTime() + needDays * 86400000);
+    return { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(), track: light,
              why: `earned, but the last step up was ${Math.floor(days)} day${Math.floor(days) === 1 ? '' : 's'} ago` };
   }
+  if (isLoad) {
+    const week = base.loadSteps.filter(t => now - new Date(t) < 7 * 86400000).sort();
+    if (week.length >= track.loadStepsPerWeek) {
+      const ready = new Date(new Date(week[0]).getTime() + 7 * 86400000);
+      return { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(), track: light,
+               why: `earned, but ${week.length} step${week.length === 1 ? '' : 's'} that added running already this week` };
+    }
+    if (longestRecentS > 0 && totalsMin[from + 1] * 60 > SPIKE_MAX * longestRecentS) {
+      return { ...base, qualifying, moved: false, from, to: from, track: light,
+               why: `the next step is ${totalsMin[from + 1]} min of running and your longest session in 30 days is `
+                  + `${Math.round(longestRecentS / 60)} -- run this step's full time first` };
+    }
+  }
   return { rung: from + 1, qualifying: 0, changedAt: now.toISOString(),
-           moved: true, from, to: from + 1, why: `${qualifying} good runs in a row on this rung` };
+           loadSteps: isLoad ? [...base.loadSteps, now.toISOString()].slice(-10) : base.loadSteps,
+           moved: true, from, to: from + 1, track: light,
+           why: `${qualifying} good run${qualifying === 1 ? '' : 's'} in a row on this rung` };
 }
 
 /**

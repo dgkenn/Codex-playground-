@@ -8,7 +8,8 @@ import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
          DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION,
          talkTestOffset, talkTestApplies, TALK_LIMIT_BPM, HR_DOSE_FRACTION,
-         stepLadder, QUALIFYING_TO_ADVANCE, MIN_DAYS_BETWEEN_STEPS, demonstratedRung } from '../progression.js';
+         stepLadder, QUALIFYING_TO_ADVANCE, MIN_DAYS_BETWEEN_STEPS, demonstratedRung,
+         trafficLight, TRACKS, SPIKE_MAX } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -326,6 +327,67 @@ const hrSummary = (over = {}) => ({
   // A repeat is still a repeat while catching up.
   assert.equal(stepLadder({ rung: 1 }, REPEAT, { ladderLength: 10, now: day(14), catchUpRung: 4 }).rung, 1);
   console.log('  ok  stepping up to what recent sessions already covered needs one good run and no wait');
+}
+
+{
+  // The fast track, all green, from 2 min x 7 to the 5K: a run every other day, every one good. The
+  // ladder's totals (min of running): steps that keep the total come every 2 days; steps that add
+  // running every 3+, at most two a week, never past 1.3x the longest session of the last 30 days.
+  const totals = [8, 14, 18, 20, 20, 24, 24, 30, 30, 30, 35, 40];
+  const t0 = new Date('2026-10-26T12:00:00Z');
+  const day = d => new Date(t0.getTime() + d * 86400000);
+  let st = { rung: 1, qualifying: 0, changedAt: day(-3).toISOString() };
+  let longest = 14 * 60;
+  const trail = [];
+  for (let d = 0; d <= 80 && st.rung < totals.length - 1; d += 2) {
+    longest = Math.max(longest, totals[st.rung] * 60);   // he runs the step's full time
+    const r = stepLadder(st, ADVANCE, { ladderLength: totals.length, now: day(d), light: 'green',
+                                        totalsMin: totals, longestRecentS: longest });
+    if (r.moved) {
+      trail.push(`d${d}:${totals[r.to]}`);
+      if (totals[r.to] > totals[r.from]) assert.ok(totals[r.to] * 60 <= SPIKE_MAX * longest, 'no spike past 1.3x');
+    }
+    st = r;
+  }
+  const doneDay = Number(trail.at(-1).split(':')[0].slice(1));
+  assert.equal(st.rung, totals.length - 1, `reached the top: ${trail.join(' ')}`);
+  assert.ok(doneDay >= 21 && doneDay <= 35, `about three to five weeks all-green, not days and not months: day ${doneDay}`);
+  const loads = trail.map(x => x.split(':')).filter((x, i, a) => i > 0 && Number(x[1]) > Number(a[i - 1][1]));
+  // no more than two running-adding steps in any 7 days
+  const ld = st.loadSteps.map(x => new Date(x).getTime());
+  for (const a of ld) assert.ok(ld.filter(b => b >= a && b - a < 7 * 86400000).length <= 2, 'at most two load steps a week');
+  console.log(`  ok  all green, the fast track reaches the 5K step in ${doneDay} days (${trail.join(' ')})`);
+
+  // The same run of good sessions on the steady track takes about twice as long or more.
+  let a = { rung: 1, qualifying: 0, changedAt: day(-3).toISOString() };
+  let ad = null;
+  for (let d = 0; d <= 200 && a.rung < totals.length - 1; d += 2) {
+    a = stepLadder(a, ADVANCE, { ladderLength: totals.length, now: day(d), light: 'amber', totalsMin: totals, longestRecentS: 40 * 60 });
+    if (a.rung === totals.length - 1) ad = d;
+  }
+  assert.ok(ad >= doneDay * 1.8, `steady track ${ad} days vs fast ${doneDay}`);
+  console.log(`  ok  the steady track takes ${ad} days for the same run of good sessions`);
+}
+
+{
+  // Red holds; the light comes from the body's signals.
+  const r = stepLadder({ rung: 3, qualifying: 3 }, ADVANCE, { ladderLength: 12, light: 'red', now: new Date() });
+  assert.equal(r.moved, false);
+  assert.match(r.why, /holding/);
+  assert.equal(trafficLight({}).light, 'green');
+  assert.equal(trafficLight({ readiness: 'suppressed' }).light, 'amber');
+  assert.equal(trafficLight({ lastTalk: 'hard' }).light, 'amber');
+  assert.equal(trafficLight({ painRecent: true }).light, 'amber');
+  assert.equal(trafficLight({ readiness: 'strained' }).light, 'red');
+  const p = trafficLight({ painHold: { hold: true, site: 'left_shin' }, readiness: 'suppressed' });
+  assert.equal(p.light, 'red');
+  assert.match(p.why[0], /left shin is a pattern/);
+  // A spike: the next step adds running past 1.3x the longest of the last 30 days -- held, with why.
+  const s = stepLadder({ rung: 1, qualifying: 0, changedAt: '2026-10-01T00:00:00Z' }, ADVANCE,
+    { ladderLength: 12, light: 'green', totalsMin: [8, 14, 18], longestRecentS: 12 * 60, now: new Date('2026-10-26T00:00:00Z') });
+  assert.equal(s.moved, false);
+  assert.match(s.why, /longest session in 30 days is 12/);
+  console.log('  ok  red holds; amber and red come from HRV, pain, and the talk test; a spike is held with the reason');
 }
 
 console.log('\nAll progression tests passed.');

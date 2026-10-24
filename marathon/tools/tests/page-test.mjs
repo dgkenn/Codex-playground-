@@ -476,11 +476,62 @@ async function openAll(page) {
   await page.fill('#hrceil', '');
   await page.dispatchEvent('#hrceil', 'change');
   await page.waitForTimeout(150);
-  assert.equal(await read(), base, 'emptied: back to the formula');
+  assert.equal(await read(), base + 6, 'emptied: back to the formula, where every answer counts as before');
   await page.evaluate(() => { localStorage.removeItem('band.talk'); localStorage.removeItem('band.ceiling.athlete'); });
   await page.reload({ waitUntil: 'load' });
   await page.waitForTimeout(200);
   console.log('  ok  the run ceiling is his: 165 by default, the talk test moves it from there (at most +5), the field changes it');
+}
+
+// --- the 5K goal: track, projection, benchmarks ----------------------------------------------------
+
+{
+  // The goal card names the track the body has him on and when the 5K step can come; a red signal
+  // holds it; a time trial starts with no pace target and is not recorded if stopped short; a
+  // measured maximum above the age formula moves the walk floor.
+  await page.evaluate(() => { localStorage.removeItem('band.benchmarks'); localStorage.removeItem('band.checks.v1'); });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  const detail = await page.textContent('#goaldetail');
+  const D = '(?:\\w+ \\d+|\\d+ \\w+)';                       // "Nov 23" or "23 Nov", by locale
+  assert.match(detail, new RegExp(`^Step \\d+ of 12\\. Fast track — every signal says go\\. Earliest, every run going well: ${D}; on the steady track: ${D}\\.$`),
+    `the goal card: "${detail}"`);
+  // A strained morning (illness reported) holds the ladder.
+  await page.evaluate(() => localStorage.setItem('band.checks.v1', JSON.stringify([{
+    day: (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date()),
+    hrvMs: 40, restingHr: 60, cleanCount: 260, artifactFraction: 0.02, illness: true, source: 'verity_ppi_rmssd', posture: 'supine' }])));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.match(await page.textContent('#goaldetail'), /Holding \(morning readiness says rest\)/);
+  await page.evaluate(() => localStorage.removeItem('band.checks.v1'));
+
+  // The time trial runs as a pace session with no target, and a stop short of 2 km files nothing.
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  await page.fill('#target', '');
+  await page.click('#trialbtn');
+  await page.waitForTimeout(1500);
+  assert.equal((await page.textContent('#go')).trim(), 'Stop', 'the trial is running');
+  let lines = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /2 km time trial/.test(l)), JSON.stringify(lines.slice(0, 4)));
+  assert.ok(!lines.some(l => /Enter a target pace/.test(l)), 'no target pace needed');
+  await page.click('#go');
+  await page.waitForTimeout(300);
+  lines = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /time trial stopped before 2 km — not recorded/.test(l)));
+  assert.equal(await page.evaluate(() => localStorage.getItem('band.benchmarks')), null);
+
+  // A trial that measured a peak of 196: the maximum is 196, so the walk floor is 71% of it.
+  await page.evaluate(() => localStorage.setItem('band.benchmarks', JSON.stringify([
+    { kind: 'trial', at: new Date().toISOString(), distM: 2000, timeS: 760, avgHr: 182, peakHr: 196, predicted5kS: 2008 }])));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.match(await page.textContent('#sessdetail'), /walks at 139/, 'floor from the measured maximum');
+  assert.match(await page.textContent('#goalbench'), /Last 2 km: 12:40, peak 196 bpm → 5K about 33:28\. Next time trial from/);
+  await page.evaluate(() => localStorage.removeItem('band.benchmarks'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  console.log('  ok  the 5K goal card: fast track and projection, held on a red signal; the time trial; a measured maximum moves the floor');
 }
 
 // --- the ladder says where you are and what moves you ----------------------------------------------
