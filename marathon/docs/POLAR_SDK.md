@@ -146,7 +146,10 @@ page starts it again.
 - **The session:** autosaved every 6 s and again whenever the page is hidden, with enough context to
   be judged if the page never reaches Stop.
 - **Link history:** every drop, stall, repair and recovery is in the session's `link` record, so the
-  next analysis can see what failed rather than guess.
+  next analysis can see what failed rather than guess. The coach's own log of what it said and did is
+  saved with the run as well (`log`).
+- **Everything on the phone:** **Save backup** writes it all to one file; **Restore backup** puts it
+  back on a new phone or after the browser's data is cleared (`backup.js`).
 
 ## Considered and not done
 

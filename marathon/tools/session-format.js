@@ -96,9 +96,11 @@ export function compact(session, { stats = null, stepS = STEP_S } = {}) {
     labels,
     route,
     // Carried through when present: the armband link's history (why heart rate is missing where it
-    // is), and -- in the autosave only -- what the page needs to judge a run it never got to finish.
+    // is), what the coach said and did, and -- in the autosave only -- what the page needs to judge a
+    // run it never got to finish.
     ...(session.link ? { link: session.link } : {}),
     ...(session.live ? { live: session.live } : {}),
+    ...(session.log && session.log.length ? { log: session.log } : {}),
   };
 }
 

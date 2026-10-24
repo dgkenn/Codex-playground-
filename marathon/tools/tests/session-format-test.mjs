@@ -50,6 +50,18 @@ function session(n, { label = i => `stage_${1 + Math.floor(i / 240)}`, hr = i =>
 // --- what must survive ---------------------------------------------------------------------------
 
 {
+  // The link history and the coach's own log travel with the saved run; an empty log adds nothing.
+  const full = session(60);
+  const log = [{ t: 0, msg: 'armband connected' }, { t: 30, msg: 'walk', n: 2 }];
+  const link = [{ t: 12, kind: 'drop' }];
+  const c = compact({ ...full, log, link }, {});
+  assert.deepEqual(c.log, log);
+  assert.deepEqual(c.link, link);
+  assert.ok(!('log' in compact({ ...full, log: [] }, {})));
+  console.log('  ok  the session log and link history are kept with the run');
+}
+
+{
   // The stage labels are what the engine's analysis groups by. A compaction that loses them turns an
   // hour on a treadmill into one undifferentiated blob and the session has to be run again.
   const full = session(30 * 60);

@@ -82,6 +82,7 @@ const parts = {
   BENCHMARKS: inline('benchmarks.js'),
   SELFTEST: inline('selftest.js'),
   REMOTEBENCH: inline('remote-bench.js'),
+  BACKUP: inline('backup.js'),
   THRESHOLD: inline('threshold.js'),
   LOADWATCH: inline('load-watch.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),

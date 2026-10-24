@@ -700,6 +700,15 @@
         </div>
         <div id="savedlist"></div>
         <p class="note" id="storagenote" style="margin-top:.7rem"></p>
+        <div class="row" style="margin-top:.65rem">
+          <button id="backupbtn" class="tiny">Save backup</button>
+          <button id="restorebtn" class="tiny">Restore backup</button>
+          <input id="restorefile" type="file" accept="application/json,.json" class="hide">
+        </div>
+        <p class="note" id="backupnote" style="margin-top:.5rem">
+          A backup is one file holding everything: the ladder, ceilings, morning checks, benchmarks and
+          the saved runs. Keep one in Files or iCloud so a cleared browser or a new phone costs nothing.
+        </p>
         <p class="note" style="margin-top:.7rem">
           Every session is written to this phone while it runs, not just at the end. A page that reloads
           mid-run — which iOS does by itself to a backgrounded tab, with no warning — used to take the
@@ -786,6 +795,7 @@
 /*{{BENCHMARKS}}*/
 /*{{SELFTEST}}*/
 /*{{REMOTEBENCH}}*/
+/*{{BACKUP}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -1063,6 +1073,7 @@ const S = {
  * than as a flood that hides everything around it.
  */
 let lastLogMsg = null, lastLogRow = null, lastLogCount = 1;
+const SESSION_LOG_MAX = 400;
 
 function log(msg, cls) {
   const t = S.startedAt ? Math.round((Date.now() - S.startedAt) / 1000) : 0;
@@ -1071,8 +1082,13 @@ function log(msg, cls) {
   if (msg === lastLogMsg && lastLogRow && lastLogRow.parentNode) {
     lastLogCount += 1;
     lastLogRow.lastChild.textContent = `${msg} (×${lastLogCount})`;
+    const last = S.sessionLog && S.sessionLog[S.sessionLog.length - 1];
+    if (last && last.msg === msg) last.n = lastLogCount;
     return;
   }
+  // Kept with the session, so what the coach said and did is in the saved run, not only on a screen
+  // that the next run clears. Capped: a fault that logs every second must not fill storage.
+  if (S.sessionLog && S.sessionLog.length < SESSION_LOG_MAX) S.sessionLog.push({ t, msg });
 
   const d = document.createElement('div');
   const span = document.createElement('span');
@@ -4687,6 +4703,7 @@ $('go').onclick = () => {
                      // built. Its per-run position is reset where the runner is created.
                      geoError: null, simT: 0, simDist: 0 });
   $('log').replaceChildren();
+  S.sessionLog = [];
   if (S.hrBlocksNote) log(S.hrBlocksNote, 'on');
   lastLogMsg = null; lastLogRow = null; lastLogCount = 1;
   if (S.mode !== 'rehearse') {
@@ -5450,6 +5467,7 @@ function sessionPayload() {
     ]),
     resting_ppi_ms: [], surface: 'road', strap_position: 'upper_arm',
     link: linkRecord(),
+    log: S.sessionLog || [],
     notes: 'Recorded by the Band coach. '
          + (S.samples.some(x => x.hr_bpm != null)
             ? (S.sensor && S.sensor.hasAcc
@@ -5582,4 +5600,94 @@ $('copyfull').onclick = async () => {
   }
   await copyText(text, 'Raw recording');
 };
+
+// --- backup and restore (backup.js) ---------------------------------------------------------------
+
+function lastBackupAt() {
+  try { return Number(localStorage.getItem(LAST_BACKUP_KEY)) || null; } catch { return null; }
+}
+
+/** Remind on the page and in the log when a backup is due; say when the last one was otherwise. */
+function renderBackupNote() {
+  const last = lastBackupAt();
+  const latest = sessions.index()[0];
+  const due = backupDue({ lastAt: last, latestSessionAt: latest ? Date.parse(latest.at) || 0 : 0 });
+  const note = $('backupnote');
+  if (due) {
+    note.textContent = last
+      ? `Last backup ${fmtDate(new Date(last))}, and there are runs since. Tap Save backup.`
+      : 'No backup yet. Tap Save backup and keep the file in Files or iCloud.';
+    note.style.color = 'var(--fast)';
+  } else if (last) {
+    note.textContent = `Last backup ${fmtDate(new Date(last))}.`;
+    note.style.color = '';
+  }
+  return due;
+}
+
+/**
+ * Hand the file over the most reliable way this browser has: the share sheet (Save to Files,
+ * AirDrop, Mail), then a download, then the clipboard.
+ */
+async function handOverFile(text, name) {
+  const file = typeof globalThis.File === 'function' ? new globalThis.File([text], name, { type: 'application/json' }) : null;
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return 'shared'; }
+    catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return 'downloaded';
+  } catch { /* no downloads either */ }
+  return (await copyText(text, 'Backup')) ? 'copied' : 'shown';
+}
+
+$('backupbtn').onclick = async () => {
+  const b = snapshot(localStorage, { build: BUILD.id });
+  const d = describeBackup(b);
+  const how = await handOverFile(JSON.stringify(b), backupName());
+  if (how === 'cancelled') { log('backup not saved', 'fast'); return; }
+  try { localStorage.setItem(LAST_BACKUP_KEY, String(Date.now())); } catch { /* blocked */ }
+  log(`backup ${how}: ${d.sessions} run(s), ${d.checks} morning check(s), ${d.benchmarks} benchmark(s), `
+      + `${d.kb} kB`, 'on');
+  renderBackupNote();
+};
+
+$('restorebtn').onclick = () => {
+  if (S.running || S.check) { log('Restore after the run or check, not during it.', 'fast'); return; }
+  $('restorefile').value = '';
+  $('restorefile').click();
+};
+
+$('restorefile').onchange = async e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const parsed = parseBackup(await f.text());
+  if (!parsed.ok) { log(`Not restored: ${parsed.error}.`, 'fast'); return; }
+  const d = describeBackup(parsed.backup);
+  const btn = $('restorebtn');
+  // Two taps, like Clear storage: this replaces everything on the phone with the file's contents.
+  btn.textContent = `Replace with ${fmtDate(new Date(d.at))} backup?`;
+  log(`That backup holds ${d.sessions} run(s), ${d.checks} morning check(s), ${d.benchmarks} `
+      + 'benchmark(s). Tap again to replace what is on this phone with it.', 'fast');
+  const reset = setTimeout(() => { btn.textContent = 'Restore backup'; btn.onclick = pick; }, 15000);
+  const pick = $('restorebtn').onclick;
+  btn.onclick = () => {
+    clearTimeout(reset);
+    btn.onclick = pick;
+    btn.textContent = 'Restore backup';
+    if (S.running || S.check) { log('Restore after the run or check, not during it.', 'fast'); return; }
+    const r = restore(localStorage, parsed.backup);
+    if (!r.ok) { log(`Not restored: ${r.error}.`, 'fast'); return; }
+    log(`Restored ${r.written} item(s). Reloading…`, 'on');
+    setTimeout(() => location.reload(), 1200);
+  };
+};
+
+if (renderBackupNote()) log('No recent backup of your training data. Saved sessions → Save backup.', 'fast');
 </script>

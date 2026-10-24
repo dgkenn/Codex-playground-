@@ -14,6 +14,7 @@ year of one person's sleep data, and nothing has to be dumbed down for onboardin
 
 | Document | What's in it |
 |---|---|
+| **[tools/README.md](tools/README.md)** | **The web coach, the app actually used on runs** (Bluefy + Verity Sense): how it's built, tested, and backed up. |
 | **[docs/PLAN.md](docs/PLAN.md)** | Your week-by-week plan. Generated from the engine, not hand-written. |
 | **[docs/RESEARCH.md](docs/RESEARCH.md)** | The evidence base, including the ~30 claims the fact-checkers rejected and the code changes that followed. |
 | **[docs/APP_LANDSCAPE.md](docs/APP_LANDSCAPE.md)** | What Runna/Garmin/Strava/WHOOP and a dozen others get right, what to steal, what to refuse to build. |

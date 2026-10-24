@@ -541,6 +541,44 @@ async function openAll(page) {
   console.log('  ok  the 5K goal card: fast track and projection, held on a red signal; the time trial; a measured maximum moves the floor');
 }
 
+// --- backup and restore -----------------------------------------------------------------------------
+
+{
+  // Save backup hands over one file of every band.* key; Restore takes it back after a second tap and
+  // reloads, with whatever was on the phone in between replaced.
+  await page.evaluate(() => {
+    localStorage.setItem('band.rung', JSON.stringify({ rung: 6, at: Date.now() }));
+    localStorage.removeItem('band.backup.last');
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  await openAll(page);
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#backupbtn')]);
+  assert.match(dl.suggestedFilename(), /^band-backup-\d{4}-\d\d-\d\d\.json$/);
+  const text = readFileSync(await dl.path(), 'utf8');
+  const b = JSON.parse(text);
+  assert.equal(b.format, 'band-backup');
+  assert.equal(JSON.parse(b.keys['band.rung']).rung, 6);
+  assert.match(await page.textContent('#backupnote'), /^Last backup /);
+
+  await page.evaluate(() => localStorage.setItem('band.rung', JSON.stringify({ rung: 1, at: Date.now() })));
+  await page.setInputFiles('#restorefile', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(text) });
+  await page.waitForTimeout(200);
+  assert.match(await page.textContent('#restorebtn'), /^Replace with .* backup\?$/);
+  await Promise.all([page.waitForEvent('load'), page.click('#restorebtn')]);
+  await page.waitForTimeout(200);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('band.rung')).rung), 6);
+
+  await openAll(page);
+  await page.setInputFiles('#restorefile', { name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"format":"nope"}') });
+  await page.waitForTimeout(200);
+  const lines = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(lines.some(l => /Not restored: not a backup file from this app/.test(l)), JSON.stringify(lines.slice(0, 3)));
+  assert.equal((await page.textContent('#restorebtn')).trim(), 'Restore backup');
+  await page.evaluate(() => localStorage.removeItem('band.rung'));
+  console.log('  ok  a backup downloads as one file, restores after a second tap, and a foreign file is refused');
+}
+
 // --- the ladder says where you are and what moves you ----------------------------------------------
 
 {
