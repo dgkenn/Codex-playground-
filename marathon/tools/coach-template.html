@@ -280,6 +280,20 @@
           the way.
      ============================================================================================ -->
 
+  <!-- Remote testing: only when the link carries a bench topic, and only after Allow. -->
+  <section id="benchbar" class="hide">
+    <div class="instrument" style="gap:.5rem">
+      <div><strong id="benchhead">Remote armband testing requested</strong>
+        <span class="note" id="benchdetail">Claude can run armband tests through a relay for 30 minutes:
+          heart rate, battery, motion, beat-to-beat intervals, a short test recording on the band.
+          Nothing is deleted, and nothing runs during a run. Keep this page open and the band on.</span></div>
+      <div class="row">
+        <button id="benchallow" class="tiny">Allow</button>
+        <button id="benchstop" class="tiny">No thanks</button>
+      </div>
+    </div>
+  </section>
+
   <section id="today-section">
     <h2>Today</h2>
     <div class="instrument" style="gap:.7rem">
@@ -771,6 +785,7 @@
 /*{{BACKFILL}}*/
 /*{{BENCHMARKS}}*/
 /*{{SELFTEST}}*/
+/*{{REMOTEBENCH}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -2948,6 +2963,132 @@ $('anydevice').onclick = () => connectArmband({ acceptAll: true });
  * step at a time and writes down what actually happened at each, including whether the page arrived
  * through the loader, which replaces the document and with it every listener registered on it.
  */
+// =================================================================================================
+// Remote bench (remote-bench.js): armband tests driven from elsewhere, through this phone
+// =================================================================================================
+
+let bench = null;
+const BENCH_ALWAYS = new Set(['ping', 'state', 'log', 'hr']);      // allowed during a run too
+async function benchFiles() {
+  if (backfilling) throw new Error('the app is reading the band\'s memory right now; try again in a minute');
+  return S.sensor.fileClient();
+}
+function needBand() { if (!(S.sensor && S.sensor.connected)) throw new Error('the armband is not connected'); return S.sensor; }
+const waitFor = async (cond, ms) => { const t = Date.now(); while (!cond() && Date.now() - t < ms) await new Promise(r => setTimeout(r, 100)); return cond(); };
+
+function benchHandlers() {
+  const h = {
+    ping: async () => ({ build: BUILD.id, at: new Date().toISOString(), running: !!S.running,
+                         connected: !!(S.sensor && S.sensor.connected) }),
+    state: async () => ({ sensor: S.sensor ? S.sensor.state() : null, running: !!S.running, mode: S.mode,
+                          bandRecording: !!S.bandRecording, pendingBackfill: loadPending() }),
+    log: async ({ n = 40 } = {}) => [...$('log').children].slice(0, Math.min(200, n)).map(d => d.textContent),
+    hr: async ({ seconds = 15 } = {}) => {
+      const sn = needBand(), out = [], n0 = sn.hrCount, t0 = Date.now();
+      for (let i = 0; i < Math.min(60, seconds); i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        out.push(sn.hrFresh() ? sn.hr : null);
+      }
+      return { bpm: out, notifications: sn.hrCount - n0, perSecond: +((sn.hrCount - n0) / ((Date.now() - t0) / 1000)).toFixed(2), zeros: sn.hrZeros };
+    },
+    battery: async () => needBand().readBattery({ force: true }),
+    acc: async ({ seconds = 5 } = {}) => {
+      const sn = needBand(), f0 = sn.accFrames, t0 = Date.now();
+      await new Promise(r => setTimeout(r, Math.min(30, seconds) * 1000));
+      return { hasAcc: sn.hasAcc, shed: sn.accShed, error: sn.accError, settings: sn.accSettings,
+               frames: sn.accFrames - f0, perSecond: +((sn.accFrames - f0) / ((Date.now() - t0) / 1000)).toFixed(2) };
+    },
+    selftest: async ({ ppi = true } = {}) => runSelfTest({ sensor: needBand(), withPpi: !!ppi,
+      offline: { offlineHrActive, startOfflineHr, stopOfflineHr, listOfflineRecordings,
+                 getDiskSpace: async f => getDiskSpace(f) } }),
+    ppi: async ({ seconds = 40 } = {}) => {
+      const sn = needBand(), beats = [];
+      await sn.startPpi(b => beats.push(...b));
+      await new Promise(r => setTimeout(r, Math.min(90, seconds) * 1000));
+      await sn.stopPpi();
+      const { clean, counts } = cleanIntervals(beats.map(b => b.ppiMs), { blockers: beats.map(b => b.blocker), errorMs: beats.map(b => b.errMs) });
+      return { beats: beats.length, counts, rmssd: rmssd(clean), first: beats.slice(0, 8) };
+    },
+    offline: async ({ op = 'status' } = {}) => {
+      const port = await needBand().pmdPort();
+      if (op === 'status') return { active: await offlineHrActive(port), status: await readMeasurementStatus(port) };
+      if (op === 'start') return startOfflineHr(port);
+      if (op === 'stop') { await stopOfflineHr(port); return { stopped: true }; }
+      throw new Error('op is status, start or stop');
+    },
+    recordings: async () => (await listOfflineRecordings(await benchFiles()))
+      .map(e => ({ path: e.path, type: e.type, size: e.size, date: e.date && e.date.toISOString ? e.date.toISOString() : e.date })),
+    disk: async () => getDiskSpace(await benchFiles()),
+    'fetch-hr': async () => {
+      const { samples, recordings } = await fetchOfflineHr(await benchFiles());
+      return { samples: samples.length, first: samples[0] || null, last: samples[samples.length - 1] || null,
+               every60th: samples.filter((_, i) => i % 60 === 0).slice(0, 60),
+               recordings: recordings.map(r => ({ path: r.entry.path, startMs: r.startMs, count: r.count,
+                                                  truncated: r.truncated, errors: r.errors, dirMinusHeaderMs: r.dirMinusHeaderMs })) };
+    },
+    resubscribe: async () => {
+      const sn = needBand(), n0 = sn.hrCount, t0 = Date.now();
+      await sn._resubscribeHr();
+      const back = await waitFor(() => sn.hrCount > n0, 10000);
+      return { back, ms: Date.now() - t0, connected: sn.connected };
+    },
+    rebuild: async () => {
+      const sn = needBand(), t0 = Date.now();
+      sn._rebuild('bench');
+      const back = await waitFor(() => sn.connected, 60000);
+      await waitFor(() => sn.hrCount > 0 && sn.hrFresh(), 15000);
+      return { back, ms: Date.now() - t0, hasAcc: sn.hasAcc, events: sn.events.slice(-6) };
+    },
+    settings: async ({ meas = 2 } = {}) => {
+      if (![2, 3].includes(meas)) throw new Error('meas is 2 (motion) or 3 (beat-to-beat)');
+      const port = await needBand().pmdPort();
+      const r = await port.request([0x01, meas]);
+      return { hex: Array.from(r.raw).map(b => b.toString(16).padStart(2, '0')).join(' '), status: r.statusText, settings: r.settings };
+    },
+  };
+  // During a run the bench only watches: nothing that changes what the band is doing.
+  for (const k of Object.keys(h)) {
+    if (BENCH_ALWAYS.has(k)) continue;
+    const f = h[k];
+    h[k] = async args => {
+      if (S.running) throw new Error('a run is in progress; only ping, state, log and hr while running');
+      if (S.check) throw new Error('a morning check is in progress');
+      return f(args);
+    };
+  }
+  return h;
+}
+
+function renderBench(status) {
+  const left = bench && bench.on ? Math.max(0, Math.round((bench.until - Date.now()) / 60000)) : 0;
+  $('benchhead').textContent = bench && bench.on ? `Remote armband testing on — ${left} min left`
+    : status === 'expired' ? 'Remote armband testing ended (30 minutes)' : 'Remote armband testing off';
+  $('benchallow').classList.toggle('hide', !!(bench && bench.on));
+  $('benchstop').textContent = bench && bench.on ? 'Stop' : 'Close';
+}
+
+(function setUpBench() {
+  const topic = benchTopic(location.hash);
+  if (!topic) return;
+  $('benchbar').classList.remove('hide');
+  $('benchallow').onclick = async () => {
+    bench = new RemoteBench({
+      topic, handlers: benchHandlers(),
+      onStatus: st => { renderBench(st); log(`remote testing ${st === 'on' ? 'on — keep this page open' : st}`, st === 'on' ? 'on' : 'dim'); },
+      onCommand: c => { $('benchdetail').textContent = `Last command: ${c}, ${new Date().toLocaleTimeString()}.`; renderBench('on'); },
+    });
+    keepAwake(true);
+    try { await bench.start(); } catch (e) { log(`remote testing could not start: ${describeError(e)}`, 'stop'); }
+  };
+  $('benchstop').onclick = () => {
+    if (bench) bench.stop('stopped');
+    bench = null;
+    $('benchbar').classList.add('hide');
+    try { history.replaceState(null, '', location.pathname + location.search); } catch { /* fine */ }
+    if (!S.running) keepAwake(false);
+  };
+})();
+
 /**
  * Every feature built on the link, tried once on the real band, with a report to paste back
  * (selftest.js). About a minute and a quarter, band on, sitting still.

@@ -158,3 +158,32 @@ page starts it again.
 - **Gyroscope.** It is available in normal mode and could measure arm swing directly. The
   half-cadence guard in `fusion.js` already handles the arm-swing failure, so it would add little for
   now.
+
+## The remote bench (`remote-bench.js`, `bench.py`)
+
+The band only talks to the phone. To test the real band from a machine with no radio, the phone acts
+as the bench:
+
+1. Open the app with `#bench=<topic>` on the end of its link.
+2. Tap **Allow** on the banner.
+3. The page polls `ntfy.sh/<topic>-cmd` every 6 s, runs each command on the band, and answers on
+   `<topic>-out`.
+
+`python3 marathon/tools/bench.py <topic> <command> [json]` sends a command and prints the answer.
+
+**Commands.** A fixed list, with no code execution:
+- `ping`, `state`, `log`
+- `hr`, `battery`, `acc`
+- `selftest`, `ppi`
+- `offline` (`status` / `start` / `stop`)
+- `recordings`, `disk`, `fetch-hr`
+- `resubscribe`, `rebuild`
+- `settings`
+
+**Limits:**
+- During a run, only `ping`, `state`, `log` and `hr`.
+- Nothing deletes recordings or enters SDK mode.
+- It stops itself after 30 minutes.
+
+**What goes over the relay:** test results (heart rate, battery, timings), never location. The topic
+is the only key, so share it only with whoever runs the bench.

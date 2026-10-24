@@ -67,6 +67,7 @@ const parts = {
   BACKFILL: inline('backfill.js'),
   BENCHMARKS: inline('benchmarks.js'),
   SELFTEST: inline('selftest.js'),
+  REMOTEBENCH: inline('remote-bench.js'),
   THRESHOLD: inline('threshold.js'),
   LOADWATCH: inline('load-watch.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
@@ -112,6 +113,28 @@ try {
 } catch (e) {
   throw new Error(`the assembled page does not parse: ${e.message}\n`
                 + '  Most likely two inlined modules declare the same top-level name.');
+}
+
+// Does any top-level name appear twice?
+//
+// A duplicated `const` is a syntax error and the check above catches it. A duplicated FUNCTION is
+// not: in a classic script the later declaration silently replaces the earlier one. selftest.js
+// declared a helper `finish`, the page declares the `finish` that ends a session, and the page's
+// won -- so the self-test would have ended the session and reported nothing. One scope for every
+// module makes this a standing hazard, so every top-level declaration is counted.
+{
+  const seen = new Map();
+  body.split('\n').forEach((line, i) => {
+    const m = /^(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)\s*\(|^(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)\b/.exec(line);
+    if (!m) return;
+    const name = m[1] || m[2];
+    seen.set(name, [...(seen.get(name) || []), i + 1]);
+  });
+  const dup = [...seen].filter(([, at]) => at.length > 1);
+  if (dup.length) {
+    throw new Error('the assembled page declares a top-level name more than once (the later silently wins):\n'
+                  + dup.map(([n, at]) => `  ${n} at lines ${at.join(', ')}`).join('\n'));
+  }
 }
 
 // Does it reference a name nothing ever declared?

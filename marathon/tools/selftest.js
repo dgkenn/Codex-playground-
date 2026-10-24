@@ -38,7 +38,7 @@ export async function runSelfTest({ sensor, offline, onStep = () => {}, scale = 
     const up = !!(sensor && sensor.connected && sensor.device && sensor.device.gatt && sensor.device.gatt.connected);
     return { ok: up, detail: up ? `connected to ${sensor.device.name || 'the band'}` : 'not connected — connect the armband first' };
   });
-  if (!steps[0].ok) return finish(steps);
+  if (!steps[0].ok) return outcome(steps);
 
   await step('heart rate stream', async () => {
     const n0 = sensor.hrCount, z0 = sensor.hrZeros || 0;
@@ -118,10 +118,10 @@ export async function runSelfTest({ sensor, offline, onStep = () => {}, scale = 
   }
 
   await step('link still up', async () => ({ ok: sensor.connected, detail: sensor.connected ? 'yes' : 'the link dropped during the test' }));
-  return finish(steps);
+  return outcome(steps);
 }
 
-function finish(steps) {
+function outcome(steps) {
   const bad = steps.filter(s => !s.ok);
   return {
     ok: !bad.length,
