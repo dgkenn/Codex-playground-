@@ -2675,8 +2675,11 @@ async function backfillFromBand() {
 async function backfillPending(ready) {
   const port = await S.sensor.pmdPort();
   // Polar: stop a recording before reading it. One left running (the page was killed mid-run and
-  // never reached Finish) is stopped here, when nothing is running.
-  if (await offlineHrActive(port)) await stopOfflineHr(port);
+  // never reached Finish) is stopped here, when nothing is running -- checked again after every
+  // await, because a Start tapped meanwhile has just begun a recording that must not be stopped.
+  if (S.running) return;
+  if (await offlineHrActive(port) && !S.running) await stopOfflineHr(port);
+  if (S.running) return;
   const files = await S.sensor.fileClient();
   const { samples, entries } = await fetchOfflineHr(files);
   const keep = [];
@@ -2699,6 +2702,7 @@ async function backfillPending(ready) {
   }
   savePending(keep);
   renderSaved();
+  if (S.running) return;                                   // clear the band another time
   // The band never deletes recordings, and under 2 MB free it will not start one. Once nothing is
   // waiting, everything read is cleared.
   if (!keep.length && entries.length) {
