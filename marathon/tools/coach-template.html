@@ -2685,7 +2685,13 @@ async function backfillPending(ready) {
   const keep = [];
   for (const p of ready) {
     const c = sessions.get(p.startedAt.replace(/[^0-9A-Za-z]/g, ''));
-    if (!c || !Array.isArray(c.t)) continue;              // evicted, or never filed
+    if (!c || !Array.isArray(c.t)) {
+      // Not filed yet because the page reloaded mid-run and the session is waiting to be recovered:
+      // keep it for then. Otherwise it was evicted, and there is nothing to fill.
+      const waiting = sessions.recoverable();
+      if (waiting && waiting.started_at === p.startedAt) keep.push(p);
+      continue;
+    }
     const holes = holesIn(c);
     if (!holes) continue;                                  // nothing to fill: done
     const { session: out, report } = backfillSession(c, samples);
@@ -4300,7 +4306,7 @@ $('go').onclick = () => {
   S.autosaveId = setInterval(() => {
     if (!S.running || !S.samples.length) return;
     const ok = sessions.saveActive(
-      compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}), { force: true });
+      compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode, live: liveContext() }, {}), { force: true });
     if (ok === WRITTEN) { S.savedAt = Date.now(); S.savedCount = S.samples.length; renderSavedTick(); }
     else if (ok === FAILED && !saveFailed) {
       // Once, not every six seconds. A silent failure here is the original bug in a new hat.
@@ -4312,8 +4318,8 @@ $('go').onclick = () => {
   // interval alone means nothing is written until six seconds in.
   setTimeout(() => {
     if (S.running && S.samples.length) {
-      sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode }, {}),
-                          { force: true });
+      sessions.saveActive(compact({ ...sessionPayload(), title: sessionTitle(), mode: S.mode,
+                                    live: liveContext() }, {}), { force: true });
       S.savedAt = Date.now(); S.savedCount = S.samples.length; renderSavedTick();
     }
   }, 1500);
@@ -4370,7 +4376,12 @@ $('go').onclick = () => {
  * hold still are beats per mile and efficiency factor — the same pace at a lower heart rate is
  * fitness and nothing else — so those lead, and the rest supports them.
  */
-function showStats(stats, prevStats) {
+/**
+ * `ctx` is which session this was: the one just finished (the default), or one recovered after the
+ * page reloaded mid-run, which carries its own mode, plan and start time from the autosave.
+ */
+function showStats(stats, prevStats, ctx = { mode: S.mode, startedAt: S.startedAt,
+                                              runWalk: S.plannedSession && S.plannedSession.runWalk }) {
   if (!stats) { $('stats-section').classList.add('hide'); return; }
   const mmss = secs => `${Math.floor(secs / 60)}:${String(Math.round(secs % 60)).padStart(2, '0')}`;
   const tiles = [];
@@ -4414,7 +4425,7 @@ function showStats(stats, prevStats) {
     if (stats.hrBlocks.ranInWalksS >= 30) tile('Ran in walks', mmss(stats.hrBlocks.ranInWalksS));
     if (stats.hrBlocks.comfortPaceSecKm) tile('Easy pace', readoutText(stats.hrBlocks.comfortPaceSecKm));
     if (stats.hrBlocks.toCeilingMedianS != null) {
-      tile(`Run to ${S.hrBlocks ? S.hrBlocks.ceilingBpm : 'ceiling'}`, mmss(stats.hrBlocks.toCeilingMedianS));
+      tile(`Run to ${stats.hrBlocks.ceilingBpm || (S.hrBlocks ? S.hrBlocks.ceilingBpm : 'ceiling')}`, mmss(stats.hrBlocks.toCeilingMedianS));
     }
     if (stats.hrBlocks.toFloorMedianS != null) {
       tile(`Back to ${recoveryFloorBpm()}`, mmss(stats.hrBlocks.toFloorMedianS));
@@ -4444,7 +4455,7 @@ function showStats(stats, prevStats) {
   // What this session says about where the aerobic ceiling actually sits. Filed rather than acted on
   // immediately: see threshold.js for why one session is a coincidence and the median of several is
   // the number worth training under.
-  if (S.samples && S.samples.length) {
+  if (!ctx.recovered && S.samples && S.samples.length) {
     const est = recordThreshold(S.samples);
     const nowCeil = measuredCeiling();
     if (est) {
@@ -4494,16 +4505,22 @@ function showStats(stats, prevStats) {
   // session must have got past the warm-up and lasted ten minutes before it counts as evidence.
   // A session the phone was not recording for minutes of is not evidence about anything.
   const interrupted = (stats.pausedS || 0) > 120;
-  const rw = !interrupted && S.mode === 'intervals' && S.plannedSession && S.plannedSession.runWalk;
+  const rw = !interrupted && ctx.mode === 'intervals' && ctx.runWalk;
   const clockEvidence = stats.durationS >= 600 && (stats.runningS || 0) >= 60;
   const judged = !rw ? null
     : stats.hrBlocks
       ? judgeHrSession({ blocks: rw.reps, blockS: rw.runMin * 60 }, stats.hrBlocks,
-                       recoveryBaseline(recoveryHistory({ excludeAt: new Date(S.startedAt).toISOString() })))
+                       recoveryBaseline(recoveryHistory({ excludeAt: new Date(ctx.startedAt).toISOString() })))
       : (clockEvidence ? judgeSession(rw, stats) : null);
   // And it is applied, not merely announced. This is the line that turns a schedule into a
   // controller; everything it needs has existed and been tested for weeks.
-  const moved = judged ? applyVerdict(judged, stats) : null;
+  // A run the page did not live to finish is cut short by the phone, not by the body. Its ADVANCE
+  // counts (the evidence is there) and so does an EASE_BACK (protection does not wait); a REPEAT is
+  // shown but not applied, because it would wipe a qualifying run on the strength of a reload.
+  const holdForReload = ctx.recovered && judged && judged.verdict === REPEAT;
+  const moved = judged && !holdForReload ? applyVerdict(judged, stats)
+    : holdForReload ? { moved: false, why: 'the page reloaded mid-session, so this one leaves the ladder where it was' }
+    : null;
   if (judged) {
     const L = ladder();
     const say = r => `${r.run_min}/${r.walk_min} × ${r.reps}`;
@@ -4536,7 +4553,7 @@ function showStats(stats, prevStats) {
     $('statsverdict').classList.add('hide');
   }
 
-  renderTalkQuestion(stats, S.startedAt);
+  renderTalkQuestion(stats, ctx.startedAt);
   $('stats-section').classList.remove('hide');
   // The section lives inside a collapsed <details> now (see "How it went" in the layout) — removing
   // `hide` alone would make it present but still invisible behind a closed disclosure triangle. A
@@ -4591,7 +4608,7 @@ function finish(msg) {
     // ceiling, the autonomic recovery series, and which of the four endings actually happened -- none
     // of which `runStats` can derive from the pace-and-HR trace alone. Archived with the session so it
     // reaches `showStats` on replay and `recoveryHistory()` below for every session after this one.
-    stats.hrBlocks = S.hrBlocks ? S.hrBlocks.summary() : null;
+    stats.hrBlocks = S.hrBlocks ? { ...S.hrBlocks.summary(), ceilingBpm: S.hrBlocks.ceilingBpm } : null;
     if (stats.hrBlocks) {
       stats.hrBlocks.comfortPaceSecKm = comfortableRunPace(S.samples, S.hrBlocks.ceilingBpm);
       stats.hrBlocks.ranInWalksS = S.ranInWalksS || 0;
@@ -4884,15 +4901,51 @@ function offerRecovery() {
   $('recover').classList.remove('hide');
 }
 
+/**
+ * Statistics for a session recovered from the autosave: the same runStats over its five-second
+ * trace, with the controller summary and calibration the autosave carried. Null for an old autosave
+ * from before `live` existed -- it is filed as it was, unjudged.
+ */
+function recoveredStats(found) {
+  const full = expand(found);
+  if (!full || !full.samples.length) return null;
+  const live = found.live || {};
+  for (const x of full.samples) if (!(x.hr_bpm > 0)) x.hr_bpm = null;
+  const stats = runStats(full.samples, {
+    zones: statsZones(), hrRest: profile.hrRest, hrMax: hrMaxFor(profile.age), unit,
+    tones: live.tones || 0, targetPaceSecKm: live.targetPaceSecKm || null,
+  });
+  stats.hrBlocks = live.hrBlocks || null;
+  stats.pausedS = live.pausedS || 0;
+  stats.recovered = true;
+  if (live.fusion) {
+    stats.fusion = live.fusion;
+    try { localStorage.setItem(FUSION_KEY, JSON.stringify(live.fusion)); } catch { /* full */ }
+  }
+  return stats;
+}
+
 $('recoverbtn').onclick = () => {
   const found = sessions.recoverable();
   if (!found) { $('recover').classList.add('hide'); return; }
-  const entry = sessions.archive({ ...found, finished: true, title: found.title || 'Recovered session' });
+  let stats = null;
+  try { stats = found.live ? recoveredStats(found) : null; }
+  catch (e) { log(`the recovered session could not be scored: ${describeError(e)}`, 'dim'); }
+  const prev = (sessions.index().find(e => e.stats && e.stats.efficiencyFactor != null) || {}).stats;
+  const { live, ...kept } = found;
+  const entry = sessions.archive({ ...kept, finished: true, title: found.title || 'Recovered session',
+                                   ...(stats ? { stats } : {}) });
   $('recover').classList.add('hide');
   renderSaved();
   log(entry ? `Recovered ${found.n_full || pointCount(found)} samples — it is in Saved sessions now.`
             : 'Could not file the recovered session; copy it before reloading.', entry ? 'on' : 'stop');
-  if (!entry) showDiagText(JSON.stringify(found), 'could not write it to storage');
+  if (!entry) { showDiagText(JSON.stringify(found), 'could not write it to storage'); return; }
+  if (stats && live) {
+    showStats(stats, prev, { mode: found.mode, runWalk: live.runWalk, recovered: true,
+                             startedAt: Date.parse(found.started_at) });
+  }
+  // Its heart-rate holes can now be filled from the band's memory, if the band kept recording.
+  setTimeout(() => backfillFromBand(), 2000);
 };
 
 $('discardbtn').onclick = () => {
@@ -4900,6 +4953,30 @@ $('discardbtn').onclick = () => {
   $('recover').classList.add('hide');
   log('unfinished session discarded', 'dim');
 };
+
+/**
+ * What the page would need to judge this run if it never gets to finish it: iOS reloading the page
+ * mid-run (or the athlete reloading it to fix the armband) used to leave a session that was filed
+ * with no statistics and never judged -- 24 October's, which is why a run reported as too easy moved
+ * nothing. Saved with every autosave.
+ */
+function liveContext() {
+  return {
+    hrBlocks: S.hrBlocks ? { ...S.hrBlocks.summary(), ceilingBpm: S.hrBlocks.ceilingBpm } : null,
+    runWalk: S.mode === 'intervals' && S.plannedSession ? S.plannedSession.runWalk || null : null,
+    pausedS: S.pausedS || 0,
+    targetPaceSecKm: S.rampTargetSecKm || targetSecKm || null,
+    fusion: S.fusion ? S.fusion.state() : null,
+    tones: S.tones || 0,
+  };
+}
+
+/** The armband link's events during this session, in session seconds: drops, stalls, recoveries. */
+function linkRecord() {
+  if (!S.sensor || !S.startedAt) return [];
+  return S.sensor.events.filter(e => e.at >= S.startedAt)
+    .map(e => ({ t: Math.round((e.at - S.startedAt) / 1000), kind: e.kind, ...(e.detail || {}) }));
+}
 
 function sessionPayload() {
   return {
@@ -4920,6 +4997,7 @@ function sessionPayload() {
       al == null ? null : Math.round(al * 10) / 10,
     ]),
     resting_ppi_ms: [], surface: 'road', strap_position: 'upper_arm',
+    link: linkRecord(),
     notes: 'Recorded by the Band coach. '
          + (S.samples.some(x => x.hr_bpm != null)
             ? (S.sensor && S.sensor.hasAcc

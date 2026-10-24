@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
          DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION,
-         talkTestOffset, talkTestApplies, TALK_LIMIT_BPM,
+         talkTestOffset, talkTestApplies, TALK_LIMIT_BPM, HR_DOSE_FRACTION,
          stepLadder, QUALIFYING_TO_ADVANCE, MIN_DAYS_BETWEEN_STEPS, demonstratedRung } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
@@ -184,6 +184,25 @@ const hrSummary = (over = {}) => ({
   assert.equal(three.verdict, REPEAT, three.reason);
   assert.match(three.reason, /3 cut short by the heart-rate ceiling/);
   console.log('  ok  one cut block still advances; several cut blocks repeat the rung');
+}
+
+{
+  // 24 October: blocks cut by the ceiling at 75-100 s, but the controller's extra blocks exist to make
+  // the running up. Done in full, that is the rung's dose delivered -- it advances. Short of it, it
+  // repeats, as before.
+  const done = judgeHrSession(HR_TARGET, hrSummary({ runBlocks: 9, blocksFull: 4, blocksCut: 5,
+                                                     runningS: 820, runningTargetS: 840 }), 80);
+  assert.ok(820 / 840 >= HR_DOSE_FRACTION);
+  assert.equal(done.verdict, ADVANCE, done.reason);
+  assert.match(done.reason, /extra blocks made up the rest: 14 min of the 14 min/);
+  const short = judgeHrSession(HR_TARGET, hrSummary({ runBlocks: 7, blocksFull: 4, blocksCut: 3,
+                                                      runningS: 735, runningTargetS: 840 }), 80);
+  assert.equal(short.verdict, REPEAT, short.reason);
+  // and the guards still come first: a stall or slow recovery is not rescued by the dose
+  const slow = judgeHrSession(HR_TARGET, hrSummary({ blocksFull: 4, blocksCut: 5, runningS: 840,
+                                                     runningTargetS: 840, toFloorMedianS: 200 }), 80);
+  assert.equal(slow.verdict, REPEAT);
+  console.log('  ok  the rung\'s running done in full, extra blocks included, advances; short of it repeats');
 }
 
 {

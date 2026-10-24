@@ -4,7 +4,8 @@
 import assert from 'node:assert/strict';
 import { parseHeartRate, parseAccFrame, startCommand, accMagnitude,
          VeritySensor, STALE_HR_MS, withTimeout, PICKER_TIMEOUT_MS,
-         describeError, GATT_ATTEMPTS, HR_STALL_MS, ARMBAND_KEY } from '../sensor.js';
+         describeError, GATT_ATTEMPTS, HR_STALL_MS, ARMBAND_KEY, HR_ACQUIRE_MS,
+         SHED_WINDOW_MS } from '../sensor.js';
 
 const dv = bytes => new DataView(new Uint8Array(bytes).buffer);
 
@@ -658,6 +659,66 @@ function fakePmd({ answer = () => 0, settings = true, frames = true } = {}) {
   assert.equal(s.ppiOn, false);
   s.dispose();
   console.log('  ok  beat-to-beat intervals start, arrive with the band\'s movement flag, and stop');
+}
+
+{
+  // 0 bpm is "no reading", not a heart rate, and what follows it is the optical algorithm
+  // re-acquiring: 24 October recorded two zeros and then 82, 86, 89... against a true rate near 140.
+  const s = new VeritySensor();
+  const t0 = 1_000_000;
+  s._onHr({ hr: 140, rr: [] }, t0);
+  assert.equal(s.hr, 140);
+  s._onHr({ hr: 0, rr: [] }, t0 + 1000);
+  assert.equal(s.hr, 140, 'zero is not recorded as a heart rate');
+  assert.equal(s.hrAt, t0, 'and does not refresh it');
+  s._onHr({ hr: 82, rr: [] }, t0 + 2000);
+  s._onHr({ hr: 95, rr: [] }, t0 + 20000);
+  assert.equal(s.hr, 140, 'readings while it re-acquires are not believed');
+  assert.equal(s.hrFresh(t0 + 20000), false, 'so heart rate reads as stale meanwhile');
+  s._onHr({ hr: 138, rr: [] }, t0 + 1000 + HR_ACQUIRE_MS + 1);
+  assert.equal(s.hr, 138, 'after the window, readings count again');
+  assert.equal(s.hrZeros, 1);
+  assert.ok(s.events.some(e => e.kind === 'hr-zero'), 'and the zero is in the link record');
+  console.log('  ok  0 bpm is "no reading", and the re-acquisition after it is not believed for 30 s');
+}
+
+{
+  // A browser that hands back the same characteristic objects after a reconnect: one listener each,
+  // not one per reconnect.
+  const hrL = [], dataL = [];
+  const hrChar = { async startNotifications() { return this; }, addEventListener(t, f) { hrL.push(f); } };
+  const pm = fakePmd();
+  const origGet = pm.server.getPrimaryService;
+  pm.server.getPrimaryService = async id => (/180d/.test(id) ? { getCharacteristic: async () => hrChar } : origGet(id));
+  const s = new VeritySensor();
+  for (let i = 0; i < 3; i++) { await s._attachHr(pm.server); await s._attachAcc(pm.server); }
+  assert.equal(hrL.length, 1, `one heart-rate listener after three connections, not ${hrL.length}`);
+  const got = [];
+  s.onAcc = m => got.push(m.length);
+  pm.data.emit();
+  assert.equal(got.length, 1, 'and each motion frame arrives once');
+  s.dispose();
+  console.log('  ok  reconnecting does not stack listeners: every frame arrives once');
+}
+
+{
+  // The link keeps dropping with the motion stream on: the motion stream is the optional load, so it
+  // goes, and stays gone for this connection's life.
+  const s = new VeritySensor();
+  s.hasAcc = true;
+  s.connected = true;
+  s._linkLost('disconnected', 1_000_000);
+  assert.equal(s.accShed, false, 'one drop is weather');
+  s._linkLost('stalled', 1_000_000 + 4 * 60000);
+  assert.equal(s.accShed, true, 'two in ten minutes shed the motion stream');
+  assert.equal(s.hasAcc, false);
+  assert.ok(s.events.map(e => e.kind).join(',').includes('disconnected,stalled,acc-shed'));
+  const t = new VeritySensor();
+  t.hasAcc = true;
+  t._linkLost('disconnected', 0);
+  t._linkLost('disconnected', SHED_WINDOW_MS + 1);
+  assert.equal(t.accShed, false, 'two drops far apart do not');
+  console.log('  ok  repeated link losses shed the motion stream to protect heart rate; scattered ones do not');
 }
 
 console.log('\nAll sensor tests passed.');

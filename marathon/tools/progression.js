@@ -177,6 +177,9 @@ export function nextRung(current, verdict, ladderLength) {
 /// count as done. 6 of 7 passes and 2 of 3 does not, which is deliberate: on a short rung each block
 /// is a third of the session, and one cut block is a bigger fraction of the evidence.
 export const HR_DONE_FRACTION = 0.85;
+/// ...or the rung's running done in total: this share of the planned running time, the blocks the
+/// ceiling cut made up in the extra blocks the controller adds for exactly that (hr-blocks.js).
+export const HR_DOSE_FRACTION = 0.95;
 
 /**
  * Judge one HR-governed session against what it asked for.
@@ -292,6 +295,25 @@ export function judgeHrSession(target, summary, recoveryBaseline) {
       next: 'Move up a rung: longer run blocks, same total session time.',
       reason: `${of}. Done as prescribed, with recovery holding, so the `
             + `next one can ask for more.`,
+    };
+  }
+
+  // The rung is a dose for bone and tendon -- this much running, in blocks no longer than this --
+  // and the heart-rate ceiling is the intensity governor inside it. When the ceiling cut blocks and
+  // the extra blocks made the running up, the dose the tissue was asked for was delivered, in pieces
+  // no longer than the rung allows. Holding the rung on that was holding the TISSUE progression on a
+  // CARDIAC signal: 22 and 24 October both repeated 7 x 2 min, with the athlete reporting both too
+  // easy. The next rung is self-limiting in the same way -- longer blocks the ceiling will cut, and at
+  // most three extra blocks to make them up -- so it is only reached when the running really fits.
+  const dose = summary.runningTargetS > 0 ? (summary.runningS || 0) / summary.runningTargetS : 0;
+  evidence.doseFraction = dose;
+  if (dose >= HR_DOSE_FRACTION) {
+    const mins = s => `${Math.round(s / 60)} min`;
+    return {
+      verdict: ADVANCE, evidence,
+      next: 'Move up a rung: longer run blocks, same total session time.',
+      reason: `${of}, and the extra blocks made up the rest: ${mins(summary.runningS)} of the `
+            + `${mins(summary.runningTargetS)} of running done, with recovery holding.`,
     };
   }
 

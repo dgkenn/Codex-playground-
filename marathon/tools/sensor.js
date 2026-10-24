@@ -176,6 +176,17 @@ export const ARMBAND_KEY = 'band.armband';
 /// Heart rate that was flowing and has stopped for this long, while the link still says connected,
 /// is a stalled stream: the link is torn down and rebuilt rather than left looking connected.
 export const HR_STALL_MS = 20000;
+/// After the band reports 0 bpm -- it has lost the pulse, or has just been switched on -- its next
+/// readings climb from nowhere while the optical algorithm re-acquires (24 October: 82, 86, 89, 93...
+/// mid-run, against a true rate near 140). The engine distrusts the first 30 s of a PPG stream for
+/// the same reason (signal_quality.PPG_WARMUP_S); so does this.
+export const HR_ACQUIRE_MS = 30000;
+/// Link losses within this window that make the accelerometer stream the suspect (see _linkLost).
+export const SHED_WINDOW_MS = 10 * 60 * 1000;
+export const SHED_AFTER_LOSSES = 2;
+/// Per attempt while reconnecting mid-run. The loop around it retries; one attempt hanging for the
+/// full first-connect timeout was most of a 40-second gap.
+export const RECONNECT_ATTEMPT_MS = 8000;
 
 /**
  * Turn anything that was thrown into something a person can read.
@@ -393,6 +404,15 @@ export class VeritySensor {
     this.hrCount = 0;
     this.rrCount = 0;
     this.accFrames = 0;
+    /// Link history, for the session record: why it dropped, and how long it took to come back.
+    this.events = [];
+    this._losses = [];
+    this.accShed = false;
+    this.hrZeros = 0;
+    this.acquiringUntil = 0;
+    /// Characteristic objects already listened to. A browser can hand back the SAME object after a
+    /// reconnect, and adding a fresh listener each time made every frame arrive once per reconnect.
+    this._wired = new WeakSet();
     this.ppiCount = 0;
     this.ppiOn = false;
     this.onPpi = null;
@@ -405,6 +425,7 @@ export class VeritySensor {
     this._onDisconnect = () => {
       if (this._disposed) return;
       this.connected = false;
+      this._linkLost('disconnected');
       this.onChange();
       this.onLog('armband disconnected — retrying', 'bad');
       this._reconnect();
@@ -432,6 +453,9 @@ export class VeritySensor {
       hrCount: this.hrCount,
       rrCount: this.rrCount,
       accFrames: this.accFrames,
+      accShed: this.accShed,
+      hrZeros: this.hrZeros,
+      linkEvents: this.events.slice(-20),
       connectedForS: this.connectedAt ? Math.round((Date.now() - this.connectedAt) / 1000) : null,
       lastError: this.lastError ? describeError(this.lastError) : null,
     };
@@ -696,10 +720,37 @@ export class VeritySensor {
     this.onLog(`no heart rate for ${Math.round((now - last) / 1000)} s while connected — `
                + 'reconnecting', 'bad');
     this.connected = false;
+    this._linkLost('stalled', now);
     this.onChange();
     try { this.device.gatt.disconnect(); } catch { /* already down */ }
     this._reconnect();
     return true;
+  }
+
+  _event(kind, detail = null, at = Date.now()) {
+    this.events.push({ at, kind, ...(detail ? { detail } : {}) });
+    if (this.events.length > 200) this.events.splice(0, this.events.length - 200);
+  }
+
+  /**
+   * The link went. Recorded, and if it keeps going while the accelerometer is streaming, the
+   * accelerometer is stopped for the rest of this connection's life: it is the one thing on the link
+   * that is optional. On 24 October -- the first run with it streaming at 52 Hz -- the link dropped
+   * nine times in 26 minutes, against twice on 22 October without it. That is not proof, but heart
+   * rate is the signal the session is governed by, and arm steps are a refinement of pace that the
+   * phone's own motion and GPS already cover.
+   */
+  _linkLost(kind, now = Date.now()) {
+    this._event(kind, null, now);
+    this._losses = this._losses.filter(t => now - t < SHED_WINDOW_MS);
+    this._losses.push(now);
+    if (!this.accShed && this.hasAcc && this._losses.length >= SHED_AFTER_LOSSES) {
+      this.accShed = true;
+      this.hasAcc = false;
+      this.accError = 'stopped after repeated link losses, to keep heart rate';
+      this._event('acc-shed', null, now);
+      this.onLog('the armband link keeps dropping — stopping its motion stream to keep heart rate', 'bad');
+    }
   }
 
   /** Finished with: stop every loop, release the band, forget the device. */
@@ -800,11 +851,15 @@ export class VeritySensor {
         }
       }
       try {
-        // Timed out here too, or one hung attempt ends the retry loop permanently.
-        const server = await this._openGatt();
+        // Timed out here too, or one hung attempt ends the retry loop permanently. One short attempt
+        // per turn of this loop: the loop is the retry, and a 20 s x 3 attempt inside it was most of
+        // a 40-second gap.
+        const server = await this._openGatt({ attempts: 1, timeoutMs: RECONNECT_ATTEMPT_MS });
         await withTimeout(this._attachHr(server), CONNECT_TIMEOUT_MS, 'resubscribing');
         this.connected = true;
         this.connectedAt = Date.now();
+        const lost = [...this.events].reverse().find(e => e.kind === 'disconnected' || e.kind === 'stalled');
+        this._event('reconnected', lost ? { afterMs: this.connectedAt - lost.at, attempts: failures + 1 } : null);
         this.onChange();
         this.onLog('armband reconnected', 'on');
         this._rememberGood();
@@ -833,14 +888,31 @@ export class VeritySensor {
     const hrChar = await hrService.getCharacteristic(HR_CHAR);
     this._at('subscribing to heart rate');
     await hrChar.startNotifications();
-    hrChar.addEventListener('characteristicvaluechanged', e => {
-      const { hr, rr } = parseHeartRate(e.target.value);
-      this.hr = hr;
-      this.hrAt = Date.now();
-      this.hrCount += 1;
-      if (rr.length) { this.rr.push(...rr); this.rrCount += rr.length; }
+    if (this._wired.has(hrChar)) return;
+    this._wired.add(hrChar);
+    hrChar.addEventListener('characteristicvaluechanged', e => this._onHr(parseHeartRate(e.target.value)));
+  }
+
+  /**
+   * One heart-rate notification. Zero is not a heart rate -- it is the band saying it has none -- and
+   * it was being recorded as one (two 0 bpm samples on 24 October). It starts the re-acquisition
+   * window instead: readings in the next HR_ACQUIRE_MS are counted but not believed.
+   */
+  _onHr({ hr, rr }, now = Date.now()) {
+    this.hrCount += 1;
+    if (!(hr > 0)) {
+      this.hrZeros += 1;
+      if (now >= this.acquiringUntil) this._event('hr-zero', null, now);
+      this.acquiringUntil = now + HR_ACQUIRE_MS;
       this.onChange();
-    });
+      return;
+    }
+    if (now < this.acquiringUntil) { this.onChange(); return; }
+    this.hr = hr;
+    this.hrAt = now;
+    if (rr.length) { this.rr.push(...rr); this.rrCount += rr.length; }
+    if (this.rr.length > 600) this.rr.splice(0, this.rr.length - 600);
+    this.onChange();
   }
 
   /**
@@ -851,6 +923,7 @@ export class VeritySensor {
     try {
       await withTimeout(this._attachBattery(server), EXTRA_TIMEOUT_MS, 'reading the battery');
     } catch { /* optional */ }
+    if (this.accShed) { this.onChange(); return; }
     try {
       await withTimeout(this._attachAcc(server), ACC_TIMEOUT_MS, 'starting the accelerometer');
       this.hasAcc = true;
@@ -904,25 +977,31 @@ export class VeritySensor {
     await control.startNotifications();
     control.addEventListener('characteristicvaluechanged', this._onPmdControl);
     await data.startNotifications();
-    data.addEventListener('characteristicvaluechanged', e => {
-      const v = e.target.value;
-      const samples = parseAccFrame(v);
-      if (samples) {
-        this.accFrames += 1;
-        const mags = samples.map(accMagnitude);
-        for (const m of mags) this.accWindow.push(m);
-        if (this.onAcc) { try { this.onAcc(mags, Date.now() / 1000); } catch { /* consumer's problem */ } }
-        return;
-      }
-      const beats = parsePpiFrame(v);
-      if (beats) {
-        this.ppiCount += beats.length;
-        if (this.onPpi) { try { this.onPpi(beats, Date.now() / 1000); } catch { /* consumer's problem */ } }
-      }
-    });
+    if (!this._wired.has(data)) {
+      this._wired.add(data);
+      data.addEventListener('characteristicvaluechanged', e => this._onPmdData(e.target.value));
+    }
     this._pmdControl = control;
     this._pmd = { server, control, data };
     return this._pmd;
+  }
+
+  /** A frame on the shared measurement channel, routed by its measurement type. */
+  _onPmdData(v) {
+    const samples = parseAccFrame(v);
+    if (samples) {
+      if (this.accShed) return;                         // stopped by _linkLost; stragglers ignored
+      this.accFrames += 1;
+      const mags = samples.map(accMagnitude);
+      for (const m of mags) this.accWindow.push(m);
+      if (this.onAcc) { try { this.onAcc(mags, Date.now() / 1000); } catch { /* consumer's problem */ } }
+      return;
+    }
+    const beats = parsePpiFrame(v);
+    if (beats) {
+      this.ppiCount += beats.length;
+      if (this.onPpi) { try { this.onPpi(beats, Date.now() / 1000); } catch { /* consumer's problem */ } }
+    }
   }
 
   async _attachAcc(server) {

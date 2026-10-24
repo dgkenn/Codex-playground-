@@ -79,12 +79,14 @@ export class StepDetector {
   constructor() {
     this.mean = null; this.smooth = 0; this.prev = 0; this.prev2 = 0;
     this.var = 1; this.lastStepT = -Infinity; this.steps = []; // times of steps
+    this.lastSampleT = -Infinity;                               // when the sensor last said anything
     this.peaks = [];                                            // [t, peak] per step
   }
 
   /** One accelerometer reading (m/s^2, gravity included). Returns true when a step is detected. */
   add(t, ax, ay, az) {
     if (ax == null || ay == null || az == null) return false;
+    this.lastSampleT = t;
     const m = Math.hypot(ax, ay, az);
     this.mean = this.mean == null ? m : this.mean + (m - this.mean) * 0.02;
     const x = m - this.mean;
@@ -348,8 +350,14 @@ export class SpeedFusion {
     ];
     this._silent = this._silent || { phone: 0, arm: 0 };
     this._unusable = this._unusable || { phone: false, arm: false };
+    // A source that has delivered no samples at all lately is not "seeing no steps", it is not
+    // seeing anything: the page was frozen (iOS stops motion events with the page) or the band's link
+    // is down. It can be neither still nor stepping until it speaks again. On 24 October a twelve-second
+    // freeze ended with the speed pinned to zero mid-run, because "no step for three seconds" was read
+    // as standing at a crossing.
+    for (const c of srcs) c.fresh = t - c.det.lastSampleT <= 1.5;
     for (const c of srcs) {
-      if (!c.seen || this._unusable[c.key]) continue;
+      if (!c.seen || this._unusable[c.key] || !c.fresh) continue;
       this._silent[c.key] = movingByGps && c.det.sinceStep(t) > this.cfg.stillAfterS ? this._silent[c.key] + 1 : 0;
       if (this._silent[c.key] >= 20) this._unusable[c.key] = true;
     }
@@ -397,7 +405,7 @@ export class SpeedFusion {
 
     // Still: every live step source that has shown it can see steps has been quiet for three
     // seconds, and GPS does not say moving.
-    const proven = live.filter(c => c.ever);
+    const proven = live.filter(c => c.ever && c.fresh);
     const still = proven.length > 0 && proven.every(c => c.det.sinceStep(t) > this.cfg.stillAfterS)
                   && !(gpsV != null && gpsV > 1.2);
     const cad = (live.find(c => c.key === 'phone' && c.cad != null) || live.find(c => c.cad != null) || {}).cad ?? null;

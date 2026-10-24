@@ -1928,6 +1928,10 @@ async function openAll(page) {
   const savedText = await page.inputValue('#diagtext');
   const saved = JSON.parse(savedText);
   assert.equal(saved.schema_version, 2, 'archived sessions are stored compact');
+  // Scored, not filed blank: 24 October's recovered run came back with "stats": null, unjudged.
+  assert.ok(saved.stats && saved.stats.durationS > 0, `a recovered run is scored: ${JSON.stringify(saved.stats)}`);
+  assert.equal(saved.stats.recovered, true);
+  assert.ok(!('live' in saved), 'the autosave-only context is not archived');
   assert.ok(Array.isArray(saved.t) && saved.t.length >= 1, `no trace: ${savedText.slice(0, 120)}`);
   assert.ok(saved.started_at);
   assert.ok(savedText.length < 60_000, `${savedText.length} characters is back to unpasteable`);

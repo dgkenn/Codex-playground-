@@ -250,4 +250,22 @@ function session({ phoneBias = 0.88, motion = true, arm = false, armHalfWalking 
   console.log('  ok  with a fix every four seconds the estimate stays trusted between fixes');
 }
 
+{
+  // A frozen page: twelve seconds with no motion events and no fixes, then both resume. "No step
+  // for three seconds" is not evidence of standing still when the sensor said nothing at all.
+  const f = new SpeedFusion();
+  let ph = 0, d = 0;
+  const step = (t, moving = true) => {
+    for (let k = 0; k < 50; k++) {
+      ph += 165 / 60 / 50; if (ph >= 1) ph -= 1;
+      f.motion({ t: t + k / 50, ax: 0, ay: 0, az: 9.81 + (ph < 0.12 ? 9 * Math.sin(Math.PI * ph / 0.12) : 0) });
+    }
+  };
+  for (let t = 0; t < 200; t++) { step(t); d += 2.4; f.gps({ t, lat: 42.33 + d / 111195, lon: -71.05, accuracy: 5, speed: 2.4 }); f.tick(t); }
+  d += 2.4 * 12;
+  const out = f.tick(212);                               // the first tick after the freeze, nothing new yet
+  assert.ok(out.speedMS > 1.5 && out.source !== 'still', `not pinned to zero after a freeze: ${out.speedMS.toFixed(2)} (${out.source})`);
+  console.log(`  ok  a frozen page is not read as standing still (${out.speedMS.toFixed(2)} m/s on the first tick back)`);
+}
+
 console.log('\nAll fusion tests passed.');
