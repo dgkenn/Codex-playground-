@@ -385,6 +385,7 @@
         <!-- Shown only once the ordinary route has failed, so the normal case stays one button. -->
         <button id="anydevice" class="tiny hide">Any device</button>
         <button id="btprobe" class="tiny">Bluetooth probe</button>
+        <button id="selftest" class="tiny">Armband self-test</button>
         <button id="forget" class="tiny">Remembered devices</button>
       </div>
       <div class="zonebar" id="zonebar"></div>
@@ -769,6 +770,7 @@
 /*{{POLAROFFLINE}}*/
 /*{{BACKFILL}}*/
 /*{{BENCHMARKS}}*/
+/*{{SELFTEST}}*/
 /*{{THRESHOLD}}*/
 /*{{LOADWATCH}}*/
 
@@ -2803,7 +2805,7 @@ function holesIn(c) {
 
 let backfilling = false;
 async function backfillFromBand() {
-  if (backfilling || S.running || S.check || !(S.sensor && S.sensor.connected)) return;
+  if (backfilling || S.running || S.check || S.selfTesting || !(S.sensor && S.sensor.connected)) return;
   const now = Date.now();
   // Nothing is running, so a session with no end is one whose page was killed mid-run: it ended.
   const ready = loadPending().map(p => (p.endMs ? p : { ...p, endMs: now }))
@@ -2946,6 +2948,39 @@ $('anydevice').onclick = () => connectArmband({ acceptAll: true });
  * step at a time and writes down what actually happened at each, including whether the page arrived
  * through the loader, which replaces the document and with it every listener registered on it.
  */
+/**
+ * Every feature built on the link, tried once on the real band, with a report to paste back
+ * (selftest.js). About a minute and a quarter, band on, sitting still.
+ */
+$('selftest').onclick = async () => {
+  if (S.running || S.check) { log('not during a run or a morning check', 'dim'); return; }
+  if (S.selfTesting) return;
+  if (backfilling) { log('the app is reading the band\'s memory — try again in a minute', 'dim'); return; }
+  if (!(S.sensor && S.sensor.connected)) { log('connect the armband first, then run the self-test', 'stop'); return; }
+  S.selfTesting = true;
+  $('selftest').textContent = 'Testing…';
+  log('armband self-test: about a minute and a quarter — keep the band on and sit still', 'on');
+  let report;
+  try {
+    report = await runSelfTest({
+      sensor: S.sensor,
+      offline: { offlineHrActive, startOfflineHr, stopOfflineHr, listOfflineRecordings, getDiskSpace },
+      onStep: st => log(`self-test: ${st.name} — ${st.ok ? 'ok' : 'FAILED'} — ${typeof st.detail === 'string' ? st.detail : JSON.stringify(st.detail)} (${st.ms} ms)`,
+                        st.ok ? 'on' : 'stop'),
+    });
+  } catch (e) {
+    report = { ok: false, summary: `the self-test itself failed: ${describeError(e)}`, steps: [] };
+  } finally {
+    S.selfTesting = false;
+    $('selftest').textContent = 'Armband self-test';
+  }
+  log(`self-test: ${report.summary}`, report.ok ? 'on' : 'stop');
+  const text = JSON.stringify({ kind: 'armband-self-test', build: BUILD, when: new Date().toISOString(),
+                                userAgent: navigator.userAgent, ...report,
+                                sensor: S.sensor ? S.sensor.state() : null }, null, 1);
+  await copyText(text, 'the self-test report');
+};
+
 $('btprobe').onclick = async () => {
   if (connecting) { log('a connection attempt is already running', 'dim'); return; }
   if (!bluetoothAvailable()) { log('no Web Bluetooth in this browser', 'stop'); return; }

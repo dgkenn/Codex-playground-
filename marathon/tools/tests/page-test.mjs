@@ -532,6 +532,12 @@ async function openAll(page) {
   await page.evaluate(() => localStorage.removeItem('band.benchmarks'));
   await page.reload({ waitUntil: 'load' });
   await page.waitForTimeout(200);
+  // The armband self-test with no armband: it says what to do instead of starting.
+  await openAll(page);
+  await page.click('#selftest');
+  await page.waitForTimeout(150);
+  const st = await page.$$eval('#log div', ds => ds.map(d => d.textContent));
+  assert.ok(st.some(l => /connect the armband first, then run the self-test/.test(l)), JSON.stringify(st.slice(0, 3)));
   console.log('  ok  the 5K goal card: fast track and projection, held on a red signal; the time trial; a measured maximum moves the floor');
 }
 

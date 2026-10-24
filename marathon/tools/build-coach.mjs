@@ -66,6 +66,7 @@ const parts = {
   POLAROFFLINE: inline('polar-offline.js'),
   BACKFILL: inline('backfill.js'),
   BENCHMARKS: inline('benchmarks.js'),
+  SELFTEST: inline('selftest.js'),
   THRESHOLD: inline('threshold.js'),
   LOADWATCH: inline('load-watch.js'),
   PLAN: readFileSync(join(root, 'engine', 'app_plan.generated.json'), 'utf8').trim(),
@@ -143,6 +144,46 @@ try {
     throw new Error(`the assembled page references a name nothing declared:\n${e.stdout}`);
   } else {
     throw e;
+  }
+}
+
+// Does it actually START?
+//
+// Parsing and declared names are not enough. Every module and the page share one scope, and a
+// top-level `const` read by something the first render calls -- before the line that declares it --
+// is a ReferenceError at load, which neither check above can see: twice in October (the ladder's
+// bridge steps, then the niggle log, which failed silently into an empty log). So the page is loaded
+// in a headless browser before anything ships, and any error during the first second fails the
+// build. Skipped, like the lint, when the browser is not on the machine; `--no-smoke` skips it.
+if (!process.argv.includes('--no-smoke')) {
+  let chromium = null;
+  try { ({ chromium } = await import('playwright-core')); } catch { /* not installed */ }
+  if (!chromium) {
+    console.warn('  (skipping the boot check: playwright-core is not installed)');
+  } else {
+    const { existsSync, readdirSync, mkdtempSync, rmSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const pw = '/opt/pw-browsers';
+    const dir = existsSync(pw) && readdirSync(pw).find(d => /^chromium-\d+$/.test(d));
+    const exe = dir && join(pw, dir, 'chrome-linux', 'chrome');
+    const tmp = mkdtempSync(join(tmpdir(), 'coach-boot-'));
+    const file = join(tmp, 'pace-coach.html');
+    writeFileSync(file, html);
+    const browser = await chromium.launch({ executablePath: exe && existsSync(exe) ? exe : undefined, args: ['--no-sandbox'] });
+    const errors = [];
+    try {
+      const page = await browser.newPage();
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto('file://' + file, { waitUntil: 'load' });
+      await page.waitForTimeout(1000);
+    } finally {
+      await browser.close();
+      rmSync(tmp, { recursive: true, force: true });
+    }
+    if (errors.length) {
+      throw new Error(`the assembled page throws while starting:\n  ${errors.join('\n  ')}\n`
+                    + '  A top-level const read before its declaration is the usual cause.');
+    }
   }
 }
 

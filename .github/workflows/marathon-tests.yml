@@ -1,0 +1,33 @@
+# The marathon coach's tests on every push that touches it: the build's own checks (parse,
+# undeclared names, a headless boot), every module suite, the Python engine, and the browser suite.
+# One command, the same one used locally: `node marathon/tools/run-tests.mjs --all`.
+name: marathon-tests
+
+on:
+  push:
+    paths:
+      - 'marathon/**'
+      - '.github/workflows/marathon-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Tools
+        run: |
+          npm install --no-save playwright-core@1.63.0
+          npx playwright-core install --with-deps chromium
+          npm install -g eslint@10.1.0
+          python -m pip install pytest
+      - name: Tests
+        working-directory: marathon/tools
+        run: node run-tests.mjs --all
