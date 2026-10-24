@@ -1717,6 +1717,7 @@ function renderToday() {
   const name = DAYS[day];
   const moved = day !== todayIndex();
   $('todaystrip').replaceChildren(...dayButtons());
+  renderGoal();                                  // every day, rest days included: the goal does not rest
   if (!s) {
     $('todaytitle').textContent = `${name} — nothing scheduled`;
     $('todaydetail').textContent = '';
@@ -1735,7 +1736,6 @@ function renderToday() {
   if (s.ramp) bits.push(`${s.ramp.steps.filter(x => x.kind === 'stage').length} stages`);
   $('todaydetail').textContent = bits.join(' · ');
   $('stepnote').textContent = s.run_walk ? stepText() : '';
-  renderGoal();
   $('today-where').classList.toggle('hide', !s.ramp);
   $('starttoday').disabled = !runnable(s);
   // The label states which flow is about to run. A one-tap start that silently picks between two
