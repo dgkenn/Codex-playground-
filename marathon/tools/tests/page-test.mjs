@@ -508,6 +508,7 @@ async function openAll(page) {
   // The time trial runs as a pace session with no target, and a stop short of 2 km files nothing.
   await page.reload({ waitUntil: 'load' });
   await page.waitForTimeout(250);
+  await openAll(page);
   await page.fill('#target', '');
   await page.click('#trialbtn');
   await page.waitForTimeout(1500);
