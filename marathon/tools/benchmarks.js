@@ -42,10 +42,11 @@ export function measuredMaxHr(benchmarks) {
  * TRIAL_EVERY_DAYS. Returns {due, why}.
  */
 export function trialDue({ runMin, benchmarks = [], now = new Date() }) {
-  if (!(runMin >= TRIAL_FROM_RUN_MIN)) {
+  const last = (benchmarks || []).filter(b => b.kind === 'trial').map(b => new Date(b.at)).sort((a, b) => b - a)[0];
+  // The block-length requirement is for the FIRST trial; after one, it is the calendar that decides.
+  if (!last && !(runMin >= TRIAL_FROM_RUN_MIN)) {
     return { due: false, why: `first time trial at ${TRIAL_FROM_RUN_MIN}-minute blocks` };
   }
-  const last = (benchmarks || []).filter(b => b.kind === 'trial').map(b => new Date(b.at)).sort((a, b) => b - a)[0];
   if (last && now - last < TRIAL_EVERY_DAYS * 86400000) {
     const next = new Date(last.getTime() + TRIAL_EVERY_DAYS * 86400000);
     return { due: false, why: 'next time trial', nextAt: next.toISOString() };

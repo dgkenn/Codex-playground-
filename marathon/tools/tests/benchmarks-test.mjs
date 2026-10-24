@@ -27,6 +27,7 @@ import { stepLadder } from '../progression.js';
   assert.equal(trialDue({ runMin: 15, benchmarks: recent, now }).due, false);
   const later = new Date(Date.parse('2026-11-01T12:00:00Z') + (TRIAL_EVERY_DAYS + 1) * 86400000);
   assert.equal(trialDue({ runMin: 15, benchmarks: recent, now: later }).due, true);
+  assert.ok(trialDue({ runMin: 2, benchmarks: recent, now }).nextAt, 'after a trial, the next date shows whatever the step');
   console.log('  ok  the trial is due at 10-minute blocks, then every three weeks');
 }
 
