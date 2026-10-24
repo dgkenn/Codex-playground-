@@ -546,7 +546,9 @@ async function openAll(page) {
   await page.waitForTimeout(250);
   const step = (await page.textContent('#stepnote')).trim();
   if (step) {
-    assert.match(step, /^Step 2 of 10 · next: 3 min × 6 after 2 good runs in a row here \(1 so far\), not before /,
+    // Twelve steps now (two bridge steps to the 5K), and with no signal against it the fast track:
+    // one good run moves the step, not before the 3 days a running-adding step needs.
+    assert.match(step, /^Step 2 of 12 · fast track · next: 3 min × 6 after one good run here \(1 so far\), not before /,
       `the step line: "${step}"`);
   }
   // A step stored by the old eight-rung ladder's index is found again by what it was (5 x 5 -> 5 min).
@@ -554,7 +556,7 @@ async function openAll(page) {
   await page.reload({ waitUntil: 'load' });
   await page.waitForTimeout(250);
   const migrated = (await page.textContent('#stepnote')).trim();
-  if (migrated) assert.match(migrated, /^Step 5 of 10/, `old rung 3 (5 min blocks) is step 5 now: "${migrated}"`);
+  if (migrated) assert.match(migrated, /^Step 5 of 12/, `old rung 3 (5 min blocks) is step 5 now: "${migrated}"`);
 
   // Foundation ends on the measured gate, from the phone: last week, top rung, one good run there.
   await page.evaluate(() => {
@@ -614,7 +616,7 @@ async function openAll(page) {
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem('band.rung')));
   assert.equal(st.rung, 2); assert.equal(st.run_min, 3); assert.equal(st.reps, 6); assert.equal(st.qualifying, 0);
   const step = (await page.textContent('#stepnote')).trim();
-  if (step) assert.match(step, /^Step 3 of 10/, `the card follows: "${step}"`);
+  if (step) assert.match(step, /^Step 3 of 12/, `the card follows: "${step}"`);
   await page.evaluate(() => localStorage.removeItem('band.rung'));
   await page.reload({ waitUntil: 'load' });
   await page.waitForTimeout(200);
