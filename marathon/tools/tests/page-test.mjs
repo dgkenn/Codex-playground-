@@ -423,6 +423,10 @@ async function openAll(page) {
   // Two "could talk easily" answers raise the ceiling 6 bpm; a "no" takes 5 back. The plan card's
   // bpm limits follow, so the athlete sees the number the next run will use.
   const read = async () => Number((await page.textContent('#sessdetail')).match(/blocks end at (\d+)/)[1]);
+  // The computed ceiling first: handed back to the formula.
+  await page.evaluate(() => localStorage.setItem('band.ceiling.athlete', JSON.stringify({ auto: true, at: '2026-01-01T00:00:00Z' })));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
   const base = await read();
   await page.evaluate(() => localStorage.setItem('band.talk', JSON.stringify(
     [{ session: 'a', answer: 'easy' }, { session: 'b', answer: 'easy' }])));
@@ -439,6 +443,42 @@ async function openAll(page) {
   await page.reload({ waitUntil: 'load' });
   await page.waitForTimeout(200);
   console.log(`  ok  talk-test answers move the ceiling the next run uses (${base} → ${base + 6} → ${base + 1})`);
+
+  // His own number: 165 by default; answers from before it was set do not count; the talk test can
+  // lift it at most 5; the field changes it, and emptying it hands it back to the formula.
+  await page.evaluate(() => {
+    localStorage.removeItem('band.ceiling.athlete');
+    localStorage.setItem('band.talk', JSON.stringify([
+      { session: 'old1', answer: 'easy', at: '2026-10-20T00:00:00Z' },
+      { session: 'old2', answer: 'easy', at: '2026-10-22T00:00:00Z' }]));
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.equal(await read(), 165, 'the chosen 165, old answers not stacked on it');
+  assert.equal(await page.inputValue('#hrceil'), '165');
+  await page.evaluate(() => {
+    const day = 86400000, now = Date.now();
+    localStorage.setItem('band.ceiling.athlete', JSON.stringify({ bpm: 165, at: new Date(now - 3 * day).toISOString() }));
+    localStorage.setItem('band.talk', JSON.stringify([
+      { session: 'n1', answer: 'easy', at: new Date(now - 2 * day).toISOString() },
+      { session: 'n2', answer: 'easy', at: new Date(now - day).toISOString() }]));
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(250);
+  assert.equal(await read(), 170, 'two easy answers since: +6, held to +5');
+  await openAll(page);
+  await page.fill('#hrceil', '158');
+  await page.dispatchEvent('#hrceil', 'change');
+  await page.waitForTimeout(150);
+  assert.equal(await read(), 158, 'the field sets it, and answers before the change no longer count');
+  await page.fill('#hrceil', '');
+  await page.dispatchEvent('#hrceil', 'change');
+  await page.waitForTimeout(150);
+  assert.equal(await read(), base, 'emptied: back to the formula');
+  await page.evaluate(() => { localStorage.removeItem('band.talk'); localStorage.removeItem('band.ceiling.athlete'); });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  console.log('  ok  the run ceiling is his: 165 by default, the talk test moves it from there (at most +5), the field changes it');
 }
 
 // --- the ladder says where you are and what moves you ----------------------------------------------

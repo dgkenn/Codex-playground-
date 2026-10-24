@@ -385,6 +385,8 @@
                           inputmode="numeric" style="width:4.2rem"></label>
         <label>resting HR <input id="hrrest" type="number" min="30" max="90" step="1"
                                  inputmode="numeric" style="width:4.2rem"></label>
+        <label>run ceiling <input id="hrceil" type="number" min="130" max="185" step="1"
+                                  inputmode="numeric" placeholder="auto" style="width:4.2rem"></label>
       </div>
     </div>
     <p class="note" id="profilenote" style="margin-top:.7rem"></p>
@@ -1245,6 +1247,16 @@ const WORK_PCT_MAX = 0.80, REST_PCT_MAX = 0.71;
 // v2: the first ceilings were stored against the Z2 table (155), and a stored number only ever
 // raises the formula, so the old key would have kept a 155 in force under a plan that says 80%.
 const CEILING_KEY = 'band.ceiling.v2';
+/// The run ceiling the athlete chose, which outranks everything computed: `{bpm, at}`, or
+/// `{auto: true, at}` to hand it back to the formula. Absent means ATHLETE_CEILING_DEFAULT.
+const ATHLETE_CEILING_KEY = 'band.ceiling.athlete';
+/// 24 October, his call after four sessions reported too easy at a 150-155 ceiling. The talk test
+/// moves it from here, counting only answers given after this.
+const ATHLETE_CEILING_DEFAULT = { bpm: 165, at: '2026-10-24T19:00:00.000Z' };
+/// How far the talk test may take a chosen ceiling: down as far as it likes (to -10, see
+/// progression.js), up by at most this. 170 is 91% of the age-formula maximum; past that the
+/// number should come from a measured maximum, not from "could you still talk".
+const ATHLETE_CEILING_UP_BPM = 5;
 /// The terrain grid (see terrain.js), created on first use. Grade comes ONLY from here: GPS altitude
 /// read 3%+ a third of the time on a six-metre-relief loop, and that was moving the pace band.
 let terrainGridInst = null;
@@ -3544,7 +3556,25 @@ function recordThreshold(samples) {
  * own sessions contain one: see threshold.js. Until enough of them are recorded, the session's own
  * prescribed easy band stands in.
  */
+function athleteCeiling() {
+  try {
+    const v = JSON.parse(localStorage.getItem(ATHLETE_CEILING_KEY) || 'null');
+    if (v && (v.auto || v.bpm > 0)) return v;
+  } catch { /* corrupt: the default */ }
+  return ATHLETE_CEILING_DEFAULT;
+}
+
 function aerobicCeilingBpm() {
+  const chosen = athleteCeiling();
+  if (!chosen.auto) {
+    // His number, and the talk test from there: only answers given since he set it count, so the
+    // old ones (given against a 150 ceiling) do not stack on top of a 165 one.
+    const since = Date.parse(chosen.at || 0) || 0;
+    const off = talkTestOffset(talkAnswers().filter(a => Date.parse(a.at || 0) > since));
+    const bpm = Math.min(chosen.bpm + ATHLETE_CEILING_UP_BPM, chosen.bpm + off);
+    return { bpm, baseBpm: chosen.bpm,
+             source: `set by you${off ? `, ${off > 0 ? '+' : ''}${bpm - chosen.bpm} from your talk tests since` : ''}` };
+  }
   const measured = measuredCeiling();
   const base = measured ? { bpm: measured.bpm, source: measured.source }
                         : { bpm: formulaCeilingBpm(), source: `${Math.round(WORK_PCT_MAX * 100)}% of max heart rate` };
@@ -4102,6 +4132,20 @@ $('gain').onchange = e => {
 
 $('age').value = String(profile.age);
 $('hrrest').value = String(profile.hrRest);
+// The run ceiling: a number is his, used as it stands and moved by the talk test from then on;
+// emptied, it goes back to the formula and the measured threshold.
+$('hrceil').value = athleteCeiling().auto ? '' : String(athleteCeiling().bpm);
+$('hrceil').addEventListener('change', e => {
+  const raw = e.target.value.trim(), v = Number(raw);
+  const at = new Date().toISOString();
+  if (raw === '') {
+    try { localStorage.setItem(ATHLETE_CEILING_KEY, JSON.stringify({ auto: true, at })); } catch { /* blocked */ }
+  } else if (Number.isFinite(v) && v >= 130 && v <= 185) {
+    try { localStorage.setItem(ATHLETE_CEILING_KEY, JSON.stringify({ bpm: Math.round(v), at })); } catch { /* blocked */ }
+  } else { e.target.value = athleteCeiling().auto ? '' : String(athleteCeiling().bpm); return; }
+  log(`run ceiling: ${aerobicCeilingBpm().bpm} bpm (${aerobicCeilingBpm().source})`, 'on');
+  renderPlan(); renderToday();
+});
 $('terrain').checked = terrainOn();
 $('terrain').onchange = e => {
   try { localStorage.setItem('band.terrain', e.target.checked ? '1' : '0'); } catch { /* blocked */ }
