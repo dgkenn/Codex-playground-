@@ -321,7 +321,9 @@ async function openAll(page) {
   // 80% / 71% of the Tanaka max for the athlete's age: the numbers the page states are the plan's.
   const nums = detail.match(/blocks end at (\d+), walks at (\d+)/);
   const max = Math.round(208 - 0.7 * 30);
-  assert.equal(Number(nums[1]), Math.round(0.8 * max), 'the ceiling is 80% of maximum');
+  // The ceiling is his own (165 by default since 24 October), and the card says so next to the rule.
+  assert.equal(Number(nums[1]), 165, 'the ceiling is the one he set');
+  assert.match(detail, new RegExp(`165 is your own ceiling; the plan's rule would say ${Math.round(0.8 * max)}`));
   assert.equal(Number(nums[2]), Math.round(0.71 * max), 'the walk floor is 71% of maximum');
   console.log(`  ok  a run/walk day states block pace, ${nums[1]} / ${nums[2]} bpm limits and the percent-of-max rule`);
 }

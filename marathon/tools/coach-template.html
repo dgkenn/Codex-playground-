@@ -1444,7 +1444,13 @@ function renderPlan() {
                 + `–${U.pace(s.pace.target_sec_km * (1 + s.pace.tolerance))} ${U.paceLabel.toLowerCase()}`);
     }
     if (!s.run_walk && s.zones && s.zones.length) bits.push(`Z${s.zones.join('/')}`);
-    if (s.run_walk) bits.push(`in bpm: blocks end at ${aerobicCeilingBpm().bpm}, walks at ${recoveryFloorBpm()}`);
+    if (s.run_walk) {
+      // The plan's text states its percent-of-max rule; when he has set his own ceiling the number
+      // here is his, and the card says so rather than letting the two disagree silently.
+      const own = !athleteCeiling().auto;
+      bits.push(`in bpm: blocks end at ${aerobicCeilingBpm().bpm}, walks at ${recoveryFloorBpm()}`
+                + (own ? ` (${aerobicCeilingBpm().bpm} is your own ceiling; the plan's rule would say ${formulaCeilingBpm()})` : ''));
+    }
     if (s.structure) bits.push(s.structure);
     $('sessdetail').textContent = bits.join(' · ');
     // `coachable` is about the pace band, not about whether the app can run the session. The ramp
