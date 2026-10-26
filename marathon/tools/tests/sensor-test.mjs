@@ -886,6 +886,22 @@ const until = async (cond, ms = 2000) => { const t0 = Date.now(); while (!cond()
 }
 
 {
+  // Heart rate pausing while the motion stream runs: the second pause in ten minutes sheds motion.
+  const { band } = stagedBand();
+  const s = new VeritySensor({ timing: FAST });
+  s.device = band; await s._finishConnect();
+  assert.ok(await until(() => s.hasAcc));
+  const t = Date.now();
+  await s._resubscribeHr(t);
+  assert.equal(s.accShed, false, 'one pause is not a pattern');
+  await s._resubscribeHr(t + 60000);
+  assert.equal(s.accShed, true, 'the second sheds the motion stream');
+  assert.ok(s.events.some(e => e.kind === 'acc-shed'));
+  s.dispose();
+  console.log('  ok  heart rate pausing twice while motion streams sheds the motion stream');
+}
+
+{
   // Two control-point requests at once: one answer slot, so they must queue, and both get answers.
   const pm = fakePmd();
   const s = new VeritySensor();

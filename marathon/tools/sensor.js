@@ -398,6 +398,7 @@ export class VeritySensor {
     this.hrNotifyAt = 0;
     this.accAt = 0;
     this._accRestarts = [];
+    this._hrPausesWithAcc = [];
     this._gattQ = Promise.resolve();
     this._pmdQ = Promise.resolve();
     this._ppiWanted = null;
@@ -805,6 +806,16 @@ export class VeritySensor {
     this._resubbing = true;
     this._resubAt = now;
     this._event('hr-resubscribe', null, now);
+    // Heart rate pausing while the motion stream runs counts against the motion stream. On 24 and 26
+    // October every heart-rate pause came with the motion stream on; on the 26th, after it was shed
+    // at the third, there were none in the next 33 minutes. So the second one sheds it.
+    if (this.hasAcc && !this.accShed) {
+      this._hrPausesWithAcc = this._hrPausesWithAcc.filter(t => now - t < SHED_WINDOW_MS);
+      this._hrPausesWithAcc.push(now);
+      if (this._hrPausesWithAcc.length >= SHED_AFTER_LOSSES) {
+        this._shedAcc('heart rate keeps pausing while the motion stream runs', now);
+      }
+    }
     try {
       await withTimeout(this._op(async () => {
         if (typeof c.stopNotifications === 'function') await c.stopNotifications().catch(() => {});

@@ -1786,6 +1786,18 @@ async function openAll(page) {
   const lines = await lp.$$eval('#log div', ds => ds.map(d => d.textContent));
   assert.ok(lines.some(l => /armband reconnected/.test(l)), JSON.stringify(lines.slice(0, 6)));
   assert.match(await lp.textContent('#todaybt'), /Armband connected/);
+  // The start line names the ceiling the blocks are governed by, not the zone monitor's.
+  const blockCeil = lines.map(l => /each ends at (\d+) bpm/.exec(l)).find(Boolean);
+  const startCeil = lines.map(l => /Started\. heart rate leads \(ceiling (\d+) bpm\)/.exec(l)).find(Boolean);
+  assert.ok(blockCeil && startCeil && blockCeil[1] === startCeil[1], `one ceiling: ${JSON.stringify(lines.slice(-6))}`);
+  // A ten-second pause is the supervisor's to repair, not the athlete's to hear about; 25 s is.
+  const lost = l => /pacing from GPS until it is back/.test(l);
+  await lp.clock.runFor(10000);
+  await beat(3);
+  assert.ok(!(await lp.$$eval('#log div', ds => ds.map(d => d.textContent))).some(lost), 'a blip is not announced');
+  await lp.clock.runFor(25000);
+  assert.ok((await lp.$$eval('#log div', ds => ds.map(d => d.textContent))).some(lost), 'a real loss is');
+  await beat(3);
   await lp.click('#go');
   await lp.clock.runFor(500);
   const rec = await lp.evaluate(() => {

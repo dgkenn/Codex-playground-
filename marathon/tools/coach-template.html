@@ -976,6 +976,9 @@ function say(text) {
   S.speechOk = null;
   u.onstart = () => { S.speechOk = true; };
   u.onerror = e => {
+    // Cut off by the next line (the walk call at a block's end, usually): superseded, not failed.
+    // 26 October logged four of these as failures in red.
+    if (e.error === 'canceled' || e.error === 'interrupted') return;
     S.speechOk = false;
     log(`speech failed: ${e.error} — "${text}"`, 'stop');
   };
@@ -1073,6 +1076,8 @@ const S = {
  * than as a flood that hides everything around it.
  */
 let lastLogMsg = null, lastLogRow = null, lastLogCount = 1;
+/// Seconds without heart rate before the athlete is told: longer than the link supervisor's repairs.
+const HR_LOST_SAY_S = 20;
 const SESSION_LOG_MAX = 400;
 
 function log(msg, cls) {
@@ -2881,7 +2886,8 @@ async function backfillPending(ready) {
     const { session: out, report } = backfillSession(c, samples);
     if (report.filled || report.inserted) {
       sessions.archive(out);
-      log(`filled ${Math.round((report.filled + report.inserted) * (c.step_s || 5) / 60)} min of heart rate in `
+      const filledS = (report.filled + report.inserted) * (c.step_s || 5);
+      log(`filled ${filledS < 90 ? `${filledS} s` : `${Math.round(filledS / 60)} min`} of heart rate in `
           + `"${c.title || 'a session'}" from the band's memory (its clock ${report.offsetS} s off, `
           + `agreeing within ${report.meanDiffBpm} bpm where both recorded)`, 'on');
     } else if ((p.tries || 0) < 5) {
@@ -3346,10 +3352,13 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
   // "handled correctly and silently" is indistinguishable from "still working" to someone running.
   // Knowing changes what you do: the run continues on pace, and the heart-rate half of the session
   // is over rather than merely absent from a file you read later.
-  if (sn && !fresh && sn.hrCount > 0 && !S.hrLostAnnounced) {
+  // Not for a blip: the link supervisor repairs a pause in 4-10 s, and on 26 October three such
+  // pauses each said "Armband lost ... for the rest of this run" out loud, then "reporting again".
+  const quietS = sn && sn.hrAt ? (Date.now() - sn.hrAt) / 1000 : 0;
+  if (sn && !fresh && sn.hrCount > 0 && quietS >= HR_LOST_SAY_S && !S.hrLostAnnounced) {
     S.hrLostAnnounced = true;
-    log('armband stopped reporting — pacing from GPS for the rest of this run', 'stop');
-    say('Armband lost. Pacing from GPS.');
+    log(`no heart rate for ${Math.round(quietS)} s — reconnecting; pacing from GPS until it is back`, 'stop');
+    say('Heart rate lost. Reconnecting.');
   } else if (fresh && S.hrLostAnnounced) {
     // It came back: a dropout, not a death. Worth saying, and worth re-arming the notice.
     S.hrLostAnnounced = false;
@@ -4818,8 +4827,10 @@ $('go').onclick = () => {
   $('go').classList.add('stop');
   syncStopButton();
   $('copy').disabled = true;
+  // The block controller's ceiling when it governs (the athlete's 165), not the zone monitor's.
+  const ceilingNow = S.hrBlocks ? S.hrBlocks.ceilingBpm : S.hrMonitor.high;
   const governing = (S.sensor && S.sensor.connected)
-    ? `heart rate leads (ceiling ${Math.round(S.hrMonitor.high)} bpm), pace is information`
+    ? `heart rate leads (ceiling ${Math.round(ceilingNow)} bpm), pace is information`
     : 'pace leads — no armband connected';
   log(S.mode === 'rehearse' ? 'Rehearsal started — 30 minutes in 90 seconds.'
                             : `Started. ${governing}.`, 'on');

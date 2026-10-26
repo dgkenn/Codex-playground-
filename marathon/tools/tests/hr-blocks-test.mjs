@@ -379,6 +379,44 @@ function drive(b, seconds, hrAt, { hrFresh = () => true, from = 0, gradeAt = () 
 }
 
 {
+  // 26 October: 781 of 840 s run (93%) when the controller stopped adding blocks at 90%, and the
+  // judge wants 95%. Now it keeps going to the whole of the planned running (extras still bounded).
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 120, walkS: 120, reps: 7,
+                           runningTargetS: 7 * 120 });
+  // Blocks cut at about 95 s, like that day: 7 x 95 = 665 s, then extras until 840.
+  drive(b, 6000, (t, phase) => {
+    if (phase !== Phase.RUN) return 110;
+    return t - b.phaseStartT >= 95 ? CEIL : 140;
+  });
+  const s = b.summary();
+  assert.ok(s.runningS >= 840, `the whole planned running is offered: ${s.runningS} s`);
+  assert.equal(s.runBlocks, 9);
+  console.log(`  ok  extra blocks continue to the whole planned running (${s.runningS} s of 840, ${s.runBlocks} blocks)`);
+}
+
+{
+  // A walk whose heart rate has levelled off just above the floor ends there: 26 October sat at
+  // 134-138 against 133 for over two minutes, twice. One still falling, or levelled well above, waits.
+  const run = (level) => {
+    const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 120, reps: 3 });
+    let walkT = null;
+    const evs = drive(b, 900, (t, phase) => {
+      if (phase !== Phase.WALK) { walkT = null; return phase === Phase.RUN ? 140 : 110; }
+      if (walkT == null) walkT = t;
+      return Math.max(level, 150 - (t - walkT));                  // falls 1 bpm/s, then flat
+    });
+    const w = evs.find(e => e.phase === Phase.WALK), r = evs.find(e => e.phase === Phase.RUN && e.t > w.t);
+    return { secs: r.t - w.t, reason: r.reason };
+  };
+  const near = run(FLOOR + 2), far = run(FLOOR + 6);
+  // Reaches 127 at 23 s, flat from there; 30 s of flat makes it 53 s.
+  assert.equal(near.reason, 'recovered');
+  assert.ok(near.secs >= 45 && near.secs <= 60, `levelled 2 over the floor: walk ${near.secs} s`);
+  assert.equal(far.secs, 120 + 90, `levelled 6 over the floor waits out the cap: ${far.secs} s`);
+  console.log(`  ok  a walk levelled just above the floor ends (${near.secs} s); well above it does not`);
+}
+
+{
   // The comfortable pace: settled run seconds under ceiling-5, jogging, on the flat.
   const samples = [];
   let t = 0;

@@ -124,6 +124,14 @@ export const HrBlockDefaults = {
   /// short (see `runningTargetS`). Bounded, so a day when every block is cut at thirty seconds is a
   /// short session and not an endless one.
   extraBlocks: 3,
+  /// A walk whose heart rate has levelled off this close above the floor is over: recovered as far
+  /// as walking will take it. Late in a session the walking heart rate drifts up, and on 26 October
+  /// two walks sat at 134-138 against a 133 floor for over two minutes each -- time that came out of
+  /// the session and left the running dose short.
+  plateauBpm: 3,
+  /// ...levelled off meaning no more than `plateauRangeBpm` of movement over this many seconds.
+  plateauS: 30,
+  plateauRangeBpm: 2,
 };
 
 /**
@@ -337,7 +345,7 @@ export class HrBlocks {
     if (steepDown) { this._heldS += 1; return null; }
     const walkEl = el - this._heldS;
     if (live) {
-      if (el >= this.cfg.minWalkS && hr <= this.floorBpm) {
+      if (el >= this.cfg.minWalkS && (hr <= this.floorBpm || this._levelledNearFloor(hr))) {
         this.stalls = 0;
         return this._to(BlockPhase.RUN, tS, 'recovered', true);
       }
@@ -399,7 +407,10 @@ export class HrBlocks {
   _endRun(tS, reason, governedByHr) {
     const ran = this.blocks.filter(b => b.kind === BlockPhase.RUN).reduce((a, b) => a + b.durationS, 0)
               + this.elapsed(tS);
-    const enough = this.runningTargetS == null || ran >= this.runningTargetS * 0.9;
+    // The whole planned running, not most of it: the judge advances on 95% of it (HR_DOSE_FRACTION),
+    // and stopping at 90% -- as this did -- ended 26 October at 93% and made the session repeat for
+    // want of one more block it never offered. Still bounded by extraBlocks.
+    const enough = this.runningTargetS == null || ran >= this.runningTargetS;
     if (this.reps != null
         && ((this.rep >= this.reps && enough) || this.rep >= this.reps + this.cfg.extraBlocks)) {
       this._endedBy = 'reps';
@@ -445,6 +456,16 @@ export class HrBlocks {
     };
     this.blocks.push(block);
     return block;
+  }
+
+  /** Heart rate within `plateauBpm` of the floor and flat over the last `plateauS` of this walk. */
+  _levelledNearFloor(hr) {
+    const tr = this._trace;
+    if (!tr || !tr.length || hr > this.floorBpm + this.cfg.plateauBpm) return false;
+    const end = tr[tr.length - 1][0];
+    if (end - tr[0][0] < this.cfg.plateauS) return false;
+    const last = tr.filter(([s]) => s >= end - this.cfg.plateauS).map(([, h]) => h);
+    return Math.max(...last) - Math.min(...last) <= this.cfg.plateauRangeBpm;
   }
 
   _climb(tS) {
