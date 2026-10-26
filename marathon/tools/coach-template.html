@@ -539,12 +539,16 @@
         </div>
         <p class="note" style="margin-top:.6rem" id="audiosessionnote"></p>
         <label class="note" style="display:flex;gap:.4rem;align-items:center;margin-top:.7rem">
-          <input id="voicecoach" type="checkbox" checked> say the pace out loud while running
+          <input id="voicecoach" type="checkbox" checked> spoken coaching while running
+        </label>
+        <label class="note" style="display:flex;gap:.4rem;align-items:center;margin-top:.4rem">
+          <input id="voicechatty" type="checkbox"> also say pace and heart rate every 20 seconds
         </label>
         <p class="note" style="margin-top:.4rem">
-          Every twenty seconds or so, in words: <em>"12:04. On pace."</em> Run a session correctly and
-          the tones say nothing at all for the whole of it — which sounds exactly like an app that has
-          died. This is the channel that tells you where you are rather than only when you are wrong.
+          By default the voice speaks when there is something to do: each run and walk, <em>"Ease off"</em>
+          once a block as heart rate nears the ceiling, a pace that has left its band, a walk that is not
+          bringing heart rate down, each mile, and anything wrong with the armband or GPS. Tick the
+          second box to hear the numbers on a clock as well.
         </p>
         <p class="note" style="margin-top:.6rem">
           <strong>Start Apple Music first, then press a tone button.</strong> The transition chime used to
@@ -4474,6 +4478,14 @@ function applySessionType(t) {
 }
 // Spoken pace coaching. On by default — the tone vocabulary has to be learned and, at 160 steps a
 // minute under music, a rising pair and a falling pair are not reliably told apart. Words are.
+let voiceChatty = localStorage.getItem('band.voicechatty') === '1';
+$('voicechatty').checked = voiceChatty;
+$('voicechatty').onchange = e => {
+  voiceChatty = e.target.checked;
+  localStorage.setItem('band.voicechatty', voiceChatty ? '1' : '0');
+  if (S.voice) S.voice.quiet = !voiceChatty;
+  log(voiceChatty ? 'voice: pace and heart rate every 20 s' : 'voice: only when there is something to do', 'dim');
+};
 let voiceCoaching = localStorage.getItem('band.voicecoach') !== '0';
 $('voicecoach').checked = voiceCoaching;
 $('voicecoach').onchange = e => {
@@ -4694,6 +4706,7 @@ $('go').onclick = () => {
   // instead of them: run a session correctly and the tone channel is silent for the whole of it,
   // which is the same sound as a dead app.
   S.voice = new PaceVoice({
+    quiet: !voiceChatty,
     targetSecKm: target || null,
     tolerance: Number($('tol').value) / 100,
     ceilingOnly: $('ceiling').checked,

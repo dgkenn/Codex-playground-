@@ -105,6 +105,9 @@ export const WALK_DROP_BPM = 5;
 /// slow for the speed check to call it running), hit its time cap unrecovered and ended the running.
 export const WALK_RISE_BPM = 8;
 
+/// Quiet mode: how long a pace that is still out of band waits before it is said again.
+export const QUIET_REPEAT_S = 60;
+
 /// Named for this module, not `mean`: every module here inlines into one scope in the built page,
 /// so a bare `mean` collides with run-stats.js and the whole page stops parsing. The build checks
 /// for exactly that, which is how this was caught rather than shipped as a blank screen.
@@ -118,7 +121,13 @@ const meanPace = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
  */
 export class PaceVoice {
   constructor({ targetSecKm, tolerance = 0.06, ceilingOnly = false,
-                everyS = EVERY_S, settleS = SETTLE_S, formatPace = String } = {}) {
+                everyS = EVERY_S, settleS = SETTLE_S, formatPace = String, quiet = false } = {}) {
+    /// Quiet: speak only when there is something to correct, not on a clock. Asked for after
+    /// 26 October, when a line every 22 s ("11:55. Heart rate 138. Good.") came to 31 lines in eight
+    /// two-minute blocks, almost all of them "Good". In quiet mode, with heart rate governing, the one
+    /// line is "Ease off" as it nears the ceiling, once a block; on pace alone, a line when the pace
+    /// leaves the band (again after QUIET_REPEAT_S if it stays out) and one when it comes back.
+    this.quiet = quiet;
     this.targetSecKm = targetSecKm;
     this.tolerance = tolerance;
     this.ceilingOnly = ceilingOnly;
@@ -150,6 +159,9 @@ export class PaceVoice {
     this.windowStartT = null;
     this.nextAt = tS + this.settleS;
     this.lostSignal = false;
+    this.easedThisBlock = false;
+    this.lastKind = null;
+    this.lastSaidAt = null;
   }
 
   /** Stop speaking. The next `begin` starts a fresh cadence. */
@@ -169,6 +181,7 @@ export class PaceVoice {
   update(tS, paceSecKm, { running = true, trusted = true, hr = null, ceilingBpm = null } = {}) {
     if (!running || this.targetSecKm == null) { this.standDown(); return null; }
     if (this.nextAt == null) this.begin(tS);
+    if (this.quiet && hr != null && ceilingBpm != null) return this._quietHr(tS, paceSecKm, trusted, hr, ceilingBpm);
 
     if (!trusted || !(paceSecKm > 0)) {
       this.window = [];
@@ -198,10 +211,11 @@ export class PaceVoice {
     if (tS < this.nextAt
         || (this.window.length < MIN_SAMPLES && tS - this.windowStartT < SMOOTHING_S)) return null;
 
+    const avg = meanPace(this.window.map(([, p]) => p));
+    if (this.quiet && !(hr != null && ceilingBpm != null)) return this._quietPace(tS, avg);
+
     this.nextAt = tS + this.everyS;
     this.spoken += 1;
-
-    const avg = meanPace(this.window.map(([, p]) => p));
 
     // When heart rate is governing the block, heart rate decides the direction word.
     //
@@ -273,6 +287,31 @@ export class PaceVoice {
     if (w.startHr - hr >= WALK_DROP_BPM) { w.said = true; return null; }   // it is working; stay quiet
     w.said = true;
     return { text: 'Slow right down. Let it come down.', kind: 'walk', hr, dropBpm: w.startHr - hr };
+  }
+
+  /** Quiet, heart rate governing: "Ease off" once a block, as it comes within the margin. */
+  _quietHr(tS, paceSecKm, trusted, hr, ceilingBpm) {
+    const margin = ceilingBpm - hr;
+    if (this.easedThisBlock || margin > HR_MARGIN_EASE_BPM || margin <= 0) return null;
+    this.easedThisBlock = true;
+    this.spoken += 1;
+    const pace = trusted && paceSecKm > 0 ? paceSecKm : null;
+    return { text: `Ease off. Heart rate ${Math.round(hr)}.`, kind: 'fast', paceSecKm: pace, hr, marginBpm: margin };
+  }
+
+  /** Quiet, pace governing: speak when the pace leaves the band, repeat while out, confirm the return. */
+  _quietPace(tS, avg) {
+    const [fast, slow] = this.band();
+    const kind = avg < fast ? 'fast' : avg > slow && !this.ceilingOnly ? 'slow' : 'in';
+    const out = kind !== 'in';
+    const changed = kind !== this.lastKind;
+    const due = out && (changed || tS - (this.lastSaidAt ?? -Infinity) >= QUIET_REPEAT_S);
+    const back = !out && this.lastKind != null && this.lastKind !== 'in';
+    this.lastKind = kind;
+    if (!due && !back) return null;
+    this.lastSaidAt = tS;
+    this.spoken += 1;
+    return { text: `${this.formatPace(avg)}. ${this._direction(kind)}`, kind, paceSecKm: avg };
   }
 
   _direction(kind) {

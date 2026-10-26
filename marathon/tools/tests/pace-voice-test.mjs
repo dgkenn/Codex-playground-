@@ -309,3 +309,46 @@ function session(voice, paceOf, { reps = 7, runS = 120, walkS = 120 } = {}) {
 }
 
 console.log('\nAll pace-voice tests passed.');
+
+{
+  // Quiet mode, heart rate governing: 26 October's eight blocks said 31 lines, nearly all "Good".
+  // Quiet says one "Ease off" per block as heart rate comes within 5 of the ceiling, and nothing else.
+  const v = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile, quiet: true });
+  const said = [];
+  let t = 0;
+  for (let rep = 0; rep < 8; rep++) {
+    v.begin(t);
+    for (let i = 0; i < 100; i++, t++) {
+      const hr = 133 + i * 0.33;                       // 133 -> 166 over the block, like that day
+      const ev = v.update(t, 440, { running: true, trusted: true, hr, ceilingBpm: 165 });
+      if (ev) said.push(ev);
+    }
+    for (let i = 0; i < 100; i++, t++) v.update(t, 700, { running: false });
+  }
+  assert.equal(said.length, 8, `one line a block: ${said.length}`);
+  assert.ok(said.every(s => /^Ease off\. Heart rate 16[0-4]\.$/.test(s.text)), said[0].text);
+  // A block that stays well under the ceiling says nothing at all.
+  v.begin(t);
+  let quietBlock = 0;
+  for (let i = 0; i < 120; i++, t++) if (v.update(t, 440, { running: true, trusted: true, hr: 145, ceilingBpm: 165 })) quietBlock++;
+  assert.equal(quietBlock, 0);
+  console.log(`  ok  quiet mode with heart rate: ${said.length} lines in 8 blocks, each "Ease off" near the ceiling`);
+}
+
+{
+  // Quiet mode on pace: a line when the pace leaves the band, again after a minute if it stays out,
+  // one when it comes back, and nothing while it is right.
+  const v = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile, quiet: true });
+  v.begin(0);
+  const said = [];
+  for (let t = 0; t < 400; t++) {
+    const pace = t < 150 ? TARGET : t < 300 ? TARGET * 0.8 : TARGET;     // right, 20% fast, right
+    const ev = v.update(t, pace, { running: true, trusted: true });
+    if (ev) said.push({ t, ...ev });
+  }
+  const kinds = said.map(s => s.kind);
+  assert.deepEqual(kinds, ['fast', 'fast', 'fast', 'in'], JSON.stringify(said.map(s => [s.t, s.text])));
+  assert.match(said[0].text, /Ease up\.$/);
+  assert.match(said.at(-1).text, /On pace\.$/);
+  console.log(`  ok  quiet mode on pace: ${said.length} lines in ${400 / 60 | 0} min — out of band, a reminder a minute, back in`);
+}
