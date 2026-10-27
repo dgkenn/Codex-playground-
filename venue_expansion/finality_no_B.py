@@ -277,13 +277,17 @@ def event_close_ts(e):
     return int(dt.datetime.fromisoformat(e["close_time"].replace("Z", "+00:00")).timestamp())
 
 
-def fetch_event_candles(e, back_min=CANDLE_BACK_MIN):
+ORC_DIR = os.path.join(CACHE, "candles_oracle")     # oracle-anchor events live apart so they never enter the random sample
+
+
+def fetch_event_candles(e, back_min=CANDLE_BACK_MIN, outdir=None):
     """Live rungs: ONE batch call per event.  Historical rungs (settled before the 2026-08-28 cutoff and not
     in the live listing): one /historical/markets/{ticker}/candlesticks call per rung.  Raw responses are
     cached verbatim with a per-market fmt flag ('live' = *_dollars schema, 'hist' = bare schema)."""
-    path = os.path.join(CND_DIR, e["event"] + ".json")
+    path = os.path.join(outdir or CND_DIR, e["event"] + ".json")
     if os.path.exists(path):
         return True
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     close = event_close_ts(e)
     a, b = close - back_min * 60, close
     mk = []
@@ -355,7 +359,7 @@ def oracle_fetch():
         if e is None:
             print("  oracle ticker not in universe:", o["ticker"])
             continue
-        fetch_event_candles(e)
+        fetch_event_candles(e, outdir=ORC_DIR)
 
 
 # =====================================================================================================
@@ -532,8 +536,10 @@ def _hist_to_dollars(k):
     return k
 
 
-def load_event_candles(e):
+def load_event_candles(e, alt_dir=None):
     path = os.path.join(CND_DIR, e["event"] + ".json")
+    if not os.path.exists(path) and alt_dir:
+        path = os.path.join(alt_dir, e["event"] + ".json")
     if not os.path.exists(path):
         return None
     d = json.load(open(path))
@@ -1028,7 +1034,7 @@ def anchor_a(A):
     rows_out, ok_cost, ok_net, ok_cap, ok_nmin, have = [], 0, 0, 0, 0, 0
     for o in orc:
         e = by_tk.get(o["ticker"])
-        cm = load_event_candles(e) if e else None
+        cm = load_event_candles(e, ORC_DIR) if e else None
         if cm is None:
             rows_out.append({"ticker": o["ticker"], "status": "event_candles_not_fetched"})
             continue

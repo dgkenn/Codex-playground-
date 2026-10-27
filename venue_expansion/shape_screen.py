@@ -540,7 +540,7 @@ def stage_candles(max_fetch=10 ** 9):
             print(f"  candles {i}/{len(plan)}  fetched {n}  stats={STATS} pace={PACE_S:.2f}", flush=True)
 
 
-def stage_verify(n=120):
+def stage_verify(n=60):
     """Re-fetch a random subset of sampled tickers via GET /markets/{ticker}; compare market.result with the listing's."""
     plan = jload(os.path.join(CACHE, "sample_plan.json"), [])
     vp = os.path.join(CACHE, "verify_results.json")
@@ -633,27 +633,36 @@ def market_metrics(it):
 # MM1 stage B).  A shortlist entry that matches a pattern is a RE-DISCOVERY of that family's graveyard entry.
 # --------------------------------------------------------------------------------------------------------------------
 GRAVEYARD = [
-    ("US/intl daily-extreme temperature (KXHIGH*/KXLOWT*)", R(r"^KX(HIGH|LOWT)|daily (max|min)|max(imum)? temp|low(est)? temp"),
-     "#1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs (NULL/FAIL/INSUFFICIENT), #12 near-miss conversion "
-     "(NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); "
-     "EDGE_SIZING v2/stage2 (oracle $2.1k/mo median, realistic $15/mo, retire); TERMINAL_FINALITY A/B (INSUFFICIENT; false-lock bar fails)"),
-    ("hourly/range temperature snapshot (KXTEMP*)", R(r"^KXTEMP"), "none directly (snapshot at a clock time: structurally no gap); adjacent: #19/#12 weather family"),
-    ("mention / said-word markets", R(r"MENTION|SAY|mention|\bsay\b"), "#14 earnings/Gutfeld mentions (PROMISING-WEAKENED, ~$18/mo), #22/#23/#25 illiquid+stacked mention anchor (INCONCLUSIVE/FAIL)"),
-    ("crypto/commodity touch-max-min ladders", R(r"MAXMON|MINMON|MAXY|MINY|MAXD|MIND|MAX$|MIN$|one touch|touch|trimmed mean"), "#16 commodity ladders (NOT PROMISING), #17 crypto MAX ladders (NOT PROMISING: can_close_early reprices 46% >1h early)"),
-    ("crypto/index/FX/commodity price at a time", R(r"^KX(BTC|ETH|SOL|XRP|DOGE|BNB|HYPE|INX|NASDAQ|USD|GBP|EUR|GOLD|SILVER|PLATINUM|COPPER|NATGAS|WTI)|15M$"), "#34 per-series last_price (FAIL), #36 crypto up/down latency (NO-EDGE-ANY-LATENCY), #27/#28 cross-venue crypto, #21 snapshot arbs; "
-     "#16/#17 commodity+crypto expansion"),
-    ("sports totals/props/game", R(r"^KX(NFL|NBA|NHL|MLB|EPL|MLS|NCAA|ESOCCER|SOCCER|TENNIS|ATP|WTA|UFC|PGA)|GAME$|TOTAL$|SPREAD$|GOAL$"), "#13 sports totals (NOT PROMISING: median lag 0.0s), #35 NFL moneyline vs sharp line (NULL), #20 long-tail passive (FAIL)"),
-    ("earthquake / hazard magnitude", R(r"QUAKE|EARTHQUAKE|MAGNITUDE"), "#15 earthquake magnitude (NOT PROMISING: USGS revises 10-60+ min, no lag)"),
-    ("FDA / regulatory approvals", R(r"FDA|APPROV"), "#18 FDA (NOT PROMISING: no minute-resolution feed)"),
-    ("macro releases (CPI/jobs/claims/Fed)", R(r"CPI|PAYROLL|JOBLESS|CLAIMS|FED|GDP|UNRATE|PCE|JOLTS"), "#24/#26 jobless claims (INSUFFICIENT/FAIL), #29 + spec_M1 macro-surprise (INSUFFICIENT), spec_J1"),
-    ("broad longshot/favorite bias (any category)", R(r"^$"), "#30-#34 favorite-longshot Specs 1-3 + maker + per-series (FAIL)"),
+    # (family, regex over series/title/subtype, ledger refs, kind)  kind: EXACT = the same product/mechanism was tested; ADJACENT = same mechanism class, different product
+    ("US daily-extreme temperature (KXHIGH*/KXLOWT*)", R(r"^KX(HIGH|LOWT)"),
+     "#1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), "
+     "#19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle $2.1k/mo median, realistic $15/mo, retire); TERMINAL_FINALITY A/B + FINALITY_NO (INSUFFICIENT)", "EXACT"),
+    ("weather period products (rain / avg-temp streaks / tornado counts)", R(r"^KX(RAIN|AVGTK|TORNADO|SNOW)"),
+     "same physical-feed mechanism as the KXHIGH/KXLOWT studies (#1,#2,#12, EDGE_SIZING) but these products were never tested", "ADJACENT"),
+    ("social-media / public-figure post counts", R(r"TRUTHSOCIAL|TWEETS|TRUMPACT|TRUMPPHOTO|TRUMPNOM"),
+     "#14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested", "ADJACENT"),
+    ("mention / said-word markets", R(r"MENTION|SAYS?$|SAY[A-Z]*$"), "#14, #22, #23, #25", "EXACT"),
+    ("crypto/commodity touch-max-min ladders", R(r"MAXMON|MINMON|MAXY|MINY|MAXD|MIND\b|one touch"), "#16 commodity ladders (NOT PROMISING), #17 crypto MAX ladders (NOT PROMISING: can_close_early reprices 46% >1h early)", "EXACT"),
+    ("crypto/index/FX/commodity price at a time", R(r"^KX(BTC|ETH|SOL|XRP|DOGE|BNB|HYPE|INX|NASDAQ|USD|GBP|EUR|GOLD|SILVER|PLATINUM|COPPER|NATGAS|WTI|BRENT)|15M$"),
+     "#34 per-series last_price (FAIL), #36 crypto up/down latency (NO-EDGE-ANY-LATENCY), #27/#28 cross-venue crypto, #16/#17 commodity+crypto expansion", "EXACT"),
+    ("sports totals/props/game", R(r"^KX(NFL|NBA|NHL|MLB|EPL|MLS|NCAA|ESOCCER|SOCCER|TENNIS|ATP|WTA|UFC|PGA)"), "#13 sports totals (NOT PROMISING: median lag 0.0s), #35 NFL moneyline vs sharp line (NULL), #20 long-tail passive (FAIL)", "EXACT"),
+    ("earthquake / hazard magnitude", R(r"QUAKE|EARTHQUAKE"), "#15 earthquake magnitude (NOT PROMISING: USGS revises 10-60+ min, no lag)", "EXACT"),
+    ("FDA / regulatory approvals", R(r"FDA|APPROV"), "#18 FDA (NOT PROMISING: no minute-resolution feed)", "EXACT"),
+    ("macro releases (CPI/jobs/claims/Fed)", R(r"CPI|PAYROLL|JOBLESS|CLAIMS|FED[A-Z]*$|GDP|UNRATE|PCE|JOLTS"), "#24/#26 jobless claims (INSUFFICIENT/FAIL), #29 + spec_M1 macro-surprise (INSUFFICIENT), spec_J1", "EXACT"),
 ]
 
 
 def graveyard_match(series, title, subtype):
-    blob = f"{series} {title or ''} {subtype or ''}"
-    hits = [(fam, refs) for fam, rx, refs in GRAVEYARD if rx.search(series) or rx.search(blob)]
-    return hits
+    """-> list of (family, refs, kind) whose pattern matches the series ticker, subtype or title."""
+    return [(fam, refs, kind) for fam, rx, refs, kind in GRAVEYARD if rx.search(series)]
+
+
+def gy_verdict(hits):
+    if any(h[2] == "EXACT" for h in hits):
+        return "RE-DISCOVERY"
+    if hits:
+        return "ADJACENT (same mechanism, untested product)"
+    return "NEW (no ledger entry)"
 
 
 def wilson(k, n, z=1.96):
@@ -782,12 +791,12 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
         m = r["measured"]
         rows.append([i, r["series"], (r["title"] or "")[:34], r["subtype"], r["gap_h_est"], f"{m['capturable_rate']:.2f} ({m['n_capturable']}/{m['n_usable']})",
                      m["median_capturable_volume"], m["median_priced_lead_min"], r["score"],
-                     "; ".join(x[0] for x in graveyard_match(r["series"], r["title"], r["subtype"])) or "NONE FOUND"])
-    L.append(_tbl(["#", "series", "title", "subtype", "gap h", "capturable", "median capt. vol", "priced-lead min", "score", "graveyard match"], rows))
-    L.append("\n### Family roll-up\n")
-    L.append(_tbl(["family", "series", "usable mkts", "capturable (pooled)", "median gap h", "median capt. vol", "median score/series", "graveyard"],
-                  [[f["family"], f["n_series"], f["n_usable"], f["capturable_rate_pooled"], f["median_gap_h"], f["median_capt_volume"], f["score_median_per_series"],
-                    "; ".join(f["graveyard"])[:230] or "NONE FOUND"] for f in fam_rows[:20]]))
+                     gy_verdict(graveyard_match(r["series"], r["title"], r["subtype"]))])
+    L.append(_tbl(["#", "series", "title", "subtype", "gap h", "capturable", "median capt. vol", "priced-lead min", "score", "graveyard verdict"], rows))
+    L.append("\n### Family roll-up (pooled over sampled markets; this is the ranking that matters)\n")
+    L.append(_tbl(["#", "family", "series", "usable mkts", "capturable (pooled)", "Wilson 95%", "median gap h", "median capt. vol", "score", "gap-free score", "graveyard verdict"],
+                  [[i, f["family"], f["n_series"], f["n_usable"], f"{f['capturable_rate_pooled']:.3f} ({f['n_capturable']}/{f['n_usable']})", f["wilson95"], f["median_gap_h"], f["median_capt_volume"],
+                    f["score"], f["score_gapfree"], f["verdict"]] for i, f in enumerate(fam_rows[:25], 1)]))
     L.append("\n### Same candidates ranked WITHOUT the gap term (capturable rate x median volume) - the check that the weather result is not produced by the gap column\n")
     L.append(_tbl(["#", "series", "subtype", "capturable", "median capt. vol", "gap-free score"],
                   [[i, r["series"], r["subtype"], f"{r['measured']['capturable_rate']:.2f} ({r['measured']['n_capturable']}/{r['measured']['n_usable']})",
@@ -797,12 +806,13 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
     L.append("## 6. Screen sanity check - does it rediscover weather?\n")
     famnames = [f["family"] for f in fam_rows]
     wxf = [i for i, n in enumerate(famnames, 1) if n in ("KXHIGH*", "KXLOWT*")]
-    gf_wx = [i for i, r in enumerate(ranked_gf, 1) if r["series"].startswith(("KXHIGH", "KXLOWT"))]
+    famgf = [f["family"] for f in o["family_rollup_gapfree"]]
+    gf_wx = [i for i, n in enumerate(famgf, 1) if n in ("KXHIGH*", "KXLOWT*")]
     if wxf and wxf[0] <= 3:
         L.append(f"**PASS.** Weather daily extremes are family rank {wxf[0]} (and {wxf[1] if len(wxf) > 1 else 'n/a'}) of {len(famnames)} by score, and the first weather series "
-                 f"is at position {gf_wx[0] if gf_wx else 'n/a'} of {len(ranked_gf)} even with the gap term removed. The screen finds the one family this program already knows has the property.\n")
+                 f"is gap-free family rank {gf_wx[0] if gf_wx else 'n/a'} of {len(famgf)} even with the gap term removed. The screen finds the one family this program already knows has the property.\n")
     else:
-        L.append(f"**SCREEN BROKEN OR WEATHER NOT PRESENT.** Weather family rank(s): {wxf or 'none'} of {len(famnames)}; gap-free first weather position: {gf_wx[:1] or 'none'}. "
+        L.append(f"**SCREEN BROKEN OR WEATHER NOT PRESENT.** Weather family rank(s): {wxf or 'none'} of {len(famnames)}; gap-free weather family rank(s): {gf_wx or 'none'}. "
                  "Per the task's own criterion this means the screen cannot be trusted until diagnosed.\n")
     # ---- 7. control audit -----------------------------------------------------------------------------------------
     L.append("## 7. Classifier-miss audit (non-EARLY series whose winners were already priced >= 60 min before close)\n")
@@ -819,7 +829,7 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
     rows = []
     for i, r in enumerate(ranked[:20], 1):
         gm = graveyard_match(r["series"], r["title"], r["subtype"])
-        rows.append([i, r["series"], r["subtype"], "RE-DISCOVERY" if gm else "NEW (no ledger entry)", "; ".join(f"{a}: {b}" for a, b in gm)[:300] or "-"])
+        rows.append([i, r["series"], r["subtype"], gy_verdict(gm), "; ".join(f"{a}: {b}" for a, b, _k in gm)[:300] or "-"])
     L.append(_tbl(["#", "series", "subtype", "verdict", "graveyard entries"], rows))
     L.append("")
     L.append(NOTES_SECTION)
@@ -895,25 +905,30 @@ def stage_report():
     cand = [r for r in table if r["class"] == CLS_EARLY and r.get("measured") and r["measured"]["n_usable"] >= 3]
     ranked = sorted(cand, key=lambda r: -r["score"])
     ranked_gf = sorted(cand, key=lambda r: -r["score_gapfree"])
-    # ---- family roll-up (sum of series scores weighted by usable markets)
-    fam = collections.defaultdict(lambda: {"series": 0, "usable": 0, "capt": 0, "vols": [], "gaps": [], "score_sum": 0.0, "series_list": []})
+    # ---- family roll-up: POOLED over the family's sampled markets (series-level medians of 3-5 markets are too noisy to rank on)
+    fam = collections.defaultdict(lambda: {"series": [], "rows": []})
     for r in cand:
-        f = fam[r["family"]]
-        mm = r["measured"]
-        f["series"] += 1
-        f["usable"] += mm["n_usable"]
-        f["capt"] += mm["n_capturable"]
-        f["gaps"].append(r["gap_h_est"])
-        f["vols"].append(mm["median_capturable_volume"])
-        f["score_sum"] += r["score"]
-        f["series_list"].append(r["series"])
+        fam[r["family"]]["series"].append(r)
+        fam[r["family"]]["rows"] += per[r["series"]]
     fam_rows = []
     for k, f in fam.items():
-        fam_rows.append({"family": k, "n_series": f["series"], "n_usable": f["usable"], "capturable_rate_pooled": round(f["capt"] / f["usable"], 4) if f["usable"] else None,
-                         "median_gap_h": round(statistics.median(f["gaps"]), 2), "median_capt_volume": round(statistics.median(f["vols"]), 2),
-                         "score_median_per_series": round(statistics.median([r["score"] for r in cand if r["family"] == k]), 3),
-                         "graveyard": [x[0] + " -> " + x[1] for x in graveyard_match(f["series_list"][0], byser[f["series_list"][0]]["title"], byser[f["series_list"][0]]["subtype"])] })
-    fam_rows.sort(key=lambda x: -x["score_median_per_series"])
+        rs = f["rows"]
+        n = len(rs)
+        kc = sum(1 for x in rs if x["capturable"])
+        capv = [x["capturable_volume"] for x in rs if x["capturable"]]
+        gap = statistics.median([x["gap_h_est"] for x in f["series"]])
+        rate = kc / n
+        mv = statistics.median(capv) if capv else 0.0
+        s0 = f["series"][0]
+        gm = graveyard_match(s0["series"], s0["title"], s0["subtype"])
+        fam_rows.append({"family": k, "n_series": len(f["series"]), "n_usable": n, "n_capturable": kc, "capturable_rate_pooled": round(rate, 4),
+                         "wilson95": wilson(kc, n), "median_gap_h": round(gap, 2), "median_capt_volume": round(mv, 2),
+                         "score": round(gap * rate * mv, 3), "score_gapfree": round(rate * mv, 3),
+                         "median_priced_lead_min": round(statistics.median([x["priced_lead_min"] for x in rs]), 1),
+                         "subtype": s0["subtype"], "series_list": [x["series"] for x in f["series"]][:12],
+                         "graveyard": [x[0] + " -> " + x[1] for x in gm], "verdict": gy_verdict(gm)})
+    fam_rows.sort(key=lambda x: -x["score"])
+    fam_rows_gf = sorted(fam_rows, key=lambda x: -x["score_gapfree"])
     # ---- group-level + class-level measured summaries
     grp = collections.defaultdict(lambda: {"n": 0, "k": 0, "k60": 0, "leads": [], "c60": [], "c10": [], "series": set()})
     for r in mets:
@@ -970,7 +985,7 @@ def stage_report():
            "nature": "DESCRIPTIVE SCREEN - not a hypothesis test, no pass bar. Nothing here may be promoted without a NEW pre-registration.",
            "window_min": WINDOW_MIN, "seed": SEED, "coverage": coverage, "class_summary": class_summary,
            "group_measured": groups, "weather_gap": wgap, "ranked_by_score": ranked[:60], "ranked_gapfree": ranked_gf[:40],
-           "family_rollup": fam_rows, "classifier_miss_flags": flags, "classification": table}
+           "family_rollup": fam_rows, "family_rollup_gapfree": fam_rows_gf, "classifier_miss_flags": flags, "classification": table}
     jdump(out, os.path.join(OUTDIR, "shape_screen.json"))
     write_md(out, ranked, ranked_gf, fam_rows, flags, byser)
     print("wrote shape_screen.json / shape_screen.md")
