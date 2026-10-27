@@ -635,3 +635,149 @@ def evaluate(res):
                      "kill_false_lock_primary": kill_fl, "kill_all_positive_cells_fail_n": kill_n,
                      "kill_best_ub979_lt_0.5": kill_ub, "best_ub979_ev_vw": best_ub,
                      "n_positive_ev_cells": len(pos)}
+
+# ----------------------------------------------------------------------------- anchors
+def oracle_recompute(rows, result, close_ts, window_min=60):
+    """EDGE_SIZING Stage-1 capturable definition, recomputed independently: final 60 min, winner-side cost
+    (yes_ask if YES else 100 - yes_bid), cost<=98, net>0."""
+    cap = []
+    for ts, yb, ya, vol in rows:
+        if ts < close_ts - window_min * 60 or ts > close_ts:
+            continue
+        cost = ya if result == "yes" else (None if yb is None else 100 - yb)
+        if cost is None or not (0 < cost <= 98):
+            continue
+        if 100 - cost - fee_c(cost) <= 0:
+            continue
+        cap.append((ts, cost))
+    return cap
+
+def anchor_a(results, uni):
+    out = {}
+    # (a1) reproduce the 140 EDGE_SIZING-capturable rows from OUR candle pull (price-join integrity)
+    s2 = jload(os.path.join(HERE, "out", "edge_sizing_stage2.json"))["per_market"]
+    cmp_rows, ok_n, ok_first, ok_last, missing = 0, 0, 0, 0, 0
+    detail = []
+    for m in s2:
+        tk = m["ticker"]
+        close_ts = iso2ts(m["close_time"])
+        series = tk.split("-")[0]
+        rec = fetch_candles(tk, series, close_ts)
+        rows = candle_rows(tk, close_ts)
+        if rows is None:
+            missing += 1
+            continue
+        cap = oracle_recompute(rows, m["result"], close_ts)
+        cmp_rows += 1
+        a = len(cap) == m["n_capturable_minutes_recomputed"]
+        b = bool(cap) and cap[0][0] == m["first_capturable_ts"]
+        c = bool(cap) and cap[-1][0] == m["last_capturable_ts"]
+        ok_n += a; ok_first += b; ok_last += c
+        if not (a and b and c) and len(detail) < 12:
+            detail.append({"ticker": tk, "oracle_n": m["n_capturable_minutes_recomputed"], "my_n": len(cap),
+                           "oracle_first": m["first_capturable_ts"], "my_first": cap[0][0] if cap else None})
+    out["a1_oracle_rows_reproduced"] = {"oracle_rows": len(s2), "candles_available": cmp_rows, "candles_missing": missing,
+                                         "n_minutes_match": ok_n, "first_ts_match": ok_first, "last_ts_match": ok_last,
+                                         "mismatch_examples": detail}
+    # (a2) every priced YES-settled fire (L=0) whose entry lies in the final 60 min must be oracle-capturable
+    viol, checked, outside, false_lock_priced = [], 0, 0, 0
+    for (variant, cell, L), r in results.items():
+        if L != 0:
+            continue
+        for x in r["_recs"]:
+            u = uni[x["tk"]]
+            if x["res"] == "no":
+                false_lock_priced += 1
+                continue
+            if x["ets"] < u["close_ts"] - 3600:
+                outside += 1
+                continue
+            checked += 1
+            rows = candle_rows(x["tk"], u["close_ts"])
+            if not oracle_recompute(rows, "yes", u["close_ts"]):
+                viol.append({"variant": variant, "cell": list(cell), "ticker": x["tk"]})
+    out["a2_subset_check"] = {"priced_yes_fires_checked_(entry_in_final_60m)": checked,
+                              "violations": viol[:20], "n_violations": len(viol),
+                              "yes_fires_entered_before_final_60m_(outside_oracle_window)": outside,
+                              "false_locks_priced_(not_applicable_to_winner_side_oracle)": false_lock_priced}
+    return out
+
+def anchor_b(sig, uni, nmax=300):
+    """No-look-ahead proof: brute-force re-evaluation with obs ts < t only, 'firstness', and a perturbation test."""
+    rng = random.Random(SEED + 1)
+    fl = [f for f in sig["fires"]]
+    prim = [f for f in fl if f["variant"] == "literal" and tuple(f["cell"]) == PRIMARY]
+    pick = prim + rng.sample(fl, min(nmax, len(fl)))
+    n_ok, bad, ex = 0, [], None
+    for f in pick:
+        r = uni[f["ticker"]]
+        M, R, H, W = f["cell"]
+        lo, hi = (r["lo"], r["hi"]) if f["variant"] == "literal" else (r["lo"] - 0.5, r["hi"] + 0.5)
+        src, ts, fs = pick_source(r["station"], r["day_start"], r["day_end"])
+        t = f["t_sig"]
+        # 1) fires under strict ts<t brute force
+        ok1 = signal_bruteforce(ts, fs, r["kind"], t, lo, hi, M, R, H, r["close_ts"], W)
+        # 2) no earlier decision time qualifies
+        ok2 = True
+        for j, x in enumerate(ts):
+            tj = x + 60
+            if tj >= t:
+                break
+            if signal_bruteforce(ts, fs, r["kind"], tj, lo, hi, M, R, H, r["close_ts"], W):
+                ok2 = False
+                break
+        # 3) perturbation: corrupt every obs with ts >= t; the walk's decision at t must not change
+        fs2 = [(v if x < t else (130.0 if rng.random() < .5 else -60.0)) for x, v in zip(ts, fs)]
+        wk = walk(ts, fs2, r["kind"])
+        g = fire_for_rung(wk, lo, hi, M, R, W, r["close_ts"])
+        ok3 = g is not None and g[0] == t
+        if ok1 and ok2 and ok3:
+            n_ok += 1
+            if ex is None and f["variant"] == "literal" or (ex is None and f["variant"] == "rounded"):
+                ex = {"ticker": f["ticker"], "variant": f["variant"], "cell": f["cell"], "t_sig_utc": utc(t),
+                      "last_obs_used_utc": utc(max(x for x in ts if x < t)),
+                      "n_obs_with_ts_lt_t": sum(1 for x in ts if x < t), "n_obs_ge_t_ignored": sum(1 for x in ts if x >= t)}
+        else:
+            bad.append({"ticker": f["ticker"], "cell": f["cell"], "ok1": ok1, "ok2": ok2, "ok3": ok3})
+    return {"checked": len(pick), "passed": n_ok, "failures": bad[:10], "worked_example": ex}
+
+def utc(ts):
+    return dt.datetime.fromtimestamp(ts, tz=dt.timezone.utc).strftime("%Y-%m-%d %H:%MZ")
+
+# ----------------------------------------------------------------------------- tz / station diagnostics
+def cmd_tzdiag(uni=None):
+    """Validate the local-day window and station map WITHOUT touching outcomes: compare the obs-derived day
+    extreme with the market's published expiration_value (the NWS value the market settled on), under window
+    shifts of -3..+3 hours.  The true window should dominate the match rate."""
+    if uni is None:
+        uni = jload(os.path.join(CACHE, "universe.json"))
+    seen, per = set(), collections.defaultdict(lambda: collections.defaultdict(list))
+    hist_hour = collections.defaultdict(collections.Counter)
+    for r in uni:
+        k = (r["series"], r["day_end"])
+        if k in seen or r["exp_val"] in (None, ""):
+            continue
+        seen.add(k)
+        try:
+            ev = float(r["exp_val"])
+        except Exception:
+            continue
+        for dh in range(-3, 4):
+            S, E = r["day_start"] + dh * 3600, r["day_end"] + dh * 3600
+            src, ts, fs = pick_source(r["station"], S, E) if dh == 0 else ("1min",) + window_obs(r["station"], "1min", S, E)
+            if not fs:
+                continue
+            ext = max(fs) if r["kind"] == "max" else min(fs)
+            per[r["series"]][dh].append(abs(ext - ev) < 0.5)
+            if dh == 0:
+                i = fs.index(ext)
+                lh = ((ts[i] + r["off"] * 3600) // 3600) % 24
+                hist_hour[r["kind"]][lh] += 1
+    tot = collections.defaultdict(list)
+    for s, d in per.items():
+        for dh, v in d.items():
+            tot[dh].extend(v)
+    rate = {dh: (sum(v) / len(v), len(v)) for dh, v in sorted(tot.items())}
+    by_series = {s: {"n": len(d[0]), "match_dh0": round(sum(d[0]) / len(d[0]), 3) if d.get(0) else None} for s, d in per.items()}
+    return {"match_rate_by_window_shift_hours": {str(k): [round(v[0], 4), v[1]] for k, v in rate.items()},
+            "by_series_dh0": by_series, "argext_local_std_hour_hist": {k: dict(sorted(v.items())) for k, v in hist_hour.items()}}
