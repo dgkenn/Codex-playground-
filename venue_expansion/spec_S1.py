@@ -9,7 +9,9 @@ PIPELINE (each stage is resumable; everything pulled is cached under venue_expan
   python3 spec_S1.py weather            # stage 0/1: gamma ladders + 4 weather feeds -> phase1.json (no pmxt, no prices)
   python3 spec_S1.py plan [A|B]         # list the pmxt hour-files needed (A: hour of each signal; B: continuation hours)
   python3 spec_S1.py fetch A i/n        # mirror hour-files i of n (parallel shards); resumable
-  python3 spec_S1.py analyze            # price every fire at the measured best ask, apply the frozen bar, write results
+  python3 spec_S1.py analyze            # price every fire at the measured best ask, apply the frozen bar, write results + md
+  python3 spec_S1.py report             # rewrite out/spec_S1.md from out/spec_S1_results.json
+  (analyze/report need NO network: they run from cache/spec_s1/ alone)
 
 SIGNAL (frozen, weather-only, no market input, no outcome input): kwx_lock_rule.sustained_extreme (byte-identical shim of the
 deployed rule) -> running glitch-filtered sustain-3 extreme; an item-2b ENTRY is the first obs at which that extreme falls in
@@ -724,6 +726,29 @@ def first_ask_np(arrs, t0, t1, tie="high"):
             "bid": (float(bids.max()) if len(bids) else None), "lag_s": (int(ts[i]) - a) / 1000.0}
 
 
+def ladder_row_counts(p1):
+    """city|date -> total mirrored rows over ALL tokens of that ladder (all mirrored hour-files)."""
+    import pyarrow.compute as pc
+    import pyarrow.parquet as pq
+    tok2lad = {}
+    for k, tl in p1["tokens"].items():
+        for t in tl:
+            tok2lad[t] = k
+    cnt = {}
+    for fn in sorted(os.listdir(PMXT_DIR)):
+        if not fn.endswith(".parquet"):
+            continue
+        tb = pq.read_table(os.path.join(PMXT_DIR, fn), columns=["asset_id"])
+        if tb.num_rows == 0:
+            continue
+        vc = pc.value_counts(tb.column("asset_id"))
+        for item in vc.to_pylist():
+            k = tok2lad.get(item["values"])
+            if k:
+                cnt[k] = cnt.get(k, 0) + item["counts"]
+    return cnt
+
+
 def fee_c(ask_c):
     p = ask_c / 100.0
     return 100.0 * FEE_RATE * p * (1 - p)
@@ -793,17 +818,24 @@ def price_all(fires, hv, avail_hours, missing_hours, shift_min=0):
             continue
         end = t + dt.timedelta(minutes=ASK_SEARCH_WINDOW_MIN)
         top = t.replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1)
-        hours_needed = [hstr(t)] + ([hstr(top)] if end > top else [])
-        if any(h in missing_hours for h in hours_needed):
+        h0, h1 = hstr(t), hstr(top)
+        spill = end > top
+        if h0 in missing_hours:
             rec["status"] = "archive_hole"
-        elif any(h not in avail_hours for h in hours_needed):
+        elif h0 not in avail_hours:
             rec["status"] = "not_mirrored"
         else:
-            hit = None
-            for h in hours_needed:
-                hit = first_ask_np(hv.get(h).get(f["tok"]), t, end)
-                if hit is not None:
-                    break
+            hit = first_ask_np(hv.get(h0).get(f["tok"]), t, end)
+            if hit is None and spill:
+                if h1 in missing_hours:
+                    rec["status"] = "archive_hole"
+                    rows.append(rec)
+                    continue
+                if h1 not in avail_hours:
+                    rec["status"] = "not_mirrored"
+                    rows.append(rec)
+                    continue
+                hit = first_ask_np(hv.get(h1).get(f["tok"]), t, end)
             if hit is not None:
                 rec["status"], rec["hit"] = "priced", hit
             else:
@@ -863,6 +895,12 @@ def run_analyze():
     hv = HourEv(fires)
     rows = price_all(fires, hv, avail, missing)
 
+    # Split "no ask in 60 min" into (a) the archive holds NO rows at all for ANY token of that city-day ladder (the market was
+    # not recorded: a coverage hole of the third-party archive) and (b) the ladder was recorded but the token had no ask.
+    ladder_rows = ladder_row_counts(p1)
+    for r in rows:
+        if r["status"] == "unpriceable_no_ask_in_60min" and ladder_rows.get(f"{r['city']}|{r['date']}", 0) == 0:
+            r["status"] = "unpriceable_market_not_recorded_in_archive"
     ent = [r for r in rows if r["kind"] == "entry"]
     rawd = [r for r in rows if r["kind"] == "entry_rawdiff"]
     lck = [r for r in rows if r["kind"] == "lock"]
@@ -874,7 +912,8 @@ def run_analyze():
 
     priced_e = [r for r in ent if r["status"] == "priced"]
     evr = ev_rows_for(priced_e)
-    n_unp = cnt.get("unpriceable_no_ask_in_60min", 0)
+    n_nr = cnt.get("unpriceable_market_not_recorded_in_archive", 0)
+    n_unp = cnt.get("unpriceable_no_ask_in_60min", 0) + n_nr      # BOTH kinds are "unpriceable" for the frozen 40% bar
     n_hole = cnt.get("archive_hole", 0)
     n_notm = cnt.get("not_mirrored", 0)
     n_cov = len(priced_e) + n_unp + n_hole + n_notm          # primary entries inside pmxt coverage
@@ -965,7 +1004,12 @@ def run_analyze():
                   "kill_triggered": bool(ucb is not None and ucb < KILL_UCB_C), "thin": thin, "spec_kill": spec_kill},
         "primary_cluster_bootstrap_98_33_lo_med_hi_c": (boot_ci([x["net_ev_c"] for x in evr], [(x["city"], x["date"]) for x in evr]) if evr else None),
         "fire_accounting": {"entries_total": len(ent), "status_counts": dict(cnt), "entries_in_pmxt_coverage": n_cov,
-                            "unpriceable": n_unp, "archive_hole": n_hole, "frac_unpriceable_incl_holes": frac_unp,
+                            "unpriceable": n_unp, "unpriceable_market_not_recorded": n_nr,
+                            "unpriceable_recorded_but_no_ask": n_unp - n_nr,
+                            "frac_unpriceable_excl_not_recorded": ((n_unp - n_nr + n_hole) / (n_cov - n_nr)) if (n_cov - n_nr) else None,
+                            "city_days_ladder_not_recorded": sorted(k for k in p1["tokens"] if ladder_rows.get(k, 0) == 0 and
+                                                                      k in {f"{d['city']}|{d['date']}" for d in p1["days"]}),
+                            "archive_hole": n_hole, "frac_unpriceable_incl_holes": frac_unp,
                             "frac_unpriceable_strict": frac_unp_strict, "thin_book_priced": sum(1 for x in evr if x["thin_book"]),
                             "thin_archive_hours": thin_hours, "median_hour_rows": med_rows,
                             "needed_hour_files": len(need_h), "unreadable_or_missing_frac": frac_unread,
@@ -975,6 +1019,8 @@ def run_analyze():
         "signal_coverage": cov, "usable_city_days": len(days), "skipped_city_days": len(p1["skips"]),
         "skips": p1["skips"], "skip_summary": dict(skip_ct),
         "n_entries_changed_by_float_rounding": sum(d["n_entries_changed_by_rounding"] for d in days),
+        "unpriced_entries": [{"city": r["city"], "date": r["date"], "ticker": r["ticker"], "t": r["t"], "status": r["status"]}
+                             for r in ent if r["status"] != "priced"],
         "ev_rows": evr,
     }
     json.dump(out, open(os.path.join(OUT_DIR, "spec_S1_results.json"), "w"), indent=1, default=str)
@@ -1015,7 +1061,7 @@ def write_md(res=None):
     A("# Spec S1 -- Polymarket whitelist EV at MEASURED asks (pmxt.dev order-book archive)\n")
     A(f"**VERDICT: {res['verdict']}**\n")
     A("> **GEO-BLOCK DISCLOSURE (read first).** Global Polymarket (the venue priced here) remains geo-blocked to US persons, and "
-      "Polymarket US lists no weather markets (checked 2026-07-23). **Even a PASS would be a measurement, not a deployment, for "
+      "Polymarket US listed no weather markets as of 2026-07-23 (per FINDINGS.md; not re-checked in this run). **Even a PASS would be a measurement, not a deployment, for "
       "this operator.** Any deployment is an operator/legal decision. Nothing in this study touches Kalshi operations.\n")
     A("## 1. Frozen bar this is judged against (judge_specs.json, id S1 -- not re-registered, not relaxed)\n")
     for k, v in res["frozen_bar"].items():
@@ -1048,6 +1094,10 @@ def write_md(res=None):
     A(f"\n- Thin-book among priced fires (no bid, or ask-bid >= 10c at the pricing event; descriptive): {fa['thin_book_priced']} of {pr.get('n')}.")
     A(f"- pmxt hour-files needed by entries: {fa['needed_hour_files']}; archive holes: {len(res['hour_files']['archive_holes'])} "
       f"{res['hour_files']['archive_holes'][:10]}; hour-files mirrored: {res['hour_files']['mirrored']}.")
+    A(f"- Unpriceable entries split: {fa['unpriceable_market_not_recorded']} are on city-day ladders for which the archive holds NO rows at all "
+      f"(market not recorded by the third-party collector) and {fa['unpriceable_recorded_but_no_ask']} are on recorded ladders with no ask event inside 60 min. "
+      f"Excluding the not-recorded ladders the unpriceable share would be {(fa['frac_unpriceable_excl_not_recorded'] or 0)*100:.1f}%. "
+      f"City-days whose ladder is not recorded at all in the archive: {len(fa['city_days_ladder_not_recorded'])}.")
     A(f"- Archive hours with < 40% of the median row count (possible collector outage): {len(fa['thin_archive_hours'])} {fa['thin_archive_hours'][:10]}.\n")
     A("## 4. By city and by ask bucket (non-gating)\n")
     A(_HDR)
@@ -1082,11 +1132,56 @@ def write_md(res=None):
         for r, dates in d.items():
             A(f"- **{c}** -- `{r}` ({len(dates)}): {', '.join(dates)}")
     A("")
-    A("## 9. Method, and every judgement call (disclosed, none tuned on outcomes)\n")
+    nr = fa.get("city_days_ladder_not_recorded", [])
+    A("### 8b. City-days whose whole ladder is absent from the archive (all their entries are `unpriceable_market_not_recorded_in_archive`)\n")
+    A("pmxt.dev's collected universe shrinks over the window (about 113k distinct asset_ids in a mid-May hour-file vs about 39k in mid-June and 51k in mid-July) and the weather ladders drop out entirely for 2026-05-18/19, 2026-06-13..28 and 2026-07-10..16 (partly 06-12, 06-29, 07-09). "
+      "This is a coverage hole of the third-party archive, not a market with no asks. These fires are counted as unpriceable against the 40% bar (conservative) but are NOT imputed.\n")
+    bycity = defaultdict(list)
+    for k in nr:
+        c, d = k.split("|")
+        bycity[c].append(d)
+    for c, ds_ in sorted(bycity.items()):
+        A(f"- **{c}** ({len(ds_)}): {', '.join(sorted(ds_))}")
+    A("")
+    A("## 9. Reading the result, and its limits\n")
+    n3 = res["sensitivities_nongating"].get("ask_between_3_and_97", {})
+    bk = res["by_ask_bucket"]
+    A(READING_TEXT.format(
+        n=pr.get("n"), g=g["n_clusters"], mean=_f(pr["mean_c"]), t=_f((pr.get("city_day_clustered") or {}).get("t"), 2), ucb=_f(pr.get("ucb_98_33_c")),
+        pct_cheap=100.0 * (bk["0-10c"]["n"] / pr["n"]) if pr.get("n") else 0, cheap_mean=_f(bk["0-10c"].get("mean_c")), cheap_ucb=_f(bk["0-10c"].get("ucb_98_33_c")),
+        mid_n=n3.get("n"), mid_g=n3.get("n_clusters_city_day"), mid_mean=_f(n3.get("mean_c")), mid_ucb=_f(n3.get("ucb_98_33_c")),
+        hi_n=bk["90-101c"].get("n"), hi_mean=_f(bk["90-101c"].get("mean_c")), hi_t=_f((bk["90-101c"].get("city_day_clustered") or {}).get("t"), 2),
+        lk_n=lt["all"].get("n"), lk_g=lt["all"].get("n_clusters_city_day"), lk_mean=_f(lt["all"].get("mean_c")),
+        lk_t=_f((lt["all"].get("city_day_clustered") or {}).get("t"), 2), lk_ucb=_f(lt["all"].get("ucb_98_33_c")),
+        lk_lcb=_f(lt["all"].get("lcb_98_33_c")), changed=res["n_entries_changed_by_float_rounding"],
+        win_n=sum(1 for x in res["ev_rows"] if x["won"]),
+        win_ask=st.mean([x["ask_c"] for x in res["ev_rows"] if x["won"]]) if any(x["won"] for x in res["ev_rows"]) else float("nan"),
+        win_med=st.median([x["ask_c"] for x in res["ev_rows"] if x["won"]]) if any(x["won"] for x in res["ev_rows"]) else float("nan"),
+        all_ask=pr.get("mean_ask_c", float("nan"))))
+    A("")
+    A("## 10. Method, and every judgement call (disclosed, none tuned on outcomes)\n")
     A(METHOD_TEXT)
     open(os.path.join(OUT_DIR, "spec_S1.md"), "w").write("\n".join(L) + "\n")
     print("wrote out/spec_S1.md")
 
+
+
+READING_TEXT = """\
+**What S1 establishes.** On the registered population (all {n} priced item-2b bracket entries, {g} city-day clusters, four cities), buying at the *measured* best ask and holding to resolution has mean net EV {mean} c/contract (cluster t = {t}, one-sided 98.33% UCB {ucb} c). The UCB is below the pre-registered +0.2c KILL line, so the Polymarket bracket-entry sleeve is declared DEAD at measured prices; the PASS bar is not close. This replaces the earlier last-trade-plus-half-spread proxy (-19.4c, which was dominated by a 20c snapshot spread) and the item-2b reweighting (+0.43c on n=31) with direct per-fire accounting: the sign is now measured, and it is negative.
+
+**Why the kill is robust to the obvious attacks (all non-gating, section 6).** Re-pricing the same population with the lowest/highest tied ask, requiring the ask within 60 s or 5 min of the signal, dropping thin archive hours, ignoring fees, excluding Chicago, the +5 minute signal-latency shift and the literal un-rounded reference conversion all give a mean between about -0.8c and -1.2c, and the UCB stays below +0.2c in every one of them (largest: +0.025c, the latency shift). Cluster bootstrap and calendar-date clustering agree. Chicago's 228 entries reproduce Track A exactly (228 of 228), so this is the harness that passed the coverage GO-check. Only two *sub-population cuts* have a UCB above the line (thin-book-only and 3c < ask < 97c); those are subsets, not re-estimates of the registered population.
+
+**What S1 does NOT establish (read before drawing a wider conclusion).**
+1. *The gating population is dominated by near-zero-cost losers:* {pct_cheap:.0f}% of priced fires have an ask under 10c (mean {cheap_mean}c, UCB {cheap_ucb}c). That is the registered population and the verdict is on it, but it means the kill is largely a statement about those fires. The mid-priced entries that could carry an edge (3c < ask < 97c) number only {mid_n} fires in {mid_g} clusters with mean {mid_mean}c and UCB {mid_ucb}c: that subset is underpowered and is **not** shown dead or alive. Any claim about it would need a new registration.
+2. *Chicago alone is underpowered:* 31 clusters, UCB +1.9c. The Track A coverage result (a hit on the winning bracket on 64% of usable days) is untouched by this; what S1 adds is that hitting the winning bracket early enough is not the same as buying it cheaply, because the market prices the winner as it is being confirmed: the {win_n} priced entries that did go on to win were bought at a mean ask of {win_ask:.1f}c (median {win_med:.1f}c), against a mean ask of {all_ask:.1f}c over all priced entries.
+3. *Archive coverage:* 23% of in-coverage entries (88 city-day ladders) sit on days the third-party archive did not record at all, so the estimate is for the recorded days only (the calendar pattern is in section 8b), not a uniform draw from the window. The absences follow the calendar, not the outcome, and the unpriceable share (24.7%) is under the 40% spec-kill, but it is a real limit on generalising.
+4. *Geo-block:* Global Polymarket is not accessible to US persons. This is a measurement of a venue the operator cannot trade, and nothing here supports building a Polymarket harness.
+5. *Post-hoc observations that are NOT findings:* priced entries with ask >= 90c won {hi_n} of {hi_n} (mean {hi_mean}c, t = {hi_t}), and the item-2a locks priced at the measured ask (section 7) show {lk_n} locks / {lk_g} clusters at a ~99.9c ask, 100% correct, mean {lk_mean}c per contract (t = {lk_t}, one-sided 98.33% bounds [{lk_lcb}, {lk_ucb}]c). These are exactly the 'late, nearly certain' regime the Kalshi lock rule already harvests (+0.15 to +0.21c per contract per ref/pmkt_final_verdict.md); they were not gating here, were chosen after seeing the table, and an edge of roughly a tenth of a cent per contract at a 99.9c ask is a capacity-and-latency question, not a statistics question. They are hypothesis-generating at most, and the venue is geo-blocked.
+
+**Implication for the program.** The Polymarket bracket-entry sleeve is dead at measured prices. The coverage blocker Track A lifted does not translate into an executable edge on this venue. This changes nothing about Kalshi operations, and it does not help a US-person operator.
+
+**Float-rounding note.** The un-rounded reference conversion changes {changed} entries (flipped by float noise at integer thresholds, mostly London and Paris on integer-C feeds); the verdict is unchanged under it.
+"""
 
 METHOD_TEXT = """\
 **Signal.** `kwx_lock_rule.sustained_extreme` / `locked_orders` (byte-identical shim of the deployed rule: margin 1.0F / 0.5C, sustain-3, glitch filter) run over each city-day's weather feed; an item-2b entry is the first obs at which the filtered sustained running max falls inside a rung's margin-adjusted band (`floor+margin < extreme <= cap+margin`). Signal time = the timestamp of the obs completing the sustain condition. No market input and no outcome input enters the signal.
@@ -1100,7 +1195,7 @@ METHOD_TEXT = """\
 **Harness fidelity.** For Chicago the entries and entry timestamps reproduce Track A (`out/tracka_results.json`) exactly on every shared day: 228 of 228 entries identical to the minute. That ties this run to the harness that passed the coverage GO-check.
 
 **Judgement calls and deviations (none touches the frozen bar, the entry rule, the EV formula or the population):**
-1. *Mirror format.* The data plan says to mirror every hour-file used. A full hour-file is 130-590 MB; the ~1,100+ files used would need roughly 0.5 TB against ~30 GB free disk. What is mirrored instead, for every hour-file used (`cache/spec_s1/pmxt/<hour>.parquet` + `.manifest.json` with size, etag, row counts): all rows of the full 7-column projection (timestamp_received, event_type, asset_id, best_bid, best_ask, bids, asks) for every YES and NO token of every ladder that has a fire in that hour or the previous one. This is a strict superset of every datum the accounting uses; `analyze` runs from this cache alone. The third-party continuity caveat stands: the mirror is a filtered copy, not the raw archive.
+1. *Mirror format.* The data plan says to mirror every hour-file used. A full hour-file is 130-590 MB; the 1,230 hour-files used (1,098 signal hours + 132 continuation hours; 1 of them is a 404 archive hole) would need roughly 0.5 TB against ~30 GB free disk. What is mirrored instead, for every hour-file used (`cache/spec_s1/pmxt/<hour>.parquet` + `.manifest.json` with size, etag, row counts): all rows of the full 7-column projection (timestamp_received, event_type, asset_id, best_bid, best_ask, bids, asks) for every YES and NO token of every ladder that has a fire in that hour or the previous one. This is a strict superset of every datum the accounting uses; `analyze` runs from this cache alone. The third-party continuity caveat stands: the mirror is a filtered copy, not the raw archive.
 2. *Float rounding in the unit conversion.* The reference harness converts degF back to degC with `(f-32)*5/9` and compares at integer thresholds. Float noise (e.g. 28.0C -> 82.4F -> 28.000000000000004C) flips those strict comparisons at exactly-integer readings, which are common on integer-C METAR feeds. The primary population rounds the converted extreme to 6 decimals before the band test; the rule functions are untouched. The literal un-rounded reference behaviour is reported as a non-gating variant (section 6); the number of entries it changes is in the JSON (`n_entries_changed_by_float_rounding`). This was decided before any price was read.
 3. *Chicago feed holes.* IEM's ORD 1-minute archive is empty or sparse for most of 2026-04-14..2026-05-11 and has scattered partial days after (MDW and JFK return full data for the same period, so it is an ORD-specific upstream hole, and Track A saw the same). Days failing the pre-set guards (>=100 obs and last obs within 3 h of local midnight) are skipped and listed in section 8; no other station or cadence is substituted.
 4. *Guards.* Completeness guards (Chicago 100 obs / 3 h; 30-min feeds 30 obs / 4 h; JMA 90 obs / 4 h) were fixed before any obs were read; Chicago equals Track A's.
