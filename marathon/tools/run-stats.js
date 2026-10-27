@@ -31,6 +31,8 @@
 /// Metres in a mile. Named in full because the page already declares a short `MI`, and two
 /// `const` of the same name in one scope is a page that does not parse at all — the build now
 /// checks for exactly that.
+import { aerobicIndex } from './fitness.js';
+
 export const METRES_PER_MILE = 1609.344;
 
 /// Below this a sample is standing still, not running slowly. Used for moving time and for the
@@ -300,6 +302,10 @@ export function runStats(samples, {
     const a = at(endT), b = at(endT + 60);
     if (a != null && b != null) out.hrr60 = Math.round(a - b);
   }
+
+  // Heart rate for 12:00/mi on the flat, from a model of how heart rate follows grade-adjusted
+  // effort (fitness.js). The progress number that survives changes of pace, hills and block length.
+  out.aerobic = aerobicIndex(ss);
 
   return out;
 }

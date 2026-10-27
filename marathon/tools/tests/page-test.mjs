@@ -2017,6 +2017,9 @@ async function openAll(page) {
   assert.ok(idx.length >= 1, 'the session must be filed');
   assert.ok('stats' in idx[0], 'and its statistics must be filed with it, not recomputed later');
   assert.ok(idx[0].stats && idx[0].stats.durationS > 0, `stats not stored: ${JSON.stringify(idx[0].stats)}`);
+  // Three seconds is no measurement of fitness, and the fitness line says why rather than guessing.
+  assert.equal(idx[0].stats.aerobic && idx[0].stats.aerobic.ok, false);
+  assert.match(await page.textContent('#statsfitness'), /^Fitness index: not measured this time — /);
   console.log('  ok  a finished run reports its statistics and files them with the session');
 }
 

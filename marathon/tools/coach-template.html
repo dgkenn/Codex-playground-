@@ -668,6 +668,7 @@
           <div id="statsgrid" class="tiles"></div>
           <div id="statssplits" class="note" style="margin-top:.2rem"></div>
           <div id="statsprogress" class="note"></div>
+          <div id="statsfitness" class="note" style="margin-top:.4rem"></div>
           <div id="statsverdict" class="note hide"
                style="border-top:1px solid var(--line);padding-top:.6rem;margin-top:.2rem"></div>
           <div id="talkq" class="hide" style="border-top:1px solid var(--line);padding-top:.6rem;margin-top:.2rem">
@@ -784,6 +785,7 @@
 
 /*{{SESSIONSTORE}}*/
 
+/*{{FITNESS}}*/
 /*{{RUNSTATS}}*/
 
 /*{{SESSIONFORMAT}}*/
@@ -4862,6 +4864,55 @@ $('go').onclick = () => {
  * `ctx` is which session this was: the one just finished (the default), or one recovered after the
  * page reloaded mid-run, which carries its own mode, plan and start time from the autosave.
  */
+/**
+ * The fitness index (fitness.js) for every saved run, newest first: `[{at, hrAtRef}]`. Read from
+ * the stats filed with the run when it has them, and worked out from the run itself for runs filed
+ * before the index existed. Remembered per id; a run does not change once filed.
+ */
+const aerobicCache = new Map();
+function aerobicHistory() {
+  const out = [];
+  for (const e of sessions.index()) {
+    if (!aerobicCache.has(e.id)) {
+      let a = e.stats && e.stats.aerobic;
+      if (!a) {
+        try {
+          const c = sessions.get(e.id);
+          const full = c && Array.isArray(c.samples) ? c : expand(c);
+          a = full ? aerobicIndex(full.samples) : null;
+        } catch { a = null; }
+      }
+      aerobicCache.set(e.id, a && a.ok ? a.hrAtRef : null);
+    }
+    const v = aerobicCache.get(e.id);
+    if (v != null) out.push({ at: e.at, hrAtRef: v });
+  }
+  return out;
+}
+
+/** One line: this run's heart rate for the reference pace on the flat, against the runs before it. */
+function renderFitness(stats, ctx) {
+  const el = $('statsfitness');
+  const a = stats && stats.aerobic;
+  const ref = `${U.pace(1000 / REF_SPEED_MS)}/${U.name} on the flat`;
+  if (!a || !a.ok) {
+    el.textContent = a && a.why ? `Fitness index: not measured this time — ${a.why}.` : '';
+    el.style.color = 'var(--faint)';
+    return;
+  }
+  const started = ctx && ctx.startedAt ? new Date(ctx.startedAt).toISOString() : null;
+  const before = aerobicHistory().filter(h => h.at !== started).slice(0, 4);
+  const prev = before.map(h => `${h.hrAtRef} on ${fmtDate(h.at)}`).join(', ');
+  const base = before.length ? before.reduce((p, h) => p + h.hrAtRef, 0) / before.length : null;
+  const d = base == null ? null : a.hrAtRef - base;
+  el.textContent = `Fitness index: ${a.hrAtRef} bpm (±${a.ciBpm}) — the heart rate this run implies for ${ref}, `
+    + 'hills and walking accounted for. Lower is fitter.'
+    + (prev ? ` Before: ${prev}.` : ' The next run gives it something to compare with.')
+    + (d == null ? '' : Math.abs(d) <= 3 ? ' Within the usual ±3 of your recent runs.'
+      : d < 0 ? ` ${Math.round(-d)} lower than your recent average.` : ` ${Math.round(d)} higher than your recent average — heat, sleep and a hard week all show here.`);
+  el.style.color = d != null && d < -3 ? 'var(--on)' : 'var(--dim)';
+}
+
 function showStats(stats, prevStats, ctx = { mode: S.mode, startedAt: S.startedAt,
                                               runWalk: S.plannedSession && S.plannedSession.runWalk }) {
   if (!stats) { $('stats-section').classList.add('hide'); return; }
@@ -4885,6 +4936,7 @@ function showStats(stats, prevStats, ctx = { mode: S.mode, startedAt: S.startedA
       tile(`Beats / ${U.name}`, stats.beatsPerUnit.toFixed(1));
     }
     if (stats.efficiencyFactor != null) tile('Efficiency', stats.efficiencyFactor.toFixed(2));
+    if (stats.aerobic && stats.aerobic.ok) tile(`HR @ ${U.pace(1000 / REF_SPEED_MS)} flat`, `${stats.aerobic.hrAtRef}`);
     if (stats.decouplingPct != null) tile('Drift', `${stats.decouplingPct.toFixed(1)}%`);
     if (stats.pctAtOrBelowEasy != null) tile('Easy', `${Math.round(stats.pctAtOrBelowEasy)}%`);
     // Whole-session HRR60 is meaningless once the blocks are heart-rate governed (6 October: -16,
@@ -4946,6 +4998,8 @@ function showStats(stats, prevStats, ctx = { mode: S.mode, startedAt: S.startedA
             + 'that becomes the ceiling the coach uses instead of the age formula'), 'on');
     }
   }
+
+  renderFitness(stats, ctx);
 
   // Two sessions is not a trend, and the module refuses to pretend otherwise — but the direction
   // between the last two is the thing anyone actually wants to know.

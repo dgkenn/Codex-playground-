@@ -42,6 +42,7 @@ and a page that needs a second request to start is a page that sometimes doesn't
 | | `progression.js` | Harder, same or easier next time, and how fast the ladder moves |
 | | `readiness.js` | The morning check: lnRMSSD against a personal baseline (parity-tested against the engine) |
 | | `benchmarks.js` | 2 km trials, measured maximum heart rate, 5K projection |
+| | `fitness.js` | The fitness index: heart rate for 12:00/mi on the flat, from a model of how heart rate follows grade-adjusted effort |
 | | `load-watch.js` | Load spikes and the pain log |
 | Keeping data | `session-store.js` | Autosave every 6 s, recovery after a reload, the archive |
 | | `session-format.js` | The compact export the engine imports |

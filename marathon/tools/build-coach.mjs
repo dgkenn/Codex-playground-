@@ -68,6 +68,7 @@ const parts = {
   RAMP: inline('ramp.js'),
   BTPROBE: inline('bt-probe.js'),
   SESSIONSTORE: inline('session-store.js'),
+  FITNESS: inline('fitness.js'),
   RUNSTATS: inline('run-stats.js'),
   SESSIONFORMAT: inline('session-format.js'),
   TILES: inline('tiles.js'),
