@@ -757,43 +757,49 @@ def utc(ts):
 # ----------------------------------------------------------------------------- tz / station diagnostics
 def cmd_tzdiag(uni=None):
     """Validate the local-day window and station map WITHOUT touching outcomes: compare the obs-derived day
-    extreme with the market's published expiration_value (the NWS value the market settled on), under window
-    shifts of -3..+3 hours.  The true window should dominate the match rate."""
+    extreme with the market's published numeric expiration_value (the NWS value the market settled on), under window
+    shifts of -3..+3 hours, on the SAME events for every shift (events whose selected feed is 1-min and whose shifted
+    windows are all >=1000 1-min obs deep).  The true window should dominate, sharply for LOW markets."""
     if uni is None:
         uni = jload(os.path.join(CACHE, "universe.json"))
-    seen, per = set(), collections.defaultdict(lambda: collections.defaultdict(list))
+    seen = set()
+    per = {"max": collections.defaultdict(list), "min": collections.defaultdict(list)}
     hist_hour = collections.defaultdict(collections.Counter)
     diffd = collections.defaultdict(collections.Counter)
     for r in uni:
         k = (r["series"], r["day_end"])
         if k in seen or r["exp_val"] in (None, ""):
             continue
-        seen.add(k)
         try:
             ev = float(r["exp_val"])
         except Exception:
             continue
+        seen.add(k)
+        src, ts0, fs0 = pick_source(r["station"], r["day_start"], r["day_end"])
+        if not fs0:
+            continue
+        ext0 = max(fs0) if r["kind"] == "max" else min(fs0)
+        diffd[f"{r['kind']}|{src}"][int(max(-3, min(3, round(ext0 - ev))))] += 1
+        i0 = fs0.index(ext0)
+        hist_hour[r["kind"]][int(((ts0[i0] + r["off"] * 3600) // 3600) % 24)] += 1
+        if src != "1min":
+            continue
+        row = {}
         for dh in range(-3, 4):
-            S, E = r["day_start"] + dh * 3600, r["day_end"] + dh * 3600
-            src, ts, fs = pick_source(r["station"], S, E) if dh == 0 else ("1min",) + window_obs(r["station"], "1min", S, E)
-            if not fs:
-                continue
-            ext = max(fs) if r["kind"] == "max" else min(fs)
-            per[r["series"]][dh].append(abs(ext - ev) < 0.5)
-            if dh == 0:
-                diffd[f"{r['kind']}|{src}"][int(max(-3, min(3, round(ext - ev))))] += 1
-                i = fs.index(ext)
-                lh = ((ts[i] + r["off"] * 3600) // 3600) % 24
-                hist_hour[r["kind"]][lh] += 1
-    tot = collections.defaultdict(list)
-    for s, d in per.items():
-        for dh, v in d.items():
-            tot[dh].extend(v)
-    rate = {dh: (sum(v) / len(v), len(v)) for dh, v in sorted(tot.items())}
-    by_series = {s: {"n": len(d[0]), "match_dh0": round(sum(d[0]) / len(d[0]), 3) if d.get(0) else None} for s, d in per.items()}
-    return {"match_rate_by_window_shift_hours": {str(k): [round(v[0], 4), v[1]] for k, v in rate.items()},
-            "by_series_dh0": by_series,
-            "feed_minus_official_extreme_degF_dist": {k: {str(a): b for a, b in sorted(v.items())} for k, v in diffd.items()}, "argext_local_std_hour_hist": {k: dict(sorted(v.items())) for k, v in hist_hour.items()}}
+            _t, f = window_obs(r["station"], "1min", r["day_start"] + dh * 3600, r["day_end"] + dh * 3600)
+            if len(f) < 1000:
+                row = None
+                break
+            e = max(f) if r["kind"] == "max" else min(f)
+            row[dh] = abs(e - ev) < 0.5
+        if row:
+            for dh, v in row.items():
+                per[r["kind"]][dh].append(v)
+    rate = {kind: {str(dh): [round(sum(v) / len(v), 4), len(v)] for dh, v in sorted(d.items())} for kind, d in per.items()}
+    return {"match_rate_by_window_shift_hours": rate,
+            "feed_minus_official_extreme_degF_dist": {k: {str(a): b for a, b in sorted(v.items())} for k, v in diffd.items()},
+            "argext_local_std_hour_hist": {k: dict(sorted(v.items())) for k, v in hist_hour.items()}}
+
 
 def cmd_oracle_fetch():
     s2 = jload(os.path.join(HERE, "out", "edge_sizing_stage2.json"))["per_market"]
@@ -854,10 +860,12 @@ def cmd_report():
     geo = geometry_diag(uni_list)
     wex = worked_example(results, uni)
     S_FRAC[0] = info["prefix_done"] / max(1, len({f['ticker'] for f in sig['fires']}))
+    _rows, _src = load_markets()
+    unm = collections.Counter(m["series"] for m in _rows.values() if m["series"] not in SERIES_MAP)
     rep = {"spec": "venue_expansion/TERMINAL_FINALITY_SPEC.md (frozen 2026-10-27)", "build": "B (independent replication)",
            "verdict": verdict, "evaluation": ev,
            "universe": {"n_bracket_rungs": len(uni_list), "skip": sig["skip"], "obs_coverage": sig["coverage"],
-                        "n_events": len({(r['series'], r['day_end']) for r in uni_list}),
+                        "n_events": len({(r['series'], r['day_end']) for r in uni_list}), "unmapped_series_rows": dict(unm),
                         "n_series": len({r['series'] for r in uni_list}), "n_stations": len({r['station'] for r in uni_list}),
                         "n_days": len({r['day_end'] for r in uni_list}),
                         "close_span": [utc(min(r['close_ts'] for r in uni_list)), utc(max(r['close_ts'] for r in uni_list))]},
@@ -890,7 +898,7 @@ def cmd_report():
         f"No PASS is possible and I did not move any bar. Under the one charitable reading that lets the rule fire (exploratory 'lattice' variant, primary cell, "
         f"{pp['n_fires']:,} fires over the full universe) the finality inference is **wrong {pp['n_false_lock_all']:,} times = {100 * pp['false_lock_rate_all']:.1f}% "
         f"(Wilson UB {100 * pp['wilson_ub_all']:.1f}%)** against a 2% / 5% bar. The cause is data-source disagreement, not timezone: IEM's day extreme differs from the official "
-        f"settlement value by 1 degF on about half of days, one-sidedly, and a rung is only 2 degF wide. "
+        f"settlement value by 1 degF on about half of HIGH days (15-40% of LOW days), one-sidedly, and a rung is only 2 degF wide. "
         f"Priced on a random {100 * S_FRAC[0]:.0f}% subsample of fired rungs (L=10): n priced {pp['n_priced']}, untradeable {100 * (pp['untradeable_frac'] or 0):.0f}%, "
         f"EV {pp['ev_eq'].get('mean') if pp['ev_eq'].get('mean') is None else round(pp['ev_eq']['mean'], 2)}c/contract equal-weight "
         f"(signed day-clustered t {pp['ev_eq'].get('t') if pp['ev_eq'].get('t') is None else round(pp['ev_eq']['t'], 2)}).")
@@ -907,12 +915,27 @@ def cmd_report():
         "**False-lock rate** is over ALL fires (a property of obs + official result), not just priced ones; the priced-only rate is also in the JSON.",
         "**Clusters** = local calendar day of the market.",
     ]
+    sgd = {(r["kind"], r["E_position"], r["feed"]): r for r in rep["subgroups"]}
+    hh, ll = sgd[("max", "E==hi", "1min")], sgd[("min", "E==lo", "1min")]
+    hl, lh = sgd[("max", "E==lo", "1min")], sgd[("min", "E==hi", "1min")]
+    h90 = rep["lattice_primary_L10_entries_ask_ge_90"]
     rep["closing"] = (
-        "A PASS would have been necessary-but-not-sufficient; there is no PASS, so nothing here supports a canary. The program's 44th closed study (if Build A agrees) is not a "
-        "failure of finality as an idea -- the descriptive table shows that where the extreme sits relative to the feed's one-sided bias changes the false-lock rate from ~50% to ~3-6% -- "
-        "but that is an *outcome-informed* observation made on the same data, so it is a hypothesis for a new pre-registration with its own forward holdout, not a result. "
-        "And even a ~3% false-lock rate is fatal at these prices: a winner buys at <=98c for +1c to +2c net, a loser costs ~98c, so break-even needs a false-lock rate near 1-2%; "
-        "see the lattice EV rows for what the tape actually paid.")
+        "**What this says.** The frozen rule, as parameterised, selects the empty set (spec defect, section 3). The reading that lets it fire has a ~24% false-lock rate "
+        "because the feed's day extreme and the official settlement value differ by one whole degree (about half of HIGH days on the 1-min feed, 15-40% of LOW days), in a feed-specific direction, and a rung is only two "
+        "whole degrees wide. The prices agree with the diagnosis: among fires that can actually be entered at L=10 "
+        f"the false-lock rate is {100 * (rep['lattice_primary_L10_priced_false_lock_rate'] or 0):.0f}%, because YES is still offered at <=98c mostly when the market already knows the feed extreme "
+        f"is not the official one (those losers are bought at ~4c, so the loss per false lock is small, but they are not the trades the thesis imagined). "
+        f"Where the market does agree with the signal (entry ask >= 90c, n={h90['n']}) the signal is right {100 * (1 - h90['false_locks'] / max(1, h90['n'])):.1f}% of the time "
+        f"and pays {_f(h90['mean_net_pnl_c'])}c/contract net of fees: priced to the penny, no edge.\n\n"
+        "**What this does not say.** It does not say that finality as an idea is dead. The descriptive table (section 7, no prices, all 4,734 fires) shows the false-lock rate depends "
+        f"on which side of the rung the extreme sits relative to the feed's one-sided bias: on the 1-min feed, HIGH with E==hi {100 * hh['rate']:.1f}% (n={hh['n']}) vs E==lo {100 * hl['rate']:.1f}% (n={hl['n']}); "
+        f"LOW with E==lo {100 * ll['rate']:.1f}% (n={ll['n']}) vs E==hi {100 * lh['rate']:.1f}% (n={lh['n']}). That is an *outcome-informed, post-hoc* observation on the same data, so it is a "
+        "hypothesis for a new pre-registration with its own forward holdout, not a result; and since a winner nets only +1c..+5c while a loser costs up to ~98c, break-even "
+        "needs a false-lock rate near 1-5% **at the prices actually offered**, which the ask>=90c row above says the market already enforces. "
+        "A PASS would have been necessary-but-not-sufficient; there is no PASS, so nothing here supports a canary.\n\n"
+        "**Disagreement guide for the A/B comparison.** If Build A fires on the frozen grid at M=1.0, it has widened the bracket (or used a different [lo,hi]); compare against my 'lattice' rows. "
+        "If it fires at M=0.5 with E on whole degrees, it has taken lo/hi as something other than floor/cap. If its false-lock rate is far from ~24%, check feed selection (1-min vs routine) and the "
+        "local-day window first (section 9).")
     jdump(rep, OUT_JSON)
     write_md(rep, results, sig, uni)
     jdump({"%s|%s|%s" % (k[0], list(k[1]), k[2]): r["_recs"] for k, r in results.items() if k[2] == 10 and k[0] == "lattice"},
@@ -1013,7 +1036,7 @@ def write_md(rep, results, sig, uni):
       "`/historical/markets/{ticker}/candlesticks` before it (historical rows use `close` rather than `close_dollars`; "
       "aliased, values untouched, then parsed by the reused `edge_sizing_v2.normalize()`). International series (EGLL, LFPG, RJTT, ...) have no "
       "settled markets in the live listing and no verified IEM 1-minute station map; 'series_not_in_verified_US_station_map' counts only what "
-      "the live listing returned. Four US series not in the old stage-2 city map (EWR, SAN, SDF, TTN) were added with standard offsets confirmed by close-hour.\n")
+      "the live listing returned (" + ", ".join(f"{k}:{v}" for k, v in sorted(U.get("unmapped_series_rows", {}).items())) + "). Four US series not in the old stage-2 city map (EWR, SAN, SDF, TTN) were added with standard offsets confirmed by close-hour.\n")
     A("## 3. The frozen geometry cannot fire (spec defect, found by audit)\n")
     g = rep["geometry"]
     A(f"Every one of the {U['n_bracket_rungs']:,} bracket rungs has `cap_strike - floor_strike = 1` (e.g. `B64.5` = floor 64, cap 65; it settles YES on "
@@ -1075,7 +1098,7 @@ def write_md(rep, results, sig, uni):
     for k, v in rep["tz_diag"]["feed_minus_official_extreme_degF_dist"].items():
         tot = sum(v.values())
         A(f"| {k} (n={tot}) | " + " | ".join(f"{100 * v.get(str(i), 0) / tot:.0f}%" for i in range(-3, 4)) + " |")
-    A("\nMechanism: the IEM/ASOS day extreme and the official settlement value disagree by 1 degF on roughly half of days (see section 9 table) and the bias is one-sided "
+    A("\nMechanism: the IEM/ASOS day extreme and the official settlement value disagree by 1 degF on about half of HIGH days and 15-40% of LOW days (table above) and the bias is one-sided "
       "(HIGH: IEM 1-min max is >= official; routine hourly max is <= official because hourly sampling misses the peak). Rungs are only 2 whole degrees wide, so a "
       "1-degree feed disagreement flips the winner. A symmetric margin cannot fix a one-sided bias.\n")
     A("## 8. Anchors\n")
@@ -1112,11 +1135,14 @@ def write_md(rep, results, sig, uni):
         A("```")
     A("\nIndependent check that the window is right (no outcomes used): obs-derived day extreme vs the market's numeric `expiration_value` "
       "(available for markets settled after the historical cutoff), under window shifts of -3..+3 h. Share within 0.5 degF:\n")
-    A("| window shift (h) | match share | n |\n|---:|---:|---:|")
-    for k, v in rep["tz_diag"]["match_rate_by_window_shift_hours"].items():
-        A(f"| {k} | {v[0]:.3f} | {v[1]} |")
-    A("\n(The shift = 0 window is best for the 1-min feed; the residual mismatch is the 1 degF one-sided feed bias, not a timezone error. "
-      "Shifted rows use the 1-min feed only, shift 0 uses the per-market selected feed, so the comparison is slightly conservative for 0.)\n")
+    A("| window shift (h) | HIGH match share (n) | LOW match share (n) |\n|---:|---:|---:|")
+    tzm = rep["tz_diag"]["match_rate_by_window_shift_hours"]
+    for k in sorted(tzm["max"], key=int):
+        hv, lv = tzm["max"][k], tzm["min"].get(k, [None, 0])
+        A(f"| {k} | {hv[0]:.3f} ({hv[1]}) | {_f(lv[0], 3)} ({lv[1]}) |")
+    A("\n(Same events for every shift, 1-min feed only. The unshifted window is the maximum for both kinds. HIGH is nearly flat (the afternoon plateau is broad and the 1 degF feed bias dominates the match rate); "
+      "LOW markets, whose extreme sits in a narrow pre-dawn band, lose 6-22 points when the window is shifted, which is what a wrong timezone would look like. "
+      "The extreme's local-standard hour (below) is physically right: HIGH mode 14:00 LST (=15:00 DST), LOW mode 04:00-05:00 LST. The residual mismatch at shift 0 is the 1 degF feed bias tabulated above, not a timezone error.)\n")
     A("Local-standard hour of the day's extreme (shift 0): " + json.dumps(rep["tz_diag"]["argext_local_std_hour_hist"]) + "\n")
     A("## 10. Interpretation choices (where Build A may differ -- this is where a disagreement would come from)\n")
     for s_ in rep["choices"]:

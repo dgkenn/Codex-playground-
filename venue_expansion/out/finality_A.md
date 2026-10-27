@@ -5,7 +5,7 @@ Spec: `venue_expansion/TERMINAL_FINALITY_SPEC.md` (frozen 2026-10-27).  Code: `v
 ## Verdict (formal reading S = spec text literally): **INSUFFICIENT**
 
 - reading **S** (interval [floor, cap] -- LITERAL spec (formal verdict)): **INSUFFICIENT**; PASS cells at L=10: none; KILL triggers: none; best one-sided 97.9% EV upper bound at L=10: n/ac
-- reading **L** (interval [floor-0.5, cap+0.5] -- lattice/rounding reading (exploratory, pre-declared)): **INSUFFICIENT**; PASS cells at L=10: none; KILL triggers: none; best one-sided 97.9% EV upper bound at L=10: 4.72c
+- reading **L** (interval [floor-0.5, cap+0.5] -- lattice/rounding reading (exploratory, pre-declared)): **INSUFFICIENT**; PASS cells at L=10: none; KILL triggers: none; best one-sided 97.9% EV upper bound at L=10: 2.32c
 
 {{COMMENTARY}}
 
@@ -14,8 +14,8 @@ Spec: `venue_expansion/TERMINAL_FINALITY_SPEC.md` (frozen 2026-10-27).  Code: `v
 - Series tested: 40 (20 HIGH, 20 LOW; 20 stations).  Events (station-days): 6,039; bracket rungs: **24,156** (HIGH events 3,020, LOW events 3,019); close_time UTC date in 2026-05-23..2026-10-20.
 - Obs feed per event: IEM 1-minute **5,109**, routine-METAR fallback **930** (1-minute day had < 600 obs).
 - Rungs with at least one FINAL-YES fire (any reading/cell): **3,899** (all under reading L; reading S fires on none).
-- **Sampling of the priced stage**: candlesticks were pulled for 652 of 3,899 fired rungs = **16.7%**.  Work order = all fired rungs, sorted only to make the shuffle reproducible, then shuffled with seed 20261027 and NEVER re-sorted, so the pulled set is a uniformly random subsample of the fired rungs (any prefix is representative).  Signal-level facts (fire counts, false-lock rate before pricing) use ALL fired rungs in the signals stage (3,899); the covered/priced statistics below use the pulled random subsample.
-- Candle states of the pulled set: {"no_candles_in_final_120min": 51, "covered": 601, "not_fetched": 3247}
+- **Sampling of the priced stage**: candlesticks were pulled for 1,317 of 3,899 fired rungs = **33.8%**.  Work order = all fired rungs, sorted only to make the shuffle reproducible, then shuffled with seed 20261027 and NEVER re-sorted, so the pulled set is a uniformly random subsample of the fired rungs (any prefix is representative).  Signal-level facts (fire counts, false-lock rate before pricing) use ALL fired rungs in the signals stage (3,899); the covered/priced statistics below use the pulled random subsample.
+- Candle states of the pulled set: {"no_candles_in_final_120min": 119, "covered": 1198, "not_fetched": 2582}
 
 ## Method (what was actually run)
 
@@ -75,7 +75,7 @@ Rung `KXLOWTMIN-26JUN05-B64.5` (floor 64, cap 65, kind min, feed iem_1min), read
 
 ## Sanity anchors
 
-**(a) Oracle reconciliation -- HOLDS.**  Price join: 34/34 of the stored Stage-1 oracle bracket rungs re-derived from my own fresh candle pull reproduce the stored best winner cost, best net and capturable-minute count EXACTLY (same `normalize()`, fee, 98c constants).  Subset test: of 257 priced YES-settled fires in W=60 cells (entry necessarily inside the final 60 minutes), 0 are not oracle-capturable under the Stage-1 definition re-derived on the same candles.  The rule fires on 9 of the stored oracle bracket rungs.  Limitation: Only the top-40 'capturable_markets_detail' of out/edge_sizing_v2.json (34 bracket rungs) survives on disk; the full 140-market Stage-1 set and its population cache are gitignored and absent.  The subset anchor is therefore tested by re-deriving the Stage-1 capturable test (same fee/98c constants, same normalize()) on every priced YES fire, plus a price-join reproduction on the stored rungs.
+**(a) Oracle reconciliation -- HOLDS.**  Price join: 34/34 of the stored Stage-1 oracle bracket rungs re-derived from my own fresh candle pull reproduce the stored best winner cost, best net and capturable-minute count EXACTLY (same `normalize()`, fee, 98c constants).  Subset test: of 499 priced YES-settled fires in W=60 cells (entry necessarily inside the final 60 minutes), 0 are not oracle-capturable under the Stage-1 definition re-derived on the same candles.  The rule fires on 9 of the stored oracle bracket rungs.  Limitation: Only the top-40 'capturable_markets_detail' of out/edge_sizing_v2.json (34 bracket rungs) survives on disk; the full 140-market Stage-1 set and its population cache are gitignored and absent.  The subset anchor is therefore tested by re-deriving the Stage-1 capturable test (same fee/98c constants, same normalize()) on every priced YES fire, plus a price-join reproduction on the stored rungs.
 **(b) No look-ahead -- HOLDS.**  15,360 assertion re-runs, none failed (see worked example).
 **(c) Monotonicity / timezone -- HOLDS.**  Running-extreme monotonicity violations over 6,039 event-days: **0**.  Independent timezone proof: extreme of the obs inside windows shifted by s hours versus Kalshi's own official `expiration_value`:
 
@@ -102,38 +102,38 @@ Formal reading S: n fires = **0** (empty interval -- see D1).  Reading L: n fire
 
 | cell | L | fires (covered) | false locks (rate, Wilson UB) | priced (vol>0) | untradeable | EV vw (c) | EV unw (c) | t vw (bar) | t unw | days | stn | FL priced (rate, UB) | UB97.9 (c) | all 5 bars |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| M0.5_R2_H3_W60 | 10 | 571 | 135 (23.64%, 27.30%) | 136 (55) | 435 (76.18%) | 0.31 | 0.85 | 0.14 (3.17) | 0.65 | 90 | 20 | 74 (54.41%, 62.55%) | 4.72 | no |
-| M0.5_R2_H3_W120 | 10 | 601 | 140 (23.29%, 26.84%) | 236 (92) | 365 (60.73%) | -1.29 | 1.08 | -2.26 (3.15) | 1.14 | 116 | 20 | 128 (54.24%, 60.47%) | -0.12 | no |
-| M0.5_R4_H3_W60 | 10 | 498 | 127 (25.50%, 29.51%) | 95 (36) | 403 (80.92%) | -1.97 | -0.19 | -81.01 (3.20) | -0.27 | 72 | 19 | 69 (72.63%, 80.59%) | -1.92 | no |
-| M0.5_R4_H3_W120 | 10 | 534 | 130 (24.34%, 28.16%) | 181 (72) | 353 (66.10%) | -1.94 | 0.96 | -48.93 (3.16) | 1.16 | 100 | 20 | 119 (65.75%, 72.27%) | -1.86 | no |
+| M0.5_R2_H3_W60 | 10 | 1143 | 270 (23.62%, 26.17%) | 270 (114) | 873 (76.38%) | 0.22 | -0.65 | 0.22 (3.15) | -0.68 | 122 | 20 | 159 (58.89%, 64.59%) | 2.32 | no |
+| M0.5_R2_H3_W120 | 10 | 1198 | 284 (23.71%, 26.20%) | 469 (189) | 729 (60.85%) | -1.04 | -0.26 | -1.98 (3.14) | -0.34 | 144 | 20 | 259 (55.22%, 59.66%) | 0.04 | no |
+| M0.5_R4_H3_W60 | 10 | 1002 | 250 (24.95%, 27.72%) | 193 (82) | 809 (80.74%) | -5.20 | -1.58 | -1.55 (3.15) | -2.19 | 110 | 20 | 143 (74.09%, 79.76%) | 1.70 | no |
+| M0.5_R4_H3_W120 | 10 | 1071 | 258 (24.09%, 26.74%) | 363 (149) | 708 (66.11%) | -1.93 | -0.23 | -47.44 (3.14) | -0.37 | 138 | 20 | 234 (64.46%, 69.21%) | -1.84 | no |
 
 ## All cells, L = 0 and L = 20
 
 | cell | L | fires (covered) | false locks (rate, Wilson UB) | priced (vol>0) | untradeable | EV vw (c) | EV unw (c) | t vw (bar) | t unw | days | stn | FL priced (rate, UB) | UB97.9 (c) | all 5 bars |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| M0.5_R2_H3_W60 | 0 | 571 | 135 (23.64%, 27.30%) | 171 (72) | 400 (70.05%) | -0.64 | 0.16 | -0.54 (3.16) | 0.14 | 99 | 20 | 103 (60.23%, 67.27%) | 1.81 | no |
-| M0.5_R2_H3_W60 | 20 | 571 | 135 (23.64%, 27.30%) | 116 (50) | 455 (79.68%) | 2.18 | 0.89 | 0.72 (3.18) | 0.56 | 80 | 20 | 65 (56.03%, 64.73%) | 8.39 | no |
-| M0.5_R2_H3_W120 | 0 | 601 | 140 (23.29%, 26.84%) | 251 (92) | 350 (58.24%) | 0.40 | 1.05 | 0.27 (3.15) | 1.01 | 120 | 20 | 136 (54.18%, 60.24%) | 3.52 | no |
-| M0.5_R2_H3_W120 | 20 | 601 | 140 (23.29%, 26.84%) | 226 (97) | 375 (62.40%) | -0.97 | 0.49 | -1.51 (3.15) | 0.52 | 113 | 20 | 123 (54.42%, 60.79%) | 0.35 | no |
-| M0.5_R4_H3_W60 | 0 | 498 | 127 (25.50%, 29.51%) | 125 (48) | 373 (74.90%) | -1.75 | -0.35 | -11.57 (3.18) | -0.60 | 86 | 20 | 95 (76.00%, 82.64%) | -1.44 | no |
-| M0.5_R4_H3_W60 | 20 | 498 | 127 (25.50%, 29.51%) | 80 (34) | 418 (83.94%) | -1.49 | -1.01 | -5.20 (3.21) | -4.34 | 63 | 19 | 60 (75.00%, 83.19%) | -0.89 | no |
-| M0.5_R4_H3_W120 | 0 | 534 | 130 (24.34%, 28.16%) | 194 (67) | 340 (63.67%) | -1.68 | 0.87 | -7.30 (3.16) | 1.06 | 103 | 20 | 126 (64.95%, 71.31%) | -1.21 | no |
-| M0.5_R4_H3_W120 | 20 | 534 | 130 (24.34%, 28.16%) | 174 (73) | 360 (67.42%) | -1.81 | 0.25 | -17.15 (3.16) | 0.35 | 99 | 20 | 114 (65.52%, 72.18%) | -1.60 | no |
+| M0.5_R2_H3_W60 | 0 | 1143 | 270 (23.62%, 26.17%) | 345 (145) | 798 (69.82%) | -0.87 | -0.86 | -1.79 (3.14) | -1.13 | 135 | 20 | 209 (60.58%, 65.59%) | 0.13 | no |
+| M0.5_R2_H3_W60 | 20 | 1143 | 270 (23.62%, 26.17%) | 236 (102) | 907 (79.35%) | -3.43 | -0.73 | -1.21 (3.15) | -0.66 | 112 | 20 | 141 (59.75%, 65.80%) | 2.39 | no |
+| M0.5_R2_H3_W120 | 0 | 1198 | 284 (23.71%, 26.20%) | 502 (192) | 696 (58.10%) | -1.03 | -0.30 | -1.22 (3.14) | -0.40 | 145 | 20 | 279 (55.58%, 59.87%) | 0.71 | no |
+| M0.5_R2_H3_W120 | 20 | 1198 | 284 (23.71%, 26.20%) | 451 (194) | 747 (62.35%) | -1.80 | -0.73 | -2.94 (3.14) | -0.96 | 143 | 20 | 251 (55.65%, 60.17%) | -0.54 | no |
+| M0.5_R4_H3_W60 | 0 | 1002 | 250 (24.95%, 27.72%) | 255 (105) | 747 (74.55%) | -4.18 | -1.37 | -1.60 (3.14) | -2.42 | 126 | 20 | 189 (74.12%, 79.11%) | 1.20 | no |
+| M0.5_R4_H3_W60 | 20 | 1002 | 250 (24.95%, 27.72%) | 167 (72) | 835 (83.33%) | -4.67 | -1.89 | -1.61 (3.16) | -2.75 | 100 | 20 | 126 (75.45%, 81.36%) | 1.31 | no |
+| M0.5_R4_H3_W120 | 0 | 1071 | 258 (24.09%, 26.74%) | 394 (149) | 677 (63.21%) | -1.93 | -0.27 | -9.07 (3.14) | -0.48 | 140 | 20 | 253 (64.21%, 68.79%) | -1.49 | no |
+| M0.5_R4_H3_W120 | 20 | 1071 | 258 (24.09%, 26.74%) | 351 (149) | 720 (67.23%) | -1.71 | -0.64 | -14.82 (3.14) | -1.15 | 137 | 20 | 226 (64.39%, 69.22%) | -1.47 | no |
 
 ## Diagnostics: why the signal loses (reading L, M=0.5, R=2, W=120, L=10)
 
-n = 601 covered fires.  `official_value - E` (official integer minus the obs extreme at signal time): {"-4": 1, "-3": 2, "-2": 8, "-1": 145, "0": 337, "1": 87, "2": 14, "3": 3, "4": 3, "5": 1}; HIGH {"-3": 1, "-2": 6, "-1": 129, "0": 138, "1": 51, "2": 14, "3": 3, "4": 3, "5": 1}, LOW {"-4": 1, "-3": 1, "-2": 2, "-1": 16, "0": 199, "1": 36}.  A non-zero entry means the official value differs from what the obs showed; because reading-L fires have E sitting ON a bracket edge (M=0.5), a +/-1 disagreement moves the settlement into a neighbouring bracket -> false lock.
+n = 1198 covered fires.  `official_value - E` (official integer minus the obs extreme at signal time): {"-4": 1, "-3": 3, "-2": 17, "-1": 311, "0": 675, "1": 157, "2": 20, "3": 7, "4": 6, "5": 1}; HIGH {"-3": 1, "-2": 10, "-1": 271, "0": 279, "1": 88, "2": 20, "3": 6, "4": 5, "5": 1}, LOW {"-4": 1, "-3": 2, "-2": 7, "-1": 40, "0": 396, "1": 69, "3": 1, "4": 1}.  A non-zero entry means the official value differs from what the obs showed; because reading-L fires have E sitting ON a bracket edge (M=0.5), a +/-1 disagreement moves the settlement into a neighbouring bracket -> false lock.
 
 Calibration of the market at the first quote at/after signal+10 min, whatever its price (YES rate among fired rungs, by yes_ask):
 
 | yes_ask bucket | n | settled YES | YES rate |
 |---|---:|---:|---:|
-| 0-49c | 127 | 3 | 2.36% |
-| 50-79c | 13 | 9 | 69.23% |
-| 80-94c | 24 | 24 | 100.00% |
-| 95-98c | 53 | 53 | 100.00% |
-| 99-100c | 344 | 344 | 100.00% |
-| no_quote | 40 | 28 | 70.00% |
+| 0-49c | 254 | 6 | 2.36% |
+| 50-79c | 19 | 12 | 63.16% |
+| 80-94c | 50 | 48 | 96.00% |
+| 95-98c | 113 | 112 | 99.12% |
+| 99-100c | 689 | 688 | 99.85% |
+| no_quote | 73 | 48 | 65.75% |
 
 Where the book still offers the winner side at <=98c the book is, on average, correctly pricing the risk that the signal is wrong: the fires that are cheap are disproportionately the false locks.  This is adverse selection into the tradeable subset.
 
@@ -147,9 +147,9 @@ Where the book still offers the winner side at <=98c the book is, on average, co
 | close_before_2026-05-23 | 39,037 | bracket rungs outside the frozen 2026-05-23..2026-10-20 window (catalog also holds older/newer settled rungs) |
 | event-level skips (tz assertion, insufficient obs) | 0 | 0 events skipped; the 1-minute->routine fallback was used for 930 events |
 | series with no verified station/tz mapping (D7) | 1,800 | 8 series with in-window bracket rungs: KXHIGHTEWR=220, KXHIGHTSAN=248, KXHIGHTSDF=212, KXHIGHTTTN=220, KXLOWTEWR=220, KXLOWTSAN=248, KXLOWTSDF=212, KXLOWTTTN=220 (international + extra US); zero-rung series omitted |
-| fired rung: no_candles_in_final_120min | 51 | no candle in the final 120 minutes -> outside 'candlestick coverage' universe, excluded from covered stats |
+| fired rung: no_candles_in_final_120min | 119 | no candle in the final 120 minutes -> outside 'candlestick coverage' universe, excluded from covered stats |
 | fired rung: candle_fetch_error | 0 | HTTP error on both candle endpoints |
-| fired rung: not_fetched | 3,247 | not reached by the shuffled candle pull (random, un-selected) -- sampling, see fraction above |
+| fired rung: not_fetched | 2,582 | not reached by the shuffled candle pull (random, un-selected) -- sampling, see fraction above |
 | scalar-result rungs | 4 | result neither yes nor no -> dropped |
 
 ## Caveats / what this does NOT show

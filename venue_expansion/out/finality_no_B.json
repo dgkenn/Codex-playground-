@@ -1,0 +1,3007 @@
+{
+ "spec": "venue_expansion/FINALITY_NO_LADDER_SPEC.md (frozen 2026-10-27)",
+ "build": "B (independent)",
+ "bars": {
+  "n_comparisons": 39,
+  "alpha": 0.001282051282051282,
+  "t_quantile_p": 0.9993589743589744
+ },
+ "sampling": {
+  "seed": 20261027,
+  "method": "single seeded shuffle of ALL city-day events, never re-sorted; candles fetched in that order, so the fetched set is a uniform random subsample of the universe",
+  "universe_events": 6039,
+  "universe_rungs": 36234,
+  "events_with_candles": 229,
+  "fraction": 0.03792018546116907,
+  "contiguous_prefix_of_work_order": 102,
+  "events_by_partition_done": {
+   "live": 158,
+   "hist": 71
+  },
+  "events_by_partition_universe": {
+   "live": 2440,
+   "hist": 3599
+  },
+  "series_covered": 40,
+  "series_total": 40,
+  "min_series_n": 1,
+  "max_series_n": 10,
+  "usable_events_after_obs_filter": 229,
+  "design_weights_live_hist": {
+   "True": 15.443037974683545,
+   "False": 50.690140845070424
+  },
+  "universe_by_stratum": {
+   "True": 2440,
+   "False": 3599
+  },
+  "fetched_by_stratum": {
+   "True": 158,
+   "False": 71
+  },
+  "skips": {},
+  "feeds": {
+   "routine": 96,
+   "1min": 133
+  }
+ },
+ "part1": {
+  "verdict": "KILL",
+  "verdict_detail": {
+   "pass_cells": [],
+   "kill_false_lock_primary": false,
+   "best_one_sided_97.9_ub_vw_ev_c": 31.52343688812252,
+   "ev_pos_cells": 5,
+   "ev_pos_cells_failing_n_floor": 5,
+   "kill_no_ev_pos_cell_vacuous": false
+  },
+  "grid": {
+   "G=2,R=2,H=3,W=60": {
+    "L=0": {
+     "n_fires": 356,
+     "n_priced": 4,
+     "untradeable_frac": 0.9887640449438202,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 150,
+      "candles_exist_but_none_<=98c_net>0": 202
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 356,
+      "rate": 0.014044943820224719,
+      "wilson_lo": 0.006013684881743203,
+      "wilson_hi": 0.03245175172411717
+     },
+     "false_lock_priced": {
+      "k": 2,
+      "n": 4,
+      "rate": 0.5,
+      "wilson_lo": 0.15003898911025654,
+      "wilson_hi": 0.8499610108897435
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 166,
+     "priced_city_days": 4,
+     "priced_calendar_days": 4,
+     "priced_stations": 3,
+     "win_rate_priced": 0.5,
+     "mean_cost_c": 49.5,
+     "ev_raw_mean_c": -0.5,
+     "ev_unweighted_c": 0.04495011769980943,
+     "vw_cityday": {
+      "ev_c": -1.2586289168124702,
+      "se": 0.9114726425558031,
+      "t": -1.3808740471718692,
+      "df": 3.0,
+      "clusters": 4,
+      "t_bar": 11.881369860253072,
+      "ub979": 1.8539453550963776
+     },
+     "uw_cityday": {
+      "ev_c": 0.04495011769980943,
+      "se": 0.8033328340666394,
+      "t": 0.055954538136157715,
+      "df": 3.0,
+      "clusters": 4,
+      "t_bar": 11.881369860253072,
+      "ub979": 2.7882393776869594
+     },
+     "vw_calday": {
+      "ev_c": -1.2586289168124702,
+      "se": 0.9114726425558031,
+      "t": -1.3808740471718692,
+      "df": 3.0,
+      "clusters": 4,
+      "t_bar": 11.881369860253072,
+      "ub979": 1.8539453550963776
+     },
+     "uw_calday": {
+      "ev_c": 0.04495011769980943,
+      "se": 0.8033328340666394,
+      "t": 0.055954538136157715,
+      "df": 3.0,
+      "clusters": 4,
+      "t_bar": 11.881369860253072,
+      "ub979": 2.7882393776869594
+     },
+     "vol_total_raw": 55.0,
+     "n_zero_volume_entry": 2
+    },
+    "L=10": {
+     "n_fires": 356,
+     "n_priced": 2,
+     "untradeable_frac": 0.9943820224719101,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 233,
+      "candles_exist_but_none_<=98c_net>0": 121
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 356,
+      "rate": 0.014044943820224719,
+      "wilson_lo": 0.006013684881743203,
+      "wilson_hi": 0.03245175172411717
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 2,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.6576197725990219
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 166,
+     "priced_city_days": 2,
+     "priced_calendar_days": 2,
+     "priced_stations": 2,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 97.5,
+     "ev_raw_mean_c": 1.5,
+     "ev_unweighted_c": 1.2335142246341062,
+     "vw_cityday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "uw_cityday": {
+      "ev_c": 1.2335142246341062,
+      "se": 0.3579706630552768,
+      "t": 3.445852836391876,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 6.6516207540854975
+     },
+     "vw_calday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "uw_calday": {
+      "ev_c": 1.2335142246341062,
+      "se": 0.3579706630552768,
+      "t": 3.445852836391876,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 6.6516207540854975
+     },
+     "vol_total_raw": 5.0,
+     "n_zero_volume_entry": 1
+    },
+    "L=20": {
+     "n_fires": 356,
+     "n_priced": 2,
+     "untradeable_frac": 0.9943820224719101,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 243,
+      "candles_exist_but_none_<=98c_net>0": 111
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 356,
+      "rate": 0.014044943820224719,
+      "wilson_lo": 0.006013684881743203,
+      "wilson_hi": 0.03245175172411717
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 2,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.6576197725990219
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 166,
+     "priced_city_days": 2,
+     "priced_calendar_days": 2,
+     "priced_stations": 2,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 98.0,
+     "ev_raw_mean_c": 1.0,
+     "ev_unweighted_c": 1.0,
+     "vw_cityday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "uw_cityday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "vw_calday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "uw_calday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "vol_total_raw": 5.0,
+     "n_zero_volume_entry": 1
+    }
+   },
+   "G=2,R=2,H=3,W=120": {
+    "L=0": {
+     "n_fires": 368,
+     "n_priced": 15,
+     "untradeable_frac": 0.9592391304347826,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 65,
+      "candles_exist_but_none_<=98c_net>0": 288
+     },
+     "false_lock_all": {
+      "k": 6,
+      "n": 368,
+      "rate": 0.016304347826086956,
+      "wilson_lo": 0.0074933011925442505,
+      "wilson_hi": 0.035109422217217294
+     },
+     "false_lock_priced": {
+      "k": 5,
+      "n": 15,
+      "rate": 0.3333333333333333,
+      "wilson_lo": 0.15176324436857305,
+      "wilson_hi": 0.5828645226687702
+     },
+     "false_lock_city_days": 6,
+     "signalling_city_days": 170,
+     "priced_city_days": 14,
+     "priced_calendar_days": 13,
+     "priced_stations": 11,
+     "win_rate_priced": 0.6666666666666666,
+     "mean_cost_c": 70.86666666666666,
+     "ev_raw_mean_c": -5.2,
+     "ev_unweighted_c": -3.636779209560148,
+     "vw_cityday": {
+      "ev_c": -13.669058986636955,
+      "se": 10.653274442915897,
+      "t": -1.2830852204062444,
+      "df": 13.0,
+      "clusters": 14,
+      "t_bar": 4.087830994837712,
+      "ub979": 10.356496374804426
+     },
+     "uw_cityday": {
+      "ev_c": -3.636779209560148,
+      "se": 4.175509870839867,
+      "t": -0.8709784725831919,
+      "df": 13.0,
+      "clusters": 14,
+      "t_bar": 4.087830994837712,
+      "ub979": 5.779944643904193
+     },
+     "vw_calday": {
+      "ev_c": -13.669058986636955,
+      "se": 10.705565820228639,
+      "t": -1.2768179857255808,
+      "df": 12.0,
+      "clusters": 13,
+      "t_bar": 4.177566345779902,
+      "ub979": 10.69406978174587
+     },
+     "uw_calday": {
+      "ev_c": -3.636779209560148,
+      "se": 4.1941488856997955,
+      "t": -0.8671077991436992,
+      "df": 12.0,
+      "clusters": 13,
+      "t_bar": 4.177566345779902,
+      "ub979": 5.908030573683158
+     },
+     "vol_total_raw": 646.9300000000001,
+     "n_zero_volume_entry": 6
+    },
+    "L=10": {
+     "n_fires": 368,
+     "n_priced": 13,
+     "untradeable_frac": 0.9646739130434783,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 77,
+      "candles_exist_but_none_<=98c_net>0": 278
+     },
+     "false_lock_all": {
+      "k": 6,
+      "n": 368,
+      "rate": 0.016304347826086956,
+      "wilson_lo": 0.0074933011925442505,
+      "wilson_hi": 0.035109422217217294
+     },
+     "false_lock_priced": {
+      "k": 5,
+      "n": 13,
+      "rate": 0.38461538461538464,
+      "wilson_lo": 0.1770970779442661,
+      "wilson_hi": 0.6447710849257727
+     },
+     "false_lock_city_days": 6,
+     "signalling_city_days": 170,
+     "priced_city_days": 12,
+     "priced_calendar_days": 11,
+     "priced_stations": 9,
+     "win_rate_priced": 0.6153846153846154,
+     "mean_cost_c": 66.6923076923077,
+     "ev_raw_mean_c": -6.153846153846154,
+     "ev_unweighted_c": -4.034800737711492,
+     "vw_cityday": {
+      "ev_c": -16.16630533613847,
+      "se": 12.13844685717207,
+      "t": -1.3318265117737462,
+      "df": 11.0,
+      "clusters": 12,
+      "t_bar": 4.2877139487620415,
+      "ub979": 11.75736522974757
+     },
+     "uw_cityday": {
+      "ev_c": -4.034800737711492,
+      "se": 4.70285883030646,
+      "t": -0.857946386081201,
+      "df": 11.0,
+      "clusters": 12,
+      "t_bar": 4.2877139487620415,
+      "ub979": 6.7838058138963815
+     },
+     "vw_calday": {
+      "ev_c": -16.16630533613847,
+      "se": 12.193015052443839,
+      "t": -1.325866101748006,
+      "df": 10.0,
+      "clusters": 11,
+      "t_bar": 4.42601700105428,
+      "ub979": 12.251968375973075
+     },
+     "uw_calday": {
+      "ev_c": -4.034800737711492,
+      "se": 4.731675361250358,
+      "t": -0.8527213787222471,
+      "df": 10.0,
+      "clusters": 11,
+      "t_bar": 4.42601700105428,
+      "ub979": 6.993320277026039
+     },
+     "vol_total_raw": 547.42,
+     "n_zero_volume_entry": 5
+    },
+    "L=20": {
+     "n_fires": 368,
+     "n_priced": 13,
+     "untradeable_frac": 0.9646739130434783,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 105,
+      "candles_exist_but_none_<=98c_net>0": 250
+     },
+     "false_lock_all": {
+      "k": 6,
+      "n": 368,
+      "rate": 0.016304347826086956,
+      "wilson_lo": 0.0074933011925442505,
+      "wilson_hi": 0.035109422217217294
+     },
+     "false_lock_priced": {
+      "k": 5,
+      "n": 13,
+      "rate": 0.38461538461538464,
+      "wilson_lo": 0.1770970779442661,
+      "wilson_hi": 0.6447710849257727
+     },
+     "false_lock_city_days": 6,
+     "signalling_city_days": 170,
+     "priced_city_days": 12,
+     "priced_calendar_days": 11,
+     "priced_stations": 9,
+     "win_rate_priced": 0.6153846153846154,
+     "mean_cost_c": 66.61538461538461,
+     "ev_raw_mean_c": -6.076923076923077,
+     "ev_unweighted_c": -3.977868655280252,
+     "vw_cityday": {
+      "ev_c": -17.025070960099086,
+      "se": 12.51495873704702,
+      "t": -1.3603777142070108,
+      "df": 11.0,
+      "clusters": 12,
+      "t_bar": 4.2877139487620415,
+      "ub979": 11.764739551158844
+     },
+     "uw_cityday": {
+      "ev_c": -3.977868655280252,
+      "se": 4.706269580468607,
+      "t": -0.8452275389809208,
+      "df": 11.0,
+      "clusters": 12,
+      "t_bar": 4.2877139487620415,
+      "ub979": 6.848584094859525
+     },
+     "vw_calday": {
+      "ev_c": -17.025070960099086,
+      "se": 12.571861746571633,
+      "t": -1.3542203456653388,
+      "df": 10.0,
+      "clusters": 11,
+      "t_bar": 4.42601700105428,
+      "ub979": 12.276181162384749
+     },
+     "uw_calday": {
+      "ev_c": -3.977868655280252,
+      "se": 4.734750092919437,
+      "t": -0.8401433184887498,
+      "df": 10.0,
+      "clusters": 11,
+      "t_bar": 4.42601700105428,
+      "ub979": 7.057418639970127
+     },
+     "vol_total_raw": 514.89,
+     "n_zero_volume_entry": 5
+    }
+   },
+   "G=2,R=4,H=3,W=60": {
+    "L=0": {
+     "n_fires": 314,
+     "n_priced": 3,
+     "untradeable_frac": 0.9904458598726115,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 127,
+      "candles_exist_but_none_<=98c_net>0": 184
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 314,
+      "rate": 0.01592356687898089,
+      "wilson_lo": 0.0068202792227328515,
+      "wilson_hi": 0.03672803217054901
+     },
+     "false_lock_priced": {
+      "k": 2,
+      "n": 3,
+      "rate": 0.6666666666666666,
+      "wilson_lo": 0.20765960074271794,
+      "wilson_hi": 0.9385080553004134
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 150,
+     "priced_city_days": 3,
+     "priced_calendar_days": 3,
+     "priced_stations": 2,
+     "win_rate_priced": 0.3333333333333333,
+     "mean_cost_c": 33.333333333333336,
+     "ev_raw_mean_c": -1.0,
+     "ev_unweighted_c": -0.1358485535261965,
+     "vw_cityday": {
+      "ev_c": -1.2586289168124702,
+      "se": 0.9667627296258458,
+      "t": -1.3019005369596548,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 3.308774971007942
+     },
+     "uw_cityday": {
+      "ev_c": -0.1358485535261965,
+      "se": 1.0586968620155184,
+      "t": -0.12831676223878827,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 4.865891806763004
+     },
+     "vw_calday": {
+      "ev_c": -1.2586289168124702,
+      "se": 0.9667627296258458,
+      "t": -1.3019005369596548,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 3.308774971007942
+     },
+     "uw_calday": {
+      "ev_c": -0.1358485535261965,
+      "se": 1.0586968620155184,
+      "t": -0.12831676223878827,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 4.865891806763004
+     },
+     "vol_total_raw": 55.0,
+     "n_zero_volume_entry": 1
+    },
+    "L=10": {
+     "n_fires": 314,
+     "n_priced": 1,
+     "untradeable_frac": 0.9968152866242038,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 203,
+      "candles_exist_but_none_<=98c_net>0": 110
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 314,
+      "rate": 0.01592356687898089,
+      "wilson_lo": 0.0068202792227328515,
+      "wilson_hi": 0.03672803217054901
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 1,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.7934506856996815
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 150,
+     "priced_city_days": 1,
+     "priced_calendar_days": 1,
+     "priced_stations": 1,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 98.0,
+     "ev_raw_mean_c": 1.0,
+     "ev_unweighted_c": 1.0,
+     "vw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vol_total_raw": 5.0,
+     "n_zero_volume_entry": 0
+    },
+    "L=20": {
+     "n_fires": 314,
+     "n_priced": 1,
+     "untradeable_frac": 0.9968152866242038,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 213,
+      "candles_exist_but_none_<=98c_net>0": 100
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 314,
+      "rate": 0.01592356687898089,
+      "wilson_lo": 0.0068202792227328515,
+      "wilson_hi": 0.03672803217054901
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 1,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.7934506856996815
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 150,
+     "priced_city_days": 1,
+     "priced_calendar_days": 1,
+     "priced_stations": 1,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 98.0,
+     "ev_raw_mean_c": 1.0,
+     "ev_unweighted_c": 1.0,
+     "vw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vol_total_raw": 5.0,
+     "n_zero_volume_entry": 0
+    }
+   },
+   "G=2,R=4,H=3,W=120": {
+    "L=0": {
+     "n_fires": 336,
+     "n_priced": 11,
+     "untradeable_frac": 0.9672619047619048,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 62,
+      "candles_exist_but_none_<=98c_net>0": 263
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 336,
+      "rate": 0.01488095238095238,
+      "wilson_lo": 0.00637256356607087,
+      "wilson_hi": 0.034356601352346645
+     },
+     "false_lock_priced": {
+      "k": 4,
+      "n": 11,
+      "rate": 0.36363636363636365,
+      "wilson_lo": 0.15166471092207015,
+      "wilson_hi": 0.6461988255483124
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 158,
+     "priced_city_days": 11,
+     "priced_calendar_days": 10,
+     "priced_stations": 8,
+     "win_rate_priced": 0.6363636363636364,
+     "mean_cost_c": 62.54545454545455,
+     "ev_raw_mean_c": 0.09090909090909091,
+     "ev_unweighted_c": 0.418959758231271,
+     "vw_cityday": {
+      "ev_c": 0.4221291171569695,
+      "se": 0.9216660911107339,
+      "t": 0.4580065614090739,
+      "df": 10.0,
+      "clusters": 11,
+      "t_bar": 4.42601700105428,
+      "ub979": 2.5702572983902976
+     },
+     "uw_cityday": {
+      "ev_c": 0.418959758231271,
+      "se": 0.6631196150898253,
+      "t": 0.6318011844281205,
+      "df": 10.0,
+      "clusters": 11,
+      "t_bar": 4.42601700105428,
+      "ub979": 1.9644933809192602
+     },
+     "vw_calday": {
+      "ev_c": 0.4221291171569695,
+      "se": 0.911354657676077,
+      "t": 0.4631886320012718,
+      "df": 9.0,
+      "clusters": 10,
+      "t_bar": 4.604630290523933,
+      "ub979": 2.580832941587506
+     },
+     "uw_calday": {
+      "ev_c": 0.418959758231271,
+      "se": 0.6292821517772046,
+      "t": 0.665774099977338,
+      "df": 9.0,
+      "clusters": 10,
+      "t_bar": 4.604630290523933,
+      "ub979": 1.9095252326551229
+     },
+     "vol_total_raw": 345.45000000000005,
+     "n_zero_volume_entry": 5
+    },
+    "L=10": {
+     "n_fires": 336,
+     "n_priced": 9,
+     "untradeable_frac": 0.9732142857142857,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 74,
+      "candles_exist_but_none_<=98c_net>0": 253
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 336,
+      "rate": 0.01488095238095238,
+      "wilson_lo": 0.00637256356607087,
+      "wilson_hi": 0.034356601352346645
+     },
+     "false_lock_priced": {
+      "k": 4,
+      "n": 9,
+      "rate": 0.4444444444444444,
+      "wilson_lo": 0.18877852105818171,
+      "wilson_hi": 0.7333487065549232
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 158,
+     "priced_city_days": 9,
+     "priced_calendar_days": 8,
+     "priced_stations": 6,
+     "win_rate_priced": 0.5555555555555556,
+     "mean_cost_c": 54.666666666666664,
+     "ev_raw_mean_c": -0.1111111111111111,
+     "ev_unweighted_c": 0.31596030210348913,
+     "vw_cityday": {
+      "ev_c": 1.054928130062039,
+      "se": 0.6438944209542148,
+      "t": 1.6383557548125602,
+      "df": 8.0,
+      "clusters": 9,
+      "t_bar": 4.84371845002298,
+      "ub979": 2.6116769819355037
+     },
+     "uw_cityday": {
+      "ev_c": 0.31596030210348913,
+      "se": 0.7535472278267745,
+      "t": 0.4192972788377401,
+      "df": 8.0,
+      "clusters": 9,
+      "t_bar": 4.84371845002298,
+      "ub979": 2.1378176494824586
+     },
+     "vw_calday": {
+      "ev_c": 1.054928130062039,
+      "se": 0.6463340859757388,
+      "t": 1.6321715857975614,
+      "df": 7.0,
+      "clusters": 8,
+      "t_bar": 5.179176177719812,
+      "ub979": 2.6600391532050134
+     },
+     "uw_calday": {
+      "ev_c": 0.31596030210348913,
+      "se": 0.711908447825212,
+      "t": 0.4438215378237284,
+      "df": 7.0,
+      "clusters": 8,
+      "t_bar": 5.179176177719812,
+      "ub979": 2.08391919807876
+     },
+     "vol_total_raw": 262.22,
+     "n_zero_volume_entry": 3
+    },
+    "L=20": {
+     "n_fires": 336,
+     "n_priced": 9,
+     "untradeable_frac": 0.9732142857142857,
+     "untradeable_reasons": {
+      "no_candle_at_or_after_entry_time": 98,
+      "candles_exist_but_none_<=98c_net>0": 229
+     },
+     "false_lock_all": {
+      "k": 5,
+      "n": 336,
+      "rate": 0.01488095238095238,
+      "wilson_lo": 0.00637256356607087,
+      "wilson_hi": 0.034356601352346645
+     },
+     "false_lock_priced": {
+      "k": 4,
+      "n": 9,
+      "rate": 0.4444444444444444,
+      "wilson_lo": 0.18877852105818171,
+      "wilson_hi": 0.7333487065549232
+     },
+     "false_lock_city_days": 5,
+     "signalling_city_days": 158,
+     "priced_city_days": 9,
+     "priced_calendar_days": 8,
+     "priced_stations": 6,
+     "win_rate_priced": 0.5555555555555556,
+     "mean_cost_c": 54.77777777777778,
+     "ev_raw_mean_c": -0.2222222222222222,
+     "ev_unweighted_c": 0.2273266337931465,
+     "vw_cityday": {
+      "ev_c": 1.0598227169687555,
+      "se": 0.6996282284727114,
+      "t": 1.5148369860409274,
+      "df": 8.0,
+      "clusters": 9,
+      "t_bar": 4.84371845002298,
+      "ub979": 2.7513196549281
+     },
+     "uw_cityday": {
+      "ev_c": 0.2273266337931465,
+      "se": 0.7526001979812091,
+      "t": 0.3020549747434724,
+      "df": 8.0,
+      "clusters": 9,
+      "t_bar": 4.84371845002298,
+      "ub979": 2.0468943393041386
+     },
+     "vw_calday": {
+      "ev_c": 1.0598227169687555,
+      "se": 0.7022758898345008,
+      "t": 1.5091258753287324,
+      "df": 7.0,
+      "clusters": 8,
+      "t_bar": 5.179176177719812,
+      "ub979": 2.8038600445981245
+     },
+     "uw_calday": {
+      "ev_c": 0.2273266337931465,
+      "se": 0.7102816109009727,
+      "t": 0.3200514138396303,
+      "df": 7.0,
+      "clusters": 8,
+      "t_bar": 5.179176177719812,
+      "ub979": 1.9912454304813583
+     },
+     "vol_total_raw": 229.69,
+     "n_zero_volume_entry": 3
+    }
+   },
+   "G=4,R=2,H=3,W=60": {
+    "L=0": {
+     "n_fires": 194,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 115,
+      "no_candle_at_or_after_entry_time": 79
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 194,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.01941685451249947
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 116,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=10": {
+     "n_fires": 194,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 70,
+      "no_candle_at_or_after_entry_time": 124
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 194,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.01941685451249947
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 116,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=20": {
+     "n_fires": 194,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 64,
+      "no_candle_at_or_after_entry_time": 130
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 194,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.01941685451249947
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 116,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    }
+   },
+   "G=4,R=2,H=3,W=120": {
+    "L=0": {
+     "n_fires": 202,
+     "n_priced": 3,
+     "untradeable_frac": 0.9851485148514851,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 168,
+      "no_candle_at_or_after_entry_time": 31
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 202,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.018662221131116638
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 3,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.5614970318706057
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 120,
+     "priced_city_days": 3,
+     "priced_calendar_days": 3,
+     "priced_stations": 3,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 96.0,
+     "ev_raw_mean_c": 3.0,
+     "ev_unweighted_c": 3.0,
+     "vw_cityday": {
+      "ev_c": 4.858555460017197,
+      "se": 1.5257036489268179,
+      "t": 3.1844686636455983,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 12.066637199439517
+     },
+     "uw_cityday": {
+      "ev_c": 3.0,
+      "se": 1.5275252316519468,
+      "t": 1.9639610121239313,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 10.216687681465576
+     },
+     "vw_calday": {
+      "ev_c": 4.858555460017197,
+      "se": 1.5257036489268179,
+      "t": 3.1844686636455983,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 12.066637199439517
+     },
+     "uw_calday": {
+      "ev_c": 3.0,
+      "se": 1.5275252316519468,
+      "t": 1.9639610121239313,
+      "df": 2.0,
+      "clusters": 3,
+      "t_bar": 27.901618603916372,
+      "ub979": 10.216687681465576
+     },
+     "vol_total_raw": 186.07999999999998,
+     "n_zero_volume_entry": 1
+    },
+    "L=10": {
+     "n_fires": 202,
+     "n_priced": 2,
+     "untradeable_frac": 0.9900990099009901,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 163,
+      "no_candle_at_or_after_entry_time": 37
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 202,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.018662221131116638
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 2,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.6576197725990219
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 120,
+     "priced_city_days": 2,
+     "priced_calendar_days": 2,
+     "priced_stations": 2,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 95.5,
+     "ev_raw_mean_c": 3.5,
+     "ev_unweighted_c": 3.5,
+     "vw_cityday": {
+      "ev_c": 4.858555460017197,
+      "se": 1.761730824822985,
+      "t": 2.7578307602725713,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 31.52343688812252
+     },
+     "uw_cityday": {
+      "ev_c": 3.5,
+      "se": 2.5,
+      "t": 1.4,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 41.33904023871603
+     },
+     "vw_calday": {
+      "ev_c": 4.858555460017197,
+      "se": 1.761730824822985,
+      "t": 2.7578307602725713,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 31.52343688812252
+     },
+     "uw_calday": {
+      "ev_c": 3.5,
+      "se": 2.5,
+      "t": 1.4,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 41.33904023871603
+     },
+     "vol_total_raw": 186.07999999999998,
+     "n_zero_volume_entry": 0
+    },
+    "L=20": {
+     "n_fires": 202,
+     "n_priced": 2,
+     "untradeable_frac": 0.9900990099009901,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 146,
+      "no_candle_at_or_after_entry_time": 54
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 202,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.018662221131116638
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 2,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.6576197725990219
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 120,
+     "priced_city_days": 2,
+     "priced_calendar_days": 2,
+     "priced_stations": 2,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 95.5,
+     "ev_raw_mean_c": 3.5,
+     "ev_unweighted_c": 3.5,
+     "vw_cityday": {
+      "ev_c": 5.676001302507326,
+      "se": 0.6060073325945676,
+      "t": 9.366225451771385,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 14.84829563970845
+     },
+     "uw_cityday": {
+      "ev_c": 3.5,
+      "se": 2.5,
+      "t": 1.4,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 41.33904023871603
+     },
+     "vw_calday": {
+      "ev_c": 5.676001302507326,
+      "se": 0.6060073325945676,
+      "t": 9.366225451771385,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 14.84829563970845
+     },
+     "uw_calday": {
+      "ev_c": 3.5,
+      "se": 2.5,
+      "t": 1.4,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 41.33904023871603
+     },
+     "vol_total_raw": 153.54999999999998,
+     "n_zero_volume_entry": 0
+    }
+   },
+   "G=4,R=4,H=3,W=60": {
+    "L=0": {
+     "n_fires": 166,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 103,
+      "no_candle_at_or_after_entry_time": 63
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 166,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.022617909956318884
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 102,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=10": {
+     "n_fires": 166,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 64,
+      "no_candle_at_or_after_entry_time": 102
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 166,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.022617909956318884
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 102,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=20": {
+     "n_fires": 166,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 58,
+      "no_candle_at_or_after_entry_time": 108
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 166,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.022617909956318884
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 102,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    }
+   },
+   "G=4,R=4,H=3,W=120": {
+    "L=0": {
+     "n_fires": 181,
+     "n_priced": 2,
+     "untradeable_frac": 0.988950276243094,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 151,
+      "no_candle_at_or_after_entry_time": 28
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 181,
+      "rate": 0.0,
+      "wilson_lo": 1.734723475976807e-18,
+      "wilson_hi": 0.020782452416078505
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 2,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.6576197725990219
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 110,
+     "priced_city_days": 2,
+     "priced_calendar_days": 2,
+     "priced_stations": 2,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 97.5,
+     "ev_raw_mean_c": 1.5,
+     "ev_unweighted_c": 1.4999999999999998,
+     "vw_cityday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "uw_cityday": {
+      "ev_c": 1.4999999999999998,
+      "se": 0.5,
+      "t": 2.9999999999999996,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 9.067808047743206
+     },
+     "vw_calday": {
+      "ev_c": 1.0,
+      "se": 0.0,
+      "t": NaN,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 1.0
+     },
+     "uw_calday": {
+      "ev_c": 1.4999999999999998,
+      "se": 0.5,
+      "t": 2.9999999999999996,
+      "df": 1.0,
+      "clusters": 2,
+      "t_bar": 496.5627511660521,
+      "ub979": 9.067808047743206
+     },
+     "vol_total_raw": 42.48,
+     "n_zero_volume_entry": 1
+    },
+    "L=10": {
+     "n_fires": 181,
+     "n_priced": 1,
+     "untradeable_frac": 0.994475138121547,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 146,
+      "no_candle_at_or_after_entry_time": 34
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 181,
+      "rate": 0.0,
+      "wilson_lo": 1.734723475976807e-18,
+      "wilson_hi": 0.020782452416078505
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 1,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.7934506856996815
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 110,
+     "priced_city_days": 1,
+     "priced_calendar_days": 1,
+     "priced_stations": 1,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 98.0,
+     "ev_raw_mean_c": 1.0,
+     "ev_unweighted_c": 1.0,
+     "vw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vol_total_raw": 42.48,
+     "n_zero_volume_entry": 0
+    },
+    "L=20": {
+     "n_fires": 181,
+     "n_priced": 1,
+     "untradeable_frac": 0.994475138121547,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 132,
+      "no_candle_at_or_after_entry_time": 48
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 181,
+      "rate": 0.0,
+      "wilson_lo": 1.734723475976807e-18,
+      "wilson_hi": 0.020782452416078505
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 1,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.7934506856996815
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 110,
+     "priced_city_days": 1,
+     "priced_calendar_days": 1,
+     "priced_stations": 1,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 98.0,
+     "ev_raw_mean_c": 1.0,
+     "ev_unweighted_c": 1.0,
+     "vw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_cityday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "uw_calday": {
+      "ev_c": 1.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 1,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vol_total_raw": 9.95,
+     "n_zero_volume_entry": 0
+    }
+   },
+   "G=6,R=2,H=3,W=60": {
+    "L=0": {
+     "n_fires": 80,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 48,
+      "no_candle_at_or_after_entry_time": 32
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 80,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.04581812955604615
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 57,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=10": {
+     "n_fires": 80,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 25,
+      "no_candle_at_or_after_entry_time": 55
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 80,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.04581812955604615
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 57,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=20": {
+     "n_fires": 80,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 23,
+      "no_candle_at_or_after_entry_time": 57
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 80,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.04581812955604615
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 57,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    }
+   },
+   "G=6,R=2,H=3,W=120": {
+    "L=0": {
+     "n_fires": 84,
+     "n_priced": 1,
+     "untradeable_frac": 0.9880952380952381,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 70,
+      "no_candle_at_or_after_entry_time": 13
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 84,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.04373172843428738
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 1,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.7934506856996815
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 61,
+     "priced_city_days": 1,
+     "priced_calendar_days": 1,
+     "priced_stations": 1,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 97.0,
+     "ev_raw_mean_c": 2.0,
+     "ev_unweighted_c": 2.0,
+     "vw_cityday": {
+      "ev_c": NaN,
+      "se": NaN,
+      "t": NaN,
+      "df": NaN,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": NaN
+     },
+     "uw_cityday": {
+      "ev_c": 2.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vw_calday": {
+      "ev_c": NaN,
+      "se": NaN,
+      "t": NaN,
+      "df": NaN,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": NaN
+     },
+     "uw_calday": {
+      "ev_c": 2.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vol_total_raw": 0.0,
+     "n_zero_volume_entry": 1
+    },
+    "L=10": {
+     "n_fires": 84,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 69,
+      "no_candle_at_or_after_entry_time": 15
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 84,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.04373172843428738
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 61,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=20": {
+     "n_fires": 84,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 61,
+      "no_candle_at_or_after_entry_time": 23
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 84,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.04373172843428738
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 61,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    }
+   },
+   "G=6,R=4,H=3,W=60": {
+    "L=0": {
+     "n_fires": 65,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 43,
+      "no_candle_at_or_after_entry_time": 22
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 65,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.0558015313475854
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 47,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=10": {
+     "n_fires": 65,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 23,
+      "no_candle_at_or_after_entry_time": 42
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 65,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.0558015313475854
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 47,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=20": {
+     "n_fires": 65,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 21,
+      "no_candle_at_or_after_entry_time": 44
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 65,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.0558015313475854
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 47,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    }
+   },
+   "G=6,R=4,H=3,W=120": {
+    "L=0": {
+     "n_fires": 72,
+     "n_priced": 1,
+     "untradeable_frac": 0.9861111111111112,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 62,
+      "no_candle_at_or_after_entry_time": 9
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 72,
+      "rate": 0.0,
+      "wilson_lo": 3.469446951953614e-18,
+      "wilson_hi": 0.050651172619026366
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 1,
+      "rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.7934506856996815
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 52,
+     "priced_city_days": 1,
+     "priced_calendar_days": 1,
+     "priced_stations": 1,
+     "win_rate_priced": 1.0,
+     "mean_cost_c": 97.0,
+     "ev_raw_mean_c": 2.0,
+     "ev_unweighted_c": 2.0,
+     "vw_cityday": {
+      "ev_c": NaN,
+      "se": NaN,
+      "t": NaN,
+      "df": NaN,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": NaN
+     },
+     "uw_cityday": {
+      "ev_c": 2.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vw_calday": {
+      "ev_c": NaN,
+      "se": NaN,
+      "t": NaN,
+      "df": NaN,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": NaN
+     },
+     "uw_calday": {
+      "ev_c": 2.0,
+      "se": NaN,
+      "t": NaN,
+      "df": 0.0,
+      "clusters": 0,
+      "t_bar": Infinity,
+      "ub979": null
+     },
+     "vol_total_raw": 0.0,
+     "n_zero_volume_entry": 1
+    },
+    "L=10": {
+     "n_fires": 72,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 61,
+      "no_candle_at_or_after_entry_time": 11
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 72,
+      "rate": 0.0,
+      "wilson_lo": 3.469446951953614e-18,
+      "wilson_hi": 0.050651172619026366
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 52,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    },
+    "L=20": {
+     "n_fires": 72,
+     "n_priced": 0,
+     "untradeable_frac": 1.0,
+     "untradeable_reasons": {
+      "candles_exist_but_none_<=98c_net>0": 54,
+      "no_candle_at_or_after_entry_time": 18
+     },
+     "false_lock_all": {
+      "k": 0,
+      "n": 72,
+      "rate": 0.0,
+      "wilson_lo": 3.469446951953614e-18,
+      "wilson_hi": 0.050651172619026366
+     },
+     "false_lock_priced": {
+      "k": 0,
+      "n": 0,
+      "rate": NaN,
+      "wilson_lo": NaN,
+      "wilson_hi": NaN
+     },
+     "false_lock_city_days": 0,
+     "signalling_city_days": 52,
+     "priced_city_days": 0,
+     "priced_calendar_days": 0,
+     "priced_stations": 0
+    }
+   }
+  },
+  "primary_cell": {
+   "L=0": {
+    "n_fires": 202,
+    "n_priced": 3,
+    "untradeable_frac": 0.9851485148514851,
+    "untradeable_reasons": {
+     "candles_exist_but_none_<=98c_net>0": 168,
+     "no_candle_at_or_after_entry_time": 31
+    },
+    "false_lock_all": {
+     "k": 0,
+     "n": 202,
+     "rate": 0.0,
+     "wilson_lo": 0.0,
+     "wilson_hi": 0.018662221131116638
+    },
+    "false_lock_priced": {
+     "k": 0,
+     "n": 3,
+     "rate": 0.0,
+     "wilson_lo": 0.0,
+     "wilson_hi": 0.5614970318706057
+    },
+    "false_lock_city_days": 0,
+    "signalling_city_days": 120,
+    "priced_city_days": 3,
+    "priced_calendar_days": 3,
+    "priced_stations": 3,
+    "win_rate_priced": 1.0,
+    "mean_cost_c": 96.0,
+    "ev_raw_mean_c": 3.0,
+    "ev_unweighted_c": 3.0,
+    "vw_cityday": {
+     "ev_c": 4.858555460017197,
+     "se": 1.5257036489268179,
+     "t": 3.1844686636455983,
+     "df": 2.0,
+     "clusters": 3,
+     "t_bar": 27.901618603916372,
+     "ub979": 12.066637199439517
+    },
+    "uw_cityday": {
+     "ev_c": 3.0,
+     "se": 1.5275252316519468,
+     "t": 1.9639610121239313,
+     "df": 2.0,
+     "clusters": 3,
+     "t_bar": 27.901618603916372,
+     "ub979": 10.216687681465576
+    },
+    "vw_calday": {
+     "ev_c": 4.858555460017197,
+     "se": 1.5257036489268179,
+     "t": 3.1844686636455983,
+     "df": 2.0,
+     "clusters": 3,
+     "t_bar": 27.901618603916372,
+     "ub979": 12.066637199439517
+    },
+    "uw_calday": {
+     "ev_c": 3.0,
+     "se": 1.5275252316519468,
+     "t": 1.9639610121239313,
+     "df": 2.0,
+     "clusters": 3,
+     "t_bar": 27.901618603916372,
+     "ub979": 10.216687681465576
+    },
+    "vol_total_raw": 186.07999999999998,
+    "n_zero_volume_entry": 1
+   },
+   "L=10": {
+    "n_fires": 202,
+    "n_priced": 2,
+    "untradeable_frac": 0.9900990099009901,
+    "untradeable_reasons": {
+     "candles_exist_but_none_<=98c_net>0": 163,
+     "no_candle_at_or_after_entry_time": 37
+    },
+    "false_lock_all": {
+     "k": 0,
+     "n": 202,
+     "rate": 0.0,
+     "wilson_lo": 0.0,
+     "wilson_hi": 0.018662221131116638
+    },
+    "false_lock_priced": {
+     "k": 0,
+     "n": 2,
+     "rate": 0.0,
+     "wilson_lo": 0.0,
+     "wilson_hi": 0.6576197725990219
+    },
+    "false_lock_city_days": 0,
+    "signalling_city_days": 120,
+    "priced_city_days": 2,
+    "priced_calendar_days": 2,
+    "priced_stations": 2,
+    "win_rate_priced": 1.0,
+    "mean_cost_c": 95.5,
+    "ev_raw_mean_c": 3.5,
+    "ev_unweighted_c": 3.5,
+    "vw_cityday": {
+     "ev_c": 4.858555460017197,
+     "se": 1.761730824822985,
+     "t": 2.7578307602725713,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 31.52343688812252
+    },
+    "uw_cityday": {
+     "ev_c": 3.5,
+     "se": 2.5,
+     "t": 1.4,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 41.33904023871603
+    },
+    "vw_calday": {
+     "ev_c": 4.858555460017197,
+     "se": 1.761730824822985,
+     "t": 2.7578307602725713,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 31.52343688812252
+    },
+    "uw_calday": {
+     "ev_c": 3.5,
+     "se": 2.5,
+     "t": 1.4,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 41.33904023871603
+    },
+    "vol_total_raw": 186.07999999999998,
+    "n_zero_volume_entry": 0
+   },
+   "L=20": {
+    "n_fires": 202,
+    "n_priced": 2,
+    "untradeable_frac": 0.9900990099009901,
+    "untradeable_reasons": {
+     "candles_exist_but_none_<=98c_net>0": 146,
+     "no_candle_at_or_after_entry_time": 54
+    },
+    "false_lock_all": {
+     "k": 0,
+     "n": 202,
+     "rate": 0.0,
+     "wilson_lo": 0.0,
+     "wilson_hi": 0.018662221131116638
+    },
+    "false_lock_priced": {
+     "k": 0,
+     "n": 2,
+     "rate": 0.0,
+     "wilson_lo": 0.0,
+     "wilson_hi": 0.6576197725990219
+    },
+    "false_lock_city_days": 0,
+    "signalling_city_days": 120,
+    "priced_city_days": 2,
+    "priced_calendar_days": 2,
+    "priced_stations": 2,
+    "win_rate_priced": 1.0,
+    "mean_cost_c": 95.5,
+    "ev_raw_mean_c": 3.5,
+    "ev_unweighted_c": 3.5,
+    "vw_cityday": {
+     "ev_c": 5.676001302507326,
+     "se": 0.6060073325945676,
+     "t": 9.366225451771385,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 14.84829563970845
+    },
+    "uw_cityday": {
+     "ev_c": 3.5,
+     "se": 2.5,
+     "t": 1.4,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 41.33904023871603
+    },
+    "vw_calday": {
+     "ev_c": 5.676001302507326,
+     "se": 0.6060073325945676,
+     "t": 9.366225451771385,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 14.84829563970845
+    },
+    "uw_calday": {
+     "ev_c": 3.5,
+     "se": 2.5,
+     "t": 1.4,
+     "df": 1.0,
+     "clusters": 2,
+     "t_bar": 496.5627511660521,
+     "ub979": 41.33904023871603
+    },
+    "vol_total_raw": 153.54999999999998,
+    "n_zero_volume_entry": 0
+   }
+  },
+  "overshoot_mirror_reference_primary_cell": {
+   "L=0": {
+    "n_fires": 54,
+    "n_priced": 0,
+    "untradeable_frac": 1.0,
+    "untradeable_reasons": {
+     "no_candle_at_or_after_entry_time": 9,
+     "candles_exist_but_none_<=98c_net>0": 45
+    },
+    "false_lock_all": {
+     "k": 0,
+     "n": 54,
+     "rate": 0.0,
+     "wilson_lo": 6.938893903907228e-18,
+     "wilson_hi": 0.06641358811999687
+    },
+    "false_lock_priced": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "wilson_lo": NaN,
+     "wilson_hi": NaN
+    },
+    "false_lock_city_days": 0,
+    "signalling_city_days": 38,
+    "priced_city_days": 0,
+    "priced_calendar_days": 0,
+    "priced_stations": 0
+   },
+   "L=10": {
+    "n_fires": 54,
+    "n_priced": 0,
+    "untradeable_frac": 1.0,
+    "untradeable_reasons": {
+     "no_candle_at_or_after_entry_time": 11,
+     "candles_exist_but_none_<=98c_net>0": 43
+    },
+    "false_lock_all": {
+     "k": 0,
+     "n": 54,
+     "rate": 0.0,
+     "wilson_lo": 6.938893903907228e-18,
+     "wilson_hi": 0.06641358811999687
+    },
+    "false_lock_priced": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "wilson_lo": NaN,
+     "wilson_hi": NaN
+    },
+    "false_lock_city_days": 0,
+    "signalling_city_days": 38,
+    "priced_city_days": 0,
+    "priced_calendar_days": 0,
+    "priced_stations": 0
+   },
+   "L=20": {
+    "n_fires": 54,
+    "n_priced": 0,
+    "untradeable_frac": 1.0,
+    "untradeable_reasons": {
+     "no_candle_at_or_after_entry_time": 13,
+     "candles_exist_but_none_<=98c_net>0": 41
+    },
+    "false_lock_all": {
+     "k": 0,
+     "n": 54,
+     "rate": 0.0,
+     "wilson_lo": 6.938893903907228e-18,
+     "wilson_hi": 0.06641358811999687
+    },
+    "false_lock_priced": {
+     "k": 0,
+     "n": 0,
+     "rate": NaN,
+     "wilson_lo": NaN,
+     "wilson_hi": NaN
+    },
+    "false_lock_city_days": 0,
+    "signalling_city_days": 38,
+    "priced_city_days": 0,
+    "priced_calendar_days": 0,
+    "priced_stations": 0
+   }
+  },
+  "carry_forward_sensitivity_primary_L10_descriptive": {
+   "untradeable": 200,
+   "no_candle_after_entry_and_no_prior_candle": 23,
+   "no_candle_after_entry_prior_quote_cost_class": {
+    "none": 14
+   },
+   "stale_quote_would_qualify": 0
+  }
+ },
+ "part2": {
+  "verdict": "INSUFFICIENT",
+  "numeric_criteria_L10": {
+   "fires_per_day_ge_3": false,
+   "per_day_net_ge_4c": false,
+   "t_ge_bar": false
+  },
+  "arms": {
+   "L=0": {
+    "signalling_city_days": 120,
+    "n_rung_evals": 720,
+    "n_priced_fires": 88,
+    "mean_fires_per_signalling_day": 0.6959398311898557,
+    "mean_fires_per_signalling_day_raw": 0.7333333333333333,
+    "mean_fires_per_day_with_any_fire": 1.8777823176900919,
+    "days_with_any_priced_fire": 45,
+    "untradeable_frac": 0.8777777777777778,
+    "per_day_net_ev_c": 0.16636921179868264,
+    "per_day_net_ev_raw_c": -0.16666666666666666,
+    "per_day_net_se": 0.7883182824782243,
+    "t_cityday": 0.2110431985360916,
+    "df": 119.0,
+    "t_bar": 3.2985702663691883,
+    "ub979": 1.7869083907915528,
+    "t_calday": 0.21318230226928297,
+    "df_calday": 69.0,
+    "t_bar_calday": 3.357716174533832,
+    "n_ladders": 120,
+    "wrong_inference_ladder_frac": 0.18130324892826113,
+    "xhat_vs_official_exact_frac": 0.6330560693412367,
+    "xhat_vs_official_within1_frac": 0.974400853785609,
+    "by_abs_distance": {
+     "0": {
+      "n": 41,
+      "of_evaluated": 120,
+      "ev_c": 0.4512523446982237,
+      "se_cityday": 1.3707533929867957,
+      "t_cityday": 0.32920023908528856,
+      "win_rate": 0.548019419618228,
+      "mean_cost_c": 45.51219512195122
+     },
+     "1": {
+      "n": 42,
+      "of_evaluated": 205,
+      "ev_c": 1.2024850195716283,
+      "se_cityday": 0.8840941054627077,
+      "t_cityday": 1.3601323797338118,
+      "win_rate": 0.502104081182903,
+      "mean_cost_c": 44.95238095238095
+     },
+     "2": {
+      "n": 2,
+      "of_evaluated": 148,
+      "ev_c": -43.0,
+      "se_cityday": 44.0,
+      "t_cityday": -0.9772727272727273,
+      "win_rate": 0.5,
+      "mean_cost_c": 92.0
+     },
+     "3": {
+      "n": 2,
+      "of_evaluated": 120,
+      "ev_c": 3.5,
+      "se_cityday": 2.5,
+      "t_cityday": 1.4,
+      "win_rate": 1.0,
+      "mean_cost_c": 95.5
+     },
+     "4+": {
+      "n": 1,
+      "of_evaluated": 127,
+      "ev_c": 2.0,
+      "se_cityday": NaN,
+      "t_cityday": NaN,
+      "win_rate": 1.0,
+      "mean_cost_c": 97.0
+     }
+    },
+    "by_flavour": {
+     "winner": {
+      "n": 41,
+      "of_evaluated": 120,
+      "ev_c": 0.4512523446982237,
+      "se_cityday": 1.3707533929867957,
+      "t_cityday": 0.32920023908528856,
+      "win_rate": 0.548019419618228,
+      "mean_cost_c": 45.51219512195122
+     },
+     "never": {
+      "n": 40,
+      "of_evaluated": 487,
+      "ev_c": 0.6717886680082352,
+      "se_cityday": 1.1152161482703289,
+      "t_cityday": 0.6023842723674346,
+      "win_rate": 0.6226197815491631,
+      "mean_cost_c": 58.65
+     },
+     "overshoot": {
+      "n": 7,
+      "of_evaluated": 113,
+      "ev_c": -3.1973572037510665,
+      "se_cityday": 0.7474529062146968,
+      "t_cityday": -4.277670442066171,
+      "win_rate": 0.0,
+      "mean_cost_c": 2.0
+     }
+    },
+    "by_side": {
+     "yes": {
+      "n": 41,
+      "of_evaluated": 120,
+      "ev_c": 0.4512523446982237,
+      "se_cityday": 1.3707533929867957,
+      "t_cityday": 0.32920023908528856,
+      "win_rate": 0.548019419618228,
+      "mean_cost_c": 45.51219512195122
+     },
+     "no": {
+      "n": 47,
+      "of_evaluated": 600,
+      "ev_c": 0.051234971823695144,
+      "se_cityday": 0.974870624188538,
+      "t_cityday": 0.052555662825866836,
+      "win_rate": 0.5227607895225164,
+      "mean_cost_c": 50.212765957446805
+     }
+    }
+   },
+   "L=10": {
+    "signalling_city_days": 120,
+    "n_rung_evals": 720,
+    "n_priced_fires": 81,
+    "mean_fires_per_signalling_day": 0.6484155570698713,
+    "mean_fires_per_signalling_day_raw": 0.675,
+    "mean_fires_per_day_with_any_fire": 1.77405989819674,
+    "days_with_any_priced_fire": 44,
+    "untradeable_frac": 0.8875,
+    "per_day_net_ev_c": 0.009882712644175467,
+    "per_day_net_ev_raw_c": -0.38333333333333336,
+    "per_day_net_se": 0.6873213175888689,
+    "t_cityday": 0.014378591775451015,
+    "df": 119.0,
+    "t_bar": 3.2985702663691883,
+    "ub979": 1.422803291129593,
+    "t_calday": 0.014492862543170814,
+    "df_calday": 69.0,
+    "t_bar_calday": 3.357716174533832,
+    "n_ladders": 120,
+    "wrong_inference_ladder_frac": 0.18130324892826113,
+    "xhat_vs_official_exact_frac": 0.6330560693412367,
+    "xhat_vs_official_within1_frac": 0.974400853785609,
+    "by_abs_distance": {
+     "0": {
+      "n": 38,
+      "of_evaluated": 120,
+      "ev_c": 0.09788120875303916,
+      "se_cityday": 1.2205749243362563,
+      "t_cityday": 0.08019270820778705,
+      "win_rate": 0.5750492069005442,
+      "mean_cost_c": 49.6578947368421
+     },
+     "1": {
+      "n": 39,
+      "of_evaluated": 205,
+      "ev_c": 1.2127463264608727,
+      "se_cityday": 0.9644410049469189,
+      "t_cityday": 1.257460352930162,
+      "win_rate": 0.4757375555302426,
+      "mean_cost_c": 43.61538461538461
+     },
+     "2": {
+      "n": 2,
+      "of_evaluated": 148,
+      "ev_c": -43.0,
+      "se_cityday": 44.0,
+      "t_cityday": -0.9772727272727273,
+      "win_rate": 0.5,
+      "mean_cost_c": 92.0
+     },
+     "3": {
+      "n": 2,
+      "of_evaluated": 120,
+      "ev_c": 3.5,
+      "se_cityday": 2.5,
+      "t_cityday": 1.4,
+      "win_rate": 1.0,
+      "mean_cost_c": 95.5
+     },
+     "4+": {
+      "n": 0
+     }
+    },
+    "by_flavour": {
+     "winner": {
+      "n": 38,
+      "of_evaluated": 120,
+      "ev_c": 0.09788120875303916,
+      "se_cityday": 1.2205749243362563,
+      "t_cityday": 0.08019270820778705,
+      "win_rate": 0.5750492069005442,
+      "mean_cost_c": 49.6578947368421
+     },
+     "never": {
+      "n": 36,
+      "of_evaluated": 487,
+      "ev_c": 0.6073356868445644,
+      "se_cityday": 1.123323269329008,
+      "t_cityday": 0.5406597579050799,
+      "win_rate": 0.5973548956494652,
+      "mean_cost_c": 57.27777777777778
+     },
+     "overshoot": {
+      "n": 7,
+      "of_evaluated": 113,
+      "ev_c": -3.1973572037510665,
+      "se_cityday": 0.7474529062146968,
+      "t_cityday": -4.277670442066171,
+      "win_rate": 0.0,
+      "mean_cost_c": 2.0
+     }
+    },
+    "by_side": {
+     "yes": {
+      "n": 38,
+      "of_evaluated": 120,
+      "ev_c": 0.09788120875303916,
+      "se_cityday": 1.2205749243362563,
+      "t_cityday": 0.08019270820778705,
+      "win_rate": 0.5750492069005442,
+      "mean_cost_c": 49.6578947368421
+     },
+     "no": {
+      "n": 43,
+      "of_evaluated": 600,
+      "ev_c": -0.06112121536321833,
+      "se_cityday": 0.9716615743059904,
+      "t_cityday": -0.06290381031777878,
+      "win_rate": 0.4924039798865946,
+      "mean_cost_c": 48.27906976744186
+     }
+    }
+   },
+   "L=20": {
+    "signalling_city_days": 120,
+    "n_rung_evals": 720,
+    "n_priced_fires": 79,
+    "mean_fires_per_signalling_day": 0.6264904291642782,
+    "mean_fires_per_signalling_day_raw": 0.6583333333333333,
+    "mean_fires_per_day_with_any_fire": 1.7140729195438578,
+    "days_with_any_priced_fire": 44,
+    "untradeable_frac": 0.8902777777777777,
+    "per_day_net_ev_c": -0.020172848319650463,
+    "per_day_net_ev_raw_c": -0.5083333333333333,
+    "per_day_net_se": 0.7029522501080365,
+    "t_cityday": -0.028697323774908044,
+    "df": 119.0,
+    "t_bar": 3.2985702663691883,
+    "ub979": 1.4248801050129842,
+    "t_calday": -0.02889548721500844,
+    "df_calday": 69.0,
+    "t_bar_calday": 3.357716174533832,
+    "n_ladders": 120,
+    "wrong_inference_ladder_frac": 0.18130324892826113,
+    "xhat_vs_official_exact_frac": 0.6330560693412367,
+    "xhat_vs_official_within1_frac": 0.974400853785609,
+    "by_abs_distance": {
+     "0": {
+      "n": 37,
+      "of_evaluated": 120,
+      "ev_c": 0.16382577987051214,
+      "se_cityday": 1.295600476350897,
+      "t_cityday": 0.12644776137465852,
+      "win_rate": 0.5846615656268394,
+      "mean_cost_c": 51.108108108108105
+     },
+     "1": {
+      "n": 38,
+      "of_evaluated": 205,
+      "ev_c": 1.114749365444069,
+      "se_cityday": 1.0158342652398284,
+      "t_cityday": 1.0973732660818325,
+      "win_rate": 0.5024119140131602,
+      "mean_cost_c": 45.10526315789474
+     },
+     "2": {
+      "n": 2,
+      "of_evaluated": 148,
+      "ev_c": -43.0,
+      "se_cityday": 44.0,
+      "t_cityday": -0.9772727272727273,
+      "win_rate": 0.5,
+      "mean_cost_c": 92.0
+     },
+     "3": {
+      "n": 2,
+      "of_evaluated": 120,
+      "ev_c": 3.5,
+      "se_cityday": 2.5,
+      "t_cityday": 1.4,
+      "win_rate": 1.0,
+      "mean_cost_c": 95.5
+     },
+     "4+": {
+      "n": 0
+     }
+    },
+    "by_flavour": {
+     "winner": {
+      "n": 37,
+      "of_evaluated": 120,
+      "ev_c": 0.16382577987051214,
+      "se_cityday": 1.295600476350897,
+      "t_cityday": 0.12644776137465852,
+      "win_rate": 0.5846615656268394,
+      "mean_cost_c": 51.108108108108105
+     },
+     "never": {
+      "n": 35,
+      "of_evaluated": 487,
+      "ev_c": 0.6127481453852207,
+      "se_cityday": 1.1665042950573083,
+      "t_cityday": 0.5252858030455151,
+      "win_rate": 0.6358185862102311,
+      "mean_cost_c": 59.05714285714286
+     },
+     "overshoot": {
+      "n": 7,
+      "of_evaluated": 113,
+      "ev_c": -3.889112166605773,
+      "se_cityday": 1.2114756017862716,
+      "t_cityday": -3.2102273961369385,
+      "win_rate": 0.0,
+      "mean_cost_c": 3.142857142857143
+     }
+    },
+    "by_side": {
+     "yes": {
+      "n": 37,
+      "of_evaluated": 120,
+      "ev_c": 0.16382577987051214,
+      "se_cityday": 1.295600476350897,
+      "t_cityday": 0.12644776137465852,
+      "win_rate": 0.5846615656268394,
+      "mean_cost_c": 51.108108108108105
+     },
+     "no": {
+      "n": 42,
+      "of_evaluated": 600,
+      "ev_c": -0.2197074620815458,
+      "se_cityday": 1.0216698649831761,
+      "t_cityday": -0.21504741366249822,
+      "win_rate": 0.5182470245132814,
+      "mean_cost_c": 49.73809523809524
+     }
+    }
+   }
+  }
+ },
+ "anchors": {
+  "a_oracle": {
+   "oracle_top40_reproduction": {
+    "events_available": 0,
+    "of": 40,
+    "best_cost_match": 0,
+    "best_net_match": 0,
+    "capturable_match": 0,
+    "n_data_minutes_within_1": 0,
+    "rows": [
+     {
+      "ticker": "KXLOWTMIN-26JUL06-B67.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTBOS-26JUN07-B60.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTMIA-26JUN03-B73.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTMIN-26JUL21-B63.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTSATX-26JUN09-T76",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDAL-26AUG01-B80.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTCHI-26JUL21-B68.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDAL-26AUG01-B82.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDC-26JUN22-B70.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTPHIL-26JUL06-B68.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTPHIL-26JUN23-B68.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTSFO-26JUN14-B56.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTATL-26JUN14-B73.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTHOU-26JUN03-B74.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTCHI-26JUL09-B72.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTNYC-26JUN01-T54",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDEN-26JUL27-B75.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTATL-26JUN23-B70.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDC-26MAY28-B63.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDAL-26MAY25-B65.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTPHX-26JUL15-B87.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTLAX-26JUN19-B61.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDEN-26JUL08-T59",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTBOS-26JUL04-B73.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTSFO-26JUN27-B55.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTNYC-26MAY28-B63.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTSFO-26JUN15-B55.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTSFO-26MAY25-B53.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTCHI-26AUG02-B66.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDAL-26JUN06-B69.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTHOU-26JUN02-B75.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDC-26JUN27-B70.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDEN-26JUN19-B58.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDC-26JUL09-T73",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTMIA-26JUN03-T71",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTDC-26JUL04-B76.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTSATX-26JUN08-B74.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTSFO-26JUN15-B57.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTNYC-26JUN19-B67.5",
+      "status": "event_candles_not_fetched"
+     },
+     {
+      "ticker": "KXLOWTCHI-26JUL16-T77",
+      "status": "event_candles_not_fetched"
+     }
+    ]
+   },
+   "population_rate_in_oracle_window": {
+    "rungs_with_candles": 275,
+    "capturable": 20,
+    "rate": 0.07272727272727272,
+    "oracle_reference_rate": "0.1035 sample (140/1353), 0.100 pop-weighted"
+   }
+  },
+  "a_fire_join": {
+   "priced_primary_L10_fires_checked": 2,
+   "correct_NO_entries_in_oracle_window": 1,
+   "join_violations": 0
+  },
+  "obs_bias_full_universe": {
+   "settlement_day[dayend-24h,dayend)|min": {
+    "n": 1110,
+    "diff_obs_minus_official_frac": {
+     "-3": 0.0063,
+     "-2": 0.0009,
+     "-1": 0.1378,
+     "0": 0.8532,
+     "2": 0.0009,
+     "3": 0.0009
+    }
+   },
+   "dst_clock_midnight[dayend-25h,dayend-1h)|min": {
+    "n": 1110,
+    "diff_obs_minus_official_frac": {
+     "-3": 0.0072,
+     "-2": 0.0018,
+     "-1": 0.1324,
+     "0": 0.7901,
+     "1": 0.0514,
+     "2": 0.0099,
+     "3": 0.0072
+    }
+   },
+   "shifted_later[dayend-23h,dayend+1h)|min": {
+    "n": 1110,
+    "diff_obs_minus_official_frac": {
+     "-3": 0.0162,
+     "-2": 0.0207,
+     "-1": 0.2027,
+     "0": 0.7532,
+     "1": 0.0054,
+     "2": 0.0009,
+     "3": 0.0009
+    }
+   },
+   "settlement_day[dayend-24h,dayend)|max": {
+    "n": 1111,
+    "diff_obs_minus_official_frac": {
+     "0": 0.477,
+     "1": 0.5149,
+     "2": 0.0072,
+     "3": 0.0009
+    }
+   },
+   "dst_clock_midnight[dayend-25h,dayend-1h)|max": {
+    "n": 1111,
+    "diff_obs_minus_official_frac": {
+     "0": 0.4671,
+     "1": 0.5185,
+     "2": 0.0135,
+     "3": 0.0009
+    }
+   },
+   "shifted_later[dayend-23h,dayend+1h)|max": {
+    "n": 1111,
+    "diff_obs_minus_official_frac": {
+     "-3": 0.0009,
+     "-2": 0.0018,
+     "-1": 0.0072,
+     "0": 0.4698,
+     "1": 0.5122,
+     "2": 0.0072,
+     "3": 0.0009
+    }
+   }
+  },
+  "b_no_lookahead": {
+   "brute_force_prefix_events_checked": 8,
+   "cells_checked": [
+    [
+     4,
+     2,
+     120
+    ],
+    [
+     2,
+     4,
+     60
+    ],
+    [
+     6,
+     2,
+     120
+    ]
+   ],
+   "assert_result": "vectorised first-fire index/timestamp/E identical to prefix-only brute force on every checked (event, rung, cell)",
+   "worked_example": {
+    "event": "KXLOWTCHI-26AUG31",
+    "ticker": "KXLOWTCHI-26AUG31-B67.5",
+    "cell": [
+     4,
+     2,
+     120
+    ],
+    "fire_obs_index": 1319,
+    "fire_obs_ts_utc": "2026-09-01T03:59:00+00:00",
+    "signal_ts_utc": "2026-09-01T04:00:00+00:00",
+    "E_at_fire": 72.0,
+    "last_H_obs": [
+     81.0,
+     81.0,
+     81.0
+    ],
+    "lo": 67.0,
+    "hi": 68.0,
+    "n_obs_in_prefix": 1320,
+    "n_obs_in_full_day": 1440,
+    "max_prefix_obs_ts_lt_signal_ts": true
+   }
+  },
+  "c_monotonic": {
+   "events_checked": 229,
+   "violations": 0
+  },
+  "tz_day_window_vs_expiration_value": {
+   "dst_local_midnight(dayend-25h..dayend-1h)": {
+    "n": 229,
+    "match_expiration_value": 125,
+    "rate": 0.5458515283842795
+   },
+   "lst_midnight(dayend-24h..dayend)": {
+    "n": 229,
+    "match_expiration_value": 138,
+    "rate": 0.6026200873362445
+   },
+   "utc_calendar_day": {
+    "n": 229,
+    "match_expiration_value": 115,
+    "rate": 0.5021834061135371
+   }
+  },
+  "obs_vs_expiration_value": {
+   "n_by_feed": {
+    "routine": 96,
+    "1min": 133
+   },
+   "final_extreme_equals_expiration_value": {
+    "routine": 46,
+    "1min": 92
+   },
+   "within_1F": {
+    "routine": 88,
+    "1min": 132
+   }
+  },
+  "tz_worked_examples": {
+   "examples": [
+    {
+     "event": "KXHIGHTBOS-26OCT17",
+     "kind": "max",
+     "station": "BOS",
+     "close_time_listed_utc": "2026-10-18T05:00:00Z",
+     "settlement_day_end_utc": "2026-10-18T05:00:00+00:00",
+     "day_window_utc": [
+      "2026-10-17T05:00:00+00:00",
+      "2026-10-18T05:00:00+00:00"
+     ],
+     "day_window_local_wall_clock": [
+      "2026-10-17T01:00:00-04:00",
+      "2026-10-18T01:00:00-04:00"
+     ],
+     "local_utc_offset_in_effect_h": -4.0,
+     "n_obs_in_window": 1440,
+     "extreme_f": 62.0,
+     "extreme_at_utc": "2026-10-17T05:00:00+00:00",
+     "extreme_at_local_wall_clock": "2026-10-17T01:00:00-04:00",
+     "kalshi_expiration_value": 62.0,
+     "alternative_windows_extreme": {
+      "naive DST-clock-midnight window (dayend-25h..dayend-1h)": 64.0,
+      "naive UTC-calendar-day window": 68.0
+     }
+    },
+    {
+     "event": "KXHIGHTSEA-26JUL08",
+     "kind": "max",
+     "station": "SEA",
+     "close_time_listed_utc": "2026-07-09T08:00:00Z",
+     "settlement_day_end_utc": "2026-07-09T08:00:00+00:00",
+     "day_window_utc": [
+      "2026-07-08T08:00:00+00:00",
+      "2026-07-09T08:00:00+00:00"
+     ],
+     "day_window_local_wall_clock": [
+      "2026-07-08T01:00:00-07:00",
+      "2026-07-09T01:00:00-07:00"
+     ],
+     "local_utc_offset_in_effect_h": -7.0,
+     "n_obs_in_window": 1440,
+     "extreme_f": 71.0,
+     "extreme_at_utc": "2026-07-08T23:45:00+00:00",
+     "extreme_at_local_wall_clock": "2026-07-08T16:45:00-07:00",
+     "kalshi_expiration_value": 71.0,
+     "alternative_windows_extreme": {
+      "naive DST-clock-midnight window (dayend-25h..dayend-1h)": 71.0,
+      "naive UTC-calendar-day window": 76.0
+     }
+    },
+    {
+     "event": "KXLOWTLAX-26JUN04",
+     "kind": "min",
+     "station": "LAX",
+     "close_time_listed_utc": "2026-06-05T08:00:00Z",
+     "settlement_day_end_utc": "2026-06-05T08:00:00+00:00",
+     "day_window_utc": [
+      "2026-06-04T08:00:00+00:00",
+      "2026-06-05T08:00:00+00:00"
+     ],
+     "day_window_local_wall_clock": [
+      "2026-06-04T01:00:00-07:00",
+      "2026-06-05T01:00:00-07:00"
+     ],
+     "local_utc_offset_in_effect_h": -7.0,
+     "n_obs_in_window": 1440,
+     "extreme_f": 62.0,
+     "extreme_at_utc": "2026-06-04T08:00:00+00:00",
+     "extreme_at_local_wall_clock": "2026-06-04T01:00:00-07:00",
+     "kalshi_expiration_value": 62.0,
+     "alternative_windows_extreme": {
+      "naive DST-clock-midnight window (dayend-25h..dayend-1h)": 62.0,
+      "naive UTC-calendar-day window": 60.0
+     }
+    }
+   ]
+  }
+ }
+}
