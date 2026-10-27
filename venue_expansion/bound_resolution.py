@@ -88,7 +88,7 @@ def spot_F(tt_tenthsC):
     return float(SO.f_from_tenthsC(tt_tenthsC))
 
 
-def walk_day(reps, S, E, kind):
+def walk_day(reps, S, E, kind, plaus=True):
     """The ONE signal implementation.  Walks reports in time order; at each report that carries a 6-hr group of the
     right kind whose 6-hour window lies wholly inside the LST day [S,E], updates the bound.  Reads only the reports it
     is handed, in order, and at report i uses only reports 0..i  (no look-ahead by construction; anchor c re-proves it).
@@ -116,7 +116,7 @@ def walk_day(reps, S, E, kind):
         nom = round(r["ts"] / SYN) * SYN
         if abs(r["ts"] - nom) > TOL:
             continue
-        if not (-600 <= g[1] <= 600):
+        if plaus and not (-600 <= g[1] <= 600):   # physical-plausibility filter (|T| <= 60 C), inherited from SO.index_groups; plaus=False disables it
             continue
         if not (nom - SYN >= S and nom <= E):    # 6-hr window must lie inside the LST day (3A attribution)
             continue
@@ -752,6 +752,7 @@ def cmd_analyze():
     fire_rows = jload(os.path.join(CACHE, "fires.json"))
     anc = jload(os.path.join(CACHE, "anchors_cde.json"))
     ab = jload(os.path.join(CACHE, "anchor_b.json"))
+    pl = jload(os.path.join(CACHE, "plaus.json"))
     _, per_fire_e = anchor_e(fire_rows)
     arms_res, cov = {}, {}
     for arm in ARMS:
@@ -766,7 +767,7 @@ def cmd_analyze():
             rec = jload(os.path.join(CAND, fn))
             errs[(rec.get("src") or "none") + "|" + str(rec.get("err"))] += 1
     out = {"spec": "BOUND_RESOLUTION_SPEC.md (registered 2026-10-27)", "verdict": verdict, "verdict_detail": vdetail,
-           "anchor_b": ab, "anchors_cde": anc, "sampling": cov, "candle_files": nfiles, "candle_fetch_outcomes": dict(errs),
+           "anchor_b": ab, "plaus": pl, "anchors_cde": anc, "sampling": cov, "candle_files": nfiles, "candle_fetch_outcomes": dict(errs),
            "n_comparisons_bonferroni": NCMP, "alpha_per_comparison": ALPHA, "arms": {}}
     for arm in ARMS:
         out["arms"][arm] = {k: {kk: vv for kk, vv in v.items() if kk != "_recs"} for k, v in arms_res[arm].items()}
@@ -805,6 +806,7 @@ def write_md(o):
       "Data: `out/bound_resolution.json`. No bar was moved, the universe was not widened, no subset was searched. "
       "Prices were read only after anchor (b) passed.\n")
     md_anchor_b(o, L)
+    md_plaus(o, L)
     md_verdict(o, L)
     md_cells(o, L)
     md_anchors(o, L)
@@ -874,6 +876,40 @@ def md_anchor_b(o, L):
       f"**{len(X['monotonicity_violations'])} violations**.\n")
 
 
+def md_plaus(o, L):
+    A = L.append
+    pl = o.get("plaus")
+    if not pl:
+        return
+    A("### 1b. Plausibility filter vs corroboration guard, and the two known-bad observation days (coordinator request; no threshold touched)\n")
+    A(f"The METAR-group decoder carries a physical-plausibility filter inherited from `settlement_observability.index_groups`: groups with |T| > 60 C are rejected. "
+      f"Measured effect on this data: **{pl['n_rejected_groups']} groups rejected in the whole May-Oct 2026 record** -- the filter never fires. Violation counts below are identical with and without it, "
+      "so the guard's contribution and the filter's are separable: the filter's is zero.\n")
+    A("| arm | bound | violations / station-days WITH +-60C filter | WITHOUT any filter |\n|---|---|---|---|")
+    for arm in ARMS:
+        for key in (INF,) + S_GRID:
+            t = pl["table"][arm][str(key)]
+            A(f"| {arm} | {key_label(key)} | {t['filtered'][0]}/{t['filtered'][1]} | {t['unfiltered'][0]}/{t['unfiltered'][1]} |")
+    A(f"\nFire counts with and without the filter are identical in all arms and cells (checked: {pl['fires_filtered'] == pl['fires_unfiltered']}).\n")
+    A("**Known-bad days (all four are in the universe).** The faults the verifier found (LAX 2026-05-24: 120 F max / -29 F min; MDW 2026-07-07: -1 F min) are in the IEM **1-minute** feed. "
+      "They are **not in the METAR 6-hr groups this study uses**: the groups on those days are clean and the bound is valid on all four station-kind-days, guarded or not. "
+      "So the guard was NOT exercised by these cases -- it is stated plainly that they do not test it. (A corrupted 1-minute stream does pin a running extreme computed from it; a bound built from 6-hr groups is a different data path.)\n")
+    A("| station | date | kind | arm | official | IEM 1-min extreme (the faulty feed) | IEM routine extreme | METAR spot range (F) | 6-hr groups (report, F) | final bound unguarded / S=3/5/8 | violates? |\n|---|---|---|---|---|---|---|---|---|---|---|")
+    for c in pl["known_cases"]:
+        if not c.get("in_universe"):
+            A(f"| {c['station']} | {c['date']} | {c['kind']} | not in universe | | | | | | | |")
+            continue
+        fb = c["final_bound_no_plaus_filter"]
+        A(f"| {c['station']} | {c['date']} | {'HIGH' if c['kind']=='max' else 'LOW'} | {c['arm']} | {c['official']} | {c['iem_1min_extreme']} | {c['iem_routine_extreme']} | {c['metar_body_spot_range_F']} | "
+          + "; ".join(f"{g['report'][6:]} {g['F']}" for g in c["groups"]) + f" | {fb['inf']} / {fb['3']}/{fb['5']}/{fb['8']} | {any(c['violates'].values())} |")
+    A("\n**Synthetic known-answer test of the guard** (NOT data: the coordinator's fault values injected into the real METAR group stream of those days; a 120 F / -1 F / -29 F group all pass the +-60 C plausibility filter, so only the guard can stop them):\n")
+    A("| station | date | kind | injected group (F) | official | corroborated @S=3/5/8 | final bound unguarded | final bound guarded S=3/5/8 |\n|---|---|---|---|---|---|---|---|")
+    for x in pl["synthetic_guard_test"]:
+        A(f"| {x['station']} | {x['date']} | {x['kind']} | {x['injected_F']} | {x['official']} | {x['corroborated_at_S3/5/8']} | {x['final_bound_unguarded']} | {x['final_bound_S3/5/8']} |")
+    A("\nResult: the guard rejects all three injected faults at every S (no spot reading within 8 F), the unguarded bound would be pinned at 120 / -1 / -29 F and would fire false RESOLVED-NO on every rung below/above it. "
+      "That is the case for the guard; it is a confirmation of mechanism, not a measured rate. The real-data fault rate stays 1/2037 on the primary arm.\n")
+
+
 def md_verdict(o, L):
     A = L.append
     vd = o["verdict_detail"]
@@ -917,14 +953,14 @@ def md_cells(o, L):
         cov = o["sampling"][arm]
         A(f"### {ARM_LABEL[arm]}\n")
         A(f"Candle coverage: {cov['tickers_in_completed_prefix']}/{cov['tickers_total']} fired tickers ({100*(cov['ticker_fraction'] or 0):.1f}%), seeded-shuffle prefix.\n")
-        A("| S,D | L | fires | false locks (rate, Wilson UB) | fires sampled | priced | untradeable | days / stations | EV vol-wt | EV equal-wt | mean cost | entries with traded volume>0 |\n|---|---|---|---|---|---|---|---|---|---|---|---|")
+        A("| S,D | L | fires | false locks (rate, Wilson UB) | fires sampled | priced | untradeable | days / stations | EV vol-wt | EV equal-wt | mean cost | ZERO-volume entry minutes |\n|---|---|---|---|---|---|---|---|---|---|---|---|")
         for (s, d) in CELLS:
             for Lm in L_ARMS:
                 r = o["arms"][arm][f"{s}|{d}|L{Lm}"]
                 fl = "n/a" if not r["n_fires"] else f"{r['n_false_lock_all']}/{r['n_fires']} = {100*r['false_lock_rate_all']:.2f}%, UB {100*r['wilson_ub_all']:.2f}%"
                 un = "n/a" if r["untradeable_frac"] is None else f"{100*r['untradeable_frac']:.1f}%"
                 A(f"| {s},{d}{' (primary)' if (s,d)==PRIMARY else ''} | {Lm} | {r['n_fires']} | {fl} | {r['n_fires_candle_sampled']} | {r['n_priced']} | {un} | "
-                  f"{r['n_days']} / {r['n_stations']} | {ev_cell(r['ev_vw'])} | {ev_cell(r['ev_eq'])} | {fnum(r['mean_cost_c'])} | {r['n_entry_vol_positive']} |")
+                  f"{r['n_days']} / {r['n_stations']} | {ev_cell(r['ev_vw'])} | {ev_cell(r['ev_eq'])} | {fnum(r['mean_cost_c'])} | {r['n_priced'] - r['n_entry_vol_positive']} of {r['n_priced']} ({(100*(r['n_priced']-r['n_entry_vol_positive'])/r['n_priced']) if r['n_priced'] else 0:.0f}%) |")
         A("")
         r = o["arms"][arm]["5|1|L10"]
         A(f"Untradeable breakdown, cell S=5,D=1, L=10: {r['untradeable_breakdown']}. State of the first candle at/after signal+10 min: {r['first_candle_after_signal_state']}.\n")
@@ -998,15 +1034,158 @@ def md_exclusions(o, L):
 
 
 def md_verdict_text(o, L):
-    pass
+    A = L.append
+    vd = o["verdict_detail"]
+    P = o["arms"]["PRIMARY_HIGH_nonCST"]
+    p, p20, p21 = P["5|1|L10"], P["5|1|L20"], P["5|2|L10"]
+    st = p["first_candle_after_signal_state"]
+    nf = p["n_fires_candle_sampled"]
+    nc = st.get("no_candle_at_or_after_signal", 0)
+    A("**Reading, blunt.** The bound is valid and the signal is real; the trade does not exist. "
+      f"(1) Bound validity (anchor b) is excellent: 1 violation in 2,037 primary station-days, **0 false locks in {p['n_fires']} primary-cell fires** (Wilson UB {100*p['wilson_ub_all']:.2f}%, vs the 2% / 5% bars). "
+      f"The sensor-fault headwind the spec named as the likely cause of death did not materialise on the primary arm. "
+      f"(2) What kills it is price. After a rung is provably dead, the market has already pushed its YES bid to zero: at the first candle at/after signal+10 min the YES bid is 0 on "
+      f"{st.get('yes_bid=0', 0)} of {nf} fires ({100*st.get('yes_bid=0', 0)/nf:.1f}%), so the NO costs 100c and cannot be bought at <= 98c. "
+      f"Only **{p['n_priced']} of {nf} fires ({100*p['n_priced']/nf:.2f}%) have any qualifying minute -> untradeable fraction {100*p['untradeable_frac']:.2f}%** against the 70% bar. "
+      f"The 6-hr group is a lagged digest of temperatures the market priced from live observations before the group was published.\n")
+    A(f"**How the frozen rule lands.** PASS is impossible: bar 4 (n priced >= 100) and bar 5 (untradeable <= 70%) fail by two orders of magnitude in every cell (primary cell: n={p['n_priced']}, {p['n_days']} days, {p['n_stations']} stations; "
+      f"D=2 cell: n={p21['n_priced']}). KILL is triggered by the clause 'every EV>0 cell misses its n floor' (all {vd['n_cells_EV>0']} EV>0 cells have n<100). "
+      f"The other two KILL clauses do NOT fire: false-lock 0% (not > 5%), and the best one-sided 97.9% EV upper bound is {fnum(vd['best_ub979_registered_reading'])}c (not < +0.5c) -- it is that wide only because n is single digits. "
+      f"So the label is KILL by the letter of the rule, but its evidential content is 'the population is ~99.7% unbuyable', not 'EV is negative'. The EV on the {p['n_priced']} priced entries "
+      f"(volume-weighted {ev_cell(p['ev_vw'])}; equal-weight {ev_cell(p['ev_eq'])}) is statistically indistinguishable from zero and sits on {p['n_priced']} observations: the signed t-statistics are below the Bonferroni bar in every L=10 cell, so even the positive point estimates cannot support a PASS. "
+      f"Mean entry cost {fnum(p['mean_cost_c'])}c; at 97-98c the maximum possible net per contract is 1-2c after fee, so the +2.0c EV bar is nearly unreachable at those prices even with zero losses.\n")
+    zv = p["n_priced"] - p["n_entry_vol_positive"]
+    A(f"**Zero-volume entry minutes (stated outright, treated as doubtful fills).** Primary cell S=5,D=1,L=10: {zv} of {p['n_priced']} priced entry minutes have ZERO traded volume ({100*zv/max(1,p['n_priced']):.0f}%); "
+      f"the volume-weighted statistic therefore rests on {p['n_entry_vol_positive']} observation(s). Per-cell counts are in the last column of section 3. "
+      f"The +2.0c EV bars (2 and 2b) are nominally met in the L=10 D=1 cells on these 7-9 entries, but PASS still fails on t, n and untradeable fraction, so this does not change the verdict; it does mean even the {p['n_priced']} 'priced' entries include quote-only minutes that may not be fillable.\n")
+    A(f"**Caveat that cannot rescue it.** Candle rows exist only for minutes in which the book changed; no back-fill/carry-forward is applied (spec: never back-fill). {nc} of {nf} primary fires ({100*nc/nf:.1f}%) have no candle row at/after signal+10 min, "
+      f"so a quiet standing bid could in principle be hiding there. Even if **every one** of those became tradeable the untradeable fraction would still be >= {100*(1-(p['n_priced']+nc)/nf):.1f}%, far above the 70% bar. "
+      "Also, the candle window starts at each rung's first signal, so the pre-signal price path is not observed (the repricing time cannot be dated; only that it had happened by signal+10).\n")
 
 
 def md_e_text(o, L):
-    pass
+    A = L.append
+    e = o["anchors_cde"]["anchor_e"]
+    d1, d2 = e["PRIMARY_HIGH_nonCST|5|1"], e["PRIMARY_HIGH_nonCST|5|2"]
+    m1, r1 = d1["1min"], d1["routine"]
+    m2, r2 = d2["1min"], d2["routine"]
+    p = o["arms"]["PRIMARY_HIGH_nonCST"]["5|1|L10"]
+    A(f"**Which is it? An execution/timing improvement on a largely known population, not a new discovery -- with two narrow caveats.** Primary cell S=5,D=1: "
+      f"against a deployed rule on a 1-minute feed, {m1['deployed_eventually_locks']} of {m1['n_with_feed']} fires ({100*m1['deployed_eventually_locks']/m1['n_with_feed']:.0f}%) are on rungs the deployed rule also locks, and it locks "
+      f"{m1['deployed_locked_30min_or_more_before_bound_signal']} of them >= 30 min BEFORE the bound can be published (median {fnum(m1['median_minutes_bound_signal_is_after_deployed_lock'],0)} min earlier): the 6-hr group is slower than the deployed path, not faster. "
+      f"At D=2 the overlap is {100*m2['deployed_eventually_locks']/m2['n_with_feed']:.0f}% ({m2['deployed_eventually_locks']}/{m2['n_with_feed']}). "
+      f"Caveat 1 (D=1 only): the other {m1['deployed_never_locks']} fires ({100*m1['deployed_never_locks']/m1['n_with_feed']:.0f}%) are rungs overshot by only ~1 F (integer bound = cap+1, i.e. group >= cap+0.5 F), which the deployed margin (extreme > cap + 1.0 F, continuous) never reaches. "
+      f"Caveat 2: against the deployed bot's DEFAULT feed (hourly METAR spots) {r1['deployed_never_locks']} of {r1['n_with_feed']} fires ({100*r1['deployed_never_locks']/r1['n_with_feed']:.0f}%) are never locked, because the peak fell between hourly reports and only the 6-hr group saw it -- the bound sees more than the default feed. "
+      f"But on this slice the market is no more generous: the first post-signal YES bid is 0 on {100*p['first_candle_after_signal_state'].get('yes_bid=0',0)/p['n_fires_candle_sampled']:.1f}% of fires. "
+      f"Of the {p['n_priced']} priced primary entries, {p['entered_after_deployed_1min_lock']} came after a deployed 1-min lock and {p['entered_before_deployed_1min_lock']} before one (the rest had no 1-min coverage or no deployed lock). "
+      "The single standout (SFO 2026-06-28, rung [72,73], group 73.94 F -> 74 F, YES bid still ~28-32c at the signal, NO bought at 59c, settled NO) is a rounding-ambiguity case at the D=1 boundary; one observation in 2,850 is an anecdote, not an edge.\n")
 
 
 def md_notes(o, L):
-    pass
+    A = L.append
+    ab = o["anchor_b"]["anchor_b"]
+    P = o["arms"]["PRIMARY_HIGH_nonCST"]
+    A("## 6. Findings that contradict or qualify the spec's premises\n")
+    A("1. **The sensor-fault headwind is not the cause of death.** The spec predicted faults as the most likely killer. On the frozen primary arm the final-bound violation rate is 1/2,037 (0.05%, Wilson UB 0.28%) and there are 0 false locks in all six cells (UB 0.13-0.19%). "
+      "The famous DEN 24 F fault is a LOW-market fault (DEN LOW 2026-06-26), outside the HIGH-only primary arm; the guard rejects it at every S. A 2% false-lock bar is NOT unreachable for HIGH/non-CST. "
+      "Faults concentrate in the LOW arms (unguarded 7/2,035 non-CST LOW days), where the guard cuts them to 1-2 at S=3-5 for a 7-11% fire cost.")
+    A("2. **The guard is nearly irrelevant on the primary arm** (removes 0 of 1 fault; cuts 0.2-1.7% of fires) and **the +-60 C plausibility filter never fires** (0 rejected groups in the whole record). "
+      "The only primary-arm fault (NYC 2026-08-27: station group 81 F, corroborated by spot temperatures, NWS certified 77 F) also contradicts the spec's statement that NWS builds the CLI from these recorded extremes -- in at least one case it did not. "
+      "That fault produced no false lock only because the YES rung [76,77] is not in the universe for that day.")
+    A("3. **'Known hours before close' is true and is not an edge.** The bound is available a median of 486 min (8.1 h; p10 307 min, p90 669 min) before close on primary-cell fires (it is published at the synoptic reports), as the spec says. The market, however, had priced the dead rungs to a zero bid by then: the information in a 6-hr group is a lagged summary of live observations. "
+      "The spec's break-even arithmetic (f ~ 1% at 98c) never mattered because there are almost no sub-98c entries to be wrong on.")
+    A("4. **The 6-hr group is slower than the deployed path**, so this is an execution/timing question on a known population (anchor e), not a new population.")
+    A("5. **Interpretation choices made where the spec was silent (disclosed):** (a) BMAX/BMIN are integer degF (tenths-C -> F -> round half-up) and compared to the whole-degree official value; "
+      "(b) the corroboration guard is two-sided |spot - group| <= S over reports in [nominal-6h, the group's own report time] (the only reading that cannot look ahead); "
+      "(c) the guarded bound is the running max/min over corroborated groups only; (d) duplicate/COR groups each count as a decoded group (spec-literal; makes the bound monotone by construction -- the observability study's 'latest wins' rule produced 2 non-monotone guarded bounds on one LOW day and was rejected for that reason); "
+      "(e) the 'violation rate' used for the self-kill is the primary arm at the registered S=5, with all other variants shown (none exceeds 2% either, so the choice is immaterial); "
+      "(f) the KILL clause 'best one-sided 97.9% UB < +0.5c' uses the volume-weighted reading (Build-B precedent) with equal-weight as fallback; the equal-weight reading is also shown and gives the same verdict.")
+    A("6. **Secondary arms (cannot PASS)**: LOW non-CST, HIGH CST, LOW CST are reported in section 3. They show the same price wall (untradeable >= 97%). CST arms also fail structurally: their last tiling group is published ~7 min before close, so fires on that final group have signal+10 min after close. "
+      "Their positive-looking EVs rest on 2-19 entries, mostly zero-volume or 97-98c, and are not evidence of anything.")
+    A("7. **Process notes.** Candle fetch used `/historical/markets/{ticker}/candlesticks` before 2026-08-28 and live `/series/.../candlesticks` after (historical rows use `close`, aliased by `finality_B._adapt`); "
+      "57 tickers returned 404 on both endpoints (no candles; counted UNTRADEABLE). All 6,231 fired tickers were fetched (100% coverage), in a seeded shuffled order (seed 20261027) that was never re-sorted. "
+      "No file in `cache/finality/` or `cache/settlement_obs/` was written, and no live-trading file was touched. `finality_B.py` carries uncommitted edits from another study; it is imported but was not modified or committed here.\n")
+
+
+
+# ============================================================================================ plausibility / known-case disclosure
+
+def synthetic_guard_test(recs, stn):
+    """KNOWN-ANSWER test of the guard (SYNTHETIC, clearly not data): inject the coordinator's fault values into the real
+    METAR group stream of the named days and check the guard.  LAX 2026-05-24 HIGH: replace the 23:53Z 6-hr max group by
+    +48.9 C (=120 F); MDW 2026-07-07 LOW (CST): replace the 17:53Z 6-hr min group by -18.3 C (=-1 F)."""
+    out = []
+    for (st, date, kind, tcv) in (("LAX", "2026-05-24", "max", 489), ("MDW", "2026-07-07", "min", -183), ("LAX", "2026-05-24", "min", -339)):
+        r = [x for x in recs if x["station"] == st and x["lst_date"] == date and x["kind"] == kind][0]
+        reps = [dict(x) for x in day_reports(stn[st], r["day_start"], r["day_end"])]
+        gk = "g6max" if kind == "max" else "g6min"
+        idx = [i for i, x in enumerate(reps) if x[gk] is not None and abs(x["ts"] - round(x["ts"] / SYN) * SYN) <= TOL]
+        i = idx[1] if len(idx) > 1 else idx[0]
+        reps[i][gk] = ("synthetic", tcv)
+        ev = walk_day(reps, r["day_start"], r["day_end"], kind)
+        e = [x for x in ev if x["tc"] == tcv][0]
+        out.append({"station": st, "date": date, "kind": kind, "injected_F": round(spot_F(tcv), 1), "official": r["official"],
+                    "passes_plausibility_filter(+-60C)": True, "corroborated_at_S3/5/8": [e["corr"][3], e["corr"][5], e["corr"][8]],
+                    "final_bound_unguarded": ev[-1]["bound"][INF], "final_bound_S3/5/8": [ev[-1]["bound"][3], ev[-1]["bound"][5], ev[-1]["bound"][8]]})
+    return out
+
+
+def cmd_plaus():
+    """Coordinator request: (1) anchor (b) violation rate WITH and WITHOUT the +-60 C plausibility filter (separates the
+    filter's contribution from the corroboration guard's); (2) two known-bad observation days; no threshold touched."""
+    recs, rungs, skip, ex, rex, stn, walks = walk_everything()
+    walks_nf = {}
+    for r in recs:
+        walks_nf[(r["station"], r["kind"], r["day_end"])] = walk_day(
+            day_reports(stn[r["station"]], r["day_start"], r["day_end"]), r["day_start"], r["day_end"], r["kind"], plaus=False)
+    ab_f = anchor_b_compute(recs, walks)
+    ab_n = anchor_b_compute(recs, walks_nf)
+    rej = collections.Counter()
+    for st, d in stn.items():
+        for r in d["reps"]:
+            for k in ("g6max", "g6min"):
+                if r[k] is not None and not (-600 <= r[k][1] <= 600):
+                    rej[st + ":" + k + ":" + r[k][0]] += 1
+    tab = {}
+    for arm in ARMS:
+        tab[arm] = {}
+        for key in (INF,) + S_GRID:
+            f = ab_f["arms"][arm]["variants"][str(key)]
+            n_ = ab_n["arms"][arm]["variants"][str(key)]
+            tab[arm][str(key)] = {"filtered": [f["viol"], f["n"]], "unfiltered": [n_["viol"], n_["n"]]}
+    # fire counts with / without filter
+    fc_f = fire_counts(rungs, walks)
+    fc_n = fire_counts(rungs, walks_nf)
+    cases = []
+    for (st, date) in (("LAX", "2026-05-24"), ("MDW", "2026-07-07")):
+        for kind in ("max", "min"):
+            rr = [r for r in recs if r["station"] == st and r["lst_date"] == date and r["kind"] == kind]
+            if not rr:
+                cases.append({"station": st, "date": date, "kind": kind, "in_universe": False})
+                continue
+            r = rr[0]
+            key = (st, kind, r["day_end"])
+            t1, f1 = FB.window_obs(st, "1min", r["day_start"], r["day_end"])
+            tr, fr = FB.window_obs(st, "routine", r["day_start"], r["day_end"])
+            reps = day_reports(stn[st], r["day_start"], r["day_end"])
+            tts = [spot_F(x["tt"]) for x in reps if x["tt"] is not None]
+            c = {"station": st, "date": date, "kind": kind, "in_universe": True, "arm": arm_of(kind, r["off"]), "official": r["official"],
+                 "iem_1min_extreme": (max(f1) if kind == "max" else min(f1)) if f1 else None,
+                 "iem_routine_extreme": (max(fr) if kind == "max" else min(fr)) if fr else None,
+                 "metar_body_spot_range_F": [round(min(tts), 1), round(max(tts), 1)] if tts else None,
+                 "groups": [{"report": SO.utc(e["ts"]), "tc": e["tc"], "F": round(e["gF"], 2), "corr": {str(x): e["corr"][x] for x in S_GRID}} for e in walks_nf[key]],
+                 "final_bound": {str(k): (walks[key][-1]["bound"][k] if walks[key] else None) for k in (INF,) + S_GRID},
+                 "final_bound_no_plaus_filter": {str(k): (walks_nf[key][-1]["bound"][k] if walks_nf[key] else None) for k in (INF,) + S_GRID}}
+            bad = (lambda b: b is not None and ((b > r["official"]) if kind == "max" else (b < r["official"])))
+            c["violates"] = {k: bad(v) for k, v in c["final_bound_no_plaus_filter"].items()}
+            cases.append(c)
+    out = {"table": tab, "groups_rejected_by_filter": dict(rej), "n_rejected_groups": sum(rej.values()),
+           "fires_filtered": {a: {k: v["fires"] for k, v in fc_f[a].items()} for a in ARMS},
+           "fires_unfiltered": {a: {k: v["fires"] for k, v in fc_n[a].items()} for a in ARMS},
+           "falselocks_unfiltered": {a: {k: v["false_lock"] for k, v in fc_n[a].items()} for a in ARMS},
+           "known_cases": cases, "synthetic_guard_test": synthetic_guard_test(recs, stn)}
+    jdump(out, os.path.join(CACHE, "plaus.json"))
+    print(json.dumps(out, indent=1, default=str)[:6000])
 
 
 if __name__ == "__main__":
@@ -1016,6 +1195,8 @@ if __name__ == "__main__":
         sys.exit(3 if o["self_kill"] else 0)
     elif cmd == "fires":
         cmd_fires()
+    elif cmd == "plaus":
+        cmd_plaus()
     elif cmd == "analyze":
         cmd_analyze()
     elif cmd == "candles":
