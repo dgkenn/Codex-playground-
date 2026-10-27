@@ -588,7 +588,7 @@ def cluster_stat(x, w, cl):
     s = np.bincount(inv, weights=w * (x - mu), minlength=G)
     var = G / (G - 1) * float((s ** 2).sum()) / sw ** 2
     se = math.sqrt(var)
-    return mu, se, (mu / se if se > 0 else float("nan")), G - 1.0, G
+    return mu, se, (mu / se if se > 1e-9 else float("nan")), G - 1.0, G
 
 
 def t_bar(df, alpha=ALPHA_BONF):
@@ -865,6 +865,28 @@ def carry_forward_diag(fires, L):
             "no_candle_after_entry_prior_quote_cost_class": dict(n_cost_hist), "stale_quote_would_qualify": n_stale_ok}
 
 
+def entry_cost_classes(fires, L):
+    """Why are fires untradeable?  Over candles at/after the entry time: no candle at all / yes_bid<=0 on every candle (NO costs
+    100c, nothing to buy) / best NO cost 99c (net 0 after the 1c fee) / priced."""
+    c = collections.Counter()
+    for fr in fires:
+        te = fr["t"] + L * 60
+        after = [r for r in fr["rows"] if r[0] >= te]
+        if not after:
+            c["no_candle_at_or_after_entry"] += 1
+            continue
+        costs = [x for x in (no_cost_c(r[1], r[2]) for r in after) if x is not None]
+        if not costs:
+            c["yes_bid_zero_on_every_candle (NO cost 100c)"] += 1
+        elif first_entry(fr["rows"], "no", te):
+            c["priced (cost<=98c, net>0)"] += 1
+        elif min(costs) == 99:
+            c["best_NO_cost_99c (net 0 after 1c fee)"] += 1
+        else:
+            c["other"] += 1
+    return dict(c)
+
+
 def part1_verdict(grid):
     """grid[(G,R,W)][L] -> stats.  Verdict from the L=10 arm only (spec)."""
     passes, notes = [], []
@@ -1139,7 +1161,7 @@ def tz_worked_example(A):
             alts[tag] = float(fn(arr[j0:j1, 1]))
         mine = float(fn(sub[:, 1]))
         dst = off != {"NYC": -5, "MIA": -5, "BOS": -5, "SEA": -8, "LAX": -8, "DEN": -7}[e["station"]]
-        if abs(mine - ev) > 0.51 or not any(abs(v - ev) > 0.51 for v in alts.values()) or not dst:
+        if abs(mine - ev) > 0.51 or abs(alts["naive DST-clock-midnight window (dayend-25h..dayend-1h)"] - ev) <= 0.51 or not dst:
             continue                                   # want: DST-season day where the skew WOULD have mattered
         k = int(np.argmax(sub[:, 1])) if e["kind"] == "max" else int(np.argmin(sub[:, 1]))
         seen.add(key)
@@ -1223,6 +1245,8 @@ def main_analyze():
     for L in LAT:
         fs = [f for f in A["over_fires"] if f["cell"] == (PRIMARY["G"], PRIMARY["R"], PRIMARY["W"])]
         over[L] = cell_stats(fs, L)
+    ecc = {k: entry_cost_classes([f for f in A["fires"] if f["cell"] == (PRIMARY["G"], PRIMARY["R"], PRIMARY["W"]) and
+                                  (k == "all" or f["kind"] == k)], 10) for k in ("all", "max", "min")}
     cf = carry_forward_diag([f for f in A["fires"] if f["cell"] == (PRIMARY["G"], PRIMARY["R"], PRIMARY["W"])], 10)
     # ---- Part 2 ----
     p2 = {}
@@ -1275,7 +1299,8 @@ def main_analyze():
                               for k, arms in grid.items()},
                      "primary_cell": {f"L={L}": v for L, v in prim.items()},
                      "overshoot_mirror_reference_primary_cell": {f"L={L}": v for L, v in over.items()},
-                     "carry_forward_sensitivity_primary_L10_descriptive": cf},
+                     "carry_forward_sensitivity_primary_L10_descriptive": cf,
+                     "why_untradeable_primary_L10": ecc},
            "part2": {"verdict": verdict2, "numeric_criteria_L10": {"fires_per_day_ge_3": crit_fires, "per_day_net_ge_4c": crit_ev,
                                                                  "t_ge_bar": crit_t},
                      "arms": {f"L={L}": v for L, v in p2.items()}},
@@ -1303,15 +1328,19 @@ def write_md(out, A, grid, over, p2, v1, v2):
     P("## Verdicts\n")
     P(f"- **Part 1 (FINAL-NO by never-arrival): {v1}**")
     P(f"- **Part 2 (whole-ladder): {v2}**\n")
+    dws = sp["design_weights_live_hist"]
     P(f"**SAMPLING FRACTION: {sp['events_with_candles']:,} of {sp['universe_events']:,} city-day events "
-      f"({100 * sp['fraction']:.1f}%), i.e. {sp['events_with_candles']:,} of {sp['universe_rungs']:,} rungs' ladders.** "
-      f"Method: ONE seeded shuffle (seed {sp['seed']}) of every settled city-day event, never re-sorted; candlesticks "
-      f"were fetched in that order, so the fetched set is a uniform random subsample (the work order was never "
-      f"series- or date-sorted; contiguous prefix = {sp['contiguous_prefix_of_work_order']:,}). "
+      f"({100 * sp['fraction']:.1f}%) have candlesticks and enter the analysis; {sp['events_with_candles'] * 100 // sp['universe_events'] if False else ''}"
+      f"LIVE partition (settled ~2026-08-21..10-20): {sp['fetched_by_stratum']['True']}/{sp['universe_by_stratum']['True']} = CENSUS; "
+      f"HISTORICAL partition (2026-05-23..~08-20): {sp['fetched_by_stratum']['False']}/{sp['universe_by_stratum']['False']} = "
+      f"{100 * sp['fetched_by_stratum']['False'] / sp['universe_by_stratum']['False']:.1f}% random sample.** "
+      f"Why stratified: live events cost 1 batch request, historical events ~6 requests (no batch endpoint) at ~1 request/second with 429 backoff, "
+      f"so a single uniform prefix could not cover the universe in one session. Within each stratum the work order is the seeded (seed {sp['seed']}) "
+      f"shuffle and was NEVER re-sorted, so each stratum's fetched set is a uniform random subsample of that stratum "
+      f"(work-order index of first un-fetched event overall: {sp['contiguous_prefix_of_work_order']}). To keep pooled estimates unbiased for the whole "
+      f"universe every fire/day carries a stratified design weight N_h/n_h (live {dws['True']:.2f}, historical {dws['False']:.2f}); "
+      f"ALL EVs and t-statistics below are design-weighted (and volume-weighted where labelled); counts (n, fires, k/N, Wilson) are raw. "
       f"Series covered {sp['series_covered']}/{sp['series_total']} (per-series n {sp['min_series_n']}..{sp['max_series_n']}). "
-      f"Partitions fetched {sp['events_by_partition_done']} of {sp['events_by_partition_universe']} "
-      f"(live = settled on/after ~2026-08-21 via batch candlesticks; hist = Kalshi historical partition, 1 call per rung, "
-      f"which is why the full universe did not fit in a session at ~1 request/second). "
       f"Obs feed per usable event: {sp['feeds']}.\n")
     P("## Primary cell (G=4, R=2, H=3, W=120), L=10 -- the deployable arm\n")
     P("| metric | value |\n|---|---|")
@@ -1368,6 +1397,16 @@ def write_md(out, A, grid, over, p2, v1, v2):
               f"{_f(s_['vw_cityday']['ev_c']) if s_['n_priced'] else 'n/a'} | {_f(s_.get('ev_unweighted_c')) if s_['n_priced'] else 'n/a'} | "
               f"{_f(s_.get('mean_cost_c')) if s_['n_priced'] else 'n/a'} |")
     P("")
+    pv = prim[10]
+    P(f"**Reading the primary cell.** Only {pv['n_priced']} of {pv['n_fires']} never-arrival fires ever offer NO at <=98c with positive net "
+      f"({_f(100 * (1 - pv['untradeable_frac']), 2)}%): on {out['part1']['why_untradeable_primary_L10']['all']} (all / HIGH: {out['part1']['why_untradeable_primary_L10']['max']} / LOW: {out['part1']['why_untradeable_primary_L10']['min']}). "
+      f"The dead rungs simply have no YES bid (NO costs 100c) -- there is no discount to buy. "
+      f"The false-lock rate over ALL fires is {_f(100 * pv['false_lock_all']['rate'], 2)}% but over the PRICED fires it is "
+      f"{pv['false_lock_priced']['k']}/{pv['false_lock_priced']['n']} (Wilson UB {_f(100 * pv['false_lock_priced']['wilson_hi'], 1)}%): the minutes at which NO is "
+      f"actually cheap are exactly the minutes the book disagrees with the obs-only inference -- adverse selection. The volume-weighted EV "
+      f"({_f(pv['vw_cityday']['ev_c'])}c) and the volume-unweighted design-weighted EV ({_f(pv['ev_unweighted_c'])}c; raw mean {_f(pv['ev_raw_mean_c'])}c) "
+      f"have opposite signs because a handful of high-volume cheap-NO winners dominate the volume weights while the two false-locks (-94c each) "
+      f"dominate the unweighted mean; neither estimate clears its bar. Every priced primary-cell fire is a LOW market (see the HIGH split below: zero priced).\n")
     # descriptive splits of the primary cell
     P("### Primary cell, descriptive splits (L=10; not part of the frozen comparisons)\n")
     P("| split | fires | n priced | false-lock k/N | EVuw c |")
@@ -1460,7 +1499,7 @@ def write_md(out, A, grid, over, p2, v1, v2):
       "(05:00Z for NYC all year in the live partition, 04:59Z in the historical partition -> rounded up to the hour), so the day is "
       "`[dayend-24h, dayend)` in UTC and during daylight-saving time that is 01:00 -> 01:00 on the local wall clock. IEM obs are requested with "
       "`tz=UTC` and candlestick `end_period_ts` is a UTC epoch, so all three clocks are epoch seconds and no local conversion enters the signal. "
-      "Worked examples (days where a naive DST-clock-midnight window WOULD have produced a different extreme than Kalshi's official value):\n")
+      "Worked examples (selected only by: full 1-minute coverage, a DST-season date, and the naive DST-clock-midnight window disagreeing with Kalshi's official value while the settlement-day window agrees):\n")
     for e in an["tz_worked_examples"]["examples"]:
         P(f"- `{e['event']}` ({e['kind']}, {e['station']}): listed close {e['close_time_listed_utc']}; window UTC "
           f"{e['day_window_utc'][0]} .. {e['day_window_utc'][1]} = local wall clock {e['day_window_local_wall_clock'][0]} .. "

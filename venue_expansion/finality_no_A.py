@@ -385,7 +385,7 @@ def fetch_event(rungs):
     return all(os.path.exists(candle_path(r["ticker"])) for r in rungs)
 
 
-def stage_candles(budget_s, max_events):
+def stage_candles(budget_s, max_events, tiers=(1, 2)):
     """Two tiers, both in the SHUFFLED event order (never re-sorted):
        tier 1 (Part 1, FULL universe): for every event, only the bracket rungs that have >=1 never-arrival fire in ANY
                cell (obs-only decision, independent of price and outcome).
@@ -407,7 +407,7 @@ def stage_candles(budget_s, max_events):
             if res is not None:
                 json.dump(res, open(candle_path(tk), "w"))
     check_batch(events, order)
-    for tier in (1, 2):
+    for tier in tiers:
         done = 0
         for evt in order:                                # shuffled order, never re-sorted
             sg = sig.get(evt)
@@ -1623,13 +1623,14 @@ if __name__ == "__main__":
     ap.add_argument("--budget-s", type=float, default=3600.0)
     ap.add_argument("--max-events", type=int, default=10 ** 9)
     ap.add_argument("--procs", type=int, default=4)
+    ap.add_argument("--tiers", default="1,2", help="candle tiers to run, in order (e.g. 2 or 2,1)")
     a = ap.parse_args()
     if a.stage == "setup":
         stage_setup()
     elif a.stage == "order":
         stage_order()
     elif a.stage == "candles":
-        stage_candles(a.budget_s, a.max_events)
+        stage_candles(a.budget_s, a.max_events, tuple(int(x) for x in a.tiers.split(',')))
     elif a.stage == "signals":
         stage_signals(a.procs)
     elif a.stage == "report":

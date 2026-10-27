@@ -4,14 +4,14 @@ Spec: `venue_expansion/FINALITY_NO_LADDER_SPEC.md` (frozen 2026-10-27).  Code: `
 
 ## Verdicts
 
-- **Part 1 (FINAL-NO by never-arrival): INSUFFICIENT**  -- PASS cells at L=10: none; KILL triggers: none; best L=10 one-sided 97.9% EV upper bound over the 12 cells: 92.81c volume-weighted (formal) / 110.97c unweighted.
+- **Part 1 (FINAL-NO by never-arrival): INSUFFICIENT**  -- PASS cells at L=10: none; KILL triggers: none; best L=10 one-sided 97.9% EV upper bound over the 12 cells: 24.51c volume-weighted (formal) / 4.35c unweighted.
 - **Part 2 (whole ladder): NOT_EVALUABLE**  -- gate (Part 1 PASS or TERMINAL_FINALITY PASS): NOT met; companion FINAL-YES builds on disk: {'finality_A': 'INSUFFICIENT', 'finality_B': 'INSUFFICIENT'}.
 
 {{COMMENTARY}}
 
 ## Sampling / coverage (read this first)
 
-- **Part 1 priced stage: 290 of 8,699 never-arrival-fired bracket rungs have candlesticks = 3.33% (PARTIAL: a random prefix of a shuffled event order, seed 20261028).**  Signal-level facts (fire counts, false-lock rates) always use all 6,039 scored events.
+- **Part 1 priced stage: 4,305 of 8,699 never-arrival-fired bracket rungs have candlesticks = 49.49% (PARTIAL: a random prefix of a shuffled event order, seed 20261028).**  Signal-level facts (fire counts, false-lock rates) always use all 6,039 scored events.
 - **Part 2 ladder stage: 1 of 2,735 signalling city-days have the whole 6-rung ladder priced = 0.04%** (a random prefix of the shuffled event order (seed 20261028), never re-sorted).
 - Work order = sorted event list shuffled once with a fixed seed (`cache/finality_no/A/event_work_order.json`), never re-sorted.  Tier 1 (Part 1) prices only the bracket rungs that have a never-arrival fire in some cell (an obs-only decision made before any price or outcome was read); tier 2 (Part 2) prices every rung of every event with a day-level primary-cell signal.  The overshoot reference arm (anchor d) therefore only exists where tier 2 reached.
 
@@ -23,18 +23,18 @@ Spec: `venue_expansion/FINALITY_NO_LADDER_SPEC.md` (frozen 2026-10-27).  Code: `
 
 ## Worked timezone example (anchor c)
 
-Fire `KXLOWTATL-26AUG31-B73.5` (station ATL, running MIN, fixed standard offset UTC-5; bracket [73,74], official result `yes`, official value 74.00).
+Fire `KXLOWTNYC-26OCT16-B52.5` (station NYC, running MIN, fixed standard offset UTC-5; bracket [52,53], official result `no`, official value 59.00).
 
-- Local-STANDARD day starts **2026-08-31 05:00Z** (= 2026-08-31 00:00 LST, epoch 1788152400) and ends at LST midnight **2026-09-01 05:00Z** (= 2026-09-01 00:00 LST, epoch 1788238800); Kalshi's own `close_time` equals this (asserted for every event, tolerance 60 s).  In DST wall-clock the same instant is 2026-09-01 01:00 (DST wall clock): the 'local day' is NOT wall-clock midnight-to-midnight in summer (the classic 1-hour-skew trap).
-- The running extreme E = 79.0 was last set at **2026-08-31 13:03Z** (= 2026-08-31 08:03 LST).  The signal observation (index k=837 of 957 obs that day) is **2026-09-01 03:00Z** = 2026-08-31 22:00 LST, 120 min before close; signal stamped obs + 60 s = **2026-09-01 03:01Z** (epoch 1788231660).  Candle epochs are UTC `end_period_ts`, same clock as the obs epochs and `close_time`, so all three compare directly.
-- L=10 entry: first candle with end_period_ts >= sig_ts + 600 s = 2026-09-01 03:11Z; found **2026-09-01 03:12Z** (= 2026-08-31 22:12 LST), NO cost = 100 - yes_bid = 2c, fee 1c, volume 0.0; settles `yes` -> pnl -3c.
+- Local-STANDARD day starts **2026-10-16 05:00Z** (= 2026-10-16 00:00 LST, epoch 1792126800) and ends at LST midnight **2026-10-17 05:00Z** (= 2026-10-17 00:00 LST, epoch 1792213200); Kalshi's own `close_time` equals this (asserted for every event, tolerance 60 s).  In DST wall-clock the same instant is 2026-10-17 01:00 (DST wall clock): the 'local day' is NOT wall-clock midnight-to-midnight in summer (the classic 1-hour-skew trap).
+- The running extreme E = 59.0 was last set at **2026-10-16 05:00Z** (= 2026-10-16 00:00 LST).  The signal observation (index k=1320 of 1440 obs that day) is **2026-10-17 03:00Z** = 2026-10-16 22:00 LST, 120 min before close; signal stamped obs + 60 s = **2026-10-17 03:01Z** (epoch 1792206060).  Candle epochs are UTC `end_period_ts`, same clock as the obs epochs and `close_time`, so all three compare directly.
+- L=10 entry: first candle with end_period_ts >= sig_ts + 600 s = 2026-10-17 03:11Z; found **2026-10-17 04:27Z** (= 2026-10-16 23:27 LST), NO cost = 100 - yes_bid = 97c, fee 1c, volume 0.0; settles `no` -> pnl 2c.
 
 Proof the day window is right: the extreme of the 1-minute obs inside the window shifted by s hours, versus Kalshi's own `expiration_value` for this event:
 
 | s (h) | -3 | -2 | -1 | +0 | +1 | +2 | +3 |
 |---|---|---|---|---|---|---|---|
-| extreme F | 79.0 | 79.0 | 79.0 | 79.0 | 79.0 | 79.0 | 77.0 |
-| = official? | no | no | no | no | no | no | no |
+| extreme F | 57.0 | 58.0 | 58.0 | 59.0 | 58.0 | 55.0 | 52.0 |
+| = official? | no | no | no | **YES** | no | no | no |
 
 Across ALL events, exact-match fraction of the shifted-window extreme against the official integer (1-min feed):
 
@@ -49,30 +49,30 @@ The declared window (s=0) is the optimum for LOW markets and error grows with |s
 
 ## Worked no-look-ahead example (anchor b)
 
-Same fire (`KXLOWTATL-26AUG31-B73.5`, primary cell G4_R2_H3_W120, never-arrival): at obs index k=837, E = 79.0F, current temp 85.0F; the detector is a `Stream` that consumes one obs at a time, so state after obs k is a function of obs[0..k] only.  max obs ts in the prefix = 2026-09-01 03:00Z < signal ts 2026-09-01 03:01Z: True.  Re-running the detector on obs[:k+1] only reproduces the fire: True; re-running on the full day with every later obs replaced by 35.0F (an adversarial +/-50F move) reproduces it: True.
+Same fire (`KXLOWTNYC-26OCT16-B52.5`, primary cell G4_R2_H3_W120, never-arrival): at obs index k=1320, E = 59.0F, current temp 64.0F; the detector is a `Stream` that consumes one obs at a time, so state after obs k is a function of obs[0..k] only.  max obs ts in the prefix = 2026-10-17 03:00Z < signal ts 2026-10-17 03:01Z: True.  Re-running the detector on obs[:k+1] only reproduces the fire: True; re-running on the full day with every later obs replaced by 14.0F (an adversarial +/-50F move) reproduces it: True.
 
 Asserted in code for **every** distinct signal index of **every** event (29,553 detector re-runs: truncated prefix, +50F future, -50F future); the script aborts on any difference.  0 violations (the run completed).
 
 ## Part 1 -- FINAL-NO by never-arrival (bracket rungs)
 
-**Primary cell G4_R2_H3_W120 at L=10:** universe fires 4,969 (false locks 88 = 1.77%, Wilson UB 2.18%, over 151 days / 20 stations); priced stage: n priced = **5** of 175 covered fires (untradeable 97.1%), priced false locks 5 (100.00%, Wilson UB 100.00%), EV/contract volume-weighted **-2.00c** (unweighted -21.40c), signed day-clustered t **n/a** (bar 8.07), 5 days, 5 stations; entries with volume > 0: 2 (zero-volume entries carry zero weight in the weighted estimator).
+**Primary cell G4_R2_H3_W120 at L=10:** universe fires 4,969 (false locks 88 = 1.77%, Wilson UB 2.18%, over 151 days / 20 stations); priced stage: n priced = **78** of 2495 covered fires (untradeable 96.9%), priced false locks 39 (50.00%, Wilson UB 60.83%), EV/contract volume-weighted **2.15c** (unweighted -0.73c), signed day-clustered t **0.69** (bar 3.41), 52 days, 19 stations; entries with volume > 0: 29 (zero-volume entries carry zero weight in the weighted estimator).
 
 ### All 12 cells, L = 10 (the deployable arm), formal day-clustered statistics (calendar event-date clusters)
 
 | cell | L | fires (covered) | priced (vol>0) | untradeable | false locks priced (rate, Wilson UB) | mean NO cost c | EV vw c | EV unw c | t vw (bar) | days/stn | UB97.9 c (vw / unw) | bars |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| G2_R2_H3_W60 | 10 | 273 | 5 (2) | 98.2% | 4 (80.0%, 96.4%) | 38.6 | -65.19 | -19.60 | -2.14 (8.07) | 5/5 | 24.85 / 34.55 | fails 1,2,3,4,5 |
-| G2_R2_H3_W120 | 10 | 290 | 11 (3) | 96.2% | 6 (54.5%, 78.7%) | 53.6 | -2.00 | -9.18 | n/a (4.43) | 11/10 | -2.00 / 11.57 | fails 1,1,2,3,4,5 |
-| G2_R4_H3_W60 | 10 | 230 | 4 (2) | 98.3% | 3 (75.0%, 95.4%) | 48.0 | -65.19 | -24.00 | -2.07 (11.88) | 4/4 | 42.48 / 54.58 | fails 1,2,3,4,5 |
-| G2_R4_H3_W120 | 10 | 242 | 8 (2) | 96.7% | 5 (62.5%, 86.3%) | 49.4 | -2.00 | -12.88 | n/a (5.18) | 8/7 | -2.00 / 17.37 | fails 1,2,3,4,5 |
-| G4_R2_H3_W60 | 10 | 165 | 4 (2) | 97.6% | 4 (100.0%, 100.0%) | 23.8 | -65.19 | -24.75 | -2.07 (11.88) | 4/4 | 42.48 / 52.94 | fails 1,2,3,4,5 |
-| G4_R2_H3_W120 | 10 | 175 | 5 (2) | 97.1% | 5 (100.0%, 100.0%) | 20.4 | -2.00 | -21.40 | n/a (8.07) | 5/5 | -2.00 / 35.08 | fails 1,2,3,4,5 |
-| G4_R4_H3_W60 | 10 | 135 | 3 (2) | 97.8% | 3 (100.0%, 100.0%) | 31.3 | -65.19 | -32.33 | -1.95 (27.90) | 3/3 | 92.81 / 110.97 | fails 1,2,3,4,5 |
-| G4_R4_H3_W120 | 10 | 144 | 4 (1) | 97.2% | 4 (100.0%, 100.0%) | 25.2 | -2.00 | -26.25 | n/a (11.88) | 4/4 | -2.00 / 55.43 | fails 1,2,3,4,5 |
-| G6_R2_H3_W60 | 10 | 80 | 1 (1) | 98.8% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R2_H3_W120 | 10 | 86 | 2 (2) | 97.7% | 2 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (496.56) | 2/2 | -2.00 / -2.00 | fails 1,1,2,3,4,5 |
-| G6_R4_H3_W60 | 10 | 61 | 1 (1) | 98.4% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R4_H3_W120 | 10 | 67 | 1 (1) | 98.5% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
+| G2_R2_H3_W60 | 10 | 4032 | 101 (38) | 97.5% | 42 (41.6%, 51.3%) | 58.6 | -3.42 | -1.23 | -1.33 (3.36) | 71/19 | 1.89 / 1.54 | fails 1p,2,3,5 |
+| G2_R2_H3_W120 | 10 | 4305 | 239 (89) | 94.4% | 73 (30.5%, 36.7%) | 69.3 | 3.68 | -0.83 | 0.71 (3.31) | 110/20 | 14.30 / 1.11 | fails 1u,1p,3,5 |
+| G2_R4_H3_W60 | 10 | 3357 | 60 (27) | 98.2% | 35 (58.3%, 69.9%) | 44.4 | -5.28 | -3.73 | -1.67 (3.43) | 47/19 | 1.35 / 0.86 | fails 1p,2,3,4,5 |
+| G2_R4_H3_W120 | 10 | 3672 | 133 (49) | 96.4% | 56 (42.1%, 50.6%) | 58.1 | -2.94 | -1.24 | -2.30 (3.34) | 77/20 | -0.30 / 1.00 | fails 1p,2,3,5 |
+| G4_R2_H3_W60 | 10 | 2322 | 40 (16) | 98.3% | 29 (72.5%, 83.9%) | 29.6 | -6.29 | -3.12 | -1.25 (3.52) | 34/17 | 4.37 / 1.83 | fails 1p,2,3,4,5 |
+| G4_R2_H3_W120 | 10 | 2495 | 78 (29) | 96.9% | 39 (50.0%, 60.8%) | 49.7 | 2.15 | -0.73 | 0.69 (3.41) | 52/19 | 8.61 / 2.40 | fails 1p,3,4,5 |
+| G4_R4_H3_W60 | 10 | 1887 | 30 (16) | 98.4% | 24 (80.0%, 90.5%) | 23.4 | -6.22 | -4.40 | -1.25 (3.63) | 26/16 | 4.48 / 2.08 | fails 1p,2,3,4,5 |
+| G4_R4_H3_W120 | 10 | 2085 | 50 (19) | 97.6% | 31 (62.0%, 74.1%) | 39.5 | -1.92 | -2.48 | -25.15 (3.47) | 40/19 | -1.76 / 1.65 | fails 1p,2,3,4,5 |
+| G6_R2_H3_W60 | 10 | 1084 | 17 (8) | 98.4% | 13 (76.5%, 90.4%) | 24.0 | -1.67 | -1.47 | -4.68 (3.90) | 17/13 | -0.88 / -0.12 | fails 1u,1p,2,3,4,5 |
+| G6_R2_H3_W120 | 10 | 1179 | 29 (14) | 97.5% | 19 (65.5%, 80.1%) | 32.8 | 12.70 | 0.62 | 2.32 (3.69) | 23/16 | 24.51 / 4.35 | fails 1u,1p,3,4,5 |
+| G6_R4_H3_W60 | 10 | 860 | 13 (7) | 98.5% | 10 (76.9%, 91.8%) | 23.4 | -2.00 | -1.31 | n/a (4.18) | 13/10 | -2.00 / -0.33 | fails 1u,1p,2,3,4,5 |
+| G6_R4_H3_W120 | 10 | 963 | 20 (9) | 97.9% | 14 (70.0%, 85.5%) | 29.9 | -2.00 | -0.95 | n/a (3.85) | 18/12 | -2.00 / -0.14 | fails 1u,1p,2,3,4,5 |
 
 Universe-level (signal-only, every event, no pricing needed) false-lock rate per cell -- bar 1 is evaluated on this AND on the priced subset:
 
@@ -95,56 +95,59 @@ Universe-level (signal-only, every event, no pricing needed) false-lock rate per
 
 | cell | L | fires (covered) | priced (vol>0) | untradeable | false locks priced (rate, Wilson UB) | mean NO cost c | EV vw c | EV unw c | t vw (bar) | days/stn | UB97.9 c (vw / unw) | bars |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| G2_R2_H3_W60 | 0 | 273 | 7 (3) | 97.4% | 5 (71.4%, 91.8%) | 39.4 | -3.93 | -12.00 | -1.39 (5.68) | 7/7 | 3.35 / 16.37 | fails 1,2,3,4,5 |
-| G2_R2_H3_W60 | 20 | 273 | 4 (1) | 98.5% | 3 (75.0%, 95.4%) | 47.0 | -2.00 | -23.00 | n/a (11.88) | 4/4 | -2.00 / 52.17 | fails 1,2,3,4,5 |
-| G2_R2_H3_W120 | 0 | 290 | 11 (5) | 96.2% | 6 (54.5%, 78.7%) | 53.6 | -2.41 | -9.18 | -3.98 (4.43) | 11/10 | -1.00 / 11.33 | fails 1,1,2,3,4,5 |
-| G2_R2_H3_W120 | 20 | 290 | 9 (3) | 96.9% | 5 (55.6%, 81.1%) | 54.0 | -2.00 | -10.56 | -352.52 (4.84) | 9/8 | -1.99 / 14.42 | fails 1,1,2,3,4,5 |
-| G2_R4_H3_W60 | 0 | 230 | 5 (3) | 97.8% | 4 (80.0%, 96.4%) | 35.4 | -3.93 | -16.60 | -1.34 (8.07) | 5/5 | 4.70 / 28.70 | fails 1,2,3,4,5 |
-| G2_R4_H3_W60 | 20 | 230 | 3 (1) | 98.7% | 2 (66.7%, 93.9%) | 62.3 | -2.00 | -30.00 | n/a (27.90) | 3/3 | -2.00 / 109.43 | fails 1,2,3,4,5 |
-| G2_R4_H3_W120 | 0 | 242 | 8 (3) | 96.7% | 5 (62.5%, 86.3%) | 49.2 | -2.50 | -12.75 | -3.39 (5.18) | 8/7 | -0.67 / 17.18 | fails 1,2,3,4,5 |
-| G2_R4_H3_W120 | 20 | 242 | 8 (3) | 96.7% | 5 (62.5%, 86.3%) | 48.8 | -2.00 | -12.25 | -349.76 (5.18) | 8/7 | -1.99 / 16.44 | fails 1,2,3,4,5 |
-| G4_R2_H3_W60 | 0 | 165 | 4 (2) | 97.6% | 4 (100.0%, 100.0%) | 19.8 | -34.93 | -21.00 | -1.15 (11.88) | 4/4 | 69.14 / 43.88 | fails 1,2,3,4,5 |
-| G4_R2_H3_W60 | 20 | 165 | 3 (1) | 98.2% | 3 (100.0%, 100.0%) | 30.0 | -2.00 | -31.00 | n/a (27.90) | 3/3 | -2.00 / 106.01 | fails 1,2,3,4,5 |
-| G4_R2_H3_W120 | 0 | 175 | 5 (3) | 97.1% | 5 (100.0%, 100.0%) | 20.2 | -5.69 | -21.20 | -1.13 (8.07) | 5/5 | 9.16 / 34.69 | fails 1,2,3,4,5 |
-| G4_R2_H3_W120 | 20 | 175 | 4 (2) | 97.7% | 4 (100.0%, 100.0%) | 24.0 | -2.10 | -25.00 | -14.02 (11.88) | 4/4 | -1.59 / 52.41 | fails 1,2,3,4,5 |
-| G4_R4_H3_W60 | 0 | 135 | 3 (2) | 97.8% | 3 (100.0%, 100.0%) | 26.0 | -34.93 | -27.33 | -1.08 (27.90) | 3/3 | 117.78 / 92.35 | fails 1,2,3,4,5 |
-| G4_R4_H3_W60 | 20 | 135 | 2 (1) | 98.5% | 2 (100.0%, 100.0%) | 44.5 | -2.00 | -45.50 | n/a (496.56) | 2/2 | -2.00 / 612.90 | fails 1,2,3,4,5 |
-| G4_R4_H3_W120 | 0 | 144 | 4 (2) | 97.2% | 4 (100.0%, 100.0%) | 25.0 | -14.74 | -26.00 | -0.82 (11.88) | 4/4 | 46.77 / 54.82 | fails 1,2,3,4,5 |
-| G4_R4_H3_W120 | 20 | 144 | 4 (2) | 97.2% | 4 (100.0%, 100.0%) | 24.0 | -2.10 | -25.00 | -14.02 (11.88) | 4/4 | -1.59 / 52.41 | fails 1,2,3,4,5 |
-| G6_R2_H3_W60 | 0 | 80 | 1 (1) | 98.8% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R2_H3_W60 | 20 | 80 | 0 (0) | 100.0% | 0 (n/a, n/a) | n/a | n/a | n/a | n/a (n/a) | 0/0 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R2_H3_W120 | 0 | 86 | 2 (2) | 97.7% | 2 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (496.56) | 2/2 | -2.00 / -2.00 | fails 1,1,2,3,4,5 |
-| G6_R2_H3_W120 | 20 | 86 | 1 (1) | 98.8% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R4_H3_W60 | 0 | 61 | 1 (1) | 98.4% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R4_H3_W60 | 20 | 61 | 0 (0) | 100.0% | 0 (n/a, n/a) | n/a | n/a | n/a | n/a (n/a) | 0/0 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R4_H3_W120 | 0 | 67 | 1 (1) | 98.5% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
-| G6_R4_H3_W120 | 20 | 67 | 1 (1) | 98.5% | 1 (100.0%, 100.0%) | 1.0 | -2.00 | -2.00 | n/a (n/a) | 1/1 | n/a / n/a | fails 1,1,2,3,4,5 |
+| G2_R2_H3_W60 | 0 | 4032 | 132 (51) | 96.7% | 54 (40.9%, 49.4%) | 58.7 | -2.10 | -0.65 | -0.95 (3.33) | 84/20 | 2.47 / 1.25 | fails 1p,2,3,5 |
+| G2_R2_H3_W60 | 20 | 4032 | 85 (27) | 97.9% | 36 (42.4%, 53.0%) | 58.2 | -3.37 | -1.58 | -0.99 (3.39) | 59/19 | 3.68 / 1.66 | fails 1p,2,3,4,5 |
+| G2_R2_H3_W120 | 0 | 4305 | 253 (97) | 94.1% | 74 (29.2%, 35.1%) | 70.6 | 3.96 | -0.89 | 0.83 (3.30) | 112/20 | 13.74 / 0.96 | fails 1u,1p,3,5 |
+| G2_R2_H3_W120 | 20 | 4305 | 225 (85) | 94.8% | 70 (31.1%, 37.4%) | 68.7 | 3.75 | -0.87 | 0.73 (3.31) | 105/20 | 14.32 / 1.17 | fails 1u,1p,3,5 |
+| G2_R4_H3_W60 | 0 | 3357 | 81 (36) | 97.6% | 46 (56.8%, 67.0%) | 44.8 | -4.51 | -2.56 | -1.65 (3.39) | 56/20 | 1.19 / 0.64 | fails 1p,2,3,4,5 |
+| G2_R4_H3_W60 | 20 | 3357 | 52 (24) | 98.5% | 30 (57.7%, 70.1%) | 44.9 | -3.79 | -3.62 | -1.08 (3.48) | 39/19 | 3.62 / 1.77 | fails 1p,2,3,4,5 |
+| G2_R4_H3_W120 | 0 | 3672 | 142 (49) | 96.1% | 57 (40.1%, 48.4%) | 60.0 | -3.14 | -1.19 | -2.27 (3.34) | 81/20 | -0.28 / 0.90 | fails 1p,2,3,5 |
+| G2_R4_H3_W120 | 20 | 3672 | 127 (48) | 96.5% | 55 (43.3%, 52.0%) | 56.9 | -3.09 | -1.24 | -2.32 (3.35) | 76/20 | -0.33 / 1.08 | fails 1p,2,3,5 |
+| G4_R2_H3_W60 | 0 | 2322 | 47 (22) | 98.0% | 33 (70.2%, 81.3%) | 31.2 | -3.40 | -2.45 | -2.20 (3.49) | 37/18 | -0.14 / 1.13 | fails 1p,2,3,4,5 |
+| G4_R2_H3_W60 | 20 | 2322 | 35 (13) | 98.5% | 24 (68.6%, 81.4%) | 33.7 | -1.92 | -3.26 | -25.00 (3.58) | 29/16 | -1.76 / 2.14 | fails 1p,2,3,4,5 |
+| G4_R2_H3_W120 | 0 | 2495 | 85 (34) | 96.6% | 40 (47.1%, 57.6%) | 52.6 | 2.41 | -0.73 | 0.99 (3.40) | 55/19 | 7.46 / 1.99 | fails 1p,3,4,5 |
+| G4_R2_H3_W120 | 20 | 2495 | 75 (30) | 97.0% | 37 (49.3%, 60.4%) | 50.3 | 2.34 | -0.60 | 0.81 (3.41) | 51/19 | 8.35 / 2.51 | fails 1p,3,4,5 |
+| G4_R4_H3_W60 | 0 | 1887 | 36 (19) | 98.1% | 28 (77.8%, 88.3%) | 24.4 | -3.45 | -3.17 | -2.19 (3.58) | 29/17 | -0.09 / 1.42 | fails 1p,2,3,4,5 |
+| G4_R4_H3_W60 | 20 | 1887 | 26 (12) | 98.6% | 20 (76.9%, 89.0%) | 26.7 | -1.93 | -4.62 | -25.68 (3.71) | 22/13 | -1.77 / 2.61 | fails 1p,2,3,4,5 |
+| G4_R4_H3_W120 | 0 | 2085 | 55 (19) | 97.4% | 32 (58.2%, 70.3%) | 43.2 | -1.93 | -2.42 | -7.38 (3.45) | 43/19 | -1.38 / 1.32 | fails 1p,2,3,4,5 |
+| G4_R4_H3_W120 | 20 | 2085 | 50 (19) | 97.6% | 31 (62.0%, 74.1%) | 39.2 | -1.90 | -2.24 | -22.39 (3.47) | 40/19 | -1.73 / 1.74 | fails 1p,2,3,4,5 |
+| G6_R2_H3_W60 | 0 | 1084 | 22 (13) | 98.0% | 17 (77.3%, 89.9%) | 23.1 | -1.96 | -1.41 | -41.74 (3.77) | 20/14 | -1.86 / -0.34 | fails 1u,1p,2,3,4,5 |
+| G6_R2_H3_W60 | 20 | 1084 | 13 (5) | 98.8% | 9 (69.2%, 87.3%) | 30.8 | -1.90 | -1.00 | -16.38 (4.18) | 13/10 | -1.64 / 0.12 | fails 1u,1p,2,3,4,5 |
+| G6_R2_H3_W120 | 0 | 1179 | 31 (14) | 97.4% | 19 (61.3%, 76.3%) | 36.9 | 10.78 | 0.77 | 1.78 (3.69) | 23/16 | 23.85 / 4.40 | fails 1u,1p,3,4,5 |
+| G6_R2_H3_W120 | 20 | 1179 | 27 (11) | 97.7% | 18 (66.7%, 81.4%) | 31.6 | 26.67 | 0.74 | 1.99 (3.69) | 23/16 | 55.57 / 4.71 | fails 1u,1p,3,4,5 |
+| G6_R4_H3_W60 | 0 | 860 | 18 (11) | 97.9% | 14 (77.8%, 91.0%) | 22.5 | -2.00 | -1.28 | -1624.72 (3.90) | 17/12 | -2.00 / -0.45 | fails 1u,1p,2,3,4,5 |
+| G6_R4_H3_W60 | 20 | 860 | 10 (4) | 98.8% | 7 (70.0%, 89.2%) | 30.1 | -2.00 | -1.10 | n/a (4.60) | 10/7 | -2.00 / 0.19 | fails 1u,1p,2,3,4,5 |
+| G6_R4_H3_W120 | 0 | 963 | 21 (8) | 97.8% | 14 (66.7%, 82.8%) | 33.1 | -2.00 | -0.76 | n/a (3.81) | 19/12 | -2.00 / 0.11 | fails 1u,1p,2,3,4,5 |
+| G6_R4_H3_W120 | 20 | 963 | 20 (9) | 97.9% | 14 (70.0%, 85.5%) | 29.9 | -2.00 | -0.95 | n/a (3.85) | 18/12 | -2.00 / -0.14 | fails 1u,1p,2,3,4,5 |
 
 ### Robustness: city-day clustering (cluster = event, finer than calendar date) at L=10
 
 | cell | n priced | EV vw c | t vw (city-day) | bar (df=events-1) | t vw (calendar day, formal) |
 |---|---|---|---|---|---|
-| G2_R2_H3_W60 | 5 | -65.19 | -2.14 | 8.07 | -2.14 |
-| G2_R2_H3_W120 | 11 | -2.00 | n/a | 4.43 | n/a |
-| G2_R4_H3_W60 | 4 | -65.19 | -2.07 | 11.88 | -2.07 |
-| G2_R4_H3_W120 | 8 | -2.00 | n/a | 5.18 | n/a |
-| G4_R2_H3_W60 | 4 | -65.19 | -2.07 | 11.88 | -2.07 |
-| G4_R2_H3_W120 | 5 | -2.00 | n/a | 8.07 | n/a |
-| G4_R4_H3_W60 | 3 | -65.19 | -1.95 | 27.90 | -1.95 |
-| G4_R4_H3_W120 | 4 | -2.00 | n/a | 11.88 | n/a |
-| G6_R2_H3_W60 | 1 | -2.00 | n/a | n/a | n/a |
-| G6_R2_H3_W120 | 2 | -2.00 | n/a | 496.56 | n/a |
-| G6_R4_H3_W60 | 1 | -2.00 | n/a | n/a | n/a |
-| G6_R4_H3_W120 | 1 | -2.00 | n/a | n/a | n/a |
+| G2_R2_H3_W60 | 101 | -3.42 | -1.34 | 3.32 | -1.33 |
+| G2_R2_H3_W120 | 239 | 3.68 | 0.71 | 3.26 | 0.71 |
+| G2_R4_H3_W60 | 60 | -5.28 | -1.67 | 3.39 | -1.67 |
+| G2_R4_H3_W120 | 133 | -2.94 | -2.31 | 3.30 | -2.30 |
+| G4_R2_H3_W60 | 40 | -6.29 | -1.25 | 3.49 | -1.25 |
+| G4_R2_H3_W120 | 78 | 2.15 | 0.68 | 3.35 | 0.69 |
+| G4_R4_H3_W60 | 30 | -6.22 | -1.25 | 3.59 | -1.25 |
+| G4_R4_H3_W120 | 50 | -1.92 | -25.22 | 3.43 | -25.15 |
+| G6_R2_H3_W60 | 17 | -1.67 | -4.68 | 3.90 | -4.68 |
+| G6_R2_H3_W120 | 29 | 12.70 | 1.16 | 3.58 | 2.32 |
+| G6_R4_H3_W60 | 13 | -2.00 | n/a | 4.18 | n/a |
+| G6_R4_H3_W120 | 20 | -2.00 | n/a | 3.77 | n/a |
 
 ### Why tradeable fires are what they are (primary cell, L=10): market calibration at the entry price
 
 | NO cost bucket | n | NO wins | NO win rate | mean pnl c |
 |---|---|---|---|---|
-| <=50c | 4 | 0 | 0.0% | -2.25 |
-| 96-98c | 1 | 0 | 0.0% | -98.00 |
+| <=50c | 38 | 0 | 0.0% | -2.29 |
+| 51-80c | 1 | 1 | 100.0% | 47.00 |
+| 81-90c | 1 | 1 | 100.0% | 10.00 |
+| 91-95c | 7 | 7 | 100.0% | 4.86 |
+| 96-98c | 31 | 30 | 96.8% | -1.97 |
 
-Untradeable reasons, primary cell L=10: {"no_candles": 32, "cost_above_98_or_no_net": 135, "no_candle_at_or_after_target": 3}.
+Untradeable reasons, primary cell L=10: {"cost_above_98_or_no_net": 1865, "no_candles": 425, "no_candle_at_or_after_target": 127}.
 
 ## Anchor (d) -- never-arrival and overshoot reported separately
 
@@ -152,9 +155,9 @@ Part 1 (the spec's new shape) is the never-arrival signal.  Overshoot is what th
 
 | flavor | cell | L | fires (covered) | priced | untradeable | false locks (all covered) | EV vw c | EV unw c | t vw |
 |---|---|---|---|---|---|---|---|---|---|
-| never-arrival | G2_R2_H3_W120 | 10 | 290 | 11 | 96.2% | 6 (2.07%) | -2.00 | -9.18 | n/a |
-| never-arrival | G4_R2_H3_W120 | 10 | 175 | 5 | 97.1% | 5 (2.86%) | -2.00 | -21.40 | n/a |
-| never-arrival | G6_R2_H3_W120 | 10 | 86 | 2 | 97.7% | 2 (2.33%) | -2.00 | -2.00 | n/a |
+| never-arrival | G2_R2_H3_W120 | 10 | 4305 | 239 | 94.4% | 82 (1.90%) | 3.68 | -0.83 | 0.71 |
+| never-arrival | G4_R2_H3_W120 | 10 | 2495 | 78 | 96.9% | 42 (1.68%) | 2.15 | -0.73 | 0.69 |
+| never-arrival | G6_R2_H3_W120 | 10 | 1179 | 29 | 97.5% | 21 (1.78%) | 12.70 | 0.62 | 2.32 |
 | overshoot (ref) | G2_R2_H3_W120 | 10 | 7 | 0 | 100.0% | 0 (0.00%) | n/a | n/a | n/a |
 | overshoot (ref) | G4_R2_H3_W120 | 10 | 2 | 0 | 100.0% | 0 (0.00%) | n/a | n/a | n/a |
 | overshoot (ref) | G6_R2_H3_W120 | 10 | 0 | 0 | n/a | 0 (n/a) | n/a | n/a | n/a |
@@ -175,7 +178,7 @@ Correlation structure: all rungs of a city-day share one inference, so one wrong
 
 ## Sanity anchors
 
-**(a) Oracle subset / price join -- HOLDS.**  Price join: 40/40 of the stored Stage-1 oracle rungs re-derived from my own fresh candle pull reproduce the stored best winner cost, best net and capturable-minute count exactly.  Subset test: of 14 winning priced Part-1 fires (NO side, entry inside the oracle's final-60-min window) 0 are not oracle-capturable; of 0 winning priced Part-2 fires 0.  (16 winning fires entered before the final 60 min, outside the oracle's window.)  The rule fires on 2 of the stored oracle rungs.  Limitation: Only the top-40 'capturable_markets_detail' of out/edge_sizing_v2.json survives on disk; the full 140-market Stage-1 set is absent.  The subset test is therefore (i) a price-join reproduction on those 40 rungs from my own fresh pull, and (ii) the Stage-1 capturable test re-derived on the same candles for every priced fire whose side won and whose entry is inside the oracle's final 60 min.
+**(a) Oracle subset / price join -- HOLDS.**  Price join: 40/40 of the stored Stage-1 oracle rungs re-derived from my own fresh candle pull reproduce the stored best winner cost, best net and capturable-minute count exactly.  Subset test: of 610 winning priced Part-1 fires (NO side, entry inside the oracle's final-60-min window) 0 are not oracle-capturable; of 0 winning priced Part-2 fires 0.  (704 winning fires entered before the final 60 min, outside the oracle's window.)  The rule fires on 2 of the stored oracle rungs.  Limitation: Only the top-40 'capturable_markets_detail' of out/edge_sizing_v2.json survives on disk; the full 140-market Stage-1 set is absent.  The subset test is therefore (i) a price-join reproduction on those 40 rungs from my own fresh pull, and (ii) the Stage-1 capturable test re-derived on the same candles for every priced fire whose side won and whose entry is inside the oracle's final 60 min.
 
 **(b) No look-ahead -- HOLDS.**  See worked example; for every distinct signal index k0 of every event: re-run the detector on obs[:k0+1] and on the full day with all later obs replaced by +50F / -50F from the k0 temperature; all decisions at indices <= k0 must be identical (assert; the script aborts otherwise).
 

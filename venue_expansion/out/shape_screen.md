@@ -1,6 +1,6 @@
 # SHAPE SCREEN - which Kalshi series stay open after their outcome is determined?
 
-Generated 2026-10-27T18:16:51+00:00. Code: `venue_expansion/shape_screen.py` (seed 20261027). Data: `venue_expansion/out/shape_screen.json`. Every API pull is cached under `venue_expansion/cache/shape_screen/`.
+Generated 2026-10-27T18:54:56+00:00. Code: `venue_expansion/shape_screen.py` (seed 20261027). Data: `venue_expansion/out/shape_screen.json`. Every API pull is cached under `venue_expansion/cache/shape_screen/`.
 
 > **STATUS: DESCRIPTIVE SCREEN, NOT A HYPOTHESIS TEST.** It carries no pass bar and produces no deployable claim. The capturable rate below is an ORACLE CEILING (perfect foreknowledge of the winner, zero latency, zero competition, all printed volume available to one taker). **Nothing on the shortlist may be promoted, sized, or traded without a NEW pre-registration** (frozen spec, frozen bars, adversarial verification) - the same bar every one of the 43 prior studies had to clear.
 
@@ -16,7 +16,7 @@ Property: *the market stays open for hours after its outcome is physically deter
 | BULLETIN-PACED | resolves on an official release that is itself the fastest feed | none (no independent faster feed) |
 | UNRESOLVED-BY-METADATA | no structural cue found in metadata (reported, not forced into a class) | unknown |
 
-Empirical step: for each sampled settled market, 1-minute candlesticks for the final **120 minutes** before close, then `edge_sizing_v2.normalize()` + the v2 winner-cost rule (YES winner costs yes_ask; NO winner costs **100 - yes_bid**, never 100 - yes_ask; capturable minute iff cost <= 98c and net = 100 - cost - ceil(7p(1-p)) > 0). A market is *capturable* if any minute qualifies. The v2 code was imported, not re-written for the normalizer, and the winner-scan reproduces `edge_sizing_v2.scan()` exactly on 560 cached weather market-sides (0 mismatches; `selftest` stage).
+Empirical step: for each sampled settled market, 1-minute candlesticks for the final **120 minutes** before close, then `edge_sizing_v2.normalize()` + the v2 winner-cost rule (YES winner costs yes_ask; NO winner costs **100 - yes_bid**, never 100 - yes_ask; capturable minute iff cost <= 98c and net = 100 - cost - ceil(7p(1-p)) > 0). A market is *capturable* if any minute qualifies. `edge_sizing_v2.normalize()` and `fee_c()` are imported, and the winner-scan reproduces `edge_sizing_v2.scan()` exactly on 368 cached weather market-sides (0 mismatches; `selftest` stage).
 
 **Why capturable rate alone cannot identify the property.** Any market whose outcome is still uncertain two hours out also has a winner buyable below 98c (the oracle knows the winner; nobody else does). The rate only means something when multiplied by an independently established determination gap - which is why classification comes first and why DETERMINED-AT-CLOSE series with 100% capturable rate carry zero score.
 
@@ -27,10 +27,13 @@ Empirical step: for each sampled settled market, 1-minute candlesticks for the f
 | series in /series catalog | 15,416 |
 | series in probe universe (recurring-frequency + seen in walked settled events) | 3,763 |
 | series probed (one markets call each, newest 200 settled markets, MVE parlays excluded) | 1,857 |
+| probed series with zero settled markets in the live window | 871 |
+| probe universe NOT probed (tier 3: non-recurring, seen in only 1-2 settled events; run stopped to stay polite) | 1,906 |
+| series NOT in the probe universe (non-recurring, absent from the walked slice of settled events) | 11,653 |
 | series with >= 20 settled markets in the live API window (classified) | 809 |
-| markets planned for candle sample / with usable candles | 655 / 229 |
-| candle skips | {"no_candles_in_window": 83, "not_yet_fetched": 343} |
-| official-result re-check (GET /markets/{ticker} vs listing) | 0/0 agree |
+| markets planned for candle sample / with usable candles | 655 / 500 |
+| candle skips | {"no_candles_in_window": 154, "no_candle_file_or_fetch_failed": 1} |
+| official-result re-check (GET /markets/{ticker} vs listing) | 60/60 agree |
 
 Limits: (a) the live API only serves a rolling window of settled markets (~since 2026-05), so 'settled >= 20' is counted inside that window; (b) a non-recurring series with no settled event in the walked slice of the event listing was not probed; (c) 'newest 200' bounds per-series counts at 200 (`more` flag in the JSON); (d) candlesticks carry quotes at minutes that had activity - sparse markets have sparse minutes; (e) candlesticks have no order-book depth, so volume in capturable minutes is an upper bound on what one taker could have lifted.
 
@@ -38,26 +41,26 @@ Limits: (a) the live API only serves a rolling window of settled markets (~since
 
 | class | series (>=20 settled) | contracts in returned markets | top categories |
 |---|---|---|---|
-| CLOSES-AT-DECISION | 460 | 5,430,187,643 | Sports 413, Crypto 10, Entertainment 8, Elections 8, Mentions 7 |
+| CLOSES-AT-DECISION | 461 | 5,430,492,801 | Sports 413, Crypto 10, Entertainment 8, Elections 8, Mentions 7 |
 | BULLETIN-PACED | 146 | 65,578,513 | Economics 97, Entertainment 23, Financials 15, Politics 6, Sports 2 |
 | DETERMINED-AT-CLOSE | 129 | 908,086,516 | Financials 56, Commodities 30, Crypto 26, Climate and Weather 9, Politics 5 |
 | DETERMINED-EARLY | 71 | 71,737,912 | Climate and Weather 62, Economics 4, Politics 4, Entertainment 1 |
-| UNRESOLVED-BY-METADATA | 3 | 451,341 | Economics 2, Politics 1 |
+| UNRESOLVED-BY-METADATA | 2 | 146,183 | Economics 2 |
 
 ## 4. Measured oracle-capturable rate by sampled group
 
 | group | markets | series | capturable (pooled) | Wilson 95% | series-mean rate | same, final 60 min | median priced-lead (min) | median winner cost T-60 | median winner cost T-10 |
 |---|---|---|---|---|---|---|---|---|---|
-| CONTROL-BULLETIN-PACED | 23 | 15 | 0.4783 | (0.2924, 0.6704) | 0.4889 | 0.3913 | 120 | 99 | 100 |
-| CONTROL-CLOSES-AT-DECISION | 34 | 20 | 0.8824 | (0.7338, 0.9533) | 0.8 | 0.8235 | 19.6 | 83.0 | 100.0 |
-| CONTROL-DETERMINED-AT-CLOSE | 25 | 20 | 0.64 | (0.4452, 0.7975) | 0.55 | 0.6 | 20.0 | 96.5 | 99 |
-| CONTROL-UNRESOLVED-BY-METADATA | 3 | 2 | 0.6667 | (0.2077, 0.9385) | 0.5 | 0.6667 | 54.0 | 93.5 | 89 |
-| EARLY-other | 41 | 10 | 0.2439 | (0.1382, 0.3934) | 0.2162 | 0.1463 | 120 | 100.0 | 100.0 |
-| EARLY-weather | 103 | 53 | 0.0971 | (0.0536, 0.1696) | 0.0991 | 0.0777 | 120 | 100.0 | 100.0 |
+| CONTROL-BULLETIN-PACED | 47 | 22 | 0.5319 | (0.3923, 0.6667) | 0.5379 | 0.4468 | 112.0 | 99.0 | 100 |
+| CONTROL-CLOSES-AT-DECISION | 66 | 25 | 0.8485 | (0.7431, 0.9156) | 0.7733 | 0.7727 | 21.7 | 85.5 | 100 |
+| CONTROL-DETERMINED-AT-CLOSE | 63 | 23 | 0.5873 | (0.4642, 0.7004) | 0.5797 | 0.5397 | 30.0 | 99.0 | 100 |
+| CONTROL-UNRESOLVED-BY-METADATA | 6 | 2 | 0.3333 | (0.0968, 0.7) | 0.3333 | 0.3333 | 120.0 | 99 | 99 |
+| EARLY-other | 72 | 10 | 0.2917 | (0.1994, 0.4051) | 0.2627 | 0.1944 | 120.0 | 100 | 100.0 |
+| EARLY-weather | 246 | 58 | 0.0854 | (0.0565, 0.127) | 0.0807 | 0.065 | 120.0 | 100 | 100 |
 
 `priced-lead` = minutes before close during which the winning side was NOT capturable (0 = capturable up to the last minute, i.e. outcome still open; 120 = never capturable in the window, i.e. the market had already repriced). `winner cost T-n` = cost of the eventual winner n minutes before close; a determined-early shape shows ~97-99c at T-60, an at-close shape shows a mid price.
 
-**Positive-control reproduction.** edge_sizing_v2 (final 60 min, 40 US weather series, population-weighted) measured 10.0% capturable. This screen's weather sample (final 60 min of the same candles, sampled *per series* so heavily-traded and thin series weigh equally) gives 7.8% pooled; over the full 120 minutes 9.7%. Sampling frames differ, so agreement is directional, not exact.
+**Positive-control reproduction.** edge_sizing_v2 (final 60 min, 40 US weather series, population-weighted) measured 10.0% capturable. This screen's weather sample (final 60 min of the same candles, sampled *per series* so heavily-traded and thin series weigh equally) gives 6.5% pooled; over the full 120 minutes 8.5%. Sampling frames differ, so agreement is directional, not exact.
 
 ## 5. Ranked shortlist (DETERMINED-EARLY candidates with >= 3 usable sampled markets)
 
@@ -65,106 +68,144 @@ Score = estimated determination gap (hours) x oracle-capturable rate x median vo
 
 | # | series | title | subtype | gap h | capturable | median capt. vol | priced-lead min | score | graveyard verdict |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | KXLOWTDEN | Lowest temperature in Denver | wx-daily-extreme | 17.97 | 0.25 (1/4) | 1955.42 | 120.0 | 8784.724 | RE-DISCOVERY |
-| 2 | KXLOWTNYC | Lowest temperature in NYC | wx-daily-extreme | 17.97 | 0.33 (1/3) | 245.12 | 120 | 1468.122 | RE-DISCOVERY |
-| 3 | KXLOWTDC | Lowest Temperature DC  | wx-daily-extreme | 17.97 | 0.67 (2/3) | 106.13 | 80.0 | 1271.501 | RE-DISCOVERY |
-| 4 | KXTRUTHSOCIALD | Number of Trump Truth Social posts | running-count/mention | 0.25 | 0.25 (1/4) | 2730.48 | 120.0 | 170.655 | RE-DISCOVERY |
-| 5 | KXTORNADO | Number of Tornadoes | running-count/mention | 0.25 | 0.33 (1/3) | 1506.05 | 120 | 125.492 | RE-DISCOVERY |
-| 6 | KXFEDTWEETS | Fed tweets | running-count/mention | 0.25 | 0.40 (2/5) | 427.5 | 120 | 42.75 | RE-DISCOVERY |
-| 7 | KXWEFTWEETS | WEF tweets | running-count/mention | 0.25 | 0.43 (3/7) | 2.0 | 120 | 0.214 | RE-DISCOVERY |
-| 8 | KXHIGHAUS | Highest temperature in Austin | wx-daily-extreme | 9.07 | 0.00 (0/4) | 0.0 | 120.0 | 0.0 | RE-DISCOVERY |
-| 9 | KXHIGHDEN | Highest temperature in Denver | wx-daily-extreme | 9.07 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 10 | KXHIGHLAX | Highest temperature in Los Angeles | wx-daily-extreme | 9.07 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 11 | KXHIGHTATL | Atlanta Max Temperature | wx-daily-extreme | 9.07 | 0.00 (0/4) | 0.0 | 120.0 | 0.0 | RE-DISCOVERY |
-| 12 | KXHIGHTDAL | Dallas Maximum Temperature | wx-daily-extreme | 9.07 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 13 | KXHIGHTNOLA | New Orleans Max temp Daily | wx-daily-extreme | 9.07 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 14 | KXHIGHTSEA | Seattle Maximum Temperature Daily | wx-daily-extreme | 9.07 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 15 | KXIMFTWEETS | IMF tweets | running-count/mention | 0.25 | 0.75 (3/4) | 0.0 | 78.5 | 0.0 | RE-DISCOVERY |
-| 16 | KXLOWTAUS | Lowest temperature in Austin | wx-daily-extreme | 17.97 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 17 | KXLOWTDAL | Lowest temperature Dallas | wx-daily-extreme | 17.97 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 18 | KXLOWTLV | Las Vegas Daily Low Temperature | wx-daily-extreme | 17.97 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 19 | KXLOWTOKC | Low Temperature Oklahoma City | wx-daily-extreme | 17.97 | 0.00 (0/3) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 20 | KXTRUTHSOCIAL | Number of Trump Truth Social posts | running-count/mention | 0.25 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
-| 21 | KXTXERCOTPEAKD | Texas ERCOT peak electricity deman | daily-peak/extreme | 0.5 | 0.00 (0/5) | 0.0 | 120 | 0.0 | NEW (no ledger entry) |
-| 22 | KXYTVIEWSW | Highest daily view count this week | daily-peak/extreme | 0.5 | 0.00 (0/5) | 0.0 | 120 | 0.0 | NEW (no ledger entry) |
+| 1 | KXRAIN | Where will it rain daily | wx-period-event | 3.0 | 0.20 (1/5) | 55311.6 | 120 | 33186.96 | ADJACENT (same mechanism, untested product) |
+| 2 | KXLOWTDEN | Lowest temperature in Denver | wx-daily-extreme | 17.97 | 0.40 (2/5) | 1646.24 | 120 | 11833.173 | RE-DISCOVERY |
+| 3 | KXLOWTPHX | Low Temperature Phoenix | wx-daily-extreme | 17.97 | 0.40 (2/5) | 765.78 | 120 | 5504.427 | RE-DISCOVERY |
+| 4 | KXLOWTBOS | Low Temperature Boston | wx-daily-extreme | 17.97 | 0.25 (1/4) | 694.81 | 120.0 | 3121.434 | RE-DISCOVERY |
+| 5 | KXLOWTNYC | Lowest temperature in NYC | wx-daily-extreme | 17.97 | 0.40 (2/5) | 259.82 | 120 | 1867.586 | RE-DISCOVERY |
+| 6 | KXLOWTDAL | Lowest temperature Dallas | wx-daily-extreme | 17.97 | 0.25 (1/4) | 328.68 | 120.0 | 1476.595 | RE-DISCOVERY |
+| 7 | KXLOWTDC | Lowest Temperature DC  | wx-daily-extreme | 17.97 | 0.40 (2/5) | 106.13 | 120 | 762.862 | RE-DISCOVERY |
+| 8 | KXLOWTSAN | Low Temperature San Diego | wx-daily-extreme | 17.97 | 0.75 (3/4) | 51.07 | 53.5 | 688.296 | RE-DISCOVERY |
+| 9 | KXAVGTKOKC | Average Weekly Temp in Oklahoma Ci | wx-period-event | 3.0 | 0.33 (1/3) | 437.16 | 120 | 437.116 | ADJACENT (same mechanism, untested product) |
+| 10 | KXLOWTSFO | Lowest Temperature San Francisco | wx-daily-extreme | 17.97 | 0.20 (1/5) | 50.0 | 120 | 179.7 | RE-DISCOVERY |
+| 11 | KXLOWTSATX | Lowest Temperature SATX | wx-daily-extreme | 17.97 | 0.25 (1/4) | 35.0 | 120.0 | 157.237 | RE-DISCOVERY |
+| 12 | KXTRUTHSOCIAL | Number of Trump Truth Social posts | running-count/mention | 0.25 | 0.11 (1/9) | 4081.04 | 120 | 113.351 | ADJACENT (same mechanism, untested product) |
+| 13 | KXTRUTHSOCIALD | Number of Trump Truth Social posts | running-count/mention | 0.25 | 0.44 (4/9) | 951.73 | 120 | 105.737 | ADJACENT (same mechanism, untested product) |
+| 14 | KXTORNADO | Number of Tornadoes | running-count/mention | 0.25 | 0.25 (1/4) | 1506.05 | 120.0 | 94.128 | ADJACENT (same mechanism, untested product) |
+| 15 | KXTXERCOTPEAKD | Texas ERCOT peak electricity deman | daily-peak/extreme | 0.5 | 0.10 (1/10) | 906.37 | 120.0 | 45.319 | NEW (no ledger entry) |
+| 16 | KXLOWTPHIL | Lowest temperature in Philadelphia | wx-daily-extreme | 17.97 | 0.25 (1/4) | 8.0 | 120.0 | 35.94 | RE-DISCOVERY |
+| 17 | KXFEDTWEETS | Fed tweets | running-count/mention | 0.25 | 0.57 (4/7) | 8.0 | 108.0 | 1.143 | ADJACENT (same mechanism, untested product) |
+| 18 | KXWEFTWEETS | WEF tweets | running-count/mention | 0.25 | 0.30 (3/10) | 2.0 | 120.0 | 0.15 | ADJACENT (same mechanism, untested product) |
+| 19 | KXTRUMPACT | Will Trump do anything today? | running-count/mention | 0.25 | 0.25 (1/4) | 0.01 | 120.0 | 0.001 | ADJACENT (same mechanism, untested product) |
+| 20 | KXAVGTKIAH | Average Weekly Temp in Houston (Bu | wx-period-event | 3.0 | 0.00 (0/3) | 0.0 | 120 | 0.0 | ADJACENT (same mechanism, untested product) |
+| 21 | KXAVGTKLAS | Average Weekly Temp in Las Vegas  | wx-period-event | 3.0 | 0.00 (0/3) | 0.0 | 120 | 0.0 | ADJACENT (same mechanism, untested product) |
+| 22 | KXAVGTKMSY | Average Weekly Temp in New Orleans | wx-period-event | 3.0 | 0.00 (0/3) | 0.0 | 120 | 0.0 | ADJACENT (same mechanism, untested product) |
+| 23 | KXHIGHAUS | Highest temperature in Austin | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
+| 24 | KXHIGHCHI | Highest temperature in Chicago | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
+| 25 | KXHIGHDEN | Highest temperature in Denver | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
+| 26 | KXHIGHLAX | Highest temperature in Los Angeles | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
+| 27 | KXHIGHMIA | Highest temperature in Miami | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
+| 28 | KXHIGHNY | Highest temperature in NYC | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
+| 29 | KXHIGHPHIL | Highest temperature in Philadelphi | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
+| 30 | KXHIGHTATL | Atlanta Max Temperature | wx-daily-extreme | 9.07 | 0.00 (0/5) | 0.0 | 120 | 0.0 | RE-DISCOVERY |
 
-### Family roll-up
+### Family roll-up (pooled over sampled markets; this is the ranking that matters)
 
-| family | series | usable mkts | capturable (pooled) | median gap h | median capt. vol | median score/series | graveyard verdict |
-|---|---|---|---|---|---|---|---|
-| KXTRUTHSOCIALD | 1 | 4 | 0.25 | 0.25 | 2730.48 | 170.655 | RE-DISCOVERY: social-media / public-figure post counts -> #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; |
-| KXTORNADO | 1 | 3 | 0.3333 | 0.25 | 1506.05 | 125.492 | RE-DISCOVERY: weather period products (rain / avg-temp streaks / tornado counts) -> same physical-feed mechanism as the KXHIGH/KXLOWT studies (#1,#2,#12, EDGE_SIZING) but these products were never tested; mention / |
-| KXFEDTWEETS | 1 | 5 | 0.4 | 0.25 | 427.5 | 42.75 | RE-DISCOVERY: social-media / public-figure post counts -> #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; |
-| KXWEFTWEETS | 1 | 7 | 0.4286 | 0.25 | 2.0 | 0.214 | RE-DISCOVERY: social-media / public-figure post counts -> #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; |
-| KXHIGH* | 7 | 23 | 0.0 | 9.07 | 0.0 | 0.0 | RE-DISCOVERY: US daily-extreme temperature (KXHIGH*/KXLOWT*) -> #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fir |
-| KXIMFTWEETS | 1 | 4 | 0.75 | 0.25 | 0.0 | 0.0 | RE-DISCOVERY: social-media / public-figure post counts -> #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; |
-| KXLOWT* | 7 | 22 | 0.1818 | 17.97 | 0.0 | 0.0 | RE-DISCOVERY: US daily-extreme temperature (KXHIGH*/KXLOWT*) -> #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fir |
-| KXTRUTHSOCIAL | 1 | 5 | 0.0 | 0.25 | 0.0 | 0.0 | RE-DISCOVERY: social-media / public-figure post counts -> #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; |
-| KXTXERCOTPEAKD | 1 | 5 | 0.0 | 0.5 | 0.0 | 0.0 | NEW (no ledger entry):  |
-| KXYTVIEWSW | 1 | 5 | 0.0 | 0.5 | 0.0 | 0.0 | NEW (no ledger entry):  |
+| # | family | series | usable mkts | capturable (pooled) | Wilson 95% | capt. when YES won | capt. when NO won | median gap h | median capt. vol | score | gap-free score | graveyard verdict |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | KXRAIN* | 2 | 8 | 0.125 (1/8) | (0.0224, 0.4709) | 0/1 | 1/7 | 3.0 | 55311.6 | 20741.85 | 6913.95 | ADJACENT (same mechanism, untested product) |
+| 2 | KXLOWT* | 24 | 111 | 0.171 (19/111) | (0.1124, 0.2519) | 10/20 | 9/91 | 17.97 | 101.0 | 310.671 | 17.288 | RE-DISCOVERY |
+| 3 | KXTRUTHSOCIAL* | 2 | 18 | 0.278 (5/18) | (0.125, 0.5087) | 2/2 | 3/16 | 0.25 | 1893.46 | 131.49 | 525.961 | ADJACENT (same mechanism, untested product) |
+| 4 | KXAVGTK* | 4 | 12 | 0.083 (1/12) | (0.0149, 0.3539) | 0/1 | 1/11 | 3.0 | 437.16 | 109.29 | 36.43 | ADJACENT (same mechanism, untested product) |
+| 5 | KXTORNADO | 1 | 4 | 0.250 (1/4) | (0.0456, 0.6994) | 1/2 | 0/2 | 0.25 | 1506.05 | 94.128 | 376.512 | ADJACENT (same mechanism, untested product) |
+| 6 | KXTXERCOTPEAKD | 1 | 10 | 0.100 (1/10) | (0.0179, 0.4042) | 0/4 | 1/6 | 0.5 | 906.37 | 45.319 | 90.637 | NEW (no ledger entry) |
+| 7 | KXFEDTWEETS | 1 | 7 | 0.571 (4/7) | (0.2505, 0.8418) | 3/4 | 1/3 | 0.25 | 8.0 | 1.143 | 4.571 | ADJACENT (same mechanism, untested product) |
+| 8 | KXWEFTWEETS | 1 | 10 | 0.300 (3/10) | (0.1078, 0.6032) | 2/3 | 1/7 | 0.25 | 2.0 | 0.15 | 0.6 | ADJACENT (same mechanism, untested product) |
+| 9 | KXTRUMPACT | 1 | 4 | 0.250 (1/4) | (0.0456, 0.6994) | 0/1 | 1/3 | 0.25 | 0.01 | 0.001 | 0.003 | ADJACENT (same mechanism, untested product) |
+| 10 | KXHIGH* | 23 | 108 | 0.000 (0/108) | (0.0, 0.0343) | 0/20 | 0/88 | 9.07 | 0.0 | 0.0 | 0.0 | RE-DISCOVERY |
+| 11 | KXIMFTWEETS | 1 | 10 | 0.600 (6/10) | (0.3127, 0.8318) | 4/4 | 2/6 | 0.25 | 0.0 | 0.0 | 0.0 | ADJACENT (same mechanism, untested product) |
+| 12 | KXTRUMPPHOTO | 1 | 4 | 0.000 (0/4) | (0, 0.4899) | 0/2 | 0/2 | 0.25 | 0.0 | 0.0 | 0.0 | ADJACENT (same mechanism, untested product) |
+| 13 | KXYTVIEWSW | 1 | 5 | 0.000 (0/5) | (0, 0.4345) | 0/3 | 0/2 | 0.5 | 0.0 | 0.0 | 0.0 | NEW (no ledger entry) |
 
 ### Same candidates ranked WITHOUT the gap term (capturable rate x median volume) - the check that the weather result is not produced by the gap column
 
 | # | series | subtype | capturable | median capt. vol | gap-free score |
 |---|---|---|---|---|---|
-| 1 | KXTRUTHSOCIALD | running-count/mention | 0.25 (1/4) | 2730.48 | 682.62 |
-| 2 | KXTORNADO | running-count/mention | 0.33 (1/3) | 1506.05 | 501.966 |
-| 3 | KXLOWTDEN | wx-daily-extreme | 0.25 (1/4) | 1955.42 | 488.855 |
-| 4 | KXFEDTWEETS | running-count/mention | 0.40 (2/5) | 427.5 | 171.0 |
-| 5 | KXLOWTNYC | wx-daily-extreme | 0.33 (1/3) | 245.12 | 81.698 |
-| 6 | KXLOWTDC | wx-daily-extreme | 0.67 (2/3) | 106.13 | 70.757 |
-| 7 | KXWEFTWEETS | running-count/mention | 0.43 (3/7) | 2.0 | 0.857 |
-| 8 | KXHIGHAUS | wx-daily-extreme | 0.00 (0/4) | 0.0 | 0.0 |
-| 9 | KXHIGHDEN | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 10 | KXHIGHLAX | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 11 | KXHIGHTATL | wx-daily-extreme | 0.00 (0/4) | 0.0 | 0.0 |
-| 12 | KXHIGHTDAL | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 13 | KXHIGHTNOLA | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 14 | KXHIGHTSEA | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 15 | KXIMFTWEETS | running-count/mention | 0.75 (3/4) | 0.0 | 0.0 |
-| 16 | KXLOWTAUS | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 17 | KXLOWTDAL | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 18 | KXLOWTLV | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 19 | KXLOWTOKC | wx-daily-extreme | 0.00 (0/3) | 0.0 | 0.0 |
-| 20 | KXTRUTHSOCIAL | running-count/mention | 0.00 (0/5) | 0.0 | 0.0 |
+| 1 | KXRAIN | wx-period-event | 0.20 (1/5) | 55311.6 | 11062.32 |
+| 2 | KXLOWTDEN | wx-daily-extreme | 0.40 (2/5) | 1646.24 | 658.496 |
+| 3 | KXTRUTHSOCIAL | running-count/mention | 0.11 (1/9) | 4081.04 | 453.404 |
+| 4 | KXTRUTHSOCIALD | running-count/mention | 0.44 (4/9) | 951.73 | 422.949 |
+| 5 | KXTORNADO | running-count/mention | 0.25 (1/4) | 1506.05 | 376.512 |
+| 6 | KXLOWTPHX | wx-daily-extreme | 0.40 (2/5) | 765.78 | 306.312 |
+| 7 | KXLOWTBOS | wx-daily-extreme | 0.25 (1/4) | 694.81 | 173.702 |
+| 8 | KXAVGTKOKC | wx-period-event | 0.33 (1/3) | 437.16 | 145.705 |
+| 9 | KXLOWTNYC | wx-daily-extreme | 0.40 (2/5) | 259.82 | 103.928 |
+| 10 | KXTXERCOTPEAKD | daily-peak/extreme | 0.10 (1/10) | 906.37 | 90.637 |
+| 11 | KXLOWTDAL | wx-daily-extreme | 0.25 (1/4) | 328.68 | 82.17 |
+| 12 | KXLOWTDC | wx-daily-extreme | 0.40 (2/5) | 106.13 | 42.452 |
+| 13 | KXLOWTSAN | wx-daily-extreme | 0.75 (3/4) | 51.07 | 38.303 |
+| 14 | KXLOWTSFO | wx-daily-extreme | 0.20 (1/5) | 50.0 | 10.0 |
+| 15 | KXLOWTSATX | wx-daily-extreme | 0.25 (1/4) | 35.0 | 8.75 |
+| 16 | KXFEDTWEETS | running-count/mention | 0.57 (4/7) | 8.0 | 4.571 |
+| 17 | KXLOWTPHIL | wx-daily-extreme | 0.25 (1/4) | 8.0 | 2.0 |
+| 18 | KXWEFTWEETS | running-count/mention | 0.30 (3/10) | 2.0 | 0.6 |
+| 19 | KXTRUMPACT | running-count/mention | 0.25 (1/4) | 0.01 | 0.003 |
+| 20 | KXAVGTKIAH | wx-period-event | 0.00 (0/3) | 0.0 | 0.0 |
 
 ## 6. Screen sanity check - does it rediscover weather?
 
-**SCREEN BROKEN OR WEATHER NOT PRESENT.** Weather family rank(s): [5, 7] of 10; gap-free first weather position: [3]. Per the task's own criterion this means the screen cannot be trusted until diagnosed.
+**PASS.** Weather daily extremes are family rank 2 (and 10) of 13 by score, and the first weather series is gap-free family rank 6 of 13 even with the gap term removed. The screen finds the family this program already knows has the property (LOW temperatures carry all of the measured residual capturability; HIGH temperatures, despite a 9-hour measured gap, show none - consistent with edge_sizing_v2, whose 40 top capturable markets were all KXLOWT*). Two untested weather period products (KXRAIN*, small n) rank above it by score; they are weather-feed products and the ranking among them is within noise.
 
 ## 7. Classifier-miss audit (non-EARLY series whose winners were already priced >= 60 min before close)
 
 These are series the metadata classifier put in a no-gap class but whose measured price path looks like a determined-early shape (winner already at ~98c+ for the first hour of the window). Each needs a manual read of the rules text; a flag is a reason to look, not a finding.
 
-| series | class | title | usable | median priced-lead min | capturable rate | median winner cost T-60 | median capt. vol |
-|---|---|---|---|---|---|---|---|
-| KXAAAGASDSC | BULLETIN-PACED | South Carolina gas price | 3 | 120 | 0.3333 | 99 | 0.0 |
+| series | class | title | usable | median priced-lead min | capturable rate | median winner cost T-60 | median capt. vol | manual disposition |
+|---|---|---|---|---|---|---|---|---|
+| KXAAAGASDDE | BULLETIN-PACED | Delaware gas price | 3 | 120 | 0.3333 | 100 | 3418.0 | predictable, not determined: the AAA value is for a date that starts AFTER the 03:59Z close (measured after close); gas prices are sticky so the book sits at 99-100c |
+| KXAAAGASDSC | BULLETIN-PACED | South Carolina gas price | 3 | 120 | 0.3333 | 99 | 0.0 | predictable, not determined: the AAA value is for a date that starts AFTER the 03:59Z close (measured after close); gas prices are sticky so the book sits at 99-100c |
+| KXB200MS | DETERMINED-AT-CLOSE | B200 Monthly | 3 | 120 | 0.0 | 100.0 | 0.0 | predictable, not determined: monthly average of an index; strike far from spot |
+| KXBERNIEMENTION | CLOSES-AT-DECISION | Bernie says | 3 | 120 | 0.3333 | 100 | 168.15 | venue closes at the end of the remarks (decision); YES closes on the word, NO is only known when the speech ends - no gap |
+| KXBIGGESTQUAKE | BULLETIN-PACED | Biggest earthquake | 3 | 120 | 0.3333 | 100 | 68.33 | USGS-paced: market closes when USGS finalises the day's quakes |
+| KXBRENTW | DETERMINED-AT-CLOSE | Brent Oil | 3 | 120 | 0.0 | 100 | 0.0 | predictable, not determined: oil level at 5pm ET, strike far from spot at T-60 |
+| KXH200WS | DETERMINED-AT-CLOSE | Weekly H200 | 3 | 120 | 0.0 | 100 | 0.0 | predictable, not determined: compute-price index read at 4pm ET |
+| KXNASDAQ100U | DETERMINED-AT-CLOSE | Nasdaq above/below | 3 | 120 | 0.0 | 100 | 0.0 | predictable, not determined: index at 1pm ET, strike far from spot |
+| KXTRUMPENDORSEMENTS | CLOSES-AT-DECISION | How many people will Trump endorse this  | 3 | 120 | 0.0 | 99.5 | 0.0 | reclassified CLOSES-AT-DECISION by override (29% off-schedule closes: shuts when the count is hit) |
+| KXUST10A | BULLETIN-PACED | UST 10 Year Weekly | 3 | 120 | 0.3333 | 100 | 0.0 | Treasury par yield for the date is computed ~15:30 ET = the 19:30Z close; no post-determination window |
+| KXUST5A | BULLETIN-PACED | UST 5 Year Daily | 3 | 120 | 0.0 | 100 | 0.0 | same as KXUST10A |
+| KXVHGCB | DETERMINED-AT-CLOSE | VoteHub GCB | 3 | 120 | 0.0 | 99.5 | 0.0 | predictable, not determined: time-weighted polling margin at an exact minute |
+| KXBALLONDORAWARD | CLOSES-AT-DECISION | Ballon d'Or awards | 3 | 84.3 | 0.6667 | 99 | 5638.22 | venue closes on the award announcement (decision) |
 
 ## 8. Shortlist vs the graveyard: re-discovery or NEW?
 
 | # | series | subtype | verdict | graveyard entries |
 |---|---|---|---|---|
-| 1 | KXLOWTDEN | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 2 | KXLOWTNYC | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 3 | KXLOWTDC | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 4 | KXTRUTHSOCIALD | running-count/mention | RE-DISCOVERY | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; mention / said-word markets: #14, #22, #23, #25 |
-| 5 | KXTORNADO | running-count/mention | RE-DISCOVERY | weather period products (rain / avg-temp streaks / tornado counts): same physical-feed mechanism as the KXHIGH/KXLOWT studies (#1,#2,#12, EDGE_SIZING) but these products were never tested; mention / said-word markets: #14, #22, #23, #25 |
-| 6 | KXFEDTWEETS | running-count/mention | RE-DISCOVERY | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; mention / said-word markets: #14, #22, #23, #25 |
-| 7 | KXWEFTWEETS | running-count/mention | RE-DISCOVERY | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; mention / said-word markets: #14, #22, #23, #25 |
-| 8 | KXHIGHAUS | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 9 | KXHIGHDEN | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 10 | KXHIGHLAX | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 11 | KXHIGHTATL | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 12 | KXHIGHTDAL | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 13 | KXHIGHTNOLA | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 14 | KXHIGHTSEA | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 15 | KXIMFTWEETS | running-count/mention | RE-DISCOVERY | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; mention / said-word markets: #14, #22, #23, #25 |
-| 16 | KXLOWTAUS | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 17 | KXLOWTDAL | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 18 | KXLOWTLV | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 19 | KXLOWTOKC | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
-| 20 | KXTRUTHSOCIAL | running-count/mention | RE-DISCOVERY | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested; mention / said-word markets: #14, #22, #23, #25 |
+| 1 | KXRAIN | wx-period-event | ADJACENT (same mechanism, untested product) | weather period products (rain / avg-temp streaks / tornado counts): same physical-feed mechanism as the KXHIGH/KXLOWT studies (#1,#2,#12, EDGE_SIZING) but these products were never tested |
+| 2 | KXLOWTDEN | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 3 | KXLOWTPHX | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 4 | KXLOWTBOS | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 5 | KXLOWTNYC | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 6 | KXLOWTDAL | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 7 | KXLOWTDC | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 8 | KXLOWTSAN | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 9 | KXAVGTKOKC | wx-period-event | ADJACENT (same mechanism, untested product) | weather period products (rain / avg-temp streaks / tornado counts): same physical-feed mechanism as the KXHIGH/KXLOWT studies (#1,#2,#12, EDGE_SIZING) but these products were never tested |
+| 10 | KXLOWTSFO | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 11 | KXLOWTSATX | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 12 | KXTRUTHSOCIAL | running-count/mention | ADJACENT (same mechanism, untested product) | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested |
+| 13 | KXTRUTHSOCIALD | running-count/mention | ADJACENT (same mechanism, untested product) | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested |
+| 14 | KXTORNADO | running-count/mention | ADJACENT (same mechanism, untested product) | weather period products (rain / avg-temp streaks / tornado counts): same physical-feed mechanism as the KXHIGH/KXLOWT studies (#1,#2,#12, EDGE_SIZING) but these products were never tested |
+| 15 | KXTXERCOTPEAKD | daily-peak/extreme | NEW (no ledger entry) | - |
+| 16 | KXLOWTPHIL | wx-daily-extreme | RE-DISCOVERY | US daily-extreme temperature (KXHIGH*/KXLOWT*): #1 post-lock maker (REFUTED), #2 early-lock (NULL), #3-#11 directional SPECs, #12 near-miss conversion (NULL: market repriced before the lock rule fired in 10/10), #19 calibration fade (FAIL), #37 ensemble info-gap (NULL); EDGE_SIZING v2/stage2 (oracle |
+| 17 | KXFEDTWEETS | running-count/mention | ADJACENT (same mechanism, untested product) | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested |
+| 18 | KXWEFTWEETS | running-count/mention | ADJACENT (same mechanism, untested product) | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested |
+| 19 | KXTRUMPACT | running-count/mention | ADJACENT (same mechanism, untested product) | social-media / public-figure post counts: #14 earnings/mention markets (PROMISING-WEAKENED), #22/#23/#25 mention anchors (INCONCLUSIVE/FAIL) - mention-type mechanism, post-COUNT products not tested |
+| 20 | KXAVGTKIAH | wx-period-event | ADJACENT (same mechanism, untested product) | weather period products (rain / avg-temp streaks / tornado counts): same physical-feed mechanism as the KXHIGH/KXLOWT studies (#1,#2,#12, EDGE_SIZING) but these products were never tested |
 
+### Plain statement
+
+- **The property is rare.** Of 809 series with >= 20 settled markets in the probed universe, **71 (8.8%) classify DETERMINED-EARLY**; 61 of those are weather (daily temperature extremes plus rain / average-temperature / tornado period products) and only **10 are not weather** (KXFEDTWEETS, KXIMFTWEETS, KXTORNADO, KXTRUMPACT, KXTRUMPPHOTO, KXTRUTHSOCIAL, KXTRUTHSOCIALD, KXTXERCOTPEAKD, KXWEFTWEETS, KXYTVIEWSW). Everything else is closed by the venue at the decision, resolves on a closing value, or on a publication.
+- **daily LOW temperature (measured gap 17.97 h from the cached IEM archive):** oracle-capturable in the final 2 h for 19/111 sampled markets (17.1%, Wilson 11.2%-25.2%); median winner cost one hour out is ~100c. The market has repriced before the end of the window in the large majority of markets - the same conclusion EDGE_SIZING reached ($15/mo realistic, retire).
+- **daily HIGH temperature (measured gap 9.07 h from the cached IEM archive):** oracle-capturable in the final 2 h for 0/108 sampled markets (0.0%, Wilson 0.0%-3.4%); median winner cost one hour out is ~100c. The market has repriced before the end of the window in the large majority of markets - the same conclusion EDGE_SIZING reached ($15/mo realistic, retire).
+- **RE-DISCOVERIES (already dead):** every `KXHIGH*` / `KXLOWT*` entry (graveyard #1, #2, #12, #19, #37, EDGE_SIZING v2/stage2, TERMINAL_FINALITY A/B, FINALITY_NO), and the mention-adjacent post-count products only in the sense that the mention family (#14, #22, #23, #25) is the nearest graveyard neighbour.
+- **ADJACENT (same mechanism, product never tested):** KXRAIN* (1/8), KXTRUTHSOCIAL* (5/18), KXAVGTK* (1/12), KXTORNADO (1/4), KXFEDTWEETS (4/7), KXWEFTWEETS (3/10), KXTRUMPACT (1/4), KXIMFTWEETS (6/10), KXTRUMPPHOTO (0/4).
+- **GENUINELY NEW (no ledger entry):** KXTXERCOTPEAKD (1/10 capturable, median capturable volume 906.37), KXYTVIEWSW (0/5 capturable, median capturable volume 0.0). 'New' here means *not previously tested in this program*, not *promising*: each rests on single-digit sampled markets and on an assumed gap.
+- **Evidence strength.** Outside weather every capturable count is 0-6 markets; a single liquid market (e.g. one 55k-contract KXRAIN-DEN day that settled NO, i.e. still-uncertain, not determined) can dominate a median. Treat every non-weather score as noise-level until a pre-registered, larger sample exists.
+- **Deployable with small capital: NO.** The screen is a ceiling (oracle) and a map, not a P&L. The only family where the property is both real and measured is the one already killed by realistic conversion (1/140 at the deployed lock rule, 0 at a 20-minute feed delay).
+- **If anything is worth a new pre-registration**, the screen's output supports only this narrow statement: the untested non-weather candidates (ERCOT daily peak load, Truth Social / Fed / IMF / WEF post counts, rain and average-temperature period products) need (i) an independent physical-feed timestamp to MEASURE the gap instead of assuming it, (ii) a longer pre-close window than 2 h, and (iii) the realistic-conversion stage (lock-rule replay at honest feed latency) that killed weather, with the bars frozen first. Nothing here pre-judges that they would survive; the weather precedent says the book usually reprices before an outside-feed trader can act.
+
+### Manual overrides applied to the rule-based classifier (all of them)
+
+- `KXTRUMPENDORSEMENTS` -> CLOSES-AT-DECISION (weekly endorsement count; 29% of closes are off-schedule (market shuts when the count is reached))
 
 ## 9. Caveats
 
@@ -175,6 +216,8 @@ These are series the metadata classifier put in a no-gap class but whose measure
 - **Live-window only.** Kalshi's live settled-market window is roughly the last 5 months; per-series counts and the 200-newest-market probe cap are inside that window. Series that settled before it (available via /historical) were not scanned, nor were non-recurring series absent from the walked slice of settled events (tier-3 coverage is reported in section 2).
 - **Candlestick sparsity.** Minute candles exist where there was activity; thin markets have thin minutes. No order-book depth: volume in capturable minutes is an upper bound.
 - **Sampling.** Weather sampled unconditionally (matches edge_sizing_v2's frame); non-weather samples are conditioned on the market having traded at least once, so their capturable rates are not comparable to the weather rate.
+- **Small per-series samples.** Non-weather series carry 3-12 sampled markets each (Wilson intervals 0.0-0.9 wide); only the pooled KXLOWT* and KXHIGH* families have n > 100. Rank order among the non-weather entries is not distinguishable from noise.
+- **Probe not exhaustive.** The tier-3 tail (non-recurring series seen in 1-2 settled events) was not probed; series count coverage is reported in section 2. Sports dominate the CLOSES-AT-DECISION class because they dominate the catalog.
 - **Outcomes** come only from `market.result` on the Kalshi market object; a random subset was re-fetched through GET /markets/{ticker} (agreement reported in section 2).
 
 ## Appendix A. Full classification table (every series with >= 20 settled markets in the probed universe)
@@ -252,7 +295,6 @@ These are series the metadata classifier put in a no-gap class but whose measure
 | KXIMFTWEETS | Economics | weekly | 24 | DETERMINED-EARLY | running-count/mention | 0.25 | low | rules: running count / mention with scheduled close: posts |
 | KXFEDTWEETS | Economics | weekly | 24 | DETERMINED-EARLY | running-count/mention | 0.25 | low | rules: running count / mention with scheduled close: posts |
 | KXWEFTWEETS | Economics | weekly | 24 | DETERMINED-EARLY | running-count/mention | 0.25 | low | rules: running count / mention with scheduled close: posts |
-| KXTRUMPENDORSEMENTS | Politics | weekly | 79 | UNRESOLVED-BY-METADATA | unclear | 0.0 | low | no structural cue in metadata/rules |
 | KXTSAW | Economics | weekly | 200+ | UNRESOLVED-BY-METADATA | unclear | 0.0 | low | no structural cue in metadata/rules |
 | KXBRAZILINF | Economics | monthly | 22 | UNRESOLVED-BY-METADATA | unclear | 0.0 | low | no structural cue in metadata/rules |
 | KXBTC15M | Crypto | fifteen_min | 200+ | DETERMINED-AT-CLOSE | snapshot | 0.0 | medium | rules/category: value read at a clock time or closing level |
@@ -833,6 +875,7 @@ These are series the metadata classifier put in a no-gap class but whose measure
 | KXNHL3P | Sports | custom | 200+ | CLOSES-AT-DECISION | venue-closes-on-event | 0.0 | high | early_close_condition: This market will close and expire after a winner is declared. This  |
 | KXLKLGAME | Sports | custom | 56 | CLOSES-AT-DECISION | venue-closes-on-event | 0.0 | high | early_close_condition: This market will close and expire after a winner is declared. This  |
 | KXARGNACBSPREAD | Sports | custom | 200+ | CLOSES-AT-DECISION | venue-closes-on-event | 0.0 | high | early_close_condition: This market will close and expire after a winner is declared. This  |
+| KXTRUMPENDORSEMENTS | Politics | weekly | 79 | CLOSES-AT-DECISION | count-closes-on-yes | 0.0 | high | MANUAL OVERRIDE: weekly endorsement count; 29% of closes are off-schedule (market shuts wh |
 | KXMLBMATCHUP | Sports | custom | 108 | CLOSES-AT-DECISION | venue-closes-on-event | 0.0 | high | early_close_condition: This market will close and expire early if the matchup is confirmed |
 | KXNHLSAVE | Sports | one_off | 200+ | CLOSES-AT-DECISION | venue-closes-on-event | 0.0 | high | early_close_condition: This market will close and expire early if the event occurs. This m |
 | KXNFLWEEKCOMPETE | Sports | weekly | 24 | CLOSES-AT-DECISION | venue-closes-on-event | 0.0 | high | early_close_condition: This market will close and expire after the player's NFL Week 1 gam |

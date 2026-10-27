@@ -295,7 +295,9 @@ def series_features(rec, catrow):
     }
 
 
-OVERRIDES = {}   # series -> (class, subtype, reason).  Filled only after manual review of rules text; every entry is reported.
+OVERRIDES = {   # series -> (class, subtype, reason).  Only after manual read of the rules text; every entry is reported in the md.
+    "KXTRUMPENDORSEMENTS": (CLS_DECISION, "count-closes-on-yes", "weekly endorsement count; 29% of closes are off-schedule (market shuts when the count is reached)"),
+}
 
 
 def classify_series(ser, cat, f, samples, sib=None):
@@ -648,7 +650,7 @@ GRAVEYARD = [
     ("sports totals/props/game", R(r"^KX(NFL|NBA|NHL|MLB|EPL|MLS|NCAA|ESOCCER|SOCCER|TENNIS|ATP|WTA|UFC|PGA)"), "#13 sports totals (NOT PROMISING: median lag 0.0s), #35 NFL moneyline vs sharp line (NULL), #20 long-tail passive (FAIL)", "EXACT"),
     ("earthquake / hazard magnitude", R(r"QUAKE|EARTHQUAKE"), "#15 earthquake magnitude (NOT PROMISING: USGS revises 10-60+ min, no lag)", "EXACT"),
     ("FDA / regulatory approvals", R(r"FDA|APPROV"), "#18 FDA (NOT PROMISING: no minute-resolution feed)", "EXACT"),
-    ("macro releases (CPI/jobs/claims/Fed)", R(r"CPI|PAYROLL|JOBLESS|CLAIMS|FED[A-Z]*$|GDP|UNRATE|PCE|JOLTS"), "#24/#26 jobless claims (INSUFFICIENT/FAIL), #29 + spec_M1 macro-surprise (INSUFFICIENT), spec_J1", "EXACT"),
+    ("macro releases (CPI/jobs/claims/Fed)", R(r"CPI|PAYROLL|JOBLESS|CLAIMS|FEDRATE|FOMC|RATECUT|GDP|UNRATE|PCE|JOLTS"), "#24/#26 jobless claims (INSUFFICIENT/FAIL), #29 + spec_M1 macro-surprise (INSUFFICIENT), spec_J1", "EXACT"),
 ]
 
 
@@ -676,7 +678,7 @@ def wilson(k, n, z=1.96):
 
 
 def family_of(series):
-    m = re.match(r"^(KXHIGH|KXLOWT|KXTEMP|KXMAXTEMP|KXMINTEMP|KXRAIN|KXSNOW)", series)
+    m = re.match(r"^(KXHIGH|KXLOWT|KXTEMP|KXMAXTEMP|KXMINTEMP|KXRAIN|KXSNOW|KXAVGTK|KXTRUTHSOCIAL|KXAAAGASD)", series)
     return m.group(1) + "*" if m else series
 
 
@@ -705,6 +707,22 @@ def _tbl(headers, rows):
     return "\n".join(out)
 
 
+REVIEW = {   # series/family -> manual disposition of a classifier-miss flag, written after reading the rules text of each flagged series
+    "KXAAAGASD*": "predictable, not determined: the AAA value is for a date that starts AFTER the 03:59Z close (measured after close); gas prices are sticky so the book sits at 99-100c",
+    "KXB200MS": "predictable, not determined: monthly average of an index; strike far from spot",
+    "KXBERNIEMENTION": "venue closes at the end of the remarks (decision); YES closes on the word, NO is only known when the speech ends - no gap",
+    "KXBIGGESTQUAKE": "USGS-paced: market closes when USGS finalises the day's quakes",
+    "KXBRENTW": "predictable, not determined: oil level at 5pm ET, strike far from spot at T-60",
+    "KXH200WS": "predictable, not determined: compute-price index read at 4pm ET",
+    "KXNASDAQ100U": "predictable, not determined: index at 1pm ET, strike far from spot",
+    "KXTRUMPENDORSEMENTS": "reclassified CLOSES-AT-DECISION by override (29% off-schedule closes: shuts when the count is hit)",
+    "KXUST10A": "Treasury par yield for the date is computed ~15:30 ET = the 19:30Z close; no post-determination window",
+    "KXUST5A": "same as KXUST10A",
+    "KXVHGCB": "predictable, not determined: time-weighted polling margin at an exact minute",
+    "KXBALLONDORAWARD": "venue closes on the award announcement (decision)",
+    "KX5YRRATEH": "no two-sided quote at T-60 (winner cost None); not a determined shape",
+}
+
 NOTES_SECTION = ""   # filled by finalize_notes() after the numbers are in
 CAVEATS = [
     "**Descriptive, not inferential.** No pass bar, no multiple-comparison control, no out-of-sample split. A ranked list from a screen over thousands of series is exactly where a "
@@ -719,8 +737,49 @@ CAVEATS = [
     "(available via /historical) were not scanned, nor were non-recurring series absent from the walked slice of settled events (tier-3 coverage is reported in section 2).",
     "**Candlestick sparsity.** Minute candles exist where there was activity; thin markets have thin minutes. No order-book depth: volume in capturable minutes is an upper bound.",
     "**Sampling.** Weather sampled unconditionally (matches edge_sizing_v2's frame); non-weather samples are conditioned on the market having traded at least once, so their capturable rates are not comparable to the weather rate.",
+    "**Small per-series samples.** Non-weather series carry 3-12 sampled markets each (Wilson intervals 0.0-0.9 wide); only the pooled KXLOWT* and KXHIGH* families have n > 100. Rank order among the non-weather entries is not distinguishable from noise.",
+    "**Probe not exhaustive.** The tier-3 tail (non-recurring series seen in 1-2 settled events) was not probed; series count coverage is reported in section 2. Sports dominate the CLOSES-AT-DECISION class because they dominate the catalog.",
     "**Outcomes** come only from `market.result` on the Kalshi market object; a random subset was re-fetched through GET /markets/{ticker} (agreement reported in section 2).",
 ]
+
+
+def build_notes(o, ranked, fam_rows):
+    cl = o["classification"]
+    n = len(cl)
+    ne = [r for r in cl if r["class"] == CLS_EARLY]
+    wx = [r for r in ne if str(r["subtype"]).startswith("wx-")]
+    non = [r for r in ne if not str(r["subtype"]).startswith("wx-")]
+    fam = {f["family"]: f for f in fam_rows}
+    out = []
+    out.append("### Plain statement\n")
+    out.append(f"- **The property is rare.** Of {n} series with >= 20 settled markets in the probed universe, **{len(ne)} ({len(ne) / n:.1%}) classify DETERMINED-EARLY**; "
+               f"{len(wx)} of those are weather (daily temperature extremes plus rain / average-temperature / tornado period products) and only **{len(non)} are not weather** "
+               f"({', '.join(sorted(r['series'] for r in non))}). Everything else is closed by the venue at the decision, resolves on a closing value, or on a publication.")
+    for key, label in (("KXLOWT*", "daily LOW temperature"), ("KXHIGH*", "daily HIGH temperature")):
+        f = fam.get(key)
+        if f:
+            out.append(f"- **{label} (measured gap {f['median_gap_h']} h from the cached IEM archive):** oracle-capturable in the final 2 h for {f['n_capturable']}/{f['n_usable']} sampled markets "
+                       f"({f['capturable_rate_pooled']:.1%}, Wilson {f['wilson95'][0]:.1%}-{f['wilson95'][1]:.1%}); median winner cost one hour out is ~100c. "
+                       f"The market has repriced before the end of the window in the large majority of markets - the same conclusion EDGE_SIZING reached ($15/mo realistic, retire).")
+    out.append("- **RE-DISCOVERIES (already dead):** every `KXHIGH*` / `KXLOWT*` entry (graveyard #1, #2, #12, #19, #37, EDGE_SIZING v2/stage2, TERMINAL_FINALITY A/B, FINALITY_NO), "
+               "and the mention-adjacent post-count products only in the sense that the mention family (#14, #22, #23, #25) is the nearest graveyard neighbour.")
+    new = [f for f in fam_rows if f["verdict"].startswith("NEW")]
+    adj = [f for f in fam_rows if f["verdict"].startswith("ADJACENT")]
+    out.append("- **ADJACENT (same mechanism, product never tested):** " + (", ".join(f"{f['family']} ({f['n_capturable']}/{f['n_usable']})" for f in adj) or "none") + ".")
+    out.append("- **GENUINELY NEW (no ledger entry):** " + (", ".join(f"{f['family']} ({f['n_capturable']}/{f['n_usable']} capturable, median capturable volume {f['median_capt_volume']})" for f in new) or "none") +
+               ". 'New' here means *not previously tested in this program*, not *promising*: each rests on single-digit sampled markets and on an assumed gap.")
+    out.append("- **Evidence strength.** Outside weather every capturable count is 0-6 markets; a single liquid market (e.g. one 55k-contract KXRAIN-DEN day that settled NO, i.e. still-uncertain, not determined) "
+               "can dominate a median. Treat every non-weather score as noise-level until a pre-registered, larger sample exists.")
+    out.append("- **Deployable with small capital: NO.** The screen is a ceiling (oracle) and a map, not a P&L. The only family where the property is both real and measured is the one already killed by realistic conversion "
+               "(1/140 at the deployed lock rule, 0 at a 20-minute feed delay).")
+    out.append("- **If anything is worth a new pre-registration**, the screen's output supports only this narrow statement: the untested non-weather candidates (ERCOT daily peak load, Truth Social / Fed / IMF / WEF post counts, rain and average-temperature period products) "
+               "need (i) an independent physical-feed timestamp to MEASURE the gap instead of assuming it, (ii) a longer pre-close window than 2 h, and (iii) the realistic-conversion stage (lock-rule replay at honest feed latency) that "
+               "killed weather, with the bars frozen first. Nothing here pre-judges that they would survive; the weather precedent says the book usually reprices before an outside-feed trader can act.\n")
+    ov = [f"`{k}` -> {v[0]} ({v[2]})" for k, v in OVERRIDES.items()]
+    out.append("### Manual overrides applied to the rule-based classifier (all of them)\n")
+    out.append("\n".join("- " + x for x in ov) if ov else "- none")
+    out.append("")
+    return out
 
 
 def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
@@ -747,8 +806,8 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
     L.append(f"Empirical step: for each sampled settled market, 1-minute candlesticks for the final **{o['window_min']} minutes** before close, then "
              "`edge_sizing_v2.normalize()` + the v2 winner-cost rule (YES winner costs yes_ask; NO winner costs **100 - yes_bid**, never 100 - yes_ask; "
              "capturable minute iff cost <= 98c and net = 100 - cost - ceil(7p(1-p)) > 0). A market is *capturable* if any minute qualifies. "
-             "The v2 code was imported, not re-written for the normalizer, and the winner-scan reproduces `edge_sizing_v2.scan()` exactly on 560 cached "
-             "weather market-sides (0 mismatches; `selftest` stage).\n")
+             "`edge_sizing_v2.normalize()` and `fee_c()` are imported, and the winner-scan reproduces `edge_sizing_v2.scan()` exactly on "
+             f"{o['selftest']['compared']} cached weather market-sides ({o['selftest']['mismatches']} mismatches; `selftest` stage).\n")
     L.append("**Why capturable rate alone cannot identify the property.** Any market whose outcome is still uncertain two hours out also has a winner "
              "buyable below 98c (the oracle knows the winner; nobody else does). The rate only means something when multiplied by an independently established "
              "determination gap - which is why classification comes first and why DETERMINED-AT-CLOSE series with 100% capturable rate carry zero score.\n")
@@ -757,6 +816,9 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
         ["series in /series catalog", f"{cov['series_in_catalog']:,}"],
         ["series in probe universe (recurring-frequency + seen in walked settled events)", f"{cov['series_in_probe_universe']:,}"],
         ["series probed (one markets call each, newest 200 settled markets, MVE parlays excluded)", f"{cov['series_probed']:,}"],
+        ["probed series with zero settled markets in the live window", f"{cov['series_probed_zero_settled']:,}"],
+        ["probe universe NOT probed (tier 3: non-recurring, seen in only 1-2 settled events; run stopped to stay polite)", f"{cov['series_in_probe_universe'] - cov['series_probed']:,}"],
+        ["series NOT in the probe universe (non-recurring, absent from the walked slice of settled events)", f"{cov['series_in_catalog'] - cov['series_in_probe_universe']:,}"],
         ["series with >= 20 settled markets in the live API window (classified)", f"{cov['series_with_ge20_settled']:,}"],
         ["markets planned for candle sample / with usable candles", f"{cov['markets_sampled_planned']:,} / {cov['markets_with_usable_candles']:,}"],
         ["candle skips", json.dumps(cov["skips"])],
@@ -794,8 +856,8 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
                      gy_verdict(graveyard_match(r["series"], r["title"], r["subtype"]))])
     L.append(_tbl(["#", "series", "title", "subtype", "gap h", "capturable", "median capt. vol", "priced-lead min", "score", "graveyard verdict"], rows))
     L.append("\n### Family roll-up (pooled over sampled markets; this is the ranking that matters)\n")
-    L.append(_tbl(["#", "family", "series", "usable mkts", "capturable (pooled)", "Wilson 95%", "median gap h", "median capt. vol", "score", "gap-free score", "graveyard verdict"],
-                  [[i, f["family"], f["n_series"], f["n_usable"], f"{f['capturable_rate_pooled']:.3f} ({f['n_capturable']}/{f['n_usable']})", f["wilson95"], f["median_gap_h"], f["median_capt_volume"],
+    L.append(_tbl(["#", "family", "series", "usable mkts", "capturable (pooled)", "Wilson 95%", "capt. when YES won", "capt. when NO won", "median gap h", "median capt. vol", "score", "gap-free score", "graveyard verdict"],
+                  [[i, f["family"], f["n_series"], f["n_usable"], f"{f['capturable_rate_pooled']:.3f} ({f['n_capturable']}/{f['n_usable']})", f["wilson95"], f"{f['k_yes_won_capturable']}/{f['n_yes_won']}", f"{f['k_no_won_capturable']}/{f['n_no_won']}", f["median_gap_h"], f["median_capt_volume"],
                     f["score"], f["score_gapfree"], f["verdict"]] for i, f in enumerate(fam_rows[:25], 1)]))
     L.append("\n### Same candidates ranked WITHOUT the gap term (capturable rate x median volume) - the check that the weather result is not produced by the gap column\n")
     L.append(_tbl(["#", "series", "subtype", "capturable", "median capt. vol", "gap-free score"],
@@ -810,7 +872,9 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
     gf_wx = [i for i, n in enumerate(famgf, 1) if n in ("KXHIGH*", "KXLOWT*")]
     if wxf and wxf[0] <= 3:
         L.append(f"**PASS.** Weather daily extremes are family rank {wxf[0]} (and {wxf[1] if len(wxf) > 1 else 'n/a'}) of {len(famnames)} by score, and the first weather series "
-                 f"is gap-free family rank {gf_wx[0] if gf_wx else 'n/a'} of {len(famgf)} even with the gap term removed. The screen finds the one family this program already knows has the property.\n")
+                 f"is gap-free family rank {gf_wx[0] if gf_wx else 'n/a'} of {len(famgf)} even with the gap term removed. The screen finds the family this program already knows has the property "
+                 "(LOW temperatures carry all of the measured residual capturability; HIGH temperatures, despite a 9-hour measured gap, show none - consistent with edge_sizing_v2, whose 40 top capturable markets were all KXLOWT*). "
+                 "Two untested weather period products (KXRAIN*, small n) rank above it by score; they are weather-feed products and the ranking among them is within noise.\n")
     else:
         L.append(f"**SCREEN BROKEN OR WEATHER NOT PRESENT.** Weather family rank(s): {wxf or 'none'} of {len(famnames)}; gap-free weather family rank(s): {gf_wx or 'none'}. "
                  "Per the task's own criterion this means the screen cannot be trusted until diagnosed.\n")
@@ -819,8 +883,8 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
     L.append("These are series the metadata classifier put in a no-gap class but whose measured price path looks like a determined-early shape (winner already at ~98c+ for the first hour of the window). "
              "Each needs a manual read of the rules text; a flag is a reason to look, not a finding.\n")
     if flags:
-        L.append(_tbl(["series", "class", "title", "usable", "median priced-lead min", "capturable rate", "median winner cost T-60", "median capt. vol"],
-                      [[f["series"], f["class"], (f["title"] or "")[:40], f["n_usable"], f["median_priced_lead_min"], f["capturable_rate"], f["median_winner_cost_T60"], f["median_capturable_volume"]] for f in flags[:30]]))
+        L.append(_tbl(["series", "class", "title", "usable", "median priced-lead min", "capturable rate", "median winner cost T-60", "median capt. vol", "manual disposition"],
+                      [[f["series"], f["class"], (f["title"] or "")[:40], f["n_usable"], f["median_priced_lead_min"], f["capturable_rate"], f["median_winner_cost_T60"], f["median_capturable_volume"], f["disposition"]] for f in flags[:40]]))
     else:
         L.append("_No control series met the flag criterion in the sampled markets._")
     L.append("")
@@ -832,7 +896,7 @@ def write_md(o, ranked, ranked_gf, fam_rows, flags, byser):
         rows.append([i, r["series"], r["subtype"], gy_verdict(gm), "; ".join(f"{a}: {b}" for a, b, _k in gm)[:300] or "-"])
     L.append(_tbl(["#", "series", "subtype", "verdict", "graveyard entries"], rows))
     L.append("")
-    L.append(NOTES_SECTION)
+    L.extend(build_notes(o, ranked, fam_rows))
     # ---- 9. caveats --------------------------------------------------------------------------------------------------
     L.append("## 9. Caveats\n")
     for c in CAVEATS:
@@ -921,7 +985,11 @@ def stage_report():
         mv = statistics.median(capv) if capv else 0.0
         s0 = f["series"][0]
         gm = graveyard_match(s0["series"], s0["title"], s0["subtype"])
-        fam_rows.append({"family": k, "n_series": len(f["series"]), "n_usable": n, "n_capturable": kc, "capturable_rate_pooled": round(rate, 4),
+        yes_ = [x for x in rs if x["result"] == "yes"]
+        no_ = [x for x in rs if x["result"] == "no"]
+        fam_rows.append({"family": k, "n_series": len(f["series"]), "n_usable": n, "n_capturable": kc,
+                         "n_yes_won": len(yes_), "k_yes_won_capturable": sum(1 for x in yes_ if x["capturable"]),
+                         "n_no_won": len(no_), "k_no_won_capturable": sum(1 for x in no_ if x["capturable"]), "capturable_rate_pooled": round(rate, 4),
                          "wilson95": wilson(kc, n), "median_gap_h": round(gap, 2), "median_capt_volume": round(mv, 2),
                          "score": round(gap * rate * mv, 3), "score_gapfree": round(rate * mv, 3),
                          "median_priced_lead_min": round(statistics.median([x["priced_lead_min"] for x in rs]), 1),
@@ -956,11 +1024,14 @@ def stage_report():
     flags = []
     for r in table:
         m = r.get("measured")
-        if m and r["class"] != CLS_EARLY and m["n_usable"] >= 3 and m["median_priced_lead_min"] >= 60:
+        if m and r["class"] != CLS_EARLY and m["n_usable"] >= 3 and m["median_priced_lead_min"] >= 60 \
+                and (m["median_winner_cost_T60"] or 0) >= 97:
             flags.append({"series": r["series"], "class": r["class"], "subtype": r["subtype"], "title": r["title"],
                           "n_usable": m["n_usable"], "median_priced_lead_min": m["median_priced_lead_min"],
                           "capturable_rate": m["capturable_rate"], "median_winner_cost_T60": m["median_winner_cost_T60"],
-                          "median_capturable_volume": m["median_capturable_volume"]})
+                          "median_capturable_volume": m["median_capturable_volume"],
+                          "rules": r["sample_rules"][:200], "close_to_settle_h": r["median_close_to_settle_h"],
+                          "disposition": REVIEW.get(r["series"]) or REVIEW.get(family_of(r["series"])) or "unreviewed"})
     flags.sort(key=lambda x: -x["median_priced_lead_min"])
     # ---- verify
     vok = sum(1 for v in verify.values() if v.get("get") is not None)
@@ -977,11 +1048,13 @@ def stage_report():
     cat = jload(os.path.join(CACHE, "series_catalog.json"), [])
     uni, seen, _ = universe()
     probed = len([f for f in os.listdir(os.path.join(CACHE, "series_markets")) if f.endswith(".json")])
-    coverage = {"series_in_catalog": len(cat), "series_in_probe_universe": len(uni), "series_probed": probed,
+    zero = sum(1 for f_ in os.listdir(os.path.join(CACHE, "series_markets")) if f_.endswith(".json") and not (jload(os.path.join(CACHE, "series_markets", f_)) or {}).get("markets"))
+    coverage = {"series_probed_zero_settled": zero, "series_in_catalog": len(cat), "series_in_probe_universe": len(uni), "series_probed": probed,
                 "series_with_ge20_settled": len(table), "events_walked": sum(seen.values()), "series_seen_in_event_walk": len(seen),
                 "markets_sampled_planned": len(plan), "markets_with_usable_candles": len(mets), "skips": dict(skips),
                 "result_verification_get_vs_listing": {"checked": vok, "agree": vag}}
-    out = {"generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+    st_ = stage_selftest()
+    out = {"selftest": st_, "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
            "nature": "DESCRIPTIVE SCREEN - not a hypothesis test, no pass bar. Nothing here may be promoted without a NEW pre-registration.",
            "window_min": WINDOW_MIN, "seed": SEED, "coverage": coverage, "class_summary": class_summary,
            "group_measured": groups, "weather_gap": wgap, "ranked_by_score": ranked[:60], "ranked_gapfree": ranked_gf[:40],
