@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import edge_sizing_v2 as V2   # ONLY normalize() is used (spec-sanctioned)
 
-CACHE = os.path.join(HERE, "cache", "finality")
+CACHE = os.path.join(HERE, "cache", "finality", "B")   # own namespace: build A shares cache/finality/
 MKT = os.path.join(CACHE, "markets")
 OBS = os.path.join(CACHE, "obs")
 CAND = os.path.join(CACHE, "candles")
@@ -553,12 +553,22 @@ def cmd_analyze():
         if tk not in rowscache:
             rowscache[tk] = candle_rows(tk, uni[tk]["close_ts"])
         return rowscache[tk]
+    # candle-work sample = the longest COMPLETED PREFIX of the seeded shuffled work order (never re-sorted)
+    order = jload(os.path.join(CACHE, "candle_work_order.json")) if os.path.exists(os.path.join(CACHE, "candle_work_order.json")) else []
+    prefix = []
+    for tk in order:
+        if os.path.exists(os.path.join(CAND, tk + ".json")):
+            prefix.append(tk)
+        else:
+            break
+    sampled = set(prefix)
     results = {}
     for variant in ("literal", "lattice"):
         for cell in CELLS:
-            fl = [f for f in sig["fires"] if f["variant"] == variant and tuple(f["cell"]) == cell]
-            k_all = len(fl)
-            k_fl = sum(1 for f in fl if f["result"] == "no")
+            fl_full = [f for f in sig["fires"] if f["variant"] == variant and tuple(f["cell"]) == cell]
+            fl = [f for f in fl_full if f["ticker"] in sampled]
+            k_all = len(fl_full)                       # false-lock rate uses EVERY fire (obs + official result only)
+            k_fl = sum(1 for f in fl_full if f["result"] == "no")
             fl_all = wilson(k_fl, k_all)
             for L in LS:
                 recs, unt = [], collections.Counter()
@@ -579,10 +589,10 @@ def cmd_analyze():
                 k_fl_p = sum(1 for x in recs if x["res"] == "no")
                 results[(variant, cell, L)] = {
                     "variant": variant, "cell": list(cell), "L": L,
-                    "n_fires": k_all, "n_false_lock_all": k_fl,
+                    "n_fires": k_all, "n_fires_candle_sampled": len(fl), "n_false_lock_all": k_fl,
                     "false_lock_rate_all": fl_all[0], "wilson_ub_all": fl_all[2],
-                    "n_priced": n, "n_untradeable": k_all - n, "untradeable_breakdown": dict(unt),
-                    "untradeable_frac": ((k_all - n) / k_all) if k_all else None,
+                    "n_priced": n, "n_untradeable": len(fl) - n, "untradeable_breakdown": dict(unt),
+                    "untradeable_frac": ((len(fl) - n) / len(fl)) if fl else None,
                     "n_false_lock_priced": k_fl_p,
                     "false_lock_rate_priced": (k_fl_p / n) if n else None,
                     "wilson_ub_priced": wilson(k_fl_p, n)[2],
@@ -594,7 +604,7 @@ def cmd_analyze():
                     "sum_entry_vol": sum(x["vol"] for x in recs),
                     "_recs": recs,
                 }
-    return results, sig, uni_list
+    return results, sig, uni_list, {"order_len": len(order), "prefix_done": len(prefix)}
 
 def evaluate(res):
     """Apply the frozen PASS/KILL bars at L=10 for the literal (spec) variant."""
@@ -753,6 +763,7 @@ def cmd_tzdiag(uni=None):
         uni = jload(os.path.join(CACHE, "universe.json"))
     seen, per = set(), collections.defaultdict(lambda: collections.defaultdict(list))
     hist_hour = collections.defaultdict(collections.Counter)
+    diffd = collections.defaultdict(collections.Counter)
     for r in uni:
         k = (r["series"], r["day_end"])
         if k in seen or r["exp_val"] in (None, ""):
@@ -770,6 +781,7 @@ def cmd_tzdiag(uni=None):
             ext = max(fs) if r["kind"] == "max" else min(fs)
             per[r["series"]][dh].append(abs(ext - ev) < 0.5)
             if dh == 0:
+                diffd[f"{r['kind']}|{src}"][int(max(-3, min(3, round(ext - ev))))] += 1
                 i = fs.index(ext)
                 lh = ((ts[i] + r["off"] * 3600) // 3600) % 24
                 hist_hour[r["kind"]][lh] += 1
@@ -780,4 +792,341 @@ def cmd_tzdiag(uni=None):
     rate = {dh: (sum(v) / len(v), len(v)) for dh, v in sorted(tot.items())}
     by_series = {s: {"n": len(d[0]), "match_dh0": round(sum(d[0]) / len(d[0]), 3) if d.get(0) else None} for s, d in per.items()}
     return {"match_rate_by_window_shift_hours": {str(k): [round(v[0], 4), v[1]] for k, v in rate.items()},
-            "by_series_dh0": by_series, "argext_local_std_hour_hist": {k: dict(sorted(v.items())) for k, v in hist_hour.items()}}
+            "by_series_dh0": by_series,
+            "feed_minus_official_extreme_degF_dist": {k: {str(a): b for a, b in sorted(v.items())} for k, v in diffd.items()}, "argext_local_std_hour_hist": {k: dict(sorted(v.items())) for k, v in hist_hour.items()}}
+
+def cmd_oracle_fetch():
+    s2 = jload(os.path.join(HERE, "out", "edge_sizing_stage2.json"))["per_market"]
+    for m in s2:
+        fetch_candles(m["ticker"], m["ticker"].split("-")[0], iso2ts(m["close_time"]))
+    print("oracle candles fetched", len(s2))
+
+def worked_example(results, uni):
+    """Concrete timezone walk-through on a real priced fire (DST month, standard-offset day, UTC epochs)."""
+    sig = jload(os.path.join(CACHE, "signal.json"))
+    cands = []
+    for x in results[("lattice", PRIMARY, 10)]["_recs"]:
+        r = uni[x["tk"]]
+        try:
+            float(r["exp_val"])
+        except Exception:
+            continue
+        if r["kind"] == "max" and r["station"] == "SEA" and sig["src"].get(x["tk"]) == "1min":
+            cands.append((x["tk"], x))
+    if not cands:
+        for x in results[("lattice", PRIMARY, 10)]["_recs"]:
+            r = uni[x["tk"]]
+            if sig["src"].get(x["tk"]) == "1min":
+                cands.append((x["tk"], x))
+    if not cands:
+        return None
+    tk, x = sorted(cands)[0]
+    r = uni[tk]
+    src, ts, fs = pick_source(r["station"], r["day_start"], r["day_end"])
+    ext = max(fs) if r["kind"] == "max" else min(fs)
+    i_ext = fs.index(ext)
+    off = r["off"]
+    def loc(t, o):
+        return dt.datetime.fromtimestamp(t + o * 3600, tz=dt.timezone.utc).strftime("%Y-%m-%d %H:%M")
+    f = [q for q in sig["fires"] if q["ticker"] == tk and q["variant"] == "lattice" and tuple(q["cell"]) == PRIMARY][0]
+    mk = jload(os.path.join(MKT, r["series"] + ".json")) if os.path.exists(os.path.join(MKT, r["series"] + ".json")) else []
+    return {"ticker": tk, "station": r["station"], "kind": r["kind"], "bracket": [r["lo"], r["hi"]], "official_result": r["result"],
+            "expiration_value": r["exp_val"], "close_time_utc": utc(r["close_ts"]), "local_day_end_utc": utc(r["day_end"]),
+            "local_day_start_utc": utc(r["day_start"]), "std_offset_h": off,
+            "local_day_in_standard_time": f"{loc(r['day_start'], off)} .. {loc(r['day_end'], off)} (LST, UTC{off:+d})",
+            "same_day_on_the_wall_clock_in_DST": f"{loc(r['day_start'], off + 1)} .. {loc(r['day_end'], off + 1)} (LDT, UTC{off + 1:+d})",
+            "n_obs_in_window": len(ts), "obs_source": src, "running_extreme_F": ext,
+            "extreme_obs_utc": utc(ts[i_ext]), "extreme_obs_LST": loc(ts[i_ext], off),
+            "t_sig_utc": utc(f["t_sig"]), "t_sig_LST": loc(f["t_sig"], off), "t_sig_epoch": f["t_sig"],
+            "minutes_before_close": round((r["close_ts"] - f["t_sig"]) / 60.0, 1),
+            "entry_candle_end_ts_epoch@L10": x["ets"], "entry_candle_utc@L10": utc(x["ets"]),
+            "entry_yes_ask_c": x["cost"], "pnl_c": x["pnl"], "pnl_note": "(100 - ask - fee) if settled YES else (-ask - fee)"}
+
+S_FRAC = [0.0]
+
+def cmd_report():
+    results, sig, uni_list, info = cmd_analyze()
+    uni = {r["ticker"]: r for r in uni_list}
+    verdict, ev = evaluate(results)
+    a_a = anchor_a(results, uni)
+    a_b = anchor_b(sig, uni)
+    tz = cmd_tzdiag(uni_list)
+    geo = geometry_diag(uni_list)
+    wex = worked_example(results, uni)
+    S_FRAC[0] = info["prefix_done"] / max(1, len({f['ticker'] for f in sig['fires']}))
+    rep = {"spec": "venue_expansion/TERMINAL_FINALITY_SPEC.md (frozen 2026-10-27)", "build": "B (independent replication)",
+           "verdict": verdict, "evaluation": ev,
+           "universe": {"n_bracket_rungs": len(uni_list), "skip": sig["skip"], "obs_coverage": sig["coverage"],
+                        "n_events": len({(r['series'], r['day_end']) for r in uni_list}),
+                        "n_series": len({r['series'] for r in uni_list}), "n_stations": len({r['station'] for r in uni_list}),
+                        "n_days": len({r['day_end'] for r in uni_list}),
+                        "close_span": [utc(min(r['close_ts'] for r in uni_list)), utc(max(r['close_ts'] for r in uni_list))]},
+           "sampling": {"signal_walk": "FULL universe (obs-only, no price needed)", "candle_work_order": "seeded shuffle, seed=%d, never re-sorted" % SEED,
+                        "fired_rungs_total": len({f['ticker'] for f in sig['fires']}), **info,
+                        "sampling_fraction_of_fired_rungs": round(info["prefix_done"] / max(1, len({f['ticker'] for f in sig['fires']})), 4)},
+           "geometry": geo, "anchors": {"a": a_a, "b": a_b, "c": {"monotone_violations": sig["monotone_violations"]}},
+           "tz_diag": tz, "worked_example": wex,
+           "cells": [{k: v for k, v in r.items() if k != "_recs"} for r in results.values()]}
+    rep["subgroups"] = subgroup_table(sig, uni, results)
+    pp = results[("lattice", PRIMARY, 10)]
+    def split(recs):
+        out = {}
+        for tag, sel in (("settled_YES_wins", [x for x in recs if x["res"] == "yes"]), ("settled_NO_false_locks", [x for x in recs if x["res"] == "no"])):
+            n = len(sel)
+            out[tag] = {"n": n, "mean_entry_ask_c": (sum(x["cost"] for x in sel) / n) if n else None,
+                        "mean_net_pnl_c": (sum(x["pnl"] for x in sel) / n) if n else None,
+                        "share_entered_at_ask>=90c": (sum(1 for x in sel if x["cost"] >= 90) / n) if n else None,
+                        "share_entered_at_ask<=10c": (sum(1 for x in sel if x["cost"] <= 10) / n) if n else None}
+        return out
+    rep["lattice_primary_L10_split"] = split(pp["_recs"])
+    rep["lattice_primary_L10_priced_false_lock_rate"] = pp["false_lock_rate_priced"]
+    # entries at ask>=90 only (the 'market still shows near-certain winner' tail) -- descriptive
+    hi = [x for x in pp["_recs"] if x["cost"] >= 90]
+    rep["lattice_primary_L10_entries_ask_ge_90"] = {"n": len(hi), "false_locks": sum(1 for x in hi if x["res"] == "no"),
+                                                    "mean_net_pnl_c": (sum(x["pnl"] for x in hi) / len(hi)) if hi else None}
+    rep["headline"] = (
+        f"Executed literally, the frozen spec produces **zero fires in all 8 cells x 3 latency arms**: brackets are 1 degF wide in (floor, cap) terms "
+        f"(a 2-whole-degree rung), so `lo+M <= E <= hi-M` is empty for M=1.0 and needs a half-degree extreme for M=0.5; observed extremes are whole degrees. "
+        f"No PASS is possible and I did not move any bar. Under the one charitable reading that lets the rule fire (exploratory 'lattice' variant, primary cell, "
+        f"{pp['n_fires']:,} fires over the full universe) the finality inference is **wrong {pp['n_false_lock_all']:,} times = {100 * pp['false_lock_rate_all']:.1f}% "
+        f"(Wilson UB {100 * pp['wilson_ub_all']:.1f}%)** against a 2% / 5% bar. The cause is data-source disagreement, not timezone: IEM's day extreme differs from the official "
+        f"settlement value by 1 degF on about half of days, one-sidedly, and a rung is only 2 degF wide. "
+        f"Priced on a random {100 * S_FRAC[0]:.0f}% subsample of fired rungs (L=10): n priced {pp['n_priced']}, untradeable {100 * (pp['untradeable_frac'] or 0):.0f}%, "
+        f"EV {pp['ev_eq'].get('mean') if pp['ev_eq'].get('mean') is None else round(pp['ev_eq']['mean'], 2)}c/contract equal-weight "
+        f"(signed day-clustered t {pp['ev_eq'].get('t') if pp['ev_eq'].get('t') is None else round(pp['ev_eq']['t'], 2)}).")
+    rep["choices"] = [
+        "**Bracket geometry literal**: `[lo,hi] = [floor_strike, cap_strike]` exactly as carried on the rung. Widening it is the exploratory 'lattice' variant only (PASS-ineligible).",
+        "**Signal timestamp** `t_sig = ts(obs_i) + 60 s` (strict `< t` look-ahead rule, anchor b). A build that uses `t_sig = ts(obs_i)` shifts every signal by 1 minute; immaterial at L>=10.",
+        "**Reversed-and-held**: the last H=3 observations *including the current one* all satisfy `temp <= E(t)-R` (HIGH) / `>= E(t)+R` (LOW), with E(t) the running extreme at t. On 1-min feed H=3 means 3 minutes; on routine feed it means 3 METAR obs (~2-3 h).",
+        "**Local day** = [round(close_time to hour) - 24 h, that hour], i.e. NWS standard-time midnight-to-midnight (see section 9). E accumulates from day start.",
+        "**Terminal window** `close - W*60 <= t_sig <= close`; first qualifying t only; one fire per rung per cell.",
+        "**Feed selection per market** (recorded in `signal.json: src`): 1-min if >=1000 of 1440 minutes AND >=65 obs in the last 130 min; else routine (`asos.py` report_type 3&4) if >=6 obs in the day and >=2 in the last 130 min; else the rung is skipped (8 rungs). Only a physical bound filter (-60..130 degF) is applied; no deployed-rule glitch filter.",
+        "**Entry cost is `yes_ask`** for every fire (FINAL-YES always buys YES). For YES-settled rungs this equals the spec's winner-side cost. For false locks the spec's 'winner-side = 100 - yes_bid' is the NO price, which a YES buyer cannot pay; I charge the real YES ask and the loss `-(ask+fee)`. Using the winner-side cost for false locks would have *hidden* losses; the gate here is outcome-independent (deployable).",
+        "**Entry** = first candle with `t_sig+L <= end_period_ts <= close_time`, `0 < yes_ask <= 98`, and `100-ask-fee > 0`; none -> UNTRADEABLE (candle-less rungs are counted untradeable, conservative). Candles are sparse (trade/quote-change minutes only), so 'first candle at or after' can be several minutes later.",
+        "**EV**: per-contract net cents; equal-weight (one contract per fire, as the spec's accounting) and volume-weighted by the entry candle's traded volume. The Bonferroni t uses the day-clustered (CR1, linearised ratio) SE, df = G-1 (G = distinct local days); a PASS would have to clear the bar on BOTH weightings (the stricter reading of an ambiguous spec). One-sided 97.9% UB = mean + t_{0.979,G-1} * SE.",
+        "**False-lock rate** is over ALL fires (a property of obs + official result), not just priced ones; the priced-only rate is also in the JSON.",
+        "**Clusters** = local calendar day of the market.",
+    ]
+    rep["closing"] = (
+        "A PASS would have been necessary-but-not-sufficient; there is no PASS, so nothing here supports a canary. The program's 44th closed study (if Build A agrees) is not a "
+        "failure of finality as an idea -- the descriptive table shows that where the extreme sits relative to the feed's one-sided bias changes the false-lock rate from ~50% to ~3-6% -- "
+        "but that is an *outcome-informed* observation made on the same data, so it is a hypothesis for a new pre-registration with its own forward holdout, not a result. "
+        "And even a ~3% false-lock rate is fatal at these prices: a winner buys at <=98c for +1c to +2c net, a loser costs ~98c, so break-even needs a false-lock rate near 1-2%; "
+        "see the lattice EV rows for what the tape actually paid.")
+    jdump(rep, OUT_JSON)
+    write_md(rep, results, sig, uni)
+    jdump({"%s|%s|%s" % (k[0], list(k[1]), k[2]): r["_recs"] for k, r in results.items() if k[2] == 10 and k[0] == "lattice"},
+          os.path.join(CACHE, "priced_recs_lattice_L10.json"))
+    print(json.dumps({"verdict": verdict, "evaluation": ev, "sampling": rep["sampling"]}, indent=1, default=str))
+    return rep, results
+
+# ----------------------------------------------------------------------------- geometry diagnostic
+def geometry_diag(uni_list):
+    """How many rungs could the LITERAL rule ever fire on, as a function of M?  (spec-geometry audit)
+    Brackets are cap-floor = 1 wide (e.g. B64.5 = floor 64, cap 65), so lo+M <= E <= hi-M needs M <= 0.5 and, at 1-minute
+    (integer-degree) resolution, E == lo+0.5 which an integer can never equal."""
+    groups = collections.defaultdict(list)
+    for r in uni_list:
+        groups[(r["station"], r["kind"], r["day_start"], r["day_end"])].append(r)
+    cnt = collections.Counter()
+    widths = collections.Counter(round(r["hi"] - r["lo"], 3) for r in uni_list)
+    frac_E = collections.Counter()
+    for (st, kind, S, E), rungs in groups.items():
+        src, ts, fs = pick_source(st, S, E)
+        if not fs:
+            continue
+        wk = walk(ts, fs, kind)
+        for r in rungs:
+            for M in (0.0, 0.25, 0.5, 1.0):
+                if fire_for_rung(wk, r["lo"], r["hi"], M, 2.0, 120, r["close_ts"]):
+                    cnt[(src, M)] += 1
+        # fractional-degree share of final extremes
+        ext = max(fs) if kind == "max" else min(fs)
+        frac_E[(src, "integer" if abs(ext - round(ext)) < 1e-9 else "fractional")] += 1
+    return {"bracket_width_cap_minus_floor_counts": {str(k): v for k, v in widths.items()},
+            "literal_fires_R2_W120_by_source_and_M": {f"{k[0]}|M={k[1]}": v for k, v in sorted(cnt.items())},
+            "final_extreme_is_integer_degree": {f"{k[0]}|{k[1]}": v for k, v in sorted(frac_E.items())}}
+
+# ----------------------------------------------------------------------------- markdown
+def _f(x, nd=2, pct=False):
+    if x is None:
+        return "n/a"
+    if pct:
+        return f"{100 * x:.1f}%"
+    return f"{x:.{nd}f}"
+
+def _row(r):
+    e, v = r["ev_eq"], r["ev_vw"]
+    return (f"| {r['cell'][0]} | {r['cell'][1]:.0f} | {r['cell'][3]} | {r['L']} | {r['n_fires']} | {r['n_fires_candle_sampled']} | "
+            f"{r['n_priced']} | {_f(r['untradeable_frac'], pct=True)} | {_f(r['false_lock_rate_all'], pct=True)} "
+            f"(UB {_f(r['wilson_ub_all'], pct=True)}) | {_f(e.get('mean'))} | {_f(v.get('mean'))} | "
+            f"{_f(e.get('t'))} / {_f(v.get('t'))} | {r['n_days']} | {r['n_stations']} |")
+
+def subgroup_table(sig, uni, results):
+    """Descriptive only (obs + official result; no prices): false-lock by where E sits and by feed."""
+    fl = [f for f in sig["fires"] if f["variant"] == "lattice" and tuple(f["cell"]) == PRIMARY]
+    c = collections.defaultdict(lambda: [0, 0])
+    for f in fl:
+        r = uni[f["ticker"]]
+        pos = "E==lo" if f["E"] == r["lo"] else ("E==hi" if f["E"] == r["hi"] else "E fractional")
+        c[(r["kind"], pos, f["src"])][0] += 1
+        c[(r["kind"], pos, f["src"])][1] += f["result"] == "no"
+    rows = []
+    for k, (n, kf) in sorted(c.items()):
+        p, lo_, hi_ = wilson(kf, n)
+        rows.append({"kind": k[0], "E_position": k[1], "feed": k[2], "n": n, "false_locks": kf, "rate": p, "wilson_ub": hi_})
+    return rows
+
+def write_md(rep, results, sig, uni):
+    L = []
+    A = L.append
+    ev = rep["evaluation"]
+    U = rep["universe"]
+    S = rep["sampling"]
+    A("# TERMINAL FINALITY -- Build B (independent replication) -- RESULT\n")
+    A(f"**Verdict (frozen spec, literal reading): `{rep['verdict']}`** -- see 'Why INSUFFICIENT and not PASS or KILL'. "
+      "No PASS under any reading; the only reading under which the rule fires at all fails the false-lock bar by ~5x.\n")
+    A("Reproduce: `python venue_expansion/finality_B.py discover|obs|signal|oracle|candles` then "
+      "`python -c \"import finality_B as F; F.cmd_report()\"`. Cache: `cache/finality/B/` (own namespace). "
+      "Numbers: `out/finality_B.json`.\n")
+    A("## 0. Headline\n")
+    A(rep["headline"] + "\n")
+    A("## 1. SAMPLING -- read this first\n")
+    A(f"* **Signal walk: 100% of the universe** ({U['n_bracket_rungs']:,} bracket rungs, {U['n_events']:,} event-days, "
+      f"{U['n_series']} series, {U['n_stations']} stations, closes {U['close_span'][0]} .. {U['close_span'][1]}). The FINAL-YES signal needs "
+      "observations only, so no sampling was needed for signals, false-lock rates or the geometry audit.\n"
+      f"* **Candlestick (price) pulls: {S['prefix_done']:,} of {S['fired_rungs_total']:,} fired rungs = "
+      f"{100 * S['sampling_fraction_of_fired_rungs']:.1f}%.** Fired rungs were put in a **seeded shuffled order** (seed {SEED}), saved to "
+      "`cache/finality/B/candle_work_order.json`, and **never re-sorted**; pricing statistics use the longest completed prefix of that order, "
+      "so the priced set is itself a uniform random subsample of fires (an earlier study here produced a biased series-ordered prefix; this one cannot). "
+      "Precision, not validity, is what the truncation costs.\n"
+      "* Pricing statistics apply only to the **exploratory** 'lattice' variant (the literal variant never fires, so nothing needs pricing).\n")
+    A("## 2. Universe, skips, feed coverage\n")
+    A("| item | count |\n|---|---:|")
+    A(f"| settled bracket rungs in universe (48 US series, closes 2026-05-23..2026-10-20, official yes/no) | {U['n_bracket_rungs']:,} |")
+    for k, v in sorted(U["skip"].items()):
+        A(f"| skipped: {k} | {v:,} |")
+    for k, v in sorted(U["obs_coverage"].items()):
+        A(f"| obs coverage: {k} | {v:,} |")
+    A("\nSources: live `/markets?status=settled` (Kalshi serves only ~2026-08-21 onward there) **plus** `/historical/markets` "
+      "(everything settled before the 2026-08-28 historical cutoff). Candles come from `/series/.../candlesticks` after the cutoff and "
+      "`/historical/markets/{ticker}/candlesticks` before it (historical rows use `close` rather than `close_dollars`; "
+      "aliased, values untouched, then parsed by the reused `edge_sizing_v2.normalize()`). International series (EGLL, LFPG, RJTT, ...) have no "
+      "settled markets in the live listing and no verified IEM 1-minute station map; 'series_not_in_verified_US_station_map' counts only what "
+      "the live listing returned. Four US series not in the old stage-2 city map (EWR, SAN, SDF, TTN) were added with standard offsets confirmed by close-hour.\n")
+    A("## 3. The frozen geometry cannot fire (spec defect, found by audit)\n")
+    g = rep["geometry"]
+    A(f"Every one of the {U['n_bracket_rungs']:,} bracket rungs has `cap_strike - floor_strike = 1` (e.g. `B64.5` = floor 64, cap 65; it settles YES on "
+      "whole-degree values 64 or 65). The spec's condition `lo+M <= E <= hi-M` with `[lo,hi]=[floor,cap]` therefore needs `M <= 0.5`, and at `M=0.5` "
+      "it needs `E = lo+0.5` exactly. Observed day extremes are whole degrees " + "(" + ", ".join(f"{k}: {v}" for k, v in g["final_extreme_is_integer_degree"].items()) + " event-days), so:\n")
+    A("| literal rule, R=2, W=120 | rungs that ever fire |\n|---|---:|")
+    for k, v in g["literal_fires_R2_W120_by_source_and_M"].items():
+        A(f"| {k} | {v:,} |")
+    A("| any source, M=0.5 | 0 |\n| any source, M=1.0 (primary cell) | 0 |\n")
+    A("**All 8 frozen cells x 3 latency arms have n = 0 fires under the literal reading.** M=0 would fire (" + f"{sum(v for k, v in g['literal_fires_R2_W120_by_source_and_M'].items() if k.endswith('M=0.0')):,}" + " rungs at R=2, W=120) but M=0 is not in the frozen grid and "
+      "is exactly what the margin was meant to exclude. I did not alter the grid. As a clearly-labelled, PASS-ineligible **post-hoc** reading I also ran the 'lattice' "
+      "variant: bracket widened by one whole degree each side (`[lo-1, hi+1]`), i.e. the margin M is measured from the nearest whole-degree value that would flip the "
+      "outcome. Under it M=1.0 means `E in {lo, hi}` (and M=0.5 is the same set on integer data). Everything below labelled 'lattice' is exploratory.\n")
+    A("## 4. Primary cell (M=1.0, R=2, H=3, W=120)\n")
+    pl = results[("literal", PRIMARY, 10)]
+    A(f"* **Literal (the frozen spec): n fires = {pl['n_fires']}, priced = 0, untradeable = n/a at L=0/10/20.** False-lock rate undefined (0/0). Nothing to test.")
+    pp = results[("lattice", PRIMARY, 10)]
+    A(f"* **Lattice (exploratory) at L=10:** fires {pp['n_fires']:,}; **false locks {pp['n_false_lock_all']:,} = {_f(pp['false_lock_rate_all'], pct=True)} "
+      f"(Wilson 95% UB {_f(pp['wilson_ub_all'], pct=True)})** vs bars of <=2% / <=5% -> the finality inference is wrong on 1 in 4 rungs. "
+      f"Priced {pp['n_priced']:,} of {pp['n_fires_candle_sampled']:,} sampled fires "
+      f"(untradeable {_f(pp['untradeable_frac'], pct=True)}); EV equal-weight {_f(pp['ev_eq'].get('mean'))}c, volume-weighted {_f(pp['ev_vw'].get('mean'))}c; "
+      f"signed day-clustered t = {_f(pp['ev_eq'].get('t'))} (eq) / {_f(pp['ev_vw'].get('t'))} (vw); days {pp['n_days']}, stations {pp['n_stations']}.\n")
+    sp = rep["lattice_primary_L10_split"]
+    A("Adverse selection among the priced fires (lattice, primary cell, L=10; descriptive):\n")
+    A("| priced fires that settled | n | mean entry ask (c) | mean net P&L (c) | share entered at ask>=90c | share entered at ask<=10c |\n|---|---:|---:|---:|---:|---:|")
+    for k, v in sp.items():
+        A(f"| {k} | {v['n']} | {_f(v['mean_entry_ask_c'], 1)} | {_f(v['mean_net_pnl_c'], 1)} | {_f(v['share_entered_at_ask>=90c'], pct=True)} | {_f(v['share_entered_at_ask<=10c'], pct=True)} |")
+    h90 = rep["lattice_primary_L10_entries_ask_ge_90"]
+    A(f"\nFalse-lock rate among ALL fires {_f(pp['false_lock_rate_all'], pct=True)} but among PRICED fires {_f(rep['lattice_primary_L10_priced_false_lock_rate'], pct=True)}: "
+      "the minutes at which YES is still offered at <=98c are disproportionately the minutes at which the market already knows the feed extreme is not the official one "
+      f"(cheap YES asks on rungs that then lose). Entries at ask>=90c (market agrees with the signal): n={h90['n']}, false locks {h90['false_locks']}, mean net {_f(h90['mean_net_pnl_c'])}c.\n")
+    A("## 5. All cells\n")
+    hdr = ("| M | R | W | L | fires (all) | fires (candle-sampled) | priced | untradeable | false-lock (Wilson UB) | EV eq c | EV vw c | t eq / vw | days | stations |\n"
+           "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for variant in ("literal", "lattice"):
+        A(f"### {variant} variant" + (" (frozen spec)" if variant == "literal" else " (EXPLORATORY, not eligible for PASS)") + "\n")
+        A(hdr)
+        for cell in CELLS:
+            for Lx in LS:
+                A(_row(results[(variant, cell, Lx)]))
+        A("")
+    A("## 6. Bars at L=10 (literal variant = frozen spec)\n")
+    A(f"* PASS cells: {ev['pass_cells'] or 'none'}\n* KILL clause 1 (false-lock > 5% in primary cell): {ev['kill_false_lock_primary']} (primary cell has 0 fires: not evaluable)\n"
+      f"* KILL clause 2 (every cell with EV>0 fails n>=100): {ev['kill_all_positive_cells_fail_n']} (no literal cell has an EV at all, so it is vacuous, not met on evidence)\n"
+      f"* KILL clause 3 (best one-sided 97.9% UB on EV < +0.5c): {ev['kill_best_ub979_lt_0.5']} (best UB = {ev['best_ub979_ev_vw']}; undefined with n=0)\n")
+    A("### Why INSUFFICIENT and not PASS or KILL\n")
+    A("Zero literal fires: PASS is impossible, and each KILL clause is either unevaluable (no fires, no EV, no UB) or vacuously true on an empty set -- a KILL on "
+      "vacuity would be a verdict by technicality, not evidence. The spec says 'anything else -> INSUFFICIENT', and that is the only honest label for a rule whose "
+      "frozen parameters select the empty set. **But do not read INSUFFICIENT as 'maybe'.** The single reading under which the rule fires fails clause 1 of KILL by a wide margin "
+      "(lattice primary-cell false-lock rate above), and its EV (section 5, lattice) is what the bars would call a KILL as well.\n")
+    A("## 7. Descriptive follow-up (obs + official result only; no price; NOT a test)\n")
+    A("Lattice primary-cell fires split by where the extreme sits in the bracket and by feed. This is post-hoc description of why the false-lock rate is ~24%, "
+      "not a candidate strategy; any rule built from it would need a fresh pre-registration and forward data.\n")
+    A("| kind | E position | feed | n | false locks | rate | Wilson UB |\n|---|---|---|---:|---:|---:|---:|")
+    for r in rep["subgroups"]:
+        A(f"| {r['kind']} | {r['E_position']} | {r['feed']} | {r['n']} | {r['false_locks']} | {_f(r['rate'], pct=True)} | {_f(r['wilson_ub'], pct=True)} |")
+    A("\nFeed extreme minus official `expiration_value` (whole degF, numeric-value markets only, i.e. settled after the 2026-08-28 cutoff; no outcomes of rungs used):\n")
+    A("| kind|feed | " + " | ".join(["-3", "-2", "-1", "0", "+1", "+2", "+3"]) + " |\n|---|---|---|---|---|---|---|---|")
+    for k, v in rep["tz_diag"]["feed_minus_official_extreme_degF_dist"].items():
+        tot = sum(v.values())
+        A(f"| {k} (n={tot}) | " + " | ".join(f"{100 * v.get(str(i), 0) / tot:.0f}%" for i in range(-3, 4)) + " |")
+    A("\nMechanism: the IEM/ASOS day extreme and the official settlement value disagree by 1 degF on roughly half of days (see section 9 table) and the bias is one-sided "
+      "(HIGH: IEM 1-min max is >= official; routine hourly max is <= official because hourly sampling misses the peak). Rungs are only 2 whole degrees wide, so a "
+      "1-degree feed disagreement flips the winner. A symmetric margin cannot fix a one-sided bias.\n")
+    A("## 8. Anchors\n")
+    a = rep["anchors"]
+    A("**(a) Oracle reconciliation.**\n")
+    a1 = a["a"]["a1_oracle_rows_reproduced"]
+    A(f"* The 140 EDGE_SIZING-capturable rows (`out/edge_sizing_stage2.json: per_market`) were re-priced from my own candle pull with an independent "
+      f"recomputation of the Stage-1 rule: {a1['candles_available']} had candles; minute-count matches {a1['n_minutes_match']}, first-capturable-ts matches {a1['first_ts_match']}, "
+      f"last-capturable-ts matches {a1['last_ts_match']}. Mismatch examples (if any): {a1['mismatch_examples'][:3]}.")
+    a2 = a["a"]["a2_subset_check"]
+    A(f"* Subset check: every priced YES-settled lattice fire (L=0) whose entry lies in the final 60 min -- {a2['priced_yes_fires_checked_(entry_in_final_60m)']} checked -- must be "
+      f"oracle-capturable on that rung; violations: **{a2['n_violations']}**. Fires entered 60-120 min before close ({a2['yes_fires_entered_before_final_60m_(outside_oracle_window)']}) are outside "
+      f"the oracle's 60-min window by construction; priced false locks ({a2['false_locks_priced_(not_applicable_to_winner_side_oracle)']}) are not winner-side events.")
+    A("* **Limit, disclosed:** the oracle's own sample membership (`stage1_v2.jsonl`, `population.json`) is not on disk in this checkout, so the check cannot enumerate which "
+      "rungs the oracle *sampled and found non-capturable*; the reproduction of the 140 rows is the strongest available test of the price join.\n")
+    b = a["b"]
+    A(f"**(b) No look-ahead.** The signal decision time is `t_sig = ts(obs_i) + 60 s`, so every input has timestamp < t_sig. In code (`anchor_b`), {b['checked']} fires "
+      f"(all primary-cell fires + a seeded random sample) were re-evaluated by an independent brute-force function that sees ONLY obs with ts < t, "
+      f"confirmed *first* (no earlier decision time qualifies), and survived a perturbation test (every obs with ts >= t replaced by +/-extreme garbage -> same fire). "
+      f"Passed {b['passed']}/{b['checked']}; failures: {b['failures']}. Worked example: {b['worked_example']}\n")
+    A(f"**(c) Monotonicity.** Running max non-decreasing / running min non-increasing within every local day: **{a['c']['monotone_violations']} violations** over all walked days.\n")
+    A("## 9. Timezone handling, proven\n")
+    A("The market day is the NWS local **standard-time** day. Kalshi's `close_time` is exactly local-standard-midnight + 24 h year-round "
+      "(e.g. `06:00Z` for CST cities all year, `08:00Z` for Seattle in July even though the wall clock there is PDT), verified for every series by close-hour "
+      "(`cmd_tzcheck`; the universe builder *drops* any rung whose close-hour disagrees with the station's standard offset). Historical rows close at `HH:59Z`, so the day end is "
+      "`round(close_time to nearest hour)`; day start = day end - 24 h; the extreme is accumulated only over that window; obs are UTC epochs; candle `end_period_ts` are UTC epochs; "
+      "the terminal window is `[close_time - W min, close_time]` in the same UTC epochs.\n")
+    w = rep["worked_example"]
+    if w:
+        A("Worked example (real priced fire):\n")
+        A("```")
+        for k, v in w.items():
+            A(f"{k}: {v}")
+        A("```")
+    A("\nIndependent check that the window is right (no outcomes used): obs-derived day extreme vs the market's numeric `expiration_value` "
+      "(available for markets settled after the historical cutoff), under window shifts of -3..+3 h. Share within 0.5 degF:\n")
+    A("| window shift (h) | match share | n |\n|---:|---:|---:|")
+    for k, v in rep["tz_diag"]["match_rate_by_window_shift_hours"].items():
+        A(f"| {k} | {v[0]:.3f} | {v[1]} |")
+    A("\n(The shift = 0 window is best for the 1-min feed; the residual mismatch is the 1 degF one-sided feed bias, not a timezone error. "
+      "Shifted rows use the 1-min feed only, shift 0 uses the per-market selected feed, so the comparison is slightly conservative for 0.)\n")
+    A("Local-standard hour of the day's extreme (shift 0): " + json.dumps(rep["tz_diag"]["argext_local_std_hour_hist"]) + "\n")
+    A("## 10. Interpretation choices (where Build A may differ -- this is where a disagreement would come from)\n")
+    for s_ in rep["choices"]:
+        A("* " + s_)
+    A("\n## 11. What this does and does not say\n")
+    A(rep["closing"] + "\n")
+    open(OUT_MD, "w").write("\n".join(L))
+
+
+if __name__ == "__main__":
+    cmds = {"discover": lambda: (cmd_discover(), cmd_discover_hist()), "obs": cmd_obs, "signal": cmd_signal,
+            "candles": lambda: cmd_candles(), "oracle": cmd_oracle_fetch, "tz": cmd_tzcheck, "analyze": lambda: cmd_report()}
+    cmds[sys.argv[1]]()

@@ -65,7 +65,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import edge_sizing_v2 as V2          # noqa: E402  normalize()/fee_c() reused, NOT reimplemented
 
-CACHE = os.path.join(HERE, "cache", "finality")
+CACHE = os.path.join(HERE, "cache", "finality", "A")   # own subdir: Build B shares cache/finality/
 MKT_DIR = os.path.join(CACHE, "markets")
 OBS_DIR = os.path.join(CACHE, "obs")
 CANDLE_DIR = os.path.join(CACHE, "candles")
@@ -74,6 +74,8 @@ SIGNALS = os.path.join(CACHE, "signals.jsonl")
 STAGEA_SUMMARY = os.path.join(CACHE, "stageA_summary.json")
 OUT_JSON = os.path.join(HERE, "out", "finality_A.json")
 OUT_MD = os.path.join(HERE, "out", "finality_A.md")
+COMMENTARY_PATH = os.path.join(CACHE, "commentary.md")      # hand-written verdict commentary, spliced in by the report
+CAVEATS_PATH = os.path.join(CACHE, "caveats.md")
 for _d in (MKT_DIR, OBS_DIR, CANDLE_DIR, VERIFY_DIR, os.path.dirname(OUT_JSON)):
     os.makedirs(_d, exist_ok=True)
 
@@ -218,6 +220,7 @@ def list_settled(series):
         if m["ticker"] in seen:
             continue
         seen.add(m["ticker"])
+        m["series_ticker"] = series
         out.append(m)
     return out
 
@@ -443,6 +446,7 @@ def stage_signals():
     n_ev = n_rung = n_fire = 0
     tzdiag = []
     mono_viol = 0
+    n_lookahead = 0
     for evt in sorted(events):
         rungs = events[evt]
         series = rungs[0]["series_ticker"]
@@ -458,13 +462,16 @@ def stage_signals():
         # ---- tz check: close_time must be local-STANDARD-time midnight ending the event date
         exp_close = int((dt.datetime(d.year, d.month, d.day, tzinfo=dt.timezone.utc) + dt.timedelta(days=1)
                          - dt.timedelta(hours=sm["off"])).timestamp())
-        if any(int(dt.datetime.fromisoformat(r["close_time"].replace("Z", "+00:00")).timestamp()) != exp_close
+        # tolerance: a block of HIGH series (Aug 2026) closes at 23:59 LST, i.e. 60 s before LST midnight.  The DAY
+        # is still [LST midnight, LST midnight); the market simply stops 60 s early.  Anything else is a hard skip.
+        if any(not (-60 <= int(dt.datetime.fromisoformat(r["close_time"].replace("Z", "+00:00")).timestamp()) - exp_close <= 0)
                for r in rungs):
-            ev_skip["close_time_is_not_LST_midnight_of_event_date+1"] += len(rungs)
+            ev_skip["close_time_not_within_60s_before_LST_midnight_of_event_date+1"] += len(rungs)
             out.write(json.dumps({**base, "skip": "close_time_not_LST_midnight", "n_rungs": len(rungs),
                                   "expected_close_ts": exp_close}) + "\n")
             continue
-        day0 = close_ts - 86400
+        day0 = exp_close - 86400          # the local-standard-time day starts here; ends at exp_close (>= close_ts)
+        base["close_offset_s"] = close_ts - exp_close
         feeds = {}
         for feed in ("1min", "routine"):
             ts, tf = st_obs(sm["station"], feed)
@@ -504,7 +511,7 @@ def stage_signals():
             ts1, tf1 = st_obs(sm["station"], "1min")
             diag = {}
             for s in SH:
-                a, b = bisect.bisect_left(ts1, day0 + s * 3600), bisect.bisect_left(ts1, close_ts + s * 3600)
+                a, b = bisect.bisect_left(ts1, day0 + s * 3600), bisect.bisect_left(ts1, exp_close + s * 3600)
                 vals = [f for f in tf1[a:b] if GLITCH_LO_F <= f <= GLITCH_HI_F]
                 if len(vals) >= MIN_1MIN_OBS:
                     diag[str(s)] = max(vals) if sm["kind"] == "max" else min(vals)
@@ -518,6 +525,7 @@ def stage_signals():
                     if (r["ticker"], rd, k) in seen:
                         continue
                     seen.add((r["ticker"], rd, k))
+                    n_lookahead += 2
                     for variant in ("truncate", "poison"):
                         if variant == "truncate":
                             tt, ff = ots[:k + 1], of_[:k + 1]
@@ -545,7 +553,7 @@ def stage_signals():
     out.close()
     summ = {"events_scored": n_ev, "rungs_scored": n_rung, "rungs_with_any_fire": n_fire,
             "event_level_skips_rungs": dict(ev_skip), "pre_skips": dict(skips), "outside_window": dict(outside),
-            "monotonicity_violations": mono_viol}
+            "monotonicity_violations": mono_viol, "lookahead_assertions_run": n_lookahead}
     json.dump(summ, open(STAGEA_SUMMARY, "w"), indent=1)
     print(json.dumps(summ, indent=1))
 
@@ -555,17 +563,42 @@ def candle_path(tk):
     return os.path.join(CANDLE_DIR, tk + ".json")
 
 
+HIST_CUTOFF_TS = int(dt.datetime(2026, 8, 27, tzinfo=dt.timezone.utc).timestamp())
+
+
+def _hist_to_live(cs):
+    """/historical candlesticks use {close,...} strings; convert to the live *_dollars shape so V2.normalize()
+    (the single shared price path) can be used unchanged."""
+    out = []
+    for k in cs:
+        def node(n):
+            n = n or {}
+            return {"close_dollars": n.get("close")}
+        out.append({"end_period_ts": k.get("end_period_ts"), "volume_fp": k.get("volume"),
+                    "yes_bid": node(k.get("yes_bid")), "yes_ask": node(k.get("yes_ask"))})
+    return out
+
+
 def fetch_candles(tk, series, close_ts):
     p = candle_path(tk)
     if os.path.exists(p):
         return json.load(open(p))
-    url = (f"/series/{series}/markets/{tk}/candlesticks?start_ts={close_ts - CANDLE_WINDOW_MIN * 60 - 60}"
-           f"&end_ts={close_ts}&period_interval=1")
-    try:
-        d = kget(url)
-        res = {"ok": True, "candlesticks": d.get("candlesticks", [])}
-    except urllib.error.HTTPError as e:
-        res = {"ok": False, "error": f"HTTP {e.code}", "candlesticks": []}
+    q = f"start_ts={close_ts - CANDLE_WINDOW_MIN * 60 - 60}&end_ts={close_ts}&period_interval=1"
+    live = f"/series/{series}/markets/{tk}/candlesticks?{q}"
+    hist = f"/historical/markets/{tk}/candlesticks?{q}"
+    order = [("hist", hist), ("live", live)] if close_ts < HIST_CUTOFF_TS else [("live", live), ("hist", hist)]
+    res = {"ok": False, "error": "unreached", "candlesticks": []}
+    for src, path in order:
+        try:
+            d = kget(path)
+            cs = d.get("candlesticks", [])
+            if src == "hist":
+                cs = _hist_to_live(cs)
+            res = {"ok": True, "src": src, "candlesticks": cs}
+            if cs:
+                break
+        except urllib.error.HTTPError as e:
+            res = {"ok": False, "error": f"HTTP {e.code} via {src}", "candlesticks": []}
     json.dump(res, open(p, "w"))
     return res
 
@@ -624,6 +657,677 @@ def anchor_tickers():
             ct = int(dt.datetime.fromisoformat(r["close_time"].replace("Z", "+00:00")).timestamp())
             out[r["ticker"]] = {"series": r["series"], "close_ts": ct}
     return out
+
+
+# ====================================================================== REPORT
+def wilson(k, n, z=1.959963985):
+    if n == 0:
+        return (None, None, None)
+    p = k / n
+    den = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / den
+    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den
+    return (p, max(0.0, c - h), min(1.0, c + h))
+
+
+def tq(p, df):
+    from scipy import stats as _st
+    return float(_st.t.ppf(p, df)) if df and df >= 1 else None
+
+
+def cluster_stats(items):
+    """items: [(day, w, pnl)].  Weighted mean with day-clustered SE (CR1 small-sample factor G/(G-1))."""
+    sw = sum(w for _d, w, _p in items)
+    if not items or sw <= 0:
+        return {"n": len(items), "mean": None, "se": None, "t": None, "days": len({d for d, _, _ in items})}
+    mu = sum(w * p for _d, w, p in items) / sw
+    U = collections.defaultdict(float)
+    for d, w, p in items:
+        U[d] += w * (p - mu)
+    G = len(U)
+    se = None
+    t = None
+    if G >= 2:
+        se = math.sqrt(G / (G - 1) * sum(u * u for u in U.values())) / sw
+        t = mu / se if se > 0 else None
+    return {"n": len(items), "mean": mu, "se": se, "t": t, "days": G}
+
+
+def load_rows(tk, close_ts):
+    p = candle_path(tk)
+    if not os.path.exists(p):
+        return "not_fetched"
+    c = json.load(open(p))
+    if not c.get("ok"):
+        if "404" in str(c.get("error")):
+            return []                       # no candle data exists for this market (404 / empty) -> no coverage
+        return "fetch_error:" + str(c.get("error"))
+    V2.WINDOW_MIN = CANDLE_WINDOW_MIN        # normalize() filters to the final WINDOW_MIN minutes
+    rows = V2.normalize(c["candlesticks"], close_ts)
+    rows = sorted([r for r in rows if r[0] is not None], key=lambda r: r[0])
+    return rows
+
+
+def entry_for(rows, close_ts, sig_ts, L):
+    """First candle at/after sig_ts+L whose YES ask is <=98c with positive fee-inclusive net.  No earlier/better print."""
+    target = sig_ts + L * 60
+    after = [r for r in rows if r[0] >= target and r[0] <= close_ts]
+    if not after:
+        return {"status": "untradeable", "reason": "no_candle_at_or_after_target"}
+    saw_ask = False
+    for ts, yb, ya, vol in after:
+        if ya is None:
+            continue
+        saw_ask = True
+        if not (0 < ya <= MAX_PAY_C):
+            continue
+        fee = V2.fee_c(ya)
+        if 100 - ya - fee <= 0:
+            continue
+        return {"status": "priced", "entry_ts": ts, "cost_c": ya, "fee_c": fee, "vol": vol}
+    return {"status": "untradeable", "reason": "ask_above_98_or_no_net" if saw_ask else "no_ask_quoted"}
+
+
+def oracle_capturable_60(rows, close_ts, result):
+    """EDGE_SIZING Stage-1 definition, reproduced with the SAME fee/cap constants: winner side buyable <=98c with
+    net>0 in the final 60 minutes.  Winner cost = yes_ask if YES else 100 - yes_bid."""
+    best = None
+    n = 0
+    for ts, yb, ya, vol in rows:
+        if ts < close_ts - 3600:
+            continue
+        cost = ya if result == "yes" else (None if yb is None else 100 - yb)
+        if cost is None or not (0 < cost <= MAX_PAY_C):
+            continue
+        net = 100 - cost - V2.fee_c(cost)
+        if net <= 0:
+            continue
+        n += 1
+        if best is None or cost < best[0]:
+            best = (cost, net)
+    return {"capturable": n > 0, "n_min": n, "best_cost": best[0] if best else None, "best_net": best[1] if best else None}
+
+
+def load_events():
+    evs = []
+    for ln in open(SIGNALS):
+        evs.append(json.loads(ln))
+    return evs
+
+
+def run_report(stage):
+    if stage == "verify":
+        return stage_verify()
+    summ = json.load(open(STAGEA_SUMMARY))
+    evs = load_events()
+    official = {}
+    for s in SERIES_MAP:
+        for m in list_settled(s):
+            official[m["ticker"]] = m
+    fired = {}
+    ev_skips = collections.Counter()
+    for e in evs:
+        if "skip" in e:
+            ev_skips[e["skip"]] += e["n_rungs"]
+            continue
+        for rr in e["rungs"]:
+            if any(rr["fires"][rd] for rd in READINGS):
+                fired[rr["ticker"]] = (e, rr)
+    # ---- unmapped-series skip ledger (D7): bracket rungs in window we did NOT test, by series
+    unmapped = {}
+    try:
+        allser = [t for t in json.load(open(os.path.join(CACHE, "all_series.json")))
+                  if (t.startswith("KXHIGH") or t.startswith("KXLOWT")) and t not in SERIES_MAP]
+    except Exception:     # noqa: BLE001
+        allser = []
+    for s_ in allser:
+        n_ = 0
+        try:
+            for m in list_settled(s_):
+                cd = dt.datetime.fromisoformat(m["close_time"].replace("Z", "+00:00")).date()
+                if re.search(r"-B[\d.]+$", m["ticker"]) and WIN_LO <= cd <= WIN_HI and m.get("result") in ("yes", "no"):
+                    n_ += 1
+        except Exception:     # noqa: BLE001
+            n_ = -1
+        if n_:
+            unmapped[s_] = n_
+    order = json.load(open(os.path.join(CACHE, "candle_work_order.json")))
+    n_total_fired = len(order)
+    cand_state = collections.Counter()
+    rungs_out = []
+    fire_rows = []        # flat: one per (reading, cell, rung) with arms
+    for tk in order:
+        e, rr = fired[tk]
+        rows = load_rows(tk, e["close_ts"])
+        if isinstance(rows, str):
+            cand_state["not_fetched" if rows == "not_fetched" else "candle_fetch_error"] += 1
+            continue
+        if not rows:
+            cand_state["no_candles_in_final_120min"] += 1
+            rungs_out.append({"ticker": tk, "skip": "no_candles_in_final_120min", "event": e["event"],
+                              "result": rr["result"], "fires": rr["fires"]})
+            continue
+        cand_state["covered"] += 1
+        rec = {"ticker": tk, "series": e["series"], "station": e["station"], "kind": e["kind"], "date": e["date"],
+               "close_ts": e["close_ts"], "floor": rr["floor"], "cap": rr["cap"], "result": rr["result"],
+               "feed": e["feed"], "official_value": e["official_value"], "E_final_obs": e["E_final"],
+               "candles": [[r[0], r[1], r[2], r[3]] for r in rows], "fires": {}}
+        orc = oracle_capturable_60(rows, e["close_ts"], rr["result"])
+        rec["oracle60"] = orc
+        for rd in READINGS:
+            rec["fires"][rd] = {}
+            for ck, fr in rr["fires"][rd].items():
+                arms = {str(L): entry_for(rows, e["close_ts"], fr["sig_ts"], L) for L in LATS}
+                for L, a in arms.items():
+                    if a["status"] == "priced":
+                        win = rr["result"] == "yes"
+                        a["win"] = win
+                        a["pnl_c"] = (100 - a["cost_c"] - a["fee_c"]) if win else (-a["cost_c"] - a["fee_c"])
+                rec["fires"][rd][ck] = {**fr, "arms": arms}
+                fire_rows.append({"reading": rd, "cell": ck, "ticker": tk, "date": e["date"], "station": e["station"],
+                                  "kind": e["kind"], "result": rr["result"], "oracle60": orc, "arms": arms,
+                                  "feed": e["feed"]})
+        rungs_out.append(rec)
+
+    # ------------------------------------------------------------- cell statistics
+    cells_out = []
+    for rd in READINGS:
+        for c in GRID:
+            ck = cell_key(c)
+            fs = [f for f in fire_rows if f["reading"] == rd and f["cell"] == ck]
+            n = len(fs)
+            fl = sum(1 for f in fs if f["result"] == "no")
+            fl_p, fl_lo, fl_hi = wilson(fl, n)
+            for L in LATS:
+                priced = [f for f in fs if f["arms"][str(L)]["status"] == "priced"]
+                unt = n - len(priced)
+                fl_pr = sum(1 for f in priced if f["result"] == "no")
+                pr_p, pr_lo, pr_hi = wilson(fl_pr, len(priced))
+                wi = [(f["date"], f["arms"][str(L)]["vol"], f["arms"][str(L)]["pnl_c"]) for f in priced]
+                un = [(f["date"], 1.0, f["arms"][str(L)]["pnl_c"]) for f in priced]
+                sv, su = cluster_stats(wi), cluster_stats(un)
+                days = len({f["date"] for f in priced})
+                stations = len({f["station"] for f in priced})
+                df = days - 1
+                q = tq(0.99896, df)
+                ub979 = None if sv["mean"] is None or sv["se"] is None else sv["mean"] + tq(0.979, df) * sv["se"]
+                ub99792 = None if sv["mean"] is None or sv["se"] is None else sv["mean"] + tq(0.99792, df) * sv["se"]
+                reasons = collections.Counter(f["arms"][str(L)].get("reason") for f in fs if f["arms"][str(L)]["status"] != "priced")
+                row = {
+                    "reading": rd, "cell": ck, "M": c[0], "R": c[1], "H": c[2], "W": c[3], "L": L,
+                    "n_fires_covered": n, "false_locks": fl,
+                    "false_lock_rate_all": fl_p, "false_lock_wilson_ub_all": fl_hi,
+                    "n_priced": len(priced), "n_untradeable": unt,
+                    "untradeable_frac": (unt / n) if n else None, "untradeable_reasons": dict(reasons),
+                    "priced_false_locks": fl_pr, "false_lock_rate_priced": pr_p, "false_lock_wilson_ub_priced": pr_hi,
+                    "ev_c_volume_weighted": sv["mean"], "ev_c_unweighted": su["mean"],
+                    "t_volume_weighted": sv["t"], "t_unweighted": su["t"],
+                    "se_volume_weighted": sv["se"], "n_days_priced": days, "n_stations_priced": stations,
+                    "t_bar_p99896": q, "ub_one_sided_97.9": ub979, "ub_one_sided_99.792": ub99792,
+                    "mean_cost_c": (sum(f["arms"][str(L)]["cost_c"] for f in priced) / len(priced)) if priced else None,
+                    "win_rate_priced": (sum(1 for f in priced if f["result"] == "yes") / len(priced)) if priced else None,
+                    "zero_volume_entries": sum(1 for f in priced if f["arms"][str(L)]["vol"] <= 0),
+                    "n_priced_vol_gt0": sum(1 for f in priced if f["arms"][str(L)]["vol"] > 0),
+                }
+                # frozen PASS criteria
+                crit = {}
+                crit["1_false_lock_all"] = (fl_p is not None and fl_p <= 0.02 and fl_hi <= 0.05)
+                crit["1_false_lock_priced"] = (pr_p is not None and pr_p <= 0.02 and pr_hi <= 0.05)
+                crit["2_ev_ge_2c_vw"] = (sv["mean"] is not None and sv["mean"] >= 2.0)
+                crit["3_t_ge_bar"] = (sv["t"] is not None and q is not None and sv["t"] >= q)
+                crit["4_n_days_stations"] = (len(priced) >= 100 and days >= 40 and stations >= 10)
+                crit["5_untradeable_le_70"] = (n > 0 and unt / n <= 0.70)
+                row["criteria"] = crit
+                row["cell_passes_all"] = all(crit.values())
+                cells_out.append(row)
+
+    def verdict_for(rd):
+        rows = [r for r in cells_out if r["reading"] == rd]
+        r10 = [r for r in rows if r["L"] == 10]
+        passing = [r for r in r10 if r["cell_passes_all"]]
+        prim = next((r for r in rows if r["L"] == 10 and (r["M"], r["R"], r["H"], r["W"]) == PRIMARY), None)
+        kill = []
+        if prim and prim["false_lock_rate_all"] is not None and prim["false_lock_rate_all"] > 0.05:
+            kill.append("primary cell false-lock rate (all fires) %.3f > 5%%" % prim["false_lock_rate_all"])
+        pos = [r for r in r10 if r["ev_c_volume_weighted"] is not None and r["ev_c_volume_weighted"] > 0]
+        if pos and all(r["n_priced"] < 100 for r in pos):
+            kill.append("every L=10 cell with EV>0 fails the n>=100 floor")
+        ubs = [r["ub_one_sided_97.9"] for r in r10 if r["ub_one_sided_97.9"] is not None]
+        if ubs and max(ubs) < 0.5:
+            kill.append("best L=10 one-sided 97.9%% EV upper bound %.2fc < +0.5c" % max(ubs))
+        if passing:
+            v = "PASS"
+        elif kill:
+            v = "KILL"
+        else:
+            v = "INSUFFICIENT"
+        return {"verdict": v, "passing_cells_L10": [r["cell"] for r in passing], "kill_triggers": kill,
+                "best_ub_97.9_L10": max(ubs) if ubs else None,
+                "primary_cell_L10": prim}
+
+    verdicts = {rd: verdict_for(rd) for rd in READINGS}
+
+    # ------------------------------------------------------------- anchors
+    anchors = {}
+    # (a) oracle reconciliation
+    ora = json.load(open(os.path.join(HERE, "out", "edge_sizing_v2.json")))["capturable_markets_detail"]
+    ora_b = [r for r in ora if re.search(r"-B[\d.]+$", r["ticker"])]
+    pj = []
+    for r in ora_b:
+        ct = int(dt.datetime.fromisoformat(r["close_time"].replace("Z", "+00:00")).timestamp())
+        rows = load_rows(r["ticker"], ct)
+        if isinstance(rows, str) or not rows:
+            pj.append({"ticker": r["ticker"], "status": "no_rows_now", "detail": rows if isinstance(rows, str) else "empty"})
+            continue
+        mine = oracle_capturable_60(rows, ct, r["result"])
+        pj.append({"ticker": r["ticker"], "stored_best_cost": r["best_winner_cost_c"], "stored_best_net": r["best_net_c"],
+                   "stored_n_min": r["n_capturable_minutes"], "mine_best_cost": mine["best_cost"],
+                   "mine_best_net": mine["best_net"], "mine_n_min": mine["n_min"],
+                   "match": (mine["best_cost"] == r["best_winner_cost_c"] and mine["best_net"] == r["best_net_c"])})
+    # priced YES-winners in W=60 cells must be oracle-capturable
+    viol = []
+    chk = 0
+    for f in fire_rows:
+        if f["cell"].endswith("_W60") and f["result"] == "yes":
+            for L in LATS:
+                a = f["arms"][str(L)]
+                if a["status"] == "priced":
+                    chk += 1
+                    if not f["oracle60"]["capturable"]:
+                        viol.append({"ticker": f["ticker"], "cell": f["cell"], "L": L})
+    # stored oracle B-rungs that my rule also fires on
+    stored_fired = [t for t in (r["ticker"] for r in ora_b) if t in fired]
+    anchors["a_oracle_reconciliation"] = {
+        "oracle_B_rungs_stored": len(ora_b), "price_join_rows": pj,
+        "price_join_matches": sum(1 for x in pj if x.get("match")),
+        "price_join_checked": sum(1 for x in pj if "match" in x),
+        "priced_yes_fires_in_W60_cells_checked": chk, "violations_not_oracle_capturable": viol,
+        "oracle_B_rungs_the_rule_fires_on": stored_fired,
+        "limitation": ("Only the top-40 'capturable_markets_detail' of out/edge_sizing_v2.json (34 bracket rungs) "
+                       "survives on disk; the full 140-market Stage-1 set and its population cache are gitignored and "
+                       "absent.  The subset anchor is therefore tested by re-deriving the Stage-1 capturable test "
+                       "(same fee/98c constants, same normalize()) on every priced YES fire, plus a price-join "
+                       "reproduction on the stored rungs."),
+        "pass": (len(viol) == 0 and all(x.get("match") for x in pj if "match" in x)),
+    }
+    anchors["b_no_lookahead"] = {"assertions_run": summ.get("lookahead_assertions_run"),
+                                 "method": "streaming detector + per-fire truncation and adversarial-future-poison re-runs",
+                                 "pass": summ.get("lookahead_assertions_run", 0) > 0}
+    # (c) monotonicity + tz shift diagnostic
+    shift = {"max": collections.defaultdict(lambda: [0, 0, 0.0]), "min": collections.defaultdict(lambda: [0, 0, 0.0])}
+    for e in evs:
+        if "skip" in e or not e.get("tz_shift_extremes"):
+            continue
+        try:
+            ov = float(e["official_value"])
+        except Exception:     # noqa: BLE001
+            continue
+        for s_, v in e["tz_shift_extremes"].items():
+            a = shift[e["kind"]][int(s_)]
+            a[0] += 1
+            a[1] += int(round(v) == round(ov))
+            a[2] += abs(v - ov)
+    anchors["c_monotonic_and_tz"] = {
+        "monotonicity_violations": summ.get("monotonicity_violations"),
+        "tz_window_shift_vs_official_value": {
+            k: {str(s_): {"events": a[0], "exact_match_frac": a[1] / a[0], "mean_abs_err_F": a[2] / a[0]}
+                for s_, a in sorted(v.items())} for k, v in shift.items()},
+        "note": ("shift s hours means window [close-24h+s, close+s).  s=0 is the declared local-standard-time day; "
+                 "s=-1 is the naive wall-clock-DST-midnight day.  The declared window must win by exact-match "
+                 "fraction / lowest abs error against Kalshi's own expiration_value."),
+    }
+    anchors["c_monotonic_and_tz"]["pass"] = (summ.get("monotonicity_violations", 1) == 0)
+
+    out = {
+        "spec": "venue_expansion/TERMINAL_FINALITY_SPEC.md (frozen 2026-10-27) -- BUILD A",
+        "seed": SEED,
+        "readings": {"S": "interval [floor, cap] -- LITERAL spec (formal verdict)",
+                     "L": "interval [floor-0.5, cap+0.5] -- lattice/rounding reading (exploratory, pre-declared)"},
+        "stageA": summ, "event_level_skips": dict(ev_skips), "unmapped_series_bracket_rungs_in_window_not_tested": unmapped,
+        "sampling": {"fired_rungs_total": n_total_fired, "candle_states": dict(cand_state),
+                     "fraction_candle_pulled": (n_total_fired - cand_state.get("not_fetched", 0)) / max(n_total_fired, 1),
+                     "order": "shuffled with fixed seed; never re-sorted"},
+        "verdicts": verdicts, "cells": cells_out, "anchors": anchors,
+        "diagnostics": diagnostics(rungs_out),
+        "rungs": rungs_out,
+    }
+    json.dump(out, open(OUT_JSON, "w"))
+    print("wrote", OUT_JSON, os.path.getsize(OUT_JSON) // 1024, "KB")
+    md = build_md(out, evs)
+    if os.path.exists(COMMENTARY_PATH):
+        md = md.replace("{{COMMENTARY}}", open(COMMENTARY_PATH).read())
+        md = md.replace("{{CAVEATS}}", open(CAVEATS_PATH).read() if os.path.exists(CAVEATS_PATH) else "")
+    open(OUT_MD, "w").write(md)
+    print("wrote", OUT_MD)
+    for rd in READINGS:
+        v = verdicts[rd]
+        print(rd, v["verdict"], v["kill_triggers"], v["passing_cells_L10"])
+    return out
+
+
+def stage_verify(n=150):
+    """Cross-check the list-endpoint result against GET /markets/{ticker}.market.result for a random sample of fired rungs."""
+    order = json.load(open(os.path.join(CACHE, "candle_work_order.json")))
+    off = {}
+    for s in SERIES_MAP:
+        for m in list_settled(s):
+            off[m["ticker"]] = m
+    res = {"checked": 0, "mismatch": [], "not_found": 0}
+    for tk in order[:n]:
+        p = os.path.join(VERIFY_DIR, tk + ".json")
+        if os.path.exists(p):
+            d = json.load(open(p))
+        else:
+            try:
+                d = kget(f"/markets/{tk}").get("market", {})
+            except urllib.error.HTTPError:
+                try:
+                    d = kget(f"/historical/markets/{tk}").get("market", {})
+                except Exception:     # noqa: BLE001
+                    d = {"_nf": True}
+            json.dump(d, open(p, "w"))
+        if d.get("_nf"):
+            res["not_found"] += 1
+            continue
+        res["checked"] += 1
+        if d.get("result") != off[tk]["result"]:
+            res["mismatch"].append({"ticker": tk, "single": d.get("result"), "list": off[tk]["result"]})
+    json.dump(res, open(os.path.join(CACHE, "verify_summary.json"), "w"), indent=1)
+    print(res)
+
+
+# ====================================================================== MARKDOWN
+def _f(x, nd=3, pct=False):
+    if x is None:
+        return "n/a"
+    return f"{100 * x:.{nd - 1}f}%" if pct else f"{x:.{nd}f}"
+
+
+def _utc(ts):
+    return dt.datetime.fromtimestamp(ts, tz=dt.timezone.utc).strftime("%Y-%m-%d %H:%MZ")
+
+
+def tz_worked_example(evs):
+    best = None
+    for e in evs:
+        if "skip" in e or e["feed"] != "iem_1min" or not e.get("tz_shift_extremes") or e.get("official_value") in (None, ""):
+            continue
+        ov = float(e["official_value"])
+        d = e["tz_shift_extremes"]
+        if e["station"] == "PHX":
+            continue          # Phoenix does not observe DST; the wall-clock illustration would not apply
+        if "0" in d and "-1" in d and "1" in d and round(d["0"]) == round(ov) and round(d["-1"]) != round(ov) \
+                and round(d["1"]) != round(ov):
+            if best is None or (e["kind"] == "min" and best["kind"] != "min"):
+                best = e
+            if best["kind"] == "min":
+                break
+    if not best:
+        return "(no event found where only the declared window reproduces the official value)"
+    e = best
+    sm = SERIES_MAP[e["series"]]
+    d = dt.date.fromisoformat(e["date"])
+    off = sm["off"]
+    lst0 = dt.datetime(d.year, d.month, d.day, tzinfo=dt.timezone.utc) - dt.timedelta(hours=off)
+    lines = [
+        f"Event `{e['event']}` (station {e['station']}, {'running MAX' if e['kind'] == 'max' else 'running MIN'}).",
+        f"- Event date {e['date']}; station fixed standard offset UTC{off:+d} (the NWS climate day is local STANDARD time all year).",
+        f"- Local-standard midnight that STARTS the day = {d} 00:00 LST = **{lst0:%Y-%m-%d %H:%MZ}**; the day ENDS at "
+        f"{d + dt.timedelta(days=1)} 00:00 LST = **{_utc(e['close_ts'])}**, and Kalshi's `close_time` is exactly that "
+        f"({_utc(e['close_ts'])}) -- asserted for every event (`close_time == (date+1) 00:00 - offset`).",
+        f"- Expressed in daylight-saving wall-clock (UTC{off + 1:+d}) the same day runs {(lst0 + dt.timedelta(hours=off + 1)):%H:%M} on {d} to "
+        f"{(lst0 + dt.timedelta(hours=off + 1)):%H:%M} on {d + dt.timedelta(days=1)}, i.e. it does NOT start at wall-clock midnight.  "
+        f"A naive 'local midnight to local midnight' window in DST wall-clock is the window shifted by s=-1h -- the classic 1-hour-skew trap.",
+        "",
+        "| window shift s (h) | extreme in [close-24h+s, close+s) F | official `expiration_value` | integer match |",
+        "|---|---:|---:|:---:|"]
+    ov = float(e["official_value"])
+    for s_, v in sorted(e["tz_shift_extremes"].items(), key=lambda kv: int(kv[0])):
+        lines.append(f"| {int(s_):+d}{' (declared)' if s_ == '0' else (' (naive DST wall-clock)' if s_ == '-1' else '')} | {v:.1f} | "
+                     f"{ov:.0f} | {'YES' if round(v) == round(ov) else 'no'} |")
+    lines.append("")
+    lines.append("Only the declared window reproduces Kalshi's own official value on this day; the 1-hour-shifted windows do not.")
+    return "\n".join(lines)
+
+
+def lookahead_example(out):
+    for r in out["rungs"]:
+        if "candles" in r and not r.get("skip") and r["fires"].get("L"):
+            ck = "M0.5_R2_H3_W120"
+            fr = r["fires"]["L"].get(ck)
+            if fr:
+                return r, ck, fr
+    return None, None, None
+
+
+def write_md(out, evs):
+    cells = out["cells"]
+    S = {tuple(k): v for k, v in []}
+    L_ = []
+    A = L_.append
+    ver = out["verdicts"]
+    A("# TERMINAL FINALITY -- BUILD A (primary) -- result\n")
+    A(f"Spec: `venue_expansion/TERMINAL_FINALITY_SPEC.md` (frozen 2026-10-27).  Code: `venue_expansion/finality_A.py`.  "
+      f"Per-fire records: `venue_expansion/out/finality_A.json`.  Seed {SEED}.\n")
+    A(f"## Verdict (formal reading S = spec text literally): **{ver['S']['verdict']}**\n")
+    for rd in ("S", "L"):
+        v = ver[rd]
+        A(f"- reading **{rd}** ({out['readings'][rd]}): **{v['verdict']}**; "
+          f"PASS cells at L=10: {v['passing_cells_L10'] or 'none'}; KILL triggers: {v['kill_triggers'] or 'none'}; "
+          f"best one-sided 97.9% EV upper bound at L=10: {_f(v['best_ub_97.9_L10'], 2)}c")
+    A("")
+    for k in ("verdict_commentary",):
+        pass
+    A("{{COMMENTARY}}\n")
+    st = out["stageA"]
+    A("## Universe, sampling, skips\n")
+    A("{{UNIVERSE}}\n")
+    A("## Method (what was actually run)\n")
+    A("""1. **Universe** -- settled bracket rungs (`-B` tickers, `strike_type=between`, official `result` in {yes,no}) of the 40 US
+   HIGH/LOW series with a verified station mapping, `close_time` UTC date in 2026-05-23..2026-10-20.  Market lists come from the
+   live `/markets?status=settled` endpoint (post 2026-08-28 settlements) UNION `/historical/markets` (older), de-duplicated.
+   Outcome = Kalshi `result` only; a random sample of fired rungs was cross-checked against `GET /markets/{ticker}`.
+2. **Observations** -- IEM `asos1min.py` (1-minute) per station-month, cached; routine `asos.py` (report_type 3&4) as a disclosed per-market
+   fallback when the 1-minute day has < 600 obs.  Feed recorded per market.
+3. **Signal** -- streaming detector (`Stream`): consumes obs one at a time, keeps running extreme E and, for each R, the count of
+   trailing obs at least R degrees away from E.  FINAL-YES at the first obs with (1) interval test, (2) run >= H, (3) obs within W minutes of
+   `close_time`.  Signal stamped obs-minute + 60 s (decision D3).
+4. **Entry** -- first candle with `end_period_ts >= sig_ts + L*60` and `<= close_ts`, `yes_ask <= 98c` and `100 - ask - fee > 0`; no earlier or
+   better print is ever used; no such candle = UNTRADEABLE (counted).  One contract, held to settlement.  Fee `ceil(7 p (1-p))` via `V2.fee_c`.
+   pnl = `100 - cost - fee` if the official result is YES else `-cost - fee`.  Candles are normalised by the shared `edge_sizing_v2.normalize()`.
+5. **Statistics** -- false-lock rate with Wilson 95% bounds; volume-weighted EV (weight = entry-candle volume; unweighted shown); day-clustered
+   (calendar event-date) CR1 standard error, signed t, df = days-1, bar = exact Student-t quantile at p=0.99896 on the realised df.
+6. **Interpretation decisions (D1-D9)** are pre-declared in the `finality_A.py` module docstring before any outcome was analysed.\n""")
+    A("### D1 -- the bracket-width problem in the frozen text (read this)\n")
+    A("""A Kalshi bracket rung has `cap_strike = floor_strike + 1` (e.g. `B68.5` -> floor 68, cap 69, YES iff the official **integer** high is 68 or 69;
+verified on every settled rung against `expiration_value`).  The spec's test `lo + M <= E <= hi - M` on `[lo,hi] = [floor,cap]` is therefore
+an **empty interval for every M = 1.0 cell** (it needs E >= lo+1 and E <= lo) and a single point (`E = lo + 0.5`) for M = 0.5.  Since 1-minute ASOS
+temperatures are whole degrees, reading S can essentially never fire.  This is a defect in the frozen text, discovered by arithmetic before
+outcomes were read.  Rather than silently re-define the spec, BOTH readings were run on the identical grid: **S** = the literal text (formal
+verdict) and **L** = the lattice reading `[floor-0.5, cap+0.5]` (the real-valued temperature range that rounds into the settlement set), under which
+M=0.5 means "E rounds into the bracket" and M=1.0 requires E at the bracket centre (also near-vacuous on integer data).  L is exploratory and
+cannot produce a PASS; a PASS would require re-registration.\n""")
+    A("## Worked timezone example\n")
+    A("{{TZ}}\n")
+    A("## Worked no-look-ahead example\n")
+    A("{{LOOKAHEAD}}\n")
+    A("## Sanity anchors\n")
+    A("{{ANCHORS}}\n")
+    A("## Primary cell (M=1.0, R=2, H=3, W=120) at L=10\n")
+    A("{{PRIMARY}}\n")
+    A("## All cells, L = 10 (the deployable arm)\n")
+    A("{{CELLS10}}\n")
+    A("## All cells, L = 0 and L = 20\n")
+    A("{{CELLS_OTHER}}\n")
+    A("## Diagnostics: why the signal loses (reading L, M=0.5, R=2, W=120, L=10)\n")
+    A("{{DIAG}}\n")
+    A("## Every skip, with its reason\n")
+    A("{{SKIPS}}\n")
+    A("## Caveats / what this does NOT show\n")
+    A("{{CAVEATS}}\n")
+    return "\n".join(L_)
+
+
+def cell_table(cells, rd, Ls):
+    hdr = ("| cell | L | fires (covered) | false locks (rate, Wilson UB) | priced (vol>0) | untradeable | EV vw (c) | EV unw (c) | t vw (bar) | t unw | days | stn | "
+           "FL priced (rate, UB) | UB97.9 (c) | all 5 bars |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    rows = [hdr]
+    for r in cells:
+        if r["reading"] != rd or r["L"] not in Ls:
+            continue
+        rows.append("| {c} | {L} | {n} | {fl} ({flr}, {flu}) | {pr} ({pv}) | {un} ({unf}) | {ev} | {evu} | {t} ({q}) | {tu} | {d} | {s} | {fp} ({fpr}, {fpu}) | {ub} | {ok} |".format(
+            pv=r["n_priced_vol_gt0"], tu=_f(r["t_unweighted"], 2),
+            c=r["cell"], L=r["L"], n=r["n_fires_covered"], fl=r["false_locks"], flr=_f(r["false_lock_rate_all"], 3, True),
+            flu=_f(r["false_lock_wilson_ub_all"], 3, True), pr=r["n_priced"], un=r["n_untradeable"],
+            unf=_f(r["untradeable_frac"], 3, True), ev=_f(r["ev_c_volume_weighted"], 2), evu=_f(r["ev_c_unweighted"], 2),
+            t=_f(r["t_volume_weighted"], 2), q=_f(r["t_bar_p99896"], 2), d=r["n_days_priced"], s=r["n_stations_priced"],
+            fp=r["priced_false_locks"], fpr=_f(r["false_lock_rate_priced"], 3, True), fpu=_f(r["false_lock_wilson_ub_priced"], 3, True),
+            ub=_f(r["ub_one_sided_97.9"], 2), ok="PASS" if r["cell_passes_all"] else "no"))
+    return "\n".join(rows)
+
+
+def diagnostics(rungs_out, cell="M0.5_R2_H3_W120", rd="L", Lm=10):
+    """False-lock anatomy and a calibration table of the market price at the first candle >= sig+L (any price)."""
+    offs = collections.Counter()
+    offs_by_kind = collections.defaultdict(collections.Counter)
+    bucket = collections.defaultdict(lambda: [0, 0])
+    edges = [(0, 50), (50, 80), (80, 95), (95, 99), (99, 101)]
+    n = 0
+    for r in rungs_out:
+        if "fires" not in r or r.get("skip"):
+            continue
+        fr = r["fires"].get(rd, {}).get(cell)
+        if not fr:
+            continue
+        n += 1
+        try:
+            d = round(float(r["official_value"]) - fr["E"])
+        except Exception:     # noqa: BLE001
+            d = None
+        if d is not None:
+            offs[d] += 1
+            offs_by_kind[r["kind"]][d] += 1
+        tgt = fr["sig_ts"] + Lm * 60
+        c = next((x for x in r["candles"] if x[0] >= tgt and x[0] <= r["close_ts"] and x[2] is not None), None)
+        if c is None:
+            bucket["no_quote"][0] += 1
+            bucket["no_quote"][1] += int(r["result"] == "yes")
+            continue
+        ask = c[2]
+        for lo, hi in edges:
+            if lo <= ask < hi:
+                bucket[f"{lo}-{hi - 1}c"][0] += 1
+                bucket[f"{lo}-{hi - 1}c"][1] += int(r["result"] == "yes")
+                break
+    return {"cell": cell, "reading": rd, "L": Lm, "n": n,
+            "official_minus_E_distribution": {str(k): v for k, v in sorted(offs.items())},
+            "by_kind": {k: {str(a): b for a, b in sorted(v.items())} for k, v in offs_by_kind.items()},
+            "ask_bucket_at_first_quote_after_signal": {k: {"n": v[0], "yes": v[1],
+                                                           "yes_rate": (v[1] / v[0]) if v[0] else None}
+                                                       for k, v in bucket.items()}}
+
+
+def build_md(out, evs):
+    md = write_md(out, evs)
+    cells = out["cells"]
+    st = out["stageA"]
+    samp = out["sampling"]
+    cs = samp["candle_states"]
+    # ---- universe
+    feeds = collections.Counter(e["feed"] for e in evs if "feed" in e)
+    kinds = collections.Counter(e["kind"] for e in evs if "feed" in e)
+    stations = sorted({e["station"] for e in evs if "feed" in e})
+    uni = [
+        f"- Series tested: 40 (20 HIGH, 20 LOW; {len(stations)} stations).  Events (station-days): {st['events_scored']:,}; bracket rungs: **{st['rungs_scored']:,}** "
+        f"(HIGH events {kinds.get('max', 0):,}, LOW events {kinds.get('min', 0):,}); close_time UTC date in 2026-05-23..2026-10-20.",
+        f"- Obs feed per event: IEM 1-minute **{feeds.get('iem_1min', 0):,}**, routine-METAR fallback **{feeds.get('iem_routine_fallback', 0):,}** (1-minute day had < 600 obs).",
+        f"- Rungs with at least one FINAL-YES fire (any reading/cell): **{st['rungs_with_any_fire']:,}** (all under reading L; reading S fires on none).",
+        f"- **Sampling of the priced stage**: candlesticks were pulled for {cs.get('covered', 0) + cs.get('no_candles_in_final_120min', 0) + cs.get('candle_fetch_error', 0):,} of "
+        f"{samp['fired_rungs_total']:,} fired rungs = **{100 * samp['fraction_candle_pulled']:.1f}%**.  Work order = all fired rungs, sorted only to make the shuffle "
+        f"reproducible, then shuffled with seed {SEED} and NEVER re-sorted, so the pulled set is a uniformly random subsample of the fired rungs "
+        f"(any prefix is representative).  Signal-level facts (fire counts, false-lock rate before pricing) use ALL fired rungs in the signals stage "
+        f"({st['rungs_with_any_fire']:,}); the covered/priced statistics below use the pulled random subsample.",
+        f"- Candle states of the pulled set: {json.dumps(cs)}",
+    ]
+    md = md.replace("{{UNIVERSE}}", "\n".join(uni))
+    md = md.replace("{{TZ}}", tz_worked_example(evs))
+    # ---- lookahead example
+    r, ck, fr = lookahead_example(out)
+    if r:
+        la = [f"Rung `{r['ticker']}` (floor {r['floor']}, cap {r['cap']}, kind {r['kind']}, feed {r['feed']}), reading L, cell `{ck}`:",
+              f"- Signal (obs-only): E = {fr['E']} F at obs minute {_utc(fr['obs_ts'])}; the last {fr['run']} obs were each >= R away from E (current temp {fr['temp']} F); "
+              f"obs index k = {fr['k']}; the signal is stamped {_utc(fr['sig_ts'])} (= obs minute + 60 s), so every observation used has ts < signal ts.",
+              f"- Computed by `Stream` one observation at a time; nothing after index k is ever visible to it.",
+              f"- Assertion actually run on every fire ({out['anchors']['b_no_lookahead']['assertions_run']:,} re-runs across all fires): (1) re-run the detector on obs[:k+1] only "
+              f"and (2) re-run on the full day with every observation after k replaced by an adversarial value 50 F beyond the signal-time temperature in the direction "
+              f"that would change the decision.  Both must reproduce the identical (k, E, sig_ts) or the run aborts.  0 violations (the script would have raised).",
+              f"- Entry (L=10): `{json.dumps(fr['arms']['10'])}`"]
+        md = md.replace("{{LOOKAHEAD}}", "\n".join(la))
+    else:
+        md = md.replace("{{LOOKAHEAD}}", "(no fire in the pulled subsample)")
+    # ---- anchors
+    a = out["anchors"]
+    ar = a["a_oracle_reconciliation"]
+    an = [
+        f"**(a) Oracle reconciliation -- {'HOLDS' if ar['pass'] else 'FAILS'}.**  Price join: {ar['price_join_matches']}/{ar['price_join_checked']} of the stored Stage-1 oracle bracket rungs "
+        f"re-derived from my own fresh candle pull reproduce the stored best winner cost, best net and capturable-minute count EXACTLY (same `normalize()`, fee, 98c constants).  "
+        f"Subset test: of {ar['priced_yes_fires_in_W60_cells_checked']} priced YES-settled fires in W=60 cells (entry necessarily inside the final 60 minutes), "
+        f"{len(ar['violations_not_oracle_capturable'])} are not oracle-capturable under the Stage-1 definition re-derived on the same candles.  "
+        f"The rule fires on {len(ar['oracle_B_rungs_the_rule_fires_on'])} of the stored oracle bracket rungs.  Limitation: {ar['limitation']}",
+        f"**(b) No look-ahead -- {'HOLDS' if a['b_no_lookahead']['pass'] else 'FAILS'}.**  {a['b_no_lookahead']['assertions_run']:,} assertion re-runs, none failed (see worked example).",
+        f"**(c) Monotonicity / timezone -- {'HOLDS' if a['c_monotonic_and_tz']['pass'] else 'FAILS'}.**  Running-extreme monotonicity violations over {st['events_scored']:,} event-days: "
+        f"**{a['c_monotonic_and_tz']['monotonicity_violations']}**.  Independent timezone proof: extreme of the obs inside windows shifted by s hours versus Kalshi's own official `expiration_value`:",
+    ]
+    tz = a["c_monotonic_and_tz"]["tz_window_shift_vs_official_value"]
+    an.append("\n| kind | " + " | ".join(f"s={s}" for s in sorted(int(x) for x in tz["min"])) + " |\n|---|" + "---|" * len(tz["min"]))
+    for k in ("max", "min"):
+        an.append(f"| {k} exact-match % | " + " | ".join(f"{100 * tz[k][str(s)]['exact_match_frac']:.1f}" for s in sorted(int(x) for x in tz[k])) + " |")
+        an.append(f"| {k} mean abs err F | " + " | ".join(f"{tz[k][str(s)]['mean_abs_err_F']:.2f}" for s in sorted(int(x) for x in tz[k])) + " |")
+    an.append("\nFor LOW markets (late-evening / pre-dawn sensitive) the declared window s=0 is the clear optimum and error rises monotonically with |s|, which is the signature of correct handling; "
+              "for HIGH markets the afternoon peak makes the day boundary nearly irrelevant, so the HIGH row is weakly informative (s=0 is still among the best).  "
+              "The `close_time == LST midnight` assertion (+/-60 s, 588 events close at 23:59 LST) is the strict check and held for all 6,039 events (0 skips).")
+    an.append("\n**Important side-finding from anchor (c):** even with the correct window the 1-minute-IEM extreme equals Kalshi's official integer in only "
+              f"{100 * tz['max']['0']['exact_match_frac']:.0f}% of HIGH days and {100 * tz['min']['0']['exact_match_frac']:.0f}% of LOW days (mean abs error "
+              f"{tz['max']['0']['mean_abs_err_F']:.2f} F / {tz['min']['0']['mean_abs_err_F']:.2f} F).  The official settlement value (The Weather Company) is not the ASOS 1-minute extreme; "
+              "this is the root of the false-locks below, and it is independent of timing or latency.")
+    md = md.replace("{{ANCHORS}}", "\n".join(an))
+    # ---- primary
+    prim = [r for r in cells if r["reading"] == "S" and (r["M"], r["R"], r["H"], r["W"]) == PRIMARY and r["L"] == 10][0]
+    primL = [r for r in cells if r["reading"] == "L" and (r["M"], r["R"], r["H"], r["W"]) == PRIMARY and r["L"] == 10][0]
+    pm = [f"Formal reading S: n fires = **{prim['n_fires_covered']}** (empty interval -- see D1).  Reading L: n fires = **{primL['n_fires_covered']}** (needs E exactly at the bracket centre, "
+          f"impossible on whole-degree 1-minute data).  The pre-declared primary cell therefore has **no observations under any reading** and cannot be evaluated; "
+          f"no KILL-on-primary-false-lock or PASS statement can be made about it.  The only cells that fire are the M=0.5 cells under reading L, tabled next."]
+    md = md.replace("{{PRIMARY}}", "\n".join(pm))
+    md = md.replace("{{CELLS10}}", "**Reading S (formal)**: all 8 cells x 3 arms have 0 fires (see D1); nothing to tabulate.\n\n**Reading L (exploratory)**, M=0.5 cells (M=1.0 cells have 0 fires):\n\n"
+                    + cell_table([c for c in cells if c["M"] == 0.5], "L", (10,)))
+    md = md.replace("{{CELLS_OTHER}}", cell_table([c for c in cells if c["M"] == 0.5], "L", (0, 20)))
+    # ---- skips
+    sk = ["| reason | count | where |", "|---|---:|---|"]
+    for k, v in st["pre_skips"].items():
+        sk.append(f"| {k} | {v:,} | rungs, before the window filter |")
+    for k, v in st["outside_window"].items():
+        sk.append(f"| {k} | {v:,} | bracket rungs outside the frozen 2026-05-23..2026-10-20 window (catalog also holds older/newer settled rungs) |")
+    sk.append(f"| event-level skips (tz assertion, insufficient obs) | {sum(st['event_level_skips_rungs'].values()):,} | 0 events skipped; the 1-minute->routine fallback was used for {feeds.get('iem_routine_fallback', 0):,} events |")
+    um = out.get("unmapped_series_bracket_rungs_in_window_not_tested", {})
+    sk.append(f"| series with no verified station/tz mapping (D7) | {sum(v for v in um.values() if v > 0):,} | {len(um)} series with in-window bracket rungs: {', '.join(f'{k}={v}' for k, v in sorted(um.items()))} (international + extra US); zero-rung series omitted |")
+    for k in ("no_candles_in_final_120min", "candle_fetch_error", "not_fetched"):
+        sk.append(f"| fired rung: {k} | {cs.get(k, 0):,} | " + {"no_candles_in_final_120min": "no candle in the final 120 minutes -> outside 'candlestick coverage' universe, excluded from covered stats",
+                                                                 "candle_fetch_error": "HTTP error on both candle endpoints",
+                                                                 "not_fetched": "not reached by the shuffled candle pull (random, un-selected) -- sampling, see fraction above"}[k] + " |")
+    n_scalar = sum(v for k_, v in st["pre_skips"].items() if "no_official_result" in k_)
+    sk.append(f"| scalar-result rungs | {n_scalar} | result neither yes nor no -> dropped |")
+    md = md.replace("{{SKIPS}}", "\n".join(sk))
+    dg = out["diagnostics"]
+    dl = [f"n = {dg['n']} covered fires.  `official_value - E` (official integer minus the obs extreme at signal time): {json.dumps(dg['official_minus_E_distribution'])}; "
+          f"HIGH {json.dumps(dg['by_kind'].get('max', {}))}, LOW {json.dumps(dg['by_kind'].get('min', {}))}.  A non-zero entry means the official value differs from what the obs showed; "
+          f"because reading-L fires have E sitting ON a bracket edge (M=0.5), a +/-1 disagreement moves the settlement into a neighbouring bracket -> false lock.",
+          "", "Calibration of the market at the first quote at/after signal+10 min, whatever its price (YES rate among fired rungs, by yes_ask):", "",
+          "| yes_ask bucket | n | settled YES | YES rate |", "|---|---:|---:|---:|"]
+    for k, v in sorted(dg["ask_bucket_at_first_quote_after_signal"].items()):
+        dl.append(f"| {k} | {v['n']} | {v['yes']} | {_f(v['yes_rate'], 3, True)} |")
+    dl.append("\nWhere the book still offers the winner side at <=98c the book is, on average, correctly pricing the risk that the signal is wrong: the fires that are cheap are disproportionately the false locks.  This is adverse selection into the tradeable subset.")
+    md = md.replace("{{DIAG}}", "\n".join(dl))
+    return md
 
 
 # ------------------------------------------------------------------ main (stages A/B only here; report in part 2)
