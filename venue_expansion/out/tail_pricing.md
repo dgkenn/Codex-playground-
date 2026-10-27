@@ -2,7 +2,17 @@
 
 **VERDICT: INSUFFICIENT**  (frozen PASS/KILL rule applied verbatim; numbers beside each bar in section 5)
 
-Sample: 6 of 1408 hourly events (0.4%), 5 of 60 UTC days; 1,128 strikes, 4,512 strike-T observations, 2,131 priced sales (all buckets).
+Sample: 503 of 1408 hourly events (35.7%), 60 of 60 UTC days; 92,560 strikes, 370,240 strike-T observations, 199,178 priced sales (all buckets).
+
+## 0. Plain reading (written after the run; numbers are from the tables below)
+
+* **Calibrated, not overpriced.** Of 28 longshot cells (7 buckets x 4 T) the mean executable bid lies inside the realised-rate Wilson 95% CI in 27; the one exception is T=30, 6-10c (rate 3.94% vs bid 7.83c). There is no monotone favourite-longshot gap: signs of (rate - bid) flip across buckets and across T.
+* **No cell clears EV or the Bonferroni bar.** Best t anywhere is +2.15 (T=30, 6-10c, EV +2.89c, n=330 < 400 floor, bar 3.27); its neighbours in T are +1.58c (T=15), -0.18c (T=45), -2.96c (T=5), i.e. consistent with noise. Pooled over all sales at bid <= 40c, mean net is negative at every T (-1.16, -0.17, -0.69, -1.13 c/contract at T=5/15/30/45).
+* **The 1c fee is the whole edge.** ceil(7p(1-p)) = 1c for any bid up to 17c, so selling at 1c can never net more than 0 (NO) and selling at 2-3c nets at most 1-2c against a 98-100c loss.
+* **Untradeable fraction is ~45-48% of strike-T observations, all of it yes_bid = 0 (zero 'no candle').** It is concentrated in the dead tail: among strikes whose last ask is 1c, 100% have bid 0; at ask 2c 11-37%; at ask 3c 0-13%; above that under 5%. The 95% untradeable pattern that closed weather does NOT replicate beyond the 1c tail here; the ladder has real two-sided quotes from 2c up.
+* **Verdict is INSUFFICIENT, and it is structural, not a coverage shortfall.** The frozen KILL clause needs a 97.9% upper bound < +0.2c in every n>=400 cell; cells at 6-40c have a day-clustered SE of 1.5-2.6c (binary payoff of +b vs -(100-b)), so even at 100% coverage (SE shrinks by ~sqrt(0.357) = 0.6x) the bound stays above +0.2c (e.g. T=45, 6-10c: -0.18 + 2.1 x 0.9 ~ 1.7c). The clause is practically unfireable above ~5c. In substance: no evidence of exploitable overpricing, point estimates are negative, and no PASS was close.
+* **Mirror observation (outside the frozen family, untested as a strategy):** at bid >= 81c the realised YES rate exceeds the bid by ~1.0c in every T (99.77-99.95% vs ~98.9c), so SELLING favourites loses ~2c/contract (t about -55 to -180). That is the other side of the same book; testing a BUY of YES would require the ask and was not run here.
+* **Caveats:** 35.7% of hours (503 of 1408; all 60 days covered) -- the stop was a wall-clock budget fixed before looking at results, API throughput was ~3-6 hours/minute-block under 429s. Entry uses the literal 'last candle at or before close-T' rule; candles are sparse for quiet strikes so the median candle age is 60s but p90 is 540-1140s, i.e. some quotes are up to ~19 min old; staleness sensitivity was not run (no filter is permitted). A 6-hour smoke test of the pipeline (first rows of the calibration printed, ~2k entries) was run before the full fetch; nothing in the code changed in response to it other than report formatting.
 
 ## 1. Anchor (c): calibration table (reported whatever the verdict)
 
@@ -13,61 +23,61 @@ Realised YES rate with Wilson 95% CI, against the executable `yes_bid` the selle
 
 | bucket (bid) | n priced | YES | realised YES rate | Wilson 95% CI | mean bid | gap (rate-bid, c) | bid inside CI |
 |---|---:|---:|---:|---|---:|---:|:--:|
-| 1c | 3 | 0 | 0.00% | [0.00%, 56.15%] | 1.00c | -1.00 | yes |
-| 2c | 2 | 0 | 0.00% | [0.00%, 65.76%] | 2.00c | -2.00 | yes |
-| 3c | 1 | 1 | 100.00% | [20.65%, 100.00%] | 3.00c | +97.00 | NO |
-| 4-5c | 0 | 0 | n/a | n/a | n/a | n/a | n/a |
-| 6-10c | 1 | 0 | 0.00% | [0.00%, 79.35%] | 10.00c | -10.00 | yes |
-| 11-20c | 2 | 0 | 0.00% | [0.00%, 65.76%] | 15.50c | -15.50 | yes |
-| 21-40c | 0 | 0 | n/a | n/a | n/a | n/a | n/a |
-| 41-60c (not a longshot; report only) | 2 | 1 | 50.00% | [9.45%, 90.55%] | 55.00c | -5.00 | yes |
-| 61-80c (not a longshot; report only) | 3 | 2 | 66.67% | [20.77%, 93.85%] | 67.33c | -0.67 | yes |
-| 81-100c (not a longshot; report only) | 504 | 504 | 100.00% | [99.24%, 100.00%] | 98.97c | +1.03 | NO |
+| 1c | 212 | 2 | 0.94% | [0.26%, 3.37%] | 1.00c | -0.06 | yes |
+| 2c | 89 | 0 | 0.00% | [0.00%, 4.14%] | 2.00c | -2.00 | yes |
+| 3c | 59 | 2 | 3.39% | [0.93%, 11.54%] | 3.00c | +0.39 | yes |
+| 4-5c | 87 | 3 | 3.45% | [1.18%, 9.65%] | 4.31c | -0.86 | yes |
+| 6-10c | 110 | 11 | 10.00% | [5.68%, 17.02%] | 8.04c | +1.96 | yes |
+| 11-20c | 116 | 13 | 11.21% | [6.67%, 18.23%] | 15.36c | -4.16 | yes |
+| 21-40c | 169 | 54 | 31.95% | [25.39%, 39.32%] | 29.31c | +2.64 | yes |
+| 41-60c (not a longshot; report only) | 139 | 78 | 56.12% | [47.81%, 64.09%] | 49.94c | +6.17 | yes |
+| 61-80c (not a longshot; report only) | 153 | 113 | 73.86% | [66.37%, 80.17%] | 71.60c | +2.25 | yes |
+| 81-100c (not a longshot; report only) | 47,400 | 47,375 | 99.95% | [99.92%, 99.96%] | 98.93c | +1.02 | NO |
 
 ### T = 15 minutes before close
 
 | bucket (bid) | n priced | YES | realised YES rate | Wilson 95% CI | mean bid | gap (rate-bid, c) | bid inside CI |
 |---|---:|---:|---:|---|---:|---:|:--:|
-| 1c | 5 | 0 | 0.00% | [0.00%, 43.45%] | 1.00c | -1.00 | yes |
-| 2c | 2 | 0 | 0.00% | [0.00%, 65.76%] | 2.00c | -2.00 | yes |
-| 3c | 1 | 0 | 0.00% | [0.00%, 79.35%] | 3.00c | -3.00 | yes |
-| 4-5c | 1 | 0 | 0.00% | [0.00%, 79.35%] | 4.00c | -4.00 | yes |
-| 6-10c | 5 | 0 | 0.00% | [0.00%, 43.45%] | 7.20c | -7.20 | yes |
-| 11-20c | 3 | 0 | 0.00% | [0.00%, 56.15%] | 18.67c | -18.67 | yes |
-| 21-40c | 2 | 0 | 0.00% | [0.00%, 65.76%] | 31.50c | -31.50 | yes |
-| 41-60c (not a longshot; report only) | 3 | 1 | 33.33% | [6.15%, 79.23%] | 46.33c | -13.00 | yes |
-| 61-80c (not a longshot; report only) | 4 | 4 | 100.00% | [51.01%, 100.00%] | 69.75c | +30.25 | yes |
-| 81-100c (not a longshot; report only) | 503 | 503 | 100.00% | [99.24%, 100.00%] | 98.85c | +1.15 | NO |
+| 1c | 400 | 2 | 0.50% | [0.14%, 1.80%] | 1.00c | -0.50 | yes |
+| 2c | 175 | 2 | 1.14% | [0.31%, 4.07%] | 2.00c | -0.86 | yes |
+| 3c | 149 | 4 | 2.68% | [1.05%, 6.70%] | 3.00c | -0.32 | yes |
+| 4-5c | 158 | 6 | 3.80% | [1.75%, 8.04%] | 4.45c | -0.65 | yes |
+| 6-10c | 234 | 12 | 5.13% | [2.96%, 8.75%] | 7.71c | -2.58 | yes |
+| 11-20c | 250 | 39 | 15.60% | [11.63%, 20.61%] | 15.15c | +0.45 | yes |
+| 21-40c | 322 | 88 | 27.33% | [22.75%, 32.44%] | 29.83c | -2.50 | yes |
+| 41-60c (not a longshot; report only) | 255 | 131 | 51.37% | [45.26%, 57.44%] | 50.57c | +0.80 | yes |
+| 61-80c (not a longshot; report only) | 333 | 250 | 75.08% | [70.16%, 79.42%] | 70.91c | +4.16 | yes |
+| 81-100c (not a longshot; report only) | 47,176 | 47,119 | 99.88% | [99.84%, 99.91%] | 98.85c | +1.03 | NO |
 
 ### T = 30 minutes before close
 
 | bucket (bid) | n priced | YES | realised YES rate | Wilson 95% CI | mean bid | gap (rate-bid, c) | bid inside CI |
 |---|---:|---:|---:|---|---:|---:|:--:|
-| 1c | 5 | 0 | 0.00% | [0.00%, 43.45%] | 1.00c | -1.00 | yes |
-| 2c | 5 | 0 | 0.00% | [0.00%, 43.45%] | 2.00c | -2.00 | yes |
-| 3c | 0 | 0 | n/a | n/a | n/a | n/a | n/a |
-| 4-5c | 5 | 0 | 0.00% | [0.00%, 43.45%] | 4.20c | -4.20 | yes |
-| 6-10c | 4 | 0 | 0.00% | [0.00%, 48.99%] | 8.00c | -8.00 | yes |
-| 11-20c | 4 | 0 | 0.00% | [0.00%, 48.99%] | 15.50c | -15.50 | yes |
-| 21-40c | 6 | 1 | 16.67% | [3.01%, 56.35%] | 32.00c | -15.33 | yes |
-| 41-60c (not a longshot; report only) | 3 | 2 | 66.67% | [20.77%, 93.85%] | 54.00c | +12.67 | yes |
-| 61-80c (not a longshot; report only) | 6 | 3 | 50.00% | [18.76%, 81.24%] | 71.83c | -21.83 | yes |
-| 81-100c (not a longshot; report only) | 504 | 502 | 99.60% | [98.56%, 99.89%] | 98.77c | +0.83 | yes |
+| 1c | 602 | 5 | 0.83% | [0.36%, 1.93%] | 1.00c | -0.17 | yes |
+| 2c | 297 | 5 | 1.68% | [0.72%, 3.88%] | 2.00c | -0.32 | yes |
+| 3c | 178 | 5 | 2.81% | [1.21%, 6.41%] | 3.00c | -0.19 | yes |
+| 4-5c | 270 | 11 | 4.07% | [2.29%, 7.15%] | 4.45c | -0.37 | yes |
+| 6-10c | 330 | 13 | 3.94% | [2.32%, 6.62%] | 7.83c | -3.89 | NO |
+| 11-20c | 377 | 58 | 15.38% | [12.09%, 19.37%] | 14.86c | +0.53 | yes |
+| 21-40c | 470 | 141 | 30.00% | [26.03%, 34.29%] | 29.85c | +0.15 | yes |
+| 41-60c (not a longshot; report only) | 407 | 196 | 48.16% | [43.34%, 53.01%] | 50.82c | -2.66 | yes |
+| 61-80c (not a longshot; report only) | 474 | 339 | 71.52% | [67.30%, 75.40%] | 71.32c | +0.19 | yes |
+| 81-100c (not a longshot; report only) | 46,975 | 46,872 | 99.78% | [99.73%, 99.82%] | 98.78c | +1.00 | NO |
 
 ### T = 45 minutes before close
 
 | bucket (bid) | n priced | YES | realised YES rate | Wilson 95% CI | mean bid | gap (rate-bid, c) | bid inside CI |
 |---|---:|---:|---:|---|---:|---:|:--:|
-| 1c | 5 | 0 | 0.00% | [0.00%, 43.45%] | 1.00c | -1.00 | yes |
-| 2c | 3 | 0 | 0.00% | [0.00%, 56.15%] | 2.00c | -2.00 | yes |
-| 3c | 4 | 0 | 0.00% | [0.00%, 48.99%] | 3.00c | -3.00 | yes |
-| 4-5c | 3 | 0 | 0.00% | [0.00%, 56.15%] | 4.67c | -4.67 | yes |
-| 6-10c | 4 | 0 | 0.00% | [0.00%, 48.99%] | 7.00c | -7.00 | yes |
-| 11-20c | 6 | 1 | 16.67% | [3.01%, 56.35%] | 14.17c | +2.50 | yes |
-| 21-40c | 5 | 2 | 40.00% | [11.76%, 76.93%] | 29.60c | +10.40 | yes |
-| 41-60c (not a longshot; report only) | 8 | 2 | 25.00% | [7.15%, 59.07%] | 48.38c | -23.38 | yes |
-| 61-80c (not a longshot; report only) | 5 | 4 | 80.00% | [37.55%, 96.38%] | 70.40c | +9.60 | yes |
-| 81-100c (not a longshot; report only) | 499 | 499 | 100.00% | [99.24%, 100.00%] | 98.68c | +1.32 | NO |
+| 1c | 654 | 9 | 1.38% | [0.73%, 2.59%] | 1.00c | +0.38 | yes |
+| 2c | 292 | 7 | 2.40% | [1.17%, 4.86%] | 2.00c | +0.40 | yes |
+| 3c | 231 | 10 | 4.33% | [2.37%, 7.78%] | 3.00c | +1.33 | yes |
+| 4-5c | 303 | 15 | 4.95% | [3.02%, 8.01%] | 4.41c | +0.54 | yes |
+| 6-10c | 431 | 30 | 6.96% | [4.92%, 9.76%] | 7.78c | -0.82 | yes |
+| 11-20c | 471 | 67 | 14.23% | [11.36%, 17.67%] | 15.16c | -0.93 | yes |
+| 21-40c | 565 | 167 | 29.56% | [25.94%, 33.45%] | 30.18c | -0.62 | yes |
+| 41-60c (not a longshot; report only) | 502 | 256 | 51.00% | [46.63%, 55.34%] | 50.57c | +0.42 | yes |
+| 61-80c (not a longshot; report only) | 606 | 437 | 72.11% | [68.41%, 75.53%] | 71.24c | +0.87 | yes |
+| 81-100c (not a longshot; report only) | 46,757 | 46,649 | 99.77% | [99.72%, 99.81%] | 98.73c | +1.04 | NO |
 
 ## 2. EV table per cell (selling 1 YES at `yes_bid`, fee-inclusive, cents per contract)
 
@@ -75,122 +85,128 @@ Bonferroni: 28 comparisons, two-sided alpha = 0.00179, bar = Student-t quantile 
 
 | T | bucket | n | days | EV eq-wt | EV vol-wt | t (eq) | bar | t (vol) | t (hour-clust) | UB97.9% | U_T | U_ask | nz-vol | PASS gates 1/2/3/4/5 |
 |--:|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:--:|
-| 5 | 1 | 3 | 3 | 0.00 | 0.00 | n/a | 23.63 | n/a | n/a | 0.00 | 54.1% | 100.0% | 100.0% | n/n/n/Y/Y |
-| 5 | 2 | 2 | 2 | 1.00 | 1.00 | n/a | 356.51 | n/a | n/a | 1.00 | 54.1% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 5 | 3 | 1 | 1 | -98.00 | -98.00 | n/a | n/a | n/a | n/a | n/a | 54.1% | 0.0% | 100.0% | n/n/n/Y/Y |
-| 5 | 4-5 | 0 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | 54.1% | 0.0% | n/a | n/n/n/Y/n |
-| 5 | 6-10 | 1 | 1 | 9.00 | 9.00 | n/a | n/a | n/a | n/a | n/a | 54.1% | n/a | 100.0% | Y/n/n/Y/Y |
-| 5 | 11-20 | 2 | 2 | 14.00 | 12.24 | 4.67 | 356.51 | 6.23 | 4.67 | 59.41 | 54.1% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 5 | 21-40 | 0 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | 54.1% | n/a | n/a | n/n/n/Y/n |
-| 15 | 1 | 5 | 4 | 0.00 | 0.00 | n/a | 10.62 | n/a | n/a | 0.00 | 53.1% | 100.0% | 80.0% | n/n/n/Y/Y |
-| 15 | 2 | 2 | 2 | 1.00 | 1.00 | n/a | 356.51 | n/a | n/a | 1.00 | 53.1% | 28.6% | 100.0% | Y/n/n/Y/Y |
-| 15 | 3 | 1 | 1 | 2.00 | 2.00 | n/a | n/a | n/a | n/a | n/a | 53.1% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 15 | 4-5 | 1 | 1 | 3.00 | 3.00 | n/a | n/a | n/a | n/a | n/a | 53.1% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 15 | 6-10 | 5 | 4 | 6.20 | 6.07 | 10.55 | 10.62 | 9.64 | 8.44 | 8.21 | 53.1% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 15 | 11-20 | 3 | 3 | 17.00 | 17.08 | 29.44 | 23.63 | 20.98 | 29.44 | 19.73 | 53.1% | 0.0% | 100.0% | Y/Y/n/Y/Y |
-| 15 | 21-40 | 2 | 1 | 29.50 | 28.93 | n/a | n/a | n/a | 6.56 | n/a | 53.1% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 30 | 1 | 5 | 5 | 0.00 | 0.00 | n/a | 7.39 | n/a | n/a | 0.00 | 52.0% | 100.0% | 100.0% | n/n/n/Y/Y |
-| 30 | 2 | 5 | 4 | 1.00 | 1.00 | n/a | 10.62 | n/a | n/a | 1.00 | 52.0% | 44.4% | 100.0% | Y/n/n/Y/Y |
-| 30 | 3 | 0 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | 52.0% | 0.0% | n/a | n/n/n/Y/n |
-| 30 | 4-5 | 5 | 5 | 3.20 | 3.00 | 16.00 | 7.39 | 4952.51 | 16.00 | 3.79 | 52.0% | 0.0% | 80.0% | Y/Y/n/Y/Y |
-| 30 | 6-10 | 4 | 3 | 7.00 | 7.72 | 16.17 | 23.63 | 31.57 | 7.67 | 9.05 | 52.0% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 30 | 11-20 | 4 | 4 | 14.25 | 14.45 | 15.06 | 10.62 | 11.00 | 15.06 | 17.48 | 52.0% | 0.0% | 100.0% | Y/Y/n/Y/Y |
-| 30 | 21-40 | 6 | 5 | 13.33 | 16.99 | 0.81 | 7.39 | 1.15 | 0.85 | 61.66 | 52.0% | 0.0% | 100.0% | Y/n/n/Y/Y |
-| 45 | 1 | 5 | 5 | 0.00 | 0.00 | n/a | 7.39 | n/a | n/a | 0.00 | 52.0% | 100.0% | 80.0% | n/n/n/Y/Y |
-| 45 | 2 | 3 | 3 | 1.00 | 1.00 | n/a | 23.63 | n/a | n/a | 1.00 | 52.0% | 16.7% | 100.0% | Y/n/n/Y/Y |
-| 45 | 3 | 4 | 4 | 2.00 | 2.00 | n/a | 10.62 | n/a | n/a | 2.00 | 52.0% | 25.0% | 100.0% | Y/n/n/Y/Y |
-| 45 | 4-5 | 3 | 3 | 3.67 | 4.00 | 11.00 | 23.63 | n/a | 11.00 | 5.24 | 52.0% | 0.0% | 66.7% | Y/n/n/Y/Y |
-| 45 | 6-10 | 4 | 3 | 6.00 | 6.07 | 13.86 | 23.63 | 14.05 | 14.70 | 8.05 | 52.0% | 14.3% | 100.0% | Y/n/n/Y/Y |
-| 45 | 11-20 | 6 | 5 | -3.67 | 12.18 | -0.20 | 7.39 | 3.65 | -0.21 | 49.88 | 52.0% | 0.0% | 100.0% | n/n/n/Y/Y |
-| 45 | 21-40 | 5 | 4 | -12.40 | -10.72 | -0.62 | 10.62 | -0.38 | -0.53 | 55.39 | 52.0% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 5 | 1 | 212 | 60 | -0.94 | -0.68 | -1.43 | 3.27 | -1.21 | -1.42 | 0.43 | 47.6% | 100.0% | 99.5% | n/n/n/Y/Y |
+| 5 | 2 | 89 | 50 | 1.00 | 1.00 | n/a | 3.30 | n/a | n/a | 1.00 | 47.6% | 10.7% | 100.0% | Y/n/n/Y/Y |
+| 5 | 3 | 59 | 36 | -1.39 | -1.31 | -0.60 | 3.38 | -0.54 | -0.58 | 3.49 | 47.6% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 5 | 4-5 | 87 | 40 | -0.14 | 0.31 | -0.07 | 3.35 | 0.17 | -0.07 | 3.96 | 47.6% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 5 | 6-10 | 110 | 52 | -2.96 | 0.56 | -1.10 | 3.30 | 0.26 | -1.03 | 2.65 | 47.6% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 5 | 11-20 | 116 | 51 | 2.91 | 1.39 | 0.92 | 3.30 | 0.38 | 1.01 | 9.54 | 47.6% | 0.0% | 100.0% | Y/n/n/Y/Y |
+| 5 | 21-40 | 169 | 53 | -4.64 | -7.18 | -1.23 | 3.29 | -1.67 | -1.30 | 3.21 | 47.6% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 15 | 1 | 400 | 60 | -0.50 | -0.14 | -1.42 | 3.27 | -1.19 | -1.41 | 0.23 | 46.6% | 100.0% | 84.2% | n/n/Y/Y/Y |
+| 15 | 2 | 175 | 58 | -0.14 | -2.72 | -0.18 | 3.28 | -1.05 | -0.18 | 1.54 | 46.6% | 22.7% | 96.0% | n/n/n/Y/Y |
+| 15 | 3 | 149 | 55 | -0.68 | 0.74 | -0.52 | 3.29 | 1.05 | -0.52 | 2.08 | 46.6% | 3.1% | 100.0% | n/n/n/Y/Y |
+| 15 | 4-5 | 158 | 58 | -0.35 | 0.07 | -0.23 | 3.28 | 0.05 | -0.23 | 2.82 | 46.6% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 15 | 6-10 | 234 | 59 | 1.58 | -1.24 | 1.06 | 3.27 | -0.37 | 1.09 | 4.66 | 46.6% | 0.7% | 100.0% | n/n/n/Y/Y |
+| 15 | 11-20 | 250 | 59 | -1.73 | 0.97 | -0.73 | 3.27 | 0.38 | -0.72 | 3.23 | 46.6% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 15 | 21-40 | 322 | 60 | 0.50 | 1.94 | 0.17 | 3.27 | 0.50 | 0.19 | 6.73 | 46.6% | 0.0% | 100.0% | n/n/n/Y/Y |
+| 30 | 1 | 602 | 60 | -0.83 | -0.20 | -2.00 | 3.27 | -0.99 | -1.89 | 0.03 | 45.6% | 100.0% | 68.3% | n/n/Y/Y/Y |
+| 30 | 2 | 297 | 60 | -0.68 | -6.97 | -0.98 | 3.27 | -1.35 | -0.92 | 0.77 | 45.6% | 32.4% | 83.2% | n/n/n/Y/Y |
+| 30 | 3 | 178 | 57 | -0.81 | -0.81 | -0.70 | 3.28 | -0.44 | -0.65 | 1.60 | 45.6% | 6.7% | 89.9% | n/n/n/Y/Y |
+| 30 | 4-5 | 270 | 60 | -0.63 | -5.21 | -0.52 | 3.27 | -1.14 | -0.48 | 1.89 | 45.6% | 3.1% | 94.1% | n/n/n/Y/Y |
+| 30 | 6-10 | 330 | 59 | 2.89 | 5.44 | 2.15 | 3.27 | 8.32 | 2.36 | 5.69 | 45.6% | 3.4% | 99.1% | Y/n/n/Y/Y |
+| 30 | 11-20 | 377 | 60 | -1.75 | -6.04 | -0.95 | 3.27 | -1.60 | -0.87 | 2.06 | 45.6% | 0.0% | 99.5% | n/n/n/Y/Y |
+| 30 | 21-40 | 470 | 60 | -2.15 | -6.89 | -0.82 | 3.27 | -1.89 | -0.89 | 3.27 | 45.6% | 0.2% | 100.0% | n/n/Y/Y/Y |
+| 45 | 1 | 654 | 60 | -1.38 | -0.25 | -2.44 | 3.27 | -1.06 | -2.52 | -0.21 | 45.1% | 100.0% | 59.5% | n/n/Y/Y/Y |
+| 45 | 2 | 292 | 60 | -1.40 | -2.75 | -1.47 | 3.27 | -1.30 | -1.56 | 0.58 | 45.1% | 37.2% | 79.5% | n/n/n/Y/Y |
+| 45 | 3 | 231 | 57 | -2.33 | -0.75 | -1.81 | 3.28 | -0.60 | -1.73 | 0.36 | 45.1% | 12.6% | 82.3% | n/n/n/Y/Y |
+| 45 | 4-5 | 303 | 60 | -1.54 | 0.68 | -1.10 | 3.27 | 0.75 | -1.16 | 1.38 | 45.1% | 1.4% | 93.4% | n/n/n/Y/Y |
+| 45 | 6-10 | 431 | 60 | -0.18 | 1.98 | -0.12 | 3.27 | 1.40 | -0.13 | 2.86 | 45.1% | 4.6% | 96.8% | n/n/Y/Y/Y |
+| 45 | 11-20 | 471 | 60 | -0.34 | 1.55 | -0.19 | 3.27 | 0.86 | -0.19 | 3.38 | 45.1% | 0.2% | 99.6% | n/n/Y/Y/Y |
+| 45 | 21-40 | 565 | 60 | -1.38 | 0.65 | -0.62 | 3.27 | 0.19 | -0.60 | 3.23 | 45.1% | 0.5% | 100.0% | n/n/Y/Y/Y |
 
 Above-40c buckets (reported, cannot PASS):
 
 | T | bucket | n | days | EV eq-wt | EV vol-wt | t (eq) |
 |--:|---|--:|--:|--:|--:|--:|
-| 5 | 41-60 | 2 | 2 | 3.00 | 1.90 | 0.06 |
-| 5 | 61-80 | 3 | 3 | -1.33 | -13.64 | -0.04 |
-| 5 | 81-100 | 504 | 5 | -2.03 | -4.30 | -681.74 |
-| 15 | 41-60 | 3 | 3 | 11.00 | -0.96 | 0.35 |
-| 15 | 61-80 | 4 | 4 | -32.25 | -32.76 | -13.28 |
-| 15 | 81-100 | 503 | 5 | -2.15 | -10.68 | -57.46 |
-| 30 | 41-60 | 3 | 3 | -14.67 | -25.75 | -0.42 |
-| 30 | 61-80 | 6 | 4 | 19.83 | 2.65 | 0.88 |
-| 30 | 81-100 | 504 | 5 | -1.84 | -9.77 | -4.49 |
-| 45 | 41-60 | 8 | 5 | 21.38 | 18.17 | 1.55 |
-| 45 | 61-80 | 5 | 4 | -11.60 | -9.66 | -0.55 |
-| 45 | 81-100 | 499 | 5 | -2.33 | -13.40 | -78.35 |
+| 5 | 41-60 | 139 | 52 | -8.17 | -9.30 | -1.96 |
+| 5 | 61-80 | 153 | 55 | -4.25 | -3.85 | -1.04 |
+| 5 | 81-100 | 47,400 | 60 | -2.02 | -3.25 | -179.68 |
+| 15 | 41-60 | 255 | 57 | -2.80 | -1.44 | -0.84 |
+| 15 | 61-80 | 333 | 60 | -6.16 | -8.35 | -2.36 |
+| 15 | 81-100 | 47,176 | 60 | -2.03 | -2.20 | -104.26 |
+| 30 | 41-60 | 407 | 60 | 0.66 | -1.30 | 0.23 |
+| 30 | 61-80 | 474 | 60 | -2.19 | -5.25 | -0.82 |
+| 30 | 81-100 | 46,975 | 60 | -2.01 | -1.36 | -62.28 |
+| 45 | 41-60 | 502 | 60 | -2.42 | -3.18 | -0.85 |
+| 45 | 61-80 | 606 | 60 | -2.87 | -1.56 | -1.40 |
+| 45 | 81-100 | 46,757 | 60 | -2.04 | -4.31 | -54.05 |
 
 ## 3. Untradeable fraction (what closed weather)
 
 | T | strike-T obs | untradeable | fraction | no candle | bid = 0 | median candle age at entry (s, priced) | p90 age (s) |
 |--:|--:|--:|--:|--:|--:|--:|--:|
-| 5 | 0 | 0 | n/a | 0 | 610 | None | None |
-| 15 | 0 | 0 | n/a | 0 | 599 | None | None |
-| 30 | 0 | 0 | n/a | 0 | 586 | None | None |
-| 45 | 0 | 0 | n/a | 0 | 586 | None | None |
+| 5 | 92,560 | 44,026 | 47.6% | 0 | 44,026 | 60 | 1140 |
+| 15 | 92,560 | 43,108 | 46.6% | 0 | 43,108 | 60 | 1080 |
+| 30 | 92,560 | 42,180 | 45.6% | 0 | 42,180 | 60 | 1080 |
+| 45 | 92,560 | 41,748 | 45.1% | 0 | 41,748 | 60 | 540 |
 
 ## 4. Anchor (e): tail risk (sold-tail P&L is many small wins and few large losses)
 
-Per cell, over SAMPLED hours only (the sample is a random subset of hours; a full-universe day would hold about 234.7x as many positions, so absolute day losses are understated by roughly that factor). Positions in one hourly event are open simultaneously; different hours do not overlap (T <= 45 < 60), so max simultaneous short exposure per day = largest single-hour sum of (100 - bid) over that day's sold strikes, i.e. collateral at risk, in cents (100c = $1).
+Per cell, over SAMPLED hours only (the sample is a random subset of hours; a full-universe day would hold about 2.8x as many positions, so absolute day losses are understated by roughly that factor). Positions in one hourly event are open simultaneously; different hours do not overlap (T <= 45 < 60), so max simultaneous short exposure per day = largest single-hour sum of (100 - bid) over that day's sold strikes, i.e. collateral at risk, in cents (100c = $1).
 
 | T | bucket | n | worst day (UTC) | worst-day P&L (c) | worst hour P&L (c) | max hour short exposure (c) | max day simultaneous exposure (c) |
 |--:|---|--:|---|--:|--:|--:|--:|
-| 5 | 1 | 3 | 2026-09-27 | 0 | 0 | 99 | 99 |
-| 5 | 2 | 2 | 2026-09-11 | 1 | 1 | 98 | 98 |
-| 5 | 3 | 1 | 2026-08-26 | -98 | -98 | 97 | 97 |
-| 5 | 4-5 | 0 | None | n/a | n/a | n/a | n/a |
-| 5 | 6-10 | 1 | 2026-09-27 | 9 | 9 | 90 | 90 |
-| 5 | 11-20 | 2 | 2026-09-11 | 11 | 11 | 88 | 88 |
-| 5 | 21-40 | 0 | None | n/a | n/a | n/a | n/a |
-| 15 | 1 | 5 | 2026-09-11 | 0 | 0 | 198 | 198 |
-| 15 | 2 | 2 | 2026-09-11 | 1 | 1 | 98 | 98 |
-| 15 | 3 | 1 | 2026-08-26 | 2 | 2 | 97 | 97 |
-| 15 | 4-5 | 1 | 2026-09-27 | 3 | 3 | 96 | 96 |
-| 15 | 6-10 | 5 | 2026-10-20 | 5 | 5 | 94 | 94 |
-| 15 | 11-20 | 3 | 2026-08-26 | 16 | 16 | 83 | 83 |
-| 15 | 21-40 | 2 | 2026-09-11 | 59 | 25 | 73 | 73 |
-| 30 | 1 | 5 | 2026-09-27 | 0 | 0 | 99 | 99 |
-| 30 | 2 | 5 | 2026-09-27 | 1 | 1 | 98 | 98 |
-| 30 | 3 | 0 | None | n/a | n/a | n/a | n/a |
-| 30 | 4-5 | 5 | 2026-09-27 | 3 | 3 | 96 | 96 |
-| 30 | 6-10 | 4 | 2026-09-27 | 6 | 5 | 94 | 94 |
-| 30 | 11-20 | 4 | 2026-09-11 | 13 | 13 | 86 | 86 |
-| 30 | 21-40 | 6 | 2026-10-20 | -65 | -65 | 77 | 77 |
-| 45 | 1 | 5 | 2026-09-27 | 0 | 0 | 99 | 99 |
-| 45 | 2 | 3 | 2026-09-27 | 1 | 1 | 98 | 98 |
-| 45 | 3 | 4 | 2026-09-11 | 2 | 2 | 97 | 97 |
-| 45 | 4-5 | 3 | 2026-09-11 | 3 | 3 | 96 | 96 |
-| 45 | 6-10 | 4 | 2026-10-20 | 5 | 5 | 94 | 94 |
-| 45 | 11-20 | 6 | 2026-10-20 | -89 | -89 | 89 | 89 |
-| 45 | 21-40 | 5 | 2026-10-20 | -76 | -76 | 74 | 74 |
+| 5 | 1 | 212 | 2026-10-11 | -100 | -100 | 396 | 396 |
+| 5 | 2 | 89 | 2026-09-20 | 1 | 1 | 196 | 196 |
+| 5 | 3 | 59 | 2026-08-26 | -96 | -98 | 97 | 97 |
+| 5 | 4-5 | 87 | 2026-09-14 | -94 | -97 | 96 | 96 |
+| 5 | 6-10 | 110 | 2026-08-24 | -94 | -95 | 94 | 94 |
+| 5 | 11-20 | 116 | 2026-08-25 | -212 | -88 | 89 | 89 |
+| 5 | 21-40 | 169 | 2026-08-25 | -240 | -81 | 139 | 139 |
+| 15 | 1 | 400 | 2026-10-11 | -100 | -100 | 495 | 495 |
+| 15 | 2 | 175 | 2026-09-03 | -98 | -99 | 196 | 196 |
+| 15 | 3 | 149 | 2026-10-20 | -96 | -98 | 194 | 194 |
+| 15 | 4-5 | 158 | 2026-09-18 | -97 | -97 | 191 | 191 |
+| 15 | 6-10 | 234 | 2026-09-22 | -162 | -95 | 185 | 185 |
+| 15 | 11-20 | 250 | 2026-09-03 | -218 | -172 | 175 | 175 |
+| 15 | 21-40 | 322 | 2026-09-11 | -283 | -153 | 212 | 212 |
+| 30 | 1 | 602 | 2026-08-25 | -200 | -200 | 693 | 693 |
+| 30 | 2 | 297 | 2026-08-24 | -96 | -99 | 392 | 392 |
+| 30 | 3 | 178 | 2026-08-24 | -96 | -98 | 194 | 194 |
+| 30 | 4-5 | 270 | 2026-09-11 | -167 | -193 | 288 | 288 |
+| 30 | 6-10 | 330 | 2026-08-24 | -252 | -188 | 460 | 460 |
+| 30 | 11-20 | 377 | 2026-09-11 | -241 | -259 | 256 | 256 |
+| 30 | 21-40 | 470 | 2026-09-03 | -361 | -220 | 285 | 285 |
+| 45 | 1 | 654 | 2026-09-11 | -200 | -200 | 792 | 792 |
+| 45 | 2 | 292 | 2026-08-25 | -190 | -99 | 294 | 294 |
+| 45 | 3 | 231 | 2026-08-25 | -178 | -98 | 291 | 291 |
+| 45 | 4-5 | 303 | 2026-08-24 | -280 | -193 | 286 | 286 |
+| 45 | 6-10 | 431 | 2026-08-25 | -298 | -186 | 369 | 369 |
+| 45 | 11-20 | 471 | 2026-08-25 | -274 | -174 | 344 | 344 |
+| 45 | 21-40 | 565 | 2026-08-25 | -464 | -289 | 281 | 281 |
 
 Book view: ALL longshot sales (bid <= 40c) pooled at each T:
 
 | T | n | days | mean net (c/contract) | total P&L (c) | worst day | worst-day P&L (c) | best day (c) | negative days | mean net excl. worst day (c) | worst hour P&L (c) | max day simult. exposure (c) |
 |--:|--:|--:|--:|--:|---|--:|--:|--:|--:|--:|--:|
-| 5 | 9 | 5 | -6.556 | -59 | 2026-08-26 | -98 | 18 | 1 | 4.875 | -98 | 189 |
-| 15 | 19 | 5 | 7.789 | 148 | 2026-09-12 | 5 | 73 | 0 | 8.412 | 5 | 378 |
-| 30 | 29 | 5 | 6.414 | 186 | 2026-10-20 | -36 | 86 | 1 | 9.652 | -36 | 538 |
-| 45 | 30 | 5 | -1.267 | -38 | 2026-10-20 | -157 | 55 | 1 | 4.958 | -157 | 637 |
+| 5 | 842 | 60 | -1.160 | -977 | 2026-08-25 | -625 | 187 | 26 | -0.433 | -184 | 740 |
+| 15 | 1,688 | 60 | -0.168 | -283 | 2026-09-22 | -543 | 585 | 30 | 0.157 | -434 | 1288 |
+| 30 | 2,524 | 60 | -0.685 | -1728 | 2026-08-24 | -771 | 659 | 30 | -0.386 | -688 | 1815 |
+| 45 | 2,947 | 60 | -1.129 | -3328 | 2026-08-25 | -1573 | 590 | 31 | -0.614 | -826 | 1912 |
 
 ## 5. Verdict: frozen rule, numbers beside each bar
 
-* Cells meeting the n floor (n >= 400 priced sales AND >= 40 distinct days): **0 of 28** (none).
+* Cells meeting the n floor (n >= 400 priced sales AND >= 40 distinct days): **7 of 28** (15|1, 30|1, 30|21-40, 45|1, 45|6-10, 45|11-20, 45|21-40).
 * PASS cells (all five gates): **0** (none).
-* Best longshot cell by equal-weight EV among all populated cells: **T=15, bucket 21-40c**, n=2, 1 days.
-  * Gate 1 (EV >= +1.0c both readings): equal-weight 29.50c, volume-weighted 28.93c -> met.
-  * Gate 2 (signed day-clustered t >= bar): t = n/a vs bar n/a -> NOT met.
-  * Gate 3 (n >= 400 across >= 40 days): n = 2, days = 1 -> NOT met.
-  * Gate 4 (untradeable <= 70%): U_T = 53.1% (diagnostic ask-zone: 0.0%) -> met.
-  * Gate 5 (>= 50% non-zero entry-candle volume): 100.0% -> met.
-  * KILL clause for this cell: 97.9% one-sided upper bound on EV = n/ac vs +0.2c.
+* Best longshot cell by equal-weight EV among floor-meeting cells: **T=45, bucket 6-10c**, n=431, 60 days.
+  * Gate 1 (EV >= +1.0c both readings): equal-weight -0.18c, volume-weighted 1.98c -> NOT met.
+  * Gate 2 (signed day-clustered t >= bar): t = -0.12 vs bar 3.27 -> NOT met.
+  * Gate 3 (n >= 400 across >= 40 days): n = 431, days = 60 -> met.
+  * Gate 4 (untradeable <= 70%): U_T = 45.1% (diagnostic ask-zone: 4.6%) -> met.
+  * Gate 5 (>= 50% non-zero entry-candle volume): 96.8% -> met.
+  * KILL clause for this cell: 97.9% one-sided upper bound on EV = 2.86c vs +0.2c.
 
 KILL clause (every floor-meeting cell must have one-sided 97.9% UB on EV < +0.2c):
 
 | T | bucket | n | days | EV eq-wt | SE | UB 97.9% | < +0.2c |
 |--:|---|--:|--:|--:|--:|--:|:--:|
-| (no cell meets the n floor: the KILL clause cannot fire) | | | | | | | |
+| 15 | 1 | 400 | 60 | -0.50 | 0.352 | 0.23 | NO |
+| 30 | 1 | 602 | 60 | -0.83 | 0.415 | 0.03 | yes |
+| 30 | 21-40 | 470 | 60 | -2.15 | 2.604 | 3.27 | NO |
+| 45 | 1 | 654 | 60 | -1.38 | 0.563 | -0.21 | yes |
+| 45 | 6-10 | 431 | 60 | -0.18 | 1.462 | 2.86 | NO |
+| 45 | 11-20 | 471 | 60 | -0.34 | 1.791 | 3.38 | NO |
+| 45 | 21-40 | 565 | 60 | -1.38 | 2.217 | 3.23 | NO |
 
 Alternate (secondary) reading of gate 4 with the ask-zone fraction would pass: no cell.
 
@@ -213,13 +229,13 @@ Alternate (secondary) reading of gate 4 with the ask-zone fraction would pass: n
 
 **(b) No outcome conditioning.** Fetch writes `ladder.json` (no result field) and `results.json` separately. The pricing pass (`price_hour`, `entry_quote`, `ask_zone_diag`, `fee_c`, `candle_rows`, `bucket_of`, `fetch_hour`) is asserted by AST scan to reference neither `result` nor `results`; results are first loaded after all entries are priced, and joined only in `pnl_step`. Functions checked: ['fee_c', 'candle_rows', 'entry_quote', 'price_hour', 'ask_zone_diag', 'bucket_of', 'fetch_hour']. Every entry was priced before any outcome was loaded. Entry selection is the single frozen rule (last candle at or before close-T); there is no search.
 
-**(d)** spot-check not run.
+**(d) Settlement provenance.** Official `result` field only (never self-computed). Spot-check: 40 randomly chosen strikes (seeded) re-read via `GET /markets/{ticker}`: **0 mismatches**.
 
 ## 7. Exclusions and sampling
 
-* Sampling: whole hours, seeded shuffle (20261027), saved work_order.json, strict order, never re-sorted. Hours priced 6 / 1408 = 0.4%; completed set is a contiguous prefix of the shuffled order (6 leading hours). Days touched 5 / 60.
+* Sampling: whole hours, seeded shuffle (20261027), saved work_order.json, strict order, never re-sorted. Hours priced 503 / 1408 = 35.7%; completed set is a contiguous prefix of the shuffled order (503 leading hours). Days touched 60 / 60.
 * Exclusions in pricing (non -T / non-greater strikes): none.
 * Exclusions at P&L step (no official yes/no `result`, counted per strike-T entry): none.
-* Untradeable entries (no candle or bid = 0) are kept in every denominator and never priced or back-filled: 2,381 of 4,512 strike-T observations.
+* Untradeable entries (no candle or bid = 0) are kept in every denominator and never priced or back-filled: 171,062 of 370,240 strike-T observations.
 * Calendar day = UTC date of close. Universe window: closes 2026-08-22T00:00Z to 2026-10-20T23:59Z (60 days).
 * Spec-silent choices fixed before outcomes were read are listed in the docstring of `tail_pricing.py`.

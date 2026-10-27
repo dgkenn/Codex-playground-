@@ -644,6 +644,14 @@ def write_md(rep):
     L.append(f"Sample: {S['hours_priced']} of {S['hours_in_universe']} hourly events ({S['fraction']*100:.1f}%), "
              f"{S['days_with_sampled_hours']} of {S['days_in_universe']} UTC days; {C['strike_T_observations_total']//4:,} strikes, "
              f"{C['strike_T_observations_total']:,} strike-T observations, {C['priced_sales_all_buckets']:,} priced sales (all buckets).\n")
+    L.append("## 0. Plain reading (written after the run; numbers are from the tables below)\n")
+    L.append("* **Calibrated, not overpriced.** Of 28 longshot cells (7 buckets x 4 T) the mean executable bid lies inside the realised-rate Wilson 95% CI in 27; the one exception is T=30, 6-10c (rate 3.94% vs bid 7.83c). There is no monotone favourite-longshot gap: signs of (rate - bid) flip across buckets and across T.")
+    L.append("* **No cell clears EV or the Bonferroni bar.** Best t anywhere is +2.15 (T=30, 6-10c, EV +2.89c, n=330 < 400 floor, bar 3.27); its neighbours in T are +1.58c (T=15), -0.18c (T=45), -2.96c (T=5), i.e. consistent with noise. Pooled over all sales at bid <= 40c, mean net is negative at every T (-1.16, -0.17, -0.69, -1.13 c/contract at T=5/15/30/45).")
+    L.append("* **The 1c fee is the whole edge.** ceil(7p(1-p)) = 1c for any bid up to 17c, so selling at 1c can never net more than 0 (NO) and selling at 2-3c nets at most 1-2c against a 98-100c loss.")
+    L.append("* **Untradeable fraction is ~45-48% of strike-T observations, all of it yes_bid = 0 (zero 'no candle').** It is concentrated in the dead tail: among strikes whose last ask is 1c, 100% have bid 0; at ask 2c 11-37%; at ask 3c 0-13%; above that under 5%. The 95% untradeable pattern that closed weather does NOT replicate beyond the 1c tail here; the ladder has real two-sided quotes from 2c up.")
+    L.append("* **Verdict is INSUFFICIENT, and it is structural, not a coverage shortfall.** The frozen KILL clause needs a 97.9% upper bound < +0.2c in every n>=400 cell; cells at 6-40c have a day-clustered SE of 1.5-2.6c (binary payoff of +b vs -(100-b)), so even at 100% coverage (SE shrinks by ~sqrt(0.357) = 0.6x) the bound stays above +0.2c (e.g. T=45, 6-10c: -0.18 + 2.1 x 0.9 ~ 1.7c). The clause is practically unfireable above ~5c. In substance: no evidence of exploitable overpricing, point estimates are negative, and no PASS was close.")
+    L.append("* **Mirror observation (outside the frozen family, untested as a strategy):** at bid >= 81c the realised YES rate exceeds the bid by ~1.0c in every T (99.77-99.95% vs ~98.9c), so SELLING favourites loses ~2c/contract (t about -55 to -180). That is the other side of the same book; testing a BUY of YES would require the ask and was not run here.")
+    L.append("* **Caveats:** 35.7% of hours (503 of 1408; all 60 days covered) -- the stop was a wall-clock budget fixed before looking at results, API throughput was ~3-6 hours/minute-block under 429s. Entry uses the literal 'last candle at or before close-T' rule; candles are sparse for quiet strikes so the median candle age is 60s but p90 is 540-1140s, i.e. some quotes are up to ~19 min old; staleness sensitivity was not run (no filter is permitted). A 6-hour smoke test of the pipeline (first rows of the calibration printed, ~2k entries) was run before the full fetch; nothing in the code changed in response to it other than report formatting.\n")
     L.append("## 1. Anchor (c): calibration table (reported whatever the verdict)\n")
     L.append("Realised YES rate with Wilson 95% CI, against the executable `yes_bid` the seller receives. "
              "`gap` = realised rate minus mean bid, in cents of probability: **gap < 0 means the market overprices YES (selling is favourable before fee)**. "
@@ -686,10 +694,9 @@ def write_md(rep):
     L.append("| T | strike-T obs | untradeable | fraction | no candle | bid = 0 | median candle age at entry (s, priced) | p90 age (s) |")
     L.append("|--:|--:|--:|--:|--:|--:|--:|--:|")
     for T in TS:
-        t = str(T)
-        L.append(f"| {T} | {C['obs_by_T'].get(t,0):,} | {C['untradeable_by_T'].get(t,0):,} | {_f(C['untradeable_frac_by_T'].get(t),1,True)} | "
+        L.append(f"| {T} | {C['obs_by_T'].get(T,0):,} | {C['untradeable_by_T'].get(T,0):,} | {_f(C['untradeable_frac_by_T'].get(T),1,True)} | "
                  f"{C['untradeable_reasons'].get(f'T{T}:no_candle',0):,} | {C['untradeable_reasons'].get(f'T{T}:bid_zero',0):,} | "
-                 f"{C['staleness_s_median_by_T'].get(t)} | {C['staleness_s_p90_by_T'].get(t)} |")
+                 f"{C['staleness_s_median_by_T'].get(T)} | {C['staleness_s_p90_by_T'].get(T)} |")
     L.append("\n## 4. Anchor (e): tail risk (sold-tail P&L is many small wins and few large losses)\n")
     L.append("Per cell, over SAMPLED hours only (the sample is a random subset of hours; a full-universe day would hold about "
              f"{1/S['fraction']:.1f}x as many positions, so absolute day losses are understated by roughly that factor). "
