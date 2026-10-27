@@ -2,7 +2,7 @@
 """finality_A.py -- BUILD A of TERMINAL_FINALITY_SPEC.md (frozen 2026-10-27).
 
 Executes the frozen spec; it is not trying to find an edge.  Stages (each resumable, every pull cached under
-venue_expansion/cache/finality/):
+venue_expansion/cache/finality/A/ -- own subdir, Build B shares cache/finality/):
 
     discover  settled KXHIGH*/KXLOWT* markets per series -> cache/finality/markets/<series>.json
     obs       IEM 1-minute (asos1min.py) + routine (asos.py rt 3&4) per station-month -> cache/finality/obs/
@@ -829,6 +829,22 @@ def run_report(stage):
                                   "feed": e["feed"]})
         rungs_out.append(rec)
 
+    # signal-level facts over ALL fired rungs (no sampling, no pricing, no coverage condition)
+    sig_all = {}
+    nocandle = collections.Counter()
+    for tk_, (e_, rr_) in fired.items():
+        for rd_ in READINGS:
+            for ck_ in rr_["fires"][rd_]:
+                a_ = sig_all.setdefault(f"{rd_}|{ck_}", {"fires": 0, "false_locks": 0})
+                a_["fires"] += 1
+                a_["false_locks"] += int(rr_["result"] == "no")
+    for ro_ in rungs_out:
+        if ro_.get("skip") == "no_candles_in_final_120min":
+            for rd_ in READINGS:
+                for ck_ in ro_["fires"][rd_]:
+                    nocandle[(rd_, ck_)] += 1
+    for k_, a_ in sig_all.items():
+        a_["false_lock_rate"], _lo, a_["wilson_ub"] = wilson(a_["false_locks"], a_["fires"])
     # ------------------------------------------------------------- cell statistics
     cells_out = []
     for rd in READINGS:
@@ -855,7 +871,8 @@ def run_report(stage):
                 reasons = collections.Counter(f["arms"][str(L)].get("reason") for f in fs if f["arms"][str(L)]["status"] != "priced")
                 row = {
                     "reading": rd, "cell": ck, "M": c[0], "R": c[1], "H": c[2], "W": c[3], "L": L,
-                    "n_fires_covered": n, "false_locks": fl,
+                    "n_fires_covered": n, "false_locks": fl, "n_fires_no_candles_excluded": nocandle[(rd, ck)],
+                    "untradeable_frac_if_nocandle_counted": ((unt + nocandle[(rd, ck)]) / (n + nocandle[(rd, ck)])) if (n + nocandle[(rd, ck)]) else None,
                     "false_lock_rate_all": fl_p, "false_lock_wilson_ub_all": fl_hi,
                     "n_priced": len(priced), "n_untradeable": unt,
                     "untradeable_frac": (unt / n) if n else None, "untradeable_reasons": dict(reasons),
@@ -978,6 +995,23 @@ def run_report(stage):
     }
     anchors["c_monotonic_and_tz"]["pass"] = (summ.get("monotonicity_violations", 1) == 0)
 
+    # settlement-lattice check: official result == (floor <= expiration_value <= cap) on every universe rung
+    lat = {"rungs": 0, "no_expiration_value": 0, "mismatch": 0, "cap_minus_floor": collections.Counter()}
+    _ev, _sk, _out = rungs_universe()
+    for _e, _rs in _ev.items():
+        for m in _rs:
+            lat["rungs"] += 1
+            lat["cap_minus_floor"][m["cap_strike"] - m["floor_strike"]] += 1
+            try:
+                v = float(m["expiration_value"])
+            except Exception:     # noqa: BLE001
+                lat["no_expiration_value"] += 1
+                continue
+            if (m["floor_strike"] <= v <= m["cap_strike"]) != (m["result"] == "yes"):
+                lat["mismatch"] += 1
+    lat["cap_minus_floor"] = {str(k): v for k, v in lat["cap_minus_floor"].items()}
+    anchors["settlement_lattice_check"] = lat
+
     out = {
         "spec": "venue_expansion/TERMINAL_FINALITY_SPEC.md (frozen 2026-10-27) -- BUILD A",
         "seed": SEED,
@@ -987,7 +1021,13 @@ def run_report(stage):
         "sampling": {"fired_rungs_total": n_total_fired, "candle_states": dict(cand_state),
                      "fraction_candle_pulled": (n_total_fired - cand_state.get("not_fetched", 0)) / max(n_total_fired, 1),
                      "order": "shuffled with fixed seed; never re-sorted"},
+        "recompute_note": ("rungs[*]: candles=[end_period_ts,yes_bid_c,yes_ask_c,vol]; fires[reading][cell]={sig_ts,E,temp,run,...}; "
+                           "entry for arm L = first candle with ts>=sig_ts+60*L and ts<=close_ts and 0<yes_ask<=98 and "
+                           "100-yes_ask-ceil(7p(1-p))>0 (p=ask/100); pnl_c = 100-ask-fee if result=='yes' else -ask-fee; "
+                           "EV_vw = sum(vol*pnl)/sum(vol) over priced fires; t = day-clustered (rung.date) CR1.  "
+                           "Verified: an independent -I recompute from this file reproduces n, false locks, priced n and EV for M0.5_R2_H3_W120 L=10."),
         "verdicts": verdicts, "cells": cells_out, "anchors": anchors,
+        "signal_level_all_fired_rungs": sig_all,
         "diagnostics": diagnostics(rungs_out),
         "rungs": rungs_out,
     }
@@ -1114,7 +1154,7 @@ def write_md(out, evs):
         v = ver[rd]
         A(f"- reading **{rd}** ({out['readings'][rd]}): **{v['verdict']}**; "
           f"PASS cells at L=10: {v['passing_cells_L10'] or 'none'}; KILL triggers: {v['kill_triggers'] or 'none'}; "
-          f"best one-sided 97.9% EV upper bound at L=10: {_f(v['best_ub_97.9_L10'], 2)}c")
+          f"best one-sided 97.9% EV upper bound at L=10: {('n/a (no fires)' if v['best_ub_97.9_L10'] is None else _f(v['best_ub_97.9_L10'], 2) + 'c')}")
     A("")
     for k in ("verdict_commentary",):
         pass
@@ -1140,7 +1180,7 @@ def write_md(out, evs):
 6. **Interpretation decisions (D1-D9)** are pre-declared in the `finality_A.py` module docstring before any outcome was analysed.\n""")
     A("### D1 -- the bracket-width problem in the frozen text (read this)\n")
     A("""A Kalshi bracket rung has `cap_strike = floor_strike + 1` (e.g. `B68.5` -> floor 68, cap 69, YES iff the official **integer** high is 68 or 69;
-verified on every settled rung against `expiration_value`).  The spec's test `lo + M <= E <= hi - M` on `[lo,hi] = [floor,cap]` is therefore
+checked in code: `cap-floor == 1` on all {{LAT_N}} universe rungs, and official `result` equals `floor <= expiration_value <= cap` with {{LAT_MM}} mismatches ({{LAT_NV}} rungs lack an expiration_value)).  The spec's test `lo + M <= E <= hi - M` on `[lo,hi] = [floor,cap]` is therefore
 an **empty interval for every M = 1.0 cell** (it needs E >= lo+1 and E <= lo) and a single point (`E = lo + 0.5`) for M = 0.5.  Since 1-minute ASOS
 temperatures are whole degrees, reading S can essentially never fire.  This is a defect in the frozen text, discovered by arithmetic before
 outcomes were read.  Rather than silently re-define the spec, BOTH readings were run on the identical grid: **S** = the literal text (formal
@@ -1248,8 +1288,13 @@ def build_md(out, evs):
         f"(any prefix is representative).  Signal-level facts (fire counts, false-lock rate before pricing) use ALL fired rungs in the signals stage "
         f"({st['rungs_with_any_fire']:,}); the covered/priced statistics below use the pulled random subsample.",
         f"- Candle states of the pulled set: {json.dumps(cs)}",
+        "- Signal-level false-lock rate over ALL fired rungs (no sampling, no pricing, no coverage condition), reading L, by cell: " + "; ".join(
+            f"{k.split('|')[1]}: {v['false_locks']}/{v['fires']} = {100 * v['false_lock_rate']:.1f}% (Wilson UB {100 * v['wilson_ub']:.1f}%)"
+            for k, v in sorted(out["signal_level_all_fired_rungs"].items()) if k.startswith("L|")),
     ]
     md = md.replace("{{UNIVERSE}}", "\n".join(uni))
+    lt = out["anchors"]["settlement_lattice_check"]
+    md = md.replace("{{LAT_N}}", f"{lt['rungs']:,}").replace("{{LAT_MM}}", str(lt["mismatch"])).replace("{{LAT_NV}}", str(lt["no_expiration_value"]))
     md = md.replace("{{TZ}}", tz_worked_example(evs))
     # ---- lookahead example
     r, ck, fr = lookahead_example(out)

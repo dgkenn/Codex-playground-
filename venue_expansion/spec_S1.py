@@ -475,13 +475,13 @@ def _parse_t(s):
 
 
 def watchlist_for_hour(p1, hour_str):
-    hd = dt.datetime.strptime(hour_str, "%Y-%m-%dT%H").date()
+    """Tokens (YES+NO of every rung) of each city-day ladder that has a fire (entry / rawdiff / lock) in this hour or in the
+    previous hour (whose 60-min ask window can spill into this hour). Keeps the mirror small while holding the full ladder."""
+    h1 = hstr(dt.datetime.strptime(hour_str, "%Y-%m-%dT%H").replace(tzinfo=dt.timezone.utc) - dt.timedelta(hours=1))
     toks = set()
-    for k, tl in p1["tokens"].items():
-        city, ds = k.split("|")
-        dd = dt.date.fromisoformat(ds)
-        if abs((dd - hd).days) <= 1:
-            toks.update(tl)
+    for f in fires_of(p1):
+        if hstr(f["t"]) in (hour_str, h1):
+            toks.update(p1["tokens"][f"{f['city']}|{f['date']}"])
     return sorted(toks)
 
 
@@ -505,28 +505,27 @@ def fires_of(p1):
 
 def plan_hours(stage):
     p1 = _cache_get("phase1.json")
+    fires = fires_of(p1)
     hours = set()
-    for f in fires_of(p1):
-        if f["t"] < PMXT_COVERAGE_START:
-            continue
-        hours.add(hstr(f["t"]))
-    if stage == "B":
-        # continuation hours: only for fires with no ask event at >= t inside t's own hour-file
-        ev = load_events(hours_present=True)
-        for f in fires_of(p1):
-            t, tok = f["t"], f["tok"]
-            if t < PMXT_COVERAGE_START:
+    if stage == "A":
+        for f in fires:
+            if f["t"] >= PMXT_COVERAGE_START:
+                hours.add(hstr(f["t"]))
+    else:  # B: continuation hour, only for fires with no ask-bearing event at >= t inside t's own (mirrored) hour-file
+        hv = HourEv(fires)
+        for f in fires:
+            if f["t"] < PMXT_COVERAGE_START:
                 continue
-            hit = first_ask(ev.get(tok), t, t + dt.timedelta(minutes=ASK_SEARCH_WINDOW_MIN))
-            h0 = hstr(t)
-            if hit is None and manifest_ok(h0):
-                nxt = hstr(t.replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1))
-                if t + dt.timedelta(minutes=ASK_SEARCH_WINDOW_MIN) > t.replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1):
-                    hours.add(nxt)
+            h0 = hstr(f["t"])
+            top = f["t"].replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1)
+            if not manifest_ok(h0) or f["t"] + dt.timedelta(minutes=ASK_SEARCH_WINDOW_MIN) <= top:
+                continue
+            if first_ask_np(hv.get(h0).get(f["tok"]), f["t"], f["t"] + dt.timedelta(minutes=ASK_SEARCH_WINDOW_MIN)) is None:
+                hours.add(hstr(top))
         hours = {h for h in hours if not manifest_exists(h)}
     hl = sorted(hours)
     _cache_put(f"hours_{stage}.json", hl)
-    print(f"stage {stage}: {len(hl)} hour-files needed", f"({sum(1 for h in hl if not manifest_exists(h))} not yet mirrored)")
+    print(f"stage {stage}: {len(hl)} hour-files needed ({sum(1 for h in hl if not manifest_exists(h))} not yet mirrored)")
     return hl
 
 
@@ -603,7 +602,7 @@ def fetch_hour(h, watch):
         raise RuntimeError(f"row group {i} of {h} failed: {last}")
 
     t0 = time.time()
-    with ThreadPoolExecutor(max_workers=int(os.environ.get("S1_THREADS", "12"))) as ex:
+    with ThreadPoolExecutor(max_workers=int(os.environ.get("S1_THREADS", "10"))) as ex:
         parts = list(ex.map(rd, range(n_rg)))
     tb = pa.concat_tables(parts)
     idx = pc.sort_indices(tb, sort_keys=[("timestamp_received", "ascending")])
@@ -642,75 +641,87 @@ def run_fetch(stage, shard):
 # ===============================================================================================================
 # Pricing + stats
 # ===============================================================================================================
-def load_events(hours_present=False, only_hours=None):
-    """token -> (ts_ms[], ask[], bid[]) arrays over every mirrored hour. Rows without a usable ask are dropped
-    (last_trade_price, tick_size_change, empty-ask-side). `book` events: ask = min price in `asks`, bid = max in `bids`."""
-    import numpy as np
-    import pyarrow as pa
-    import pyarrow.compute as pc
-    import pyarrow.parquet as pq
-    per = {}
-    for fn in sorted(os.listdir(PMXT_DIR)):
-        if not fn.endswith(".parquet"):
-            continue
-        h = fn[:-8]
-        if only_hours is not None and h not in only_hours:
-            continue
-        tb = pq.read_table(os.path.join(PMXT_DIR, fn))
+import numpy as np
+
+
+class HourEv:
+    """Streaming access to the mirror: per hour-file, token -> (ts_ms[], ask[], bid[]) for ask-bearing events of exactly the
+    tokens fires will query in that hour. `price_change` rows carry best_bid/best_ask; `book` snapshots carry the ladder in
+    bids/asks (best ask = min price). last_trade_price / tick_size_change rows carry no ask and are skipped."""
+
+    def __init__(self, fires, keep=3):
+        self.want = {}
+        for f in fires:
+            if f["t"] < PMXT_COVERAGE_START - dt.timedelta(hours=1):
+                continue
+            h0 = f["t"].replace(minute=0, second=0, microsecond=0)
+            for h in (h0, h0 + dt.timedelta(hours=1), h0 + dt.timedelta(hours=2)):
+                self.want.setdefault(hstr(h), set()).add(f["tok"])
+        self.cache, self.order, self.keep = {}, [], keep
+
+    def get(self, h):
+        if h in self.cache:
+            return self.cache[h]
+        d = self._load(h)
+        self.cache[h] = d
+        self.order.append(h)
+        while len(self.order) > self.keep:
+            self.cache.pop(self.order.pop(0), None)
+        return d
+
+    def _load(self, h):
+        import pyarrow as pa
+        import pyarrow.compute as pc
+        import pyarrow.parquet as pq
+        p = os.path.join(PMXT_DIR, f"{h}.parquet")
+        if not os.path.exists(p):
+            return {}
+        tb = pq.read_table(p)
+        want = pa.array(sorted(self.want.get(h, set())), type=pa.string())
+        tb = tb.filter(pc.is_in(tb.column("asset_id"), value_set=want))
         if tb.num_rows == 0:
-            continue
+            return {}
         ts = pc.cast(tb.column("timestamp_received"), pa.int64()).to_numpy()
-        aid = tb.column("asset_id").to_pylist()
-        et = tb.column("event_type").to_pylist()
-        ba = [None if x is None else float(x) for x in tb.column("best_ask").to_pylist()]
-        bb = [None if x is None else float(x) for x in tb.column("best_bid").to_pylist()]
-        asks = tb.column("asks").to_pylist()
-        bids = tb.column("bids").to_pylist()
-        for k in range(len(aid)):
-            a, b = ba[k], bb[k]
-            if et[k] == "book":
-                try:
-                    la = json.loads(asks[k]) if asks[k] else []
-                    lb = json.loads(bids[k]) if bids[k] else []
-                    a = min(float(x[0]) for x in la) if la else None
-                    b = max(float(x[0]) for x in lb) if lb else None
-                except Exception:
-                    a = b = None
-            elif et[k] != "price_change":
-                continue
-            if a is None or not (a > 0):
-                continue
-            per.setdefault(aid[k], []).append((int(ts[k]), a, b if (b is not None and b > 0) else None))
-    out = {}
-    for tok, rows in per.items():
-        rows.sort(key=lambda r: r[0])
-        out[tok] = rows
-    return out
+        aid = np.array(tb.column("asset_id").to_pylist(), dtype=object)
+        et = np.array(tb.column("event_type").to_pylist(), dtype=object)
+        ask = pc.cast(tb.column("best_ask"), pa.float64()).to_numpy(zero_copy_only=False).astype(float)
+        bid = pc.cast(tb.column("best_bid"), pa.float64()).to_numpy(zero_copy_only=False).astype(float)
+        for k in np.nonzero(et == "book")[0]:
+            try:
+                la = json.loads(tb.column("asks")[int(k)].as_py() or "[]")
+                lb = json.loads(tb.column("bids")[int(k)].as_py() or "[]")
+                ask[k] = min(float(x[0]) for x in la) if la else np.nan
+                bid[k] = max(float(x[0]) for x in lb) if lb else np.nan
+            except Exception:
+                ask[k] = bid[k] = np.nan
+        ok = ((et == "price_change") | (et == "book")) & np.isfinite(ask) & (ask > 0)
+        bid = np.where(np.isfinite(bid) & (bid > 0), bid, np.nan)
+        out = {}
+        ts, aid, ask, bid = ts[ok], aid[ok], ask[ok], bid[ok]
+        order = np.argsort(ts, kind="stable")
+        ts, aid, ask, bid = ts[order], aid[order], ask[order], bid[order]
+        for tok in set(aid.tolist()):
+            m = aid == tok
+            out[tok] = (ts[m], ask[m], bid[m])
+        return out
 
 
-def first_ask(rows, t0, t1, tie="high"):
-    """First ask-bearing event with t0 <= ts < t1. Ties at the same first ms: primary = upper median of the tied asks
-    (row order within a ms is not recoverable from the mirror); 'min'/'max' are reported as bounds. -> dict or None."""
-    if not rows:
+def first_ask_np(arrs, t0, t1, tie="high"):
+    """First ask-bearing event with t0 <= ts < t1 (ms resolution). Ties at that first ms: primary = upper median of the tied
+    asks (row order within a ms is not recoverable from the mirror); min/max are reported as bounds."""
+    if not arrs:
         return None
-    import bisect
-    a = int(t0.timestamp() * 1000)
-    b = int(t1.timestamp() * 1000)
-    keys = [r[0] for r in rows]
-    i = bisect.bisect_left(keys, a)
-    if i >= len(rows) or rows[i][0] >= b:
+    ts, ask, bid = arrs
+    a, b = int(t0.timestamp() * 1000), int(t1.timestamp() * 1000)
+    i = int(np.searchsorted(ts, a, "left"))
+    if i >= len(ts) or ts[i] >= b:
         return None
-    ts = rows[i][0]
-    tied = []
-    j = i
-    while j < len(rows) and rows[j][0] == ts:
-        tied.append(rows[j])
-        j += 1
-    asks = sorted(r[1] for r in tied)
-    pick = {"high": st.median_high(asks), "min": asks[0], "max": asks[-1]}[tie]
-    bids = [r[2] for r in tied if r[2] is not None]
-    return {"ts_ms": ts, "ask": pick, "ask_min": asks[0], "ask_max": asks[-1], "n_tied": len(tied),
-            "bid": (max(bids) if bids else None), "lag_s": (ts - a) / 1000.0}
+    j = int(np.searchsorted(ts, ts[i], "right"))
+    asks = np.sort(ask[i:j])
+    bids = bid[i:j][np.isfinite(bid[i:j])]
+    pick = {"high": float(asks[len(asks) // 2]), "min": float(asks[0]), "max": float(asks[-1])}[tie]
+    return {"ts_ms": int(ts[i]), "ask": pick, "ask_min": float(asks[0]), "ask_max": float(asks[-1]), "n_tied": int(j - i),
+            "bid": (float(bids.max()) if len(bids) else None), "lag_s": (int(ts[i]) - a) / 1000.0}
 
 
 def fee_c(ask_c):
@@ -766,32 +777,37 @@ def boot_ci(values, cl, B=4000, seed=7):
     return ms[int(0.0167 * B)], ms[int(0.5 * B)], ms[int(0.9833 * B)]
 
 
-def price_all(p1, ev, avail_hours, missing_hours):
+def price_all(fires, hv, avail_hours, missing_hours, shift_min=0):
     """Price every fire. Status taxonomy (mutually exclusive):
-       before_pmxt_coverage | archive_hole (a needed hour-file is missing from the archive and no ask found)
-       | not_mirrored (bug guard) | unpriceable_no_ask_in_60min | priced"""
+       before_pmxt_coverage | archive_hole (a needed hour-file is missing from the archive) | not_mirrored (bug guard)
+       | unpriceable_no_ask_in_60min | priced.   Searches [t, t+60min) over the signal's own hour-file and, if the window
+       spills past the top of the hour, the next hour-file."""
     rows = []
-    for f in fires_of(p1):
-        t = f["t"]
+    for f in sorted(fires, key=lambda x: x["t"]):
+        t = f["t"] + dt.timedelta(minutes=shift_min)
         rec = {k: f[k] for k in ("kind", "city", "date", "ticker", "tok", "win", "side")}
-        rec["t"] = t.isoformat()
+        rec["t"] = f["t"].isoformat()
         if t < PMXT_COVERAGE_START:
             rec["status"] = "before_pmxt_coverage"
             rows.append(rec)
             continue
         end = t + dt.timedelta(minutes=ASK_SEARCH_WINDOW_MIN)
-        hit = first_ask(ev.get(f["tok"]), t, end)
-        hours_needed = [hstr(t)]
         top = t.replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1)
-        if end > top:
-            hours_needed.append(hstr(top))
-        if hit is not None:
-            rec["status"] = "priced"
-            rec["hit"] = hit
+        hours_needed = [hstr(t)] + ([hstr(top)] if end > top else [])
+        if any(h in missing_hours for h in hours_needed):
+            rec["status"] = "archive_hole"
+        elif any(h not in avail_hours for h in hours_needed):
+            rec["status"] = "not_mirrored"
         else:
-            miss = [h for h in hours_needed if h in missing_hours]
-            nm = [h for h in hours_needed if h not in avail_hours and h not in missing_hours]
-            rec["status"] = "archive_hole" if miss else ("not_mirrored" if nm else "unpriceable_no_ask_in_60min")
+            hit = None
+            for h in hours_needed:
+                hit = first_ask_np(hv.get(h).get(f["tok"]), t, end)
+                if hit is not None:
+                    break
+            if hit is not None:
+                rec["status"], rec["hit"] = "priced", hit
+            else:
+                rec["status"] = "unpriceable_no_ask_in_60min"
         rows.append(rec)
     return rows
 
@@ -843,9 +859,9 @@ def run_analyze():
             mans[m["hour"]] = m
             (missing if m.get("missing") else avail).add(m["hour"])
     print(f"mirror: {len(avail)} hour-files present, {len(missing)} archive holes", flush=True)
-    ev = load_events()
-    print(f"events loaded for {len(ev)} tokens", flush=True)
-    rows = price_all(p1, ev, avail, missing)
+    fires = fires_of(p1)
+    hv = HourEv(fires)
+    rows = price_all(fires, hv, avail, missing)
 
     ent = [r for r in rows if r["kind"] == "entry"]
     rawd = [r for r in rows if r["kind"] == "entry_rawdiff"]
@@ -915,16 +931,10 @@ def run_analyze():
     by_city = {c: summarize([x for x in evr if x["city"] == c], c) for c in CITIES}
     by_bucket = {f"{a}-{b}c": summarize([x for x in evr if a <= x["ask_c"] < b], f"ask {a}-{b}c")
                  for a, b in [(0, 10), (10, 30), (30, 60), (60, 90), (90, 101)]}
-    # +5 min publication-latency sensitivity (signal timestamp shifted)
-    lat = []
-    for r in ent:
-        if r["status"] == "before_pmxt_coverage":
-            continue
-        t = _parse_t(r["t"]) + dt.timedelta(minutes=5)
-        hit = first_ask(ev.get(r["tok"]), t, t + dt.timedelta(minutes=ASK_SEARCH_WINDOW_MIN))
-        if hit is not None:
-            lat.append(dict(r, hit=hit))
-    sens["signal_plus_5min_latency"] = summarize(ev_rows_for(lat), "signal timestamp + 5 min")
+    # +5 min publication-latency sensitivity (signal timestamp shifted; approximation: search limited to the hour-files
+    # present in the mirror for the shifted window)
+    lat_rows = price_all([f for f in fires if f["kind"] == "entry"], hv, avail, missing, shift_min=5)
+    sens["signal_plus_5min_latency"] = summarize(ev_rows_for([r for r in lat_rows if r["status"] == "priced"]), "signal timestamp + 5 min")
 
     # ---- item-2a locks: non-gating table; YES locks on the YES token, NO locks on the NO token ----
     lock_ev = ev_rows_for([r for r in lck if r["status"] == "priced"])
@@ -974,6 +984,134 @@ def run_analyze():
     return out
 
 
+
+# ===============================================================================================================
+# REPORT (markdown) -- generated from out/spec_S1_results.json so the prose can never drift from the numbers
+# ===============================================================================================================
+def _f(x, nd=3, plus=True):
+    if x is None:
+        return "n/a"
+    return f"{x:+.{nd}f}" if plus else f"{x:.{nd}f}"
+
+
+def _row(label, s):
+    if not s or not s.get("n"):
+        return f"| {label} | 0 | - | - | - | - | - | - |"
+    cd = s.get("city_day_clustered") or {}
+    return (f"| {label} | {s['n']} | {s.get('n_clusters_city_day')} | {_f(s['mean_c'])} | {_f(s['median_c'])} | "
+            f"{_f(cd.get('t'), 2)} | {_f(s.get('ucb_98_33_c'))} | {s['win_rate']*100:.1f}% / {s['mean_ask_c']:.1f}c |")
+
+
+_HDR = ("| population | n | city-day clusters | mean net EV (c/ct) | median | cluster t | 98.33% UCB (c) | win rate / mean ask |\n"
+        "|---|---:|---:|---:|---:|---:|---:|---|")
+
+
+def write_md(res=None):
+    res = res or json.load(open(os.path.join(OUT_DIR, "spec_S1_results.json")))
+    p1 = _cache_get("phase1.json")
+    pr, g, fa = res["primary"], res["gates"], res["fire_accounting"]
+    L = []
+    A = L.append
+    A("# Spec S1 -- Polymarket whitelist EV at MEASURED asks (pmxt.dev order-book archive)\n")
+    A(f"**VERDICT: {res['verdict']}**\n")
+    A("> **GEO-BLOCK DISCLOSURE (read first).** Global Polymarket (the venue priced here) remains geo-blocked to US persons, and "
+      "Polymarket US lists no weather markets (checked 2026-07-23). **Even a PASS would be a measurement, not a deployment, for "
+      "this operator.** Any deployment is an operator/legal decision. Nothing in this study touches Kalshi operations.\n")
+    A("## 1. Frozen bar this is judged against (judge_specs.json, id S1 -- not re-registered, not relaxed)\n")
+    for k, v in res["frozen_bar"].items():
+        A(f"- **{k}**: {v}")
+    A("- Multiple-comparison policy: Bonferroni over 3 specs, per-spec one-sided alpha 0.0167; fixed t >= 2.25, z = 2.128. "
+      "No parameter was tuned (margin/sustain/glitch constants are the deployed `kwx_lock_rule.py` values), so the whole "
+      "2026-04-14..2026-07-18 window is the test set and was read once.")
+    A("- Gating population = ALL item-2b bracket entries of the four cities, priced at the measured best ask, held to the venue's "
+      "own resolution. Item-2a locks, per-city splits, ask buckets and every sensitivity below are **non-gating**.\n")
+    A("## 2. Result\n")
+    A(_HDR)
+    A(_row("**PRIMARY (gating)**", pr))
+    cd = pr.get("city_day_clustered") or {}
+    A(f"\n- Gate 1 (t >= {PASS_T}): t = {_f(cd.get('t'), 3)} -> {'met' if g['pass_t'] else 'NOT met'}.")
+    A(f"- Gate 2 (mean >= +{PASS_MEAN_C}c): mean = {_f(g['mean_c'])}c -> {'met' if g['pass_mean'] else 'NOT met'}.")
+    A(f"- Symmetric KILL (98.33% UCB < +{KILL_UCB_C}c): UCB = {_f(g['ucb_98_33_c'])}c -> {'TRIGGERED' if g['kill_triggered'] else 'not triggered'}.")
+    A(f"- min_n (>= {MIN_PRICED} priced, >= {MIN_CLUSTERS} clusters): {g['n_priced']} priced / {g['n_clusters']} clusters -> "
+      f"{'met' if not g['thin'] else 'NOT met'}.")
+    A(f"- Spec-kill checks: unpriceable {fa['frac_unpriceable_incl_holes']*100:.1f}% of in-coverage entries (kill > 40%); "
+      f"archive hour-files missing {fa['unreadable_or_missing_frac']*100:.1f}% (kill > 20%) -> {g['spec_kill'] or 'neither triggered'}.")
+    bs = res.get("primary_cluster_bootstrap_98_33_lo_med_hi_c")
+    if bs:
+        A(f"- Cluster-bootstrap cross-check (resampling city-days): 1.67% / 50% / 98.33% quantiles of the mean = "
+          f"{_f(bs[0])} / {_f(bs[1])} / {_f(bs[2])} c. Calendar-date-clustered sensitivity: t = {_f((pr.get('calendar_date_clustered') or {}).get('t'), 2)}, "
+          f"{(pr.get('calendar_date_clustered') or {}).get('n_clusters')} clusters.\n")
+    A("## 3. Fire accounting (every entry is in exactly one bucket)\n")
+    A("| status | entries |\n|---|---:|")
+    for k, v in sorted(fa["status_counts"].items(), key=lambda kv: -kv[1]):
+        A(f"| {k} | {v} |")
+    A(f"\n- Thin-book among priced fires (no bid, or ask-bid >= 10c at the pricing event; descriptive): {fa['thin_book_priced']} of {pr.get('n')}.")
+    A(f"- pmxt hour-files needed by entries: {fa['needed_hour_files']}; archive holes: {len(res['hour_files']['archive_holes'])} "
+      f"{res['hour_files']['archive_holes'][:10]}; hour-files mirrored: {res['hour_files']['mirrored']}.")
+    A(f"- Archive hours with < 40% of the median row count (possible collector outage): {len(fa['thin_archive_hours'])} {fa['thin_archive_hours'][:10]}.\n")
+    A("## 4. By city and by ask bucket (non-gating)\n")
+    A(_HDR)
+    for c, s in res["by_city"].items():
+        A(_row(c, s))
+    for c, s in res["by_ask_bucket"].items():
+        A(_row(f"ask {c}" if not c.startswith("ask") else c, s))
+    A("")
+    A("## 5. Signal coverage by city (weather-only; usable days after guards)\n")
+    A("| city | usable days | entries | entries into the eventual winner | days winner never entered |\n|---|---:|---:|---:|---:|")
+    for c, v in res["signal_coverage"].items():
+        A(f"| {c} | {v['usable_days']} | {v['n_entries']} | {v['n_entries_winner']} | {v['days_winner_never_entered']} |")
+    A("")
+    A("## 6. Sensitivities (all NON-gating; none can change the verdict)\n")
+    A(_HDR)
+    for k, s in res["sensitivities_nongating"].items():
+        A(_row(s.get("label", k) if s.get("n") else k, s))
+    A("")
+    lt = res["locks_item_2a_nongating"]
+    A("## 7. Item-2a deployed-rule LOCKS priced at the measured ask (separate, non-gating)\n")
+    A(_HDR)
+    for k in ("all", "yes_side", "no_side"):
+        A(_row(k, lt[k]))
+    A(f"\nLock pricing status: {lt['status_counts']}. YES locks priced on the YES token, NO locks on the NO token's own ask.\n")
+    A("## 8. Every skipped city-day (reason)\n")
+    from collections import defaultdict
+    by = defaultdict(lambda: defaultdict(list))
+    for sk in res["skips"]:
+        r = sk["reason"]
+        by[sk["city"]][r.split("_")[0] + "_" + "_".join(r.split("_")[1:3]) if r.startswith("thin_station") else r].append(sk["date"])
+    for c, d in by.items():
+        for r, dates in d.items():
+            A(f"- **{c}** -- `{r}` ({len(dates)}): {', '.join(dates)}")
+    A("")
+    A("## 9. Method, and every judgement call (disclosed, none tuned on outcomes)\n")
+    A(METHOD_TEXT)
+    open(os.path.join(OUT_DIR, "spec_S1.md"), "w").write("\n".join(L) + "\n")
+    print("wrote out/spec_S1.md")
+
+
+METHOD_TEXT = """\
+**Signal.** `kwx_lock_rule.sustained_extreme` / `locked_orders` (byte-identical shim of the deployed rule: margin 1.0F / 0.5C, sustain-3, glitch filter) run over each city-day's weather feed; an item-2b entry is the first obs at which the filtered sustained running max falls inside a rung's margin-adjusted band (`floor+margin < extreme <= cap+margin`). Signal time = the timestamp of the obs completing the sustain condition. No market input and no outcome input enters the signal.
+
+**Feeds.** Chicago: IEM true 1-minute ASOS, station ORD. Tokyo: JMA 10-min AMeDAS (prec_no=44, block 0371, 144 rows/day; C converted to F at the fetch boundary so the rule's degF constants apply). London EGLC / Paris LFPB: IEM asos.py with report_type=3&4 (~48 rows/day). Mexico City and Sao Paulo are excluded per the registration (no verified sub-hourly feed).
+
+**Ladders and outcomes.** Gamma event ladders (`highest-temperature-in-<city>-on-<month>-<d>-<yyyy>`); YES/NO token order is read from each market's own `outcomes` field; the resolved rung is the market whose `outcomePrices` is exactly [1,0] (the venue's own resolution), and a day is skipped unless exactly one rung resolved YES.
+
+**Pricing.** pmxt.dev hourly order-book parquet (r2v2.pmxt.dev). For each fire: the first ask-bearing event at `timestamp_received >= signal time` for the rung's YES token within 60 minutes (`price_change` rows carry `best_ask`; `book` snapshots carry the ask ladder and the best ask is its minimum price; `last_trade_price` and `tick_size_change` rows carry no ask and are skipped). No ask within 60 minutes => UNPRICEABLE, never back-filled. If a needed hour-file is an archive hole the fire is bucketed `archive_hole` and counted AGAINST the 40% unpriceable bar. Net EV per contract (cents) = payout(100 if YES) - ask - 100*0.05*p*(1-p), taker only, p = the executed ask. Cluster = city-day (CR1 small-sample-corrected SE of the mean, df = G-1); calendar-date clustering and a city-day bootstrap are reported as cross-checks.
+
+**Harness fidelity.** For Chicago the entries and entry timestamps reproduce Track A (`out/tracka_results.json`) exactly on every shared day: 228 of 228 entries identical to the minute. That ties this run to the harness that passed the coverage GO-check.
+
+**Judgement calls and deviations (none touches the frozen bar, the entry rule, the EV formula or the population):**
+1. *Mirror format.* The data plan says to mirror every hour-file used. A full hour-file is 130-590 MB; the ~1,100+ files used would need roughly 0.5 TB against ~30 GB free disk. What is mirrored instead, for every hour-file used (`cache/spec_s1/pmxt/<hour>.parquet` + `.manifest.json` with size, etag, row counts): all rows of the full 7-column projection (timestamp_received, event_type, asset_id, best_bid, best_ask, bids, asks) for every YES and NO token of every ladder that has a fire in that hour or the previous one. This is a strict superset of every datum the accounting uses; `analyze` runs from this cache alone. The third-party continuity caveat stands: the mirror is a filtered copy, not the raw archive.
+2. *Float rounding in the unit conversion.* The reference harness converts degF back to degC with `(f-32)*5/9` and compares at integer thresholds. Float noise (e.g. 28.0C -> 82.4F -> 28.000000000000004C) flips those strict comparisons at exactly-integer readings, which are common on integer-C METAR feeds. The primary population rounds the converted extreme to 6 decimals before the band test; the rule functions are untouched. The literal un-rounded reference behaviour is reported as a non-gating variant (section 6); the number of entries it changes is in the JSON (`n_entries_changed_by_float_rounding`). This was decided before any price was read.
+3. *Chicago feed holes.* IEM's ORD 1-minute archive is empty or sparse for most of 2026-04-14..2026-05-11 and has scattered partial days after (MDW and JFK return full data for the same period, so it is an ORD-specific upstream hole, and Track A saw the same). Days failing the pre-set guards (>=100 obs and last obs within 3 h of local midnight) are skipped and listed in section 8; no other station or cadence is substituted.
+4. *Guards.* Completeness guards (Chicago 100 obs / 3 h; 30-min feeds 30 obs / 4 h; JMA 90 obs / 4 h) were fixed before any obs were read; Chicago equals Track A's.
+5. *Timestamp used.* `timestamp_received` (when the archive collector saw the event), not the exchange `timestamp`. When several rows share the first millisecond the primary price is the upper median of their asks (row order inside a millisecond is not recoverable); lowest/highest are reported as bounds in section 6.
+6. *Signal time is the obs timestamp,* not the publication time of the obs. A +5 minute latency variant is reported in section 6.
+7. *Window.* The frozen window (2026-04-14..2026-07-18) is used even though the archive now extends to about six months; nothing outside it was read.
+8. *Thin book* (undefined in the registration) is defined as: no bid at the pricing event, or ask-bid >= 10c. It is descriptive only.
+9. *Near-zero rungs.* A large share of item-2b entries are into rungs whose ask is a few tenths of a cent (entries at the start of a day into low rungs, and integer-reading dead-zone rungs on the C feeds). They are in the registered population and in the gating test. Section 6 shows the result with 3c < ask < 97c as a non-gating view, because a population dominated by near-zero-cost losers mechanically pulls the mean toward -0.1c and tightens its confidence interval.
+"""
+
+
 if __name__ == "__main__":
     a = sys.argv[1:]
     if not a:
@@ -986,5 +1124,8 @@ if __name__ == "__main__":
         run_fetch(a[1], a[2])
     elif a[0] == "analyze":
         run_analyze()
+        write_md()
+    elif a[0] == "report":
+        write_md()
     else:
         sys.exit(__doc__)
