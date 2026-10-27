@@ -397,7 +397,7 @@ def cmd_signal():
             prev = run
         wk = walk(ts, fs, kind)
         for r in rungs:
-            for variant, (lo, hi) in (("literal", (r["lo"], r["hi"])), ("rounded", (r["lo"] - 0.5, r["hi"] + 0.5))):
+            for variant, (lo, hi) in (("literal", (r["lo"], r["hi"])), ("lattice", (r["lo"] - 1.0, r["hi"] + 1.0))):
                 for (M, R, H, W) in CELLS:
                     f = fire_for_rung(wk, lo, hi, M, R, W, r["close_ts"])
                     if f:
@@ -554,7 +554,7 @@ def cmd_analyze():
             rowscache[tk] = candle_rows(tk, uni[tk]["close_ts"])
         return rowscache[tk]
     results = {}
-    for variant in ("literal", "rounded"):
+    for variant in ("literal", "lattice"):
         for cell in CELLS:
             fl = [f for f in sig["fires"] if f["variant"] == variant and tuple(f["cell"]) == cell]
             k_all = len(fl)
@@ -712,7 +712,7 @@ def anchor_b(sig, uni, nmax=300):
     for f in pick:
         r = uni[f["ticker"]]
         M, R, H, W = f["cell"]
-        lo, hi = (r["lo"], r["hi"]) if f["variant"] == "literal" else (r["lo"] - 0.5, r["hi"] + 0.5)
+        lo, hi = (r["lo"], r["hi"]) if f["variant"] == "literal" else (r["lo"] - 1.0, r["hi"] + 1.0)
         src, ts, fs = pick_source(r["station"], r["day_start"], r["day_end"])
         t = f["t_sig"]
         # 1) fires under strict ts<t brute force
@@ -733,7 +733,7 @@ def anchor_b(sig, uni, nmax=300):
         ok3 = g is not None and g[0] == t
         if ok1 and ok2 and ok3:
             n_ok += 1
-            if ex is None and f["variant"] == "literal" or (ex is None and f["variant"] == "rounded"):
+            if ex is None:
                 ex = {"ticker": f["ticker"], "variant": f["variant"], "cell": f["cell"], "t_sig_utc": utc(t),
                       "last_obs_used_utc": utc(max(x for x in ts if x < t)),
                       "n_obs_with_ts_lt_t": sum(1 for x in ts if x < t), "n_obs_ge_t_ignored": sum(1 for x in ts if x >= t)}
