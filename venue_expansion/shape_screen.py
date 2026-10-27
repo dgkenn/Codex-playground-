@@ -241,7 +241,9 @@ CLOCK = R(r"\b\d{1,2}(:\d\d)? ?(a|p)\.?m\.?( |,)?(e|c|m|p)?[sd]?t\b|\b\d{1,2}(:\
 RUN_EXTREME = R(r"at any (point|time)|at least once|\bever\b|highest (hourly|daily|price|value|level|number|temperature|close)|"
                 r"lowest (hourly|daily|price|value|level|number|temperature|close)|\bpeak\b|maximum|minimum|all[- ]time high")
 RUN_COUNT = R(r"how many|number of|total (number|amount|count)|cumulative|\bposts?\b|\btweets?\b|mention|"
-              r"is stated|states the|says?\b|said by|use the word")
+              r"is stated|states the|says?\b|said by|use the word|\d+ times|at least \d+ (presidential|nomination|action|people|executive)|"
+              r"\bnominations?\b|presidential actions")
+PRICEY = R(r"price|candlestick|yield|index value|exchange rate|real-time index|approval|rating|average")
 # ---- official-release cues ----------------------------------------------------------------------------------------------
 BULLETIN = R(r"bureau of labor|\bbls\b|bureau of economic|\bbea\b|census bureau|federal reserve|fomc|\bcpi\b|\bpce\b|"
              r"\bgdp\b|payroll|unemployment rate|jobless|initial claims|energy information|\beia\b|\bfred\b|"
@@ -251,7 +253,7 @@ BULLETIN = R(r"bureau of labor|\bbls\b|bureau of economic|\bbea\b|census bureau|
              r"published|as reported by")
 BULLETIN_SRC = R(r"bureau|federal|census|energy information|u\.?s\.? (department|treasury)|fred|billboard|nielsen|"
                  r"box office|\bbea\b|\bbls\b|spotify|rotten|\bimf\b|portwatch|netflix|\baaa\b|seasonally adjusted|job openings|nonfarm|"
-                 r"leaderboard|openrouter")
+                 r"leaderboard|openrouter|luminate|billboard|first published|published number|\\btsa\\b")
 
 
 def _med(xs):
@@ -296,7 +298,7 @@ def series_features(rec, catrow):
 OVERRIDES = {}   # series -> (class, subtype, reason).  Filled only after manual review of rules text; every entry is reported.
 
 
-def classify_series(ser, cat, f, samples):
+def classify_series(ser, cat, f, samples, sib=None):
     """Return {class, subtype, basis, gap_h_est, gap_basis, confidence}.  Cues are cited in `basis`.
     KEY EMPIRICAL DISCRIMINATOR: frac_irregular_close.  A venue that really shuts the book at the decision produces
     off-schedule close timestamps; a fixed scheduled close (23:59:59 / on the hour) does not, whatever the ecc text says."""
@@ -313,6 +315,17 @@ def classify_series(ser, cat, f, samples):
     fyes = f.get("frac_irregular_close_given_yes")
     # event-closing evidence: off-schedule closes overall, OR (rare-event ladders) off-schedule closes among the YES-resolved
     closes_on_event = fci >= 0.2 or (fyes is not None and f.get("n_yes", 0) >= 3 and fyes >= 0.5)
+    inherited = ""
+    if ecc_event and not closes_on_event and f.get("n_yes", 0) < 3:
+        # too few YES outcomes to see whether the venue really closes on the event: take the pooled evidence of siblings that
+        # carry the identical early_close_condition text; with no sibling evidence, believe the text (venue closes the book).
+        pooled = (sib or {}).get((ser[:5], s0["ecc"][:120]))
+        if pooled and pooled["n_yes"] >= 3:
+            inherited = f" [sibling evidence: {pooled['irr_yes']}/{pooled['n_yes']} YES closes off-schedule over {pooled['n_series']} series]"
+            closes_on_event = pooled["irr_yes"] / pooled["n_yes"] >= 0.5
+        else:
+            closes_on_event = True
+            inherited = " [too few YES outcomes to test; ecc text believed]"
 
     def out(c, sub, basis, gap=None, gap_basis="", conf="medium"):
         return {"class": c, "subtype": sub, "basis": basis, "gap_h_est": gap, "gap_basis": gap_basis, "confidence": conf}
@@ -335,19 +348,20 @@ def classify_series(ser, cat, f, samples):
         if CLOCK.search(rp) and re.search(r"temp", blob, re.I):
             return out(CLS_CLOSE, "wx-clock-snapshot", "rules: temperature read at a clock time", 0.0, "value at the close minute", "high")
         if re.search(r"any day|consecutive|at any|at least \d", rp, re.I) or WX_ACCUM.search(rp + " " + title):
-            return out(CLS_EARLY, "wx-period-event", "rules: weather event/accumulation over a period (monotone running state), fixed close", None,
+            return out(CLS_EARLY, "wx-period-event", "rules: weather event/accumulation over a period (monotone running state), fixed close" + inherited, None,
                        "analogy to extremes; not measured", "low")
     # 2b. strong official-publication cues in the rules (e.g. IMF PortWatch, seasonally adjusted statistics, leaderboards)
-    if BULLETIN_SRC.search(rp + " " + src) and not re.search(r"hourly|peak", rp, re.I):
+    if BULLETIN_SRC.search(rp + " " + src) and not re.search(r"hourly|peak", rp, re.I) \
+            and not re.search(r"candlestick|pyth|\bat \d{1,2}(:\d\d)? ?(a|p)\.?m", rp, re.I):
         return out(CLS_BULLETIN, "official-release", "rules/source cite a publication: " + BULLETIN_SRC.search(rp + " " + src).group(0), 0.0,
                    "resolves on a publication", "medium")
     # 3. running extreme / cumulative count with a FIXED scheduled close (nothing closes the book on the lock)
     if not closes_on_event and RUN_EXTREME.search(rp + " " + title) and not re.search(r"\bat \d{1,2}(:\d\d)? ?(a|p)\.?m", rp, re.I) \
             and not (BULLETIN_SRC.search(src) and not re.search(r"hourly|daily|peak", rp, re.I)):
-        return out(CLS_EARLY, "daily-peak/extreme", "rules: running max/min over the period with scheduled close: " + RUN_EXTREME.search(rp + " " + title).group(0),
+        return out(CLS_EARLY, "daily-peak/extreme", "rules: running max/min over the period with scheduled close: " + RUN_EXTREME.search(rp + " " + title).group(0) + inherited,
                    None, "lock moment unobservable from metadata (ASSUMED)", "low")
-    if not closes_on_event and RUN_COUNT.search(rp + " " + title) and not CLOCK.search(rp):
-        return out(CLS_EARLY, "running-count/mention", "rules: running count / mention with scheduled close: " + RUN_COUNT.search(rp + " " + title).group(0),
+    if not closes_on_event and RUN_COUNT.search(rp + " " + title) and not PRICEY.search(rp):
+        return out(CLS_EARLY, "running-count/mention", "rules: running count / mention with scheduled close: " + RUN_COUNT.search(rp + " " + title).group(0) + inherited,
                    None, "lock moment unobservable from metadata (ASSUMED)", "low")
     # 4. value at a clock time / closing level
     if CLOCK.search(rp) or category in ("Financials", "Crypto", "Commodities"):
@@ -366,18 +380,31 @@ def stage_classify():
     cat = {x["ticker"]: x for x in jload(os.path.join(CACHE, "series_catalog.json"), [])}
     _u, seen, _c = universe()
     rows = []
+    recs = []
     for fn in sorted(os.listdir(d_)):
         if not fn.endswith(".json"):
             continue
         rec = jload(os.path.join(d_, fn))
         if not rec or not rec["markets"]:
             continue
-        ser = rec["series"]
-        c = cat.get(ser, {})
+        c = cat.get(rec["series"], {})
         f = series_features(rec, c)
-        if not f["n_settled_ge20"]:
+        if f["n_settled_ge20"]:
+            recs.append((rec, c, f))
+    sib = {}
+    for rec, c, f in recs:
+        ecc0 = (rec["samples"][0]["ecc"] if rec["samples"] else "")
+        if not ecc0:
             continue
-        k = classify_series(ser, c, f, rec["samples"])
+        yes_ms = [m for m in rec["markets"] if m.get("result") == "yes"]
+        irr_y = sum(1 for m in yes_ms if m["close_time"] and not re.search(r":(00|59)(\.0+)?Z$", m["close_time"]))
+        g_ = sib.setdefault((rec["series"][:5], ecc0[:120]), {"n_yes": 0, "irr_yes": 0, "n_series": 0})
+        g_["n_yes"] += len(yes_ms)
+        g_["irr_yes"] += irr_y
+        g_["n_series"] += 1
+    for rec, c, f in recs:
+        ser = rec["series"]
+        k = classify_series(ser, c, f, rec["samples"], sib)
         rows.append({"series": ser, "title": c.get("title"), "category": c.get("category"), "frequency": c.get("frequency"),
                      "n_events_walked": seen.get(ser, 0), **f, **k, "sample_rules": (rec["samples"][0]["rp"][:260] if rec["samples"] else ""),
                      "sample_ecc": (rec["samples"][0]["ecc"][:160] if rec["samples"] else "")})
