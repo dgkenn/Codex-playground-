@@ -3385,7 +3385,9 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
     log(`${ev.earcon.replace('_', ' ')}${ev.reason ? ' — ' + ev.reason : ''}`,
         ev.earcon === 'in_band' ? 'on' : ev.earcon === 'degraded' ? 'stop' : 'fast');
   }
-  const line = S.splits.update(t, fusedDistance(), pace, S.monitor.state);
+  // No pace word when heart rate governs: "on pace" and "no pace signal" are the pace band's verdicts,
+  // and on 28 October the second mile, walked in the cool-down, was called "no pace signal".
+  const line = S.splits.update(t, fusedDistance(), pace, S.hrBlocks ? null : S.monitor.state);
   if (line) { play('attend'); sayShortly(line); log(`“${line}”`); }
 
   // The spoken channel, on its own clock rather than on a threshold crossing.
@@ -4937,7 +4939,9 @@ function showStats(stats, prevStats, ctx = { mode: S.mode, startedAt: S.startedA
     }
     if (stats.efficiencyFactor != null) tile('Efficiency', stats.efficiencyFactor.toFixed(2));
     if (stats.aerobic && stats.aerobic.ok) tile(`HR @ ${U.pace(1000 / REF_SPEED_MS)} flat`, `${stats.aerobic.hrAtRef}`);
-    if (stats.decouplingPct != null) tile('Drift', `${stats.decouplingPct.toFixed(1)}%`);
+    // Decoupling compares the halves of a steady run; across run/walk blocks it measures the session's
+    // shape (28 October: 15%), so it is not shown for one.
+    if (stats.decouplingPct != null && !stats.hrBlocks) tile('Drift', `${stats.decouplingPct.toFixed(1)}%`);
     if (stats.pctAtOrBelowEasy != null) tile('Easy', `${Math.round(stats.pctAtOrBelowEasy)}%`);
     // Whole-session HRR60 is meaningless once the blocks are heart-rate governed (6 October: -16,
     // shown as "--16"); the controller's ceiling-to-floor time below replaces it there.

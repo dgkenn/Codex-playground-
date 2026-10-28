@@ -103,7 +103,7 @@ export function aerobicIndex(samples, { tauS = FIT_TAU_S, delayS = FIT_DELAY_S, 
     const e = effortAt(s.t_s - delayS);
     if (e != null) res.push(s.hr_bpm - gain * e);
   }
-  const coverage = res.length * step / span;
+  const coverage = Math.min(1, res.length * step / span);   // a paused page leaves fewer seconds than samples
   if (runningS < MIN_RUNNING_S) return { ...none('under 5 minutes of running in the first 15'), runningS, coverage };
   if (coverage < MIN_HR_COVERAGE) return { ...none('heart rate missing for too much of it'), runningS, coverage };
   const a = res.reduce((p, q) => p + q, 0) / res.length;

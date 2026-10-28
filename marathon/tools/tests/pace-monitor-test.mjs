@@ -49,3 +49,13 @@ const TARGET = 450;   // 12:04/mi, sec/km
 }
 
 console.log('\nAll pace-monitor tests passed.');
+
+{
+  // With heart rate governing the page passes no pace state, and the split names only the split.
+  const { SplitAnnouncer } = await import('../pace-monitor.js');
+  const sp = new SplitAnnouncer({ everyM: 1609.344, nameSplit: n => `${n} mile${n === 1 ? '' : 's'}` });
+  let line = null;
+  for (let t = 1; t <= 730 && !line; t++) line = sp.update(t, t * 1609.344 / 720 + 0.01, 447, null);
+  assert.match(line, /^1 mile\. \d+:\d\d\.$/);
+  console.log(`  ok  a split with no pace state says no pace verdict ("${line}")`);
+}
