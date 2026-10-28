@@ -3738,17 +3738,22 @@ function applyVerdict(judged, stats) {
   const st = stepLadder({ ...before, rung: currentRung() }, judged.verdict,
                         { ladderLength: L.length, painHold: !!(held && held.hold),
                           catchUpRung: demonstratedRung(recentRunning(), L),
-                          light: lt.light, totalsMin: ladderTotals(), longestRecentS: longestRecentRunningS() });
+                          light: lt.light, totalsMin: ladderTotals(), longestRecentS: longestRecentRunningS(),
+                          headroom: hasHeadroom(stats && stats.hrBlocks) });
   log(`next step on the ${TRACKS[lt.light].label}${lt.why.length ? ` — ${lt.why.join('; ')}` : ''}`, 'dim');
   try {
     localStorage.setItem(RUNG_KEY, JSON.stringify({
       rung: st.rung, run_min: L[st.rung].run_min, reps: L[st.rung].reps,
-      qualifying: st.qualifying, changedAt: st.changedAt, loadSteps: st.loadSteps || [],
+      qualifying: st.qualifying, changedAt: st.changedAt, loadSteps: st.loadSteps || [], skips: st.skips || [],
       verdict: judged.verdict, at: new Date().toISOString(),
     }));
   } catch { /* storage full; the verdict is still shown, it just will not stick */ }
+  if (st.skipped) {
+    log(`skipping a step: every block ran full with heart rate ${stats.hrBlocks.peakRunHr} or under, against `
+        + `a ${stats.hrBlocks.ceilingBpm} ceiling — next is ${fmtMin(L[st.to].run_min)} min × ${L[st.to].reps}`, 'on');
+  }
   return { moved: st.moved, from: st.from, to: st.to,
-           why: st.moved ? judged.reason
+           why: st.moved ? (st.skipped ? `${judged.reason} With room to spare under the ceiling, the next step is skipped.` : judged.reason)
               : (held && held.hold && judged.verdict === ADVANCE)
                 ? `the ${held.site.replace(/_/g, ' ')} is a pattern — holding here until it has two clean weeks`
                 : st.why };

@@ -540,6 +540,9 @@ export class HrBlocks {
       blocksSteepDown: runs.filter(b => b.reason === 'steep downhill').length,
       runningS: runs.reduce((a, b) => a + b.durationS, 0),
       longestRunBlockS: runs.reduce((a, b) => Math.max(a, b.durationS), 0),
+      // The highest heart rate inside any run block: how close the session came to its ceiling.
+      // What a skipped step is judged on (progression.js hasHeadroom).
+      peakRunHr: runs.reduce((a, b) => (b.peakHr != null && (a == null || b.peakHr > a) ? b.peakHr : a), null),
       walkS: walks.reduce((a, b) => a + b.durationS, 0),
       cooldownS: cooldowns.reduce((a, b) => a + b.durationS, 0),
       unrecoveredWalks: walks.filter(b => b.recovered === false).length,

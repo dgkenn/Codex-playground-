@@ -9,7 +9,7 @@ import { judgeSession, nextRung, ADVANCE, REPEAT, EASE_BACK,
          DECOUPLING_LIMIT_PCT, judgeHrSession, recoveryBaseline, RECOVERY_SLOW_FRACTION, HR_DONE_FRACTION,
          talkTestOffset, talkTestApplies, TALK_LIMIT_BPM, HR_DOSE_FRACTION,
          stepLadder, QUALIFYING_TO_ADVANCE, MIN_DAYS_BETWEEN_STEPS, demonstratedRung,
-         trafficLight, TRACKS, SPIKE_MAX } from '../progression.js';
+         trafficLight, TRACKS, SPIKE_MAX, hasHeadroom, SKIP_MARGIN_BPM } from '../progression.js';
 
 const PRESCRIBED = { runMin: 2, walkMin: 2, reps: 7 };      // 14 minutes of running
 
@@ -391,3 +391,30 @@ const hrSummary = (over = {}) => ({
 }
 
 console.log('\nAll progression tests passed.');
+
+{
+  // Skipping a step (asked for 28 October): every block full, heart rate 10+ under the ceiling, green.
+  const full = { governedBy: 'hr', ceilingBpm: 170, blocksPlanned: 6, blocksFull: 6, blocksCut: 0, peakRunHr: 158 };
+  assert.equal(hasHeadroom(full), true);
+  assert.equal(hasHeadroom({ ...full, peakRunHr: 170 - SKIP_MARGIN_BPM + 1 }), false, 'too close to the ceiling');
+  assert.equal(hasHeadroom({ ...full, blocksFull: 5, blocksCut: 1 }), false, 'a block cut');
+  assert.equal(hasHeadroom({ ...full, governedBy: 'clock' }), false);
+  assert.equal(hasHeadroom(null), false);
+
+  const totals = [8, 14, 18, 20, 20, 24, 24, 30, 30, 30, 35, 40];
+  const now = new Date('2026-11-01T12:00:00Z');
+  const st = { rung: 2, qualifying: 0, changedAt: new Date('2026-10-28T12:00:00Z').toISOString() };
+  const opts = { ladderLength: totals.length, now, light: 'green', totalsMin: totals, longestRecentS: 18 * 60, headroom: true };
+  const r = stepLadder(st, ADVANCE, opts);
+  assert.equal(r.to, 4, `6 x 3 skips 5 x 4 to 4 x 5: ${JSON.stringify(r)}`);
+  assert.equal(r.skipped, true); assert.equal(r.skips.length, 1);
+  // Not on amber, not twice in a week, and not past the spike cap (then one ordinary step instead).
+  assert.equal(stepLadder(st, ADVANCE, { ...opts, light: 'amber' }).skipped, undefined);
+  const again = stepLadder({ ...st, skips: [new Date('2026-10-29T12:00:00Z').toISOString()] }, ADVANCE, opts);
+  assert.equal(again.to, 3); assert.equal(again.skipped, false);
+  const spike = stepLadder({ ...st, rung: 5 }, ADVANCE, { ...opts, longestRecentS: 20 * 60 });   // 4x6 (24) -> 3x8 (24) ok; 3x10 (30) > 1.3 x 20
+  assert.equal(spike.to, 6, `the skip would be a spike, so one step: ${JSON.stringify(spike)}`);
+  // Without headroom, the ordinary step.
+  assert.equal(stepLadder(st, ADVANCE, { ...opts, headroom: false }).to, 3);
+  console.log('  ok  a step is skipped with room under the ceiling on green, once a week, never past the spike cap');
+}

@@ -424,6 +424,23 @@ export const TRACKS = {
 /// aggressive end the athlete chose -- the ladder's own steps are built to fit inside it.
 export const SPIKE_MAX = 1.3;
 
+/// A session clears the ceiling by this much, inside every block, for the next step to be skipped.
+export const SKIP_MARGIN_BPM = 10;
+/// At most one skipped step in this many days.
+export const SKIP_EVERY_DAYS = 7;
+
+/**
+ * Whether a heart-rate-governed session had room to spare: every planned block ran its full length,
+ * none was cut, and heart rate inside the blocks stayed SKIP_MARGIN_BPM under the ceiling. Asked for
+ * on 28 October ("you can skip a step"), after 7 x 2 min ran full with heart rate 142-162. The
+ * margin is on the in-block peak, which the armband reports late, so it is a real margin.
+ */
+export function hasHeadroom(summary) {
+  if (!summary || summary.governedBy !== 'hr' || !(summary.ceilingBpm > 0)) return false;
+  if (!(summary.blocksPlanned > 0) || summary.blocksFull < summary.blocksPlanned || summary.blocksCut > 0) return false;
+  return summary.peakRunHr != null && summary.peakRunHr <= summary.ceilingBpm - SKIP_MARGIN_BPM;
+}
+
 /**
  * The light for the next step, from the signals the app has. All inputs optional; with none of them
  * the light is green (no evidence against). Returns `{light, why: [..]}`.
@@ -462,13 +479,13 @@ export function trafficLight({ readiness = null, painHold = null, painRecent = f
  */
 export function stepLadder(state, verdict, { ladderLength, now = new Date(), painHold = false,
                                            catchUpRung = null, light = 'amber', totalsMin = null,
-                                           longestRecentS = null } = {}) {
+                                           longestRecentS = null, headroom = false } = {}) {
   const from = Math.max(0, Math.min((state && state.rung) | 0, ladderLength - 1));
   const changedAt = state && state.changedAt ? new Date(state.changedAt) : null;
   const days = changedAt ? (now - changedAt) / 86400000 : Infinity;
   const base = { rung: from, qualifying: (state && state.qualifying) || 0,
                  changedAt: state && state.changedAt ? state.changedAt : null,
-                 loadSteps: (state && state.loadSteps) || [] };
+                 loadSteps: (state && state.loadSteps) || [], skips: (state && state.skips) || [] };
 
   if (verdict === EASE_BACK) {
     const to = Math.max(0, from - 1);
@@ -501,31 +518,50 @@ export function stepLadder(state, verdict, { ladderLength, now = new Date(), pai
              why: `${qualifying} of ${track.qualifying} good runs on this rung` };
   }
   // A step that adds running (the session gets longer) is the one the injury evidence is about; a
-  // step that only lengthens the blocks is not.
-  const isLoad = !!(totalsMin && totalsMin[from + 1] > totalsMin[from]);
-  const needDays = isLoad ? track.loadMinDays : track.minDays;
-  if (days < needDays) {
-    const ready = new Date(changedAt.getTime() + needDays * 86400000);
-    return { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(), track: light,
-             why: `earned, but the last step up was ${Math.floor(days)} day${Math.floor(days) === 1 ? '' : 's'} ago` };
-  }
-  if (isLoad) {
-    const week = base.loadSteps.filter(t => now - new Date(t) < 7 * 86400000).sort();
-    if (week.length >= track.loadStepsPerWeek) {
-      const ready = new Date(new Date(week[0]).getTime() + 7 * 86400000);
-      return { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(), track: light,
-               why: `earned, but ${week.length} step${week.length === 1 ? '' : 's'} that added running already this week` };
+  // step that only lengthens the blocks is not. `gate(to)` applies the track's waits and the spike cap
+  // to a move from `from` to `to`, and returns the hold if one applies.
+  const gate = to => {
+    const isLoad = !!(totalsMin && totalsMin[to] > totalsMin[from]);
+    const needDays = isLoad ? track.loadMinDays : track.minDays;
+    if (days < needDays) {
+      const ready = new Date(changedAt.getTime() + needDays * 86400000);
+      return { isLoad, hold: { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(), track: light,
+        why: `earned, but the last step up was ${Math.floor(days)} day${Math.floor(days) === 1 ? '' : 's'} ago` } };
     }
-    if (longestRecentS > 0 && totalsMin[from + 1] * 60 > SPIKE_MAX * longestRecentS) {
-      return { ...base, qualifying, moved: false, from, to: from, track: light,
-               why: `the next step is ${totalsMin[from + 1]} min of running and your longest session in 30 days is `
-                  + `${Math.round(longestRecentS / 60)} -- run this step's full time first` };
+    if (isLoad) {
+      const week = base.loadSteps.filter(t => now - new Date(t) < 7 * 86400000).sort();
+      if (week.length >= track.loadStepsPerWeek) {
+        const ready = new Date(new Date(week[0]).getTime() + 7 * 86400000);
+        return { isLoad, hold: { ...base, qualifying, moved: false, from, to: from, readyAt: ready.toISOString(), track: light,
+          why: `earned, but ${week.length} step${week.length === 1 ? '' : 's'} that added running already this week` } };
+      }
+      if (longestRecentS > 0 && totalsMin[to] * 60 > SPIKE_MAX * longestRecentS) {
+        return { isLoad, hold: { ...base, qualifying, moved: false, from, to: from, track: light,
+          why: `the next step is ${totalsMin[to]} min of running and your longest session in 30 days is `
+             + `${Math.round(longestRecentS / 60)} -- run this step's full time first` } };
+      }
     }
+    return { isLoad, hold: null };
+  };
+  const move = (to, isLoad, skipped) => ({
+    rung: to, qualifying: 0, changedAt: now.toISOString(),
+    loadSteps: isLoad ? [...base.loadSteps, now.toISOString()].slice(-10) : base.loadSteps,
+    skips: skipped ? [...base.skips, now.toISOString()].slice(-5) : base.skips,
+    moved: true, from, to, track: light, skipped,
+    why: skipped ? 'every block ran full with heart rate well under the ceiling -- skipping a step'
+                 : `${qualifying} good run${qualifying === 1 ? '' : 's'} in a row on this rung`,
+  });
+
+  // Two rungs at once: room to spare under the ceiling, every signal green, the rung exists, no skip
+  // in the last week -- and the landing rung passes the same waits and spike cap as any other step.
+  // If it does not, the ordinary one-rung step is tried instead.
+  const recentSkip = base.skips.some(t => now - new Date(t) < SKIP_EVERY_DAYS * 86400000);
+  if (headroom && light === 'green' && from + 2 <= ladderLength - 1 && !recentSkip) {
+    const g2 = gate(from + 2);
+    if (!g2.hold) return move(from + 2, g2.isLoad, true);
   }
-  return { rung: from + 1, qualifying: 0, changedAt: now.toISOString(),
-           loadSteps: isLoad ? [...base.loadSteps, now.toISOString()].slice(-10) : base.loadSteps,
-           moved: true, from, to: from + 1, track: light,
-           why: `${qualifying} good run${qualifying === 1 ? '' : 's'} in a row on this rung` };
+  const g = gate(from + 1);
+  return g.hold || move(from + 1, g.isLoad, false);
 }
 
 /**

@@ -491,3 +491,12 @@ if (existsSync(POLAR)) {
 }
 
 console.log('\nAll hr-blocks tests passed.');
+
+{
+  // The summary carries the highest heart rate inside any run block (the skip rule reads it), not
+  // the walk peaks that follow the blocks.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 60, reps: 2 });
+  drive(b, 900, (t, phase) => (phase === Phase.RUN ? 138 : phase === Phase.WALK ? 145 : 110));
+  assert.equal(b.summary().peakRunHr, 138);
+  console.log('  ok  the summary reports the peak heart rate inside the run blocks (138)');
+}
