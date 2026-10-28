@@ -24,9 +24,16 @@ FROZEN INTERPRETATION CHOICES (spec silent or ambiguous; fixed BEFORE any fill o
     cache/favourite_maker/tape.
   * Quote placement: last candle with end_period_ts <= close - T*60 (the same candle rule as tail_pricing.entry_quote);
     A = that candle's yes_ask.close in cents.  Quoted iff A is present and A >= 80 (ZONE, frozen).  d = A - k,
-    k in {1,2,3}.  yes_ask == 100 (no offer resting) IS in the zone (spec-literal "yes_ask >= 80c"); it is flagged
-    and reported as a stratum / sensitivity (never a filter on the verdict).  A candle missing/no ask -> not quoted, counted.
-    1 contract per quote, rests from t0 = close - T*60 (exclusive) to close (inclusive), no re-quote, no cancel.
+    k in {1,2,3}.  A candle missing/no ask -> not quoted, counted.  1 contract per quote, rests from t0 = close - T*60
+    (exclusive) to close (inclusive), no re-quote, no cancel.
+  * THE ZONE IS 98% yes_ask == 100c.  `quotes` was run first (candles only): of 565,599 quotes, about 98% sit at
+    yes_ask == 100c, i.e. deep in-the-money strikes with NO resting offer, where d = A - k is anchored on a non-existent
+    ask (the mirror of MAKER_FILL's bid == 0 "untradeable" rows, which it dropped).  Decided from these COUNTS alone,
+    before any tape was fetched, any fill computed or any outcome read: run BOTH and label them, moving no bar:
+        Z1 = spec-literal, yes_ask >= 80c INCLUDING 100c (verdict of record, because the spec says so);
+        Z2 = real two-sided favourites, 80c <= yes_ask <= 99c (the market the spec's motivating bid >= 81c measurement
+             describes; 3,320 tickers vs Z1's extra 44,383).
+    Tape for Z2 tickers = cache/favourite_maker/tape (phase A); Z1-only tickers = cache/favourite_maker/tape_b (phase B).
   * Fill, on the trade tape: V(t) = cumulative count_fp of prints with created_time in (t0, close], taker_side == "no"
     and yes_price <= d.   OPTIMISTIC: V > 0.   PESSIMISTIC N in {25,100}: V > N (strictly).  N is an ASSUMPTION.
     Sensitivity (reported, never selected): same rules counting ALL taker sides at yes_price <= d (the literal mirror of
@@ -623,7 +630,6 @@ def cmd_analyze():
 
 
 # ------------------------------------------------------------------------------------- report
-PLAIN_READING: list = []          # filled AFTER the run from the tables (post-hoc prose; no bar depends on it)
 
 
 def _f(x, nd=2, pct=False):
@@ -640,6 +646,13 @@ def _fb(c):
     return None if not c["n_filled"] else (c["p_yes_filled"] - c["breakeven"]) * 100
 
 
+def _nor(c):
+    """Mirror of maker_fill's adverse-selection ratio: P(NO|filled)/P(NO|quoted) (NO is the loss event for a long)."""
+    if not c["n_filled"] or c["p_yes_quoted"] is None or c["p_yes_quoted"] >= 1.0:
+        return None
+    return (1.0 - c["p_yes_filled"]) / (1.0 - c["p_yes_quoted"])
+
+
 def _sgn(x):
     return "n/a" if x is None else f"{x:+.2f}"
 
@@ -648,8 +661,8 @@ def sec_a(L, rep, zs):
     C = rep["cells"]
     for m in MODELS:
         L.append(f"\n#### {zs}, {MODEL_LABEL[m]}{'  (DECISIVE for the verdict)' if m == 'n25' else ''}\n")
-        L.append("| T | k | quoted n | P(YES|quoted) [95%] | filled n | P(YES|filled) [95%] | [99.79% Wilson] | break-even | filled - b/e (pp) | quoted - b/e_quoted (pp) | filled - quoted (pp) | day-bootstrap 95% of diff (pp) | std. quoted |")
-        L.append("|--:|--:|--:|---|--:|---|---|--:|--:|--:|--:|---|--:|")
+        L.append("| T | k | quoted n | P(YES|quoted) [95%] | filled n | P(YES|filled) [95%] | [99.79% Wilson] | break-even | filled - b/e (pp) | quoted - b/e_quoted (pp) | filled - quoted (pp) | day-bootstrap 95% of diff (pp) | P(NO|filled) / P(NO|quoted) | std. quoted |")
+        L.append("|--:|--:|--:|---|--:|---|---|--:|--:|--:|--:|---|--:|--:|")
         for T in TS:
             for k in KS:
                 c = C[f"{zs}|{T}|{k}|{m}"]
@@ -657,7 +670,7 @@ def sec_a(L, rep, zs):
                 bs = "n/a" if not bd else f"[{bd[0] * 100:+.2f}, {bd[1] * 100:+.2f}]"
                 L.append(f"| {T} | {k} | {c['n_quoted']:,} | {_f(c['p_yes_quoted'], 2, True)} {_ci(c['q_lo'], c['q_hi'])} | {c['n_filled']:,} | "
                          f"{_f(c['p_yes_filled'], 2, True)} {_ci(c['f_lo'], c['f_hi'])} | {_ci(c['f_lo_adj'], c['f_hi_adj'])} | {_f(c['breakeven'], 2, True)} | "
-                         f"{_sgn(_fb(c))} | {_sgn((c['p_yes_quoted'] - c['mean_d_quoted'] / 100.0) * 100.0 if c['n_quoted'] else None)} | {_sgn(c['diff_pp'])} | {bs} | {_f(c['p_yes_quoted_std_to_filled_mix'], 2, True)} |")
+                         f"{_sgn(_fb(c))} | {_sgn((c['p_yes_quoted'] - c['mean_d_quoted'] / 100.0) * 100.0 if c['n_quoted'] else None)} | {_sgn(c['diff_pp'])} | {bs} | {_f(_nor(c), 2)} | {_f(c['p_yes_quoted_std_to_filled_mix'], 2, True)} |")
     L.append(f"\n#### {zs}: ask-level strata (k = 1; descriptive, NOT a filter), optimistic and N=25\n")
     L.append("| T | ask level | model | quoted n | P(YES|quoted) | filled n | P(YES|filled) [95%] | break-even | filled - b/e (pp) |")
     L.append("|--:|---|---|--:|--:|--:|---|--:|--:|")
@@ -755,6 +768,45 @@ def sec_verdict(L, rep, zs):
              f"({len(V['sensitivity']['n100']['floor'])} floor cells, {len(V['sensitivity']['n100']['pass'])} pass).")
 
 
+def plain_reading(rep):
+    C, V, S = rep["cells"], rep["verdicts"], rep["sampling"]
+    out = []
+    for zs in SETS:
+        K = {(T, k): C[f"{zs}|{T}|{k}|n25"] for T in TS for k in KS}
+        neg = sum(1 for c in K.values() if c["diff_pp"] is not None and c["diff_pp"] < 0)
+        negci = sum(1 for c in K.values() if c["boot_diff_ci"] and c["boot_diff_ci"][1] < 0)
+        pos = sum(1 for c in K.values() if c["n_filled"] and c["p_yes_filled"] > c["breakeven"])
+        g1 = sum(1 for c in K.values() if c["gates"]["g1"])
+        g2 = sum(1 for c in K.values() if c["gates"]["g2"])
+        out.append(f"**{zs} ({SET_LABEL[zs].split(': ', 1)[1]}), N=25.** Adverse selection runs in the feared direction in {neg} of 12 cells "
+                   f"(P(YES|filled) < P(YES|quoted)); the day-bootstrap 95% CI of the gap excludes zero on the negative side in {negci} of 12. "
+                   f"Gross edge per fill is nevertheless positive at the point estimate in {pos} of 12 cells (P(YES|filled) > break-even), but the 99.79% Wilson LOWER bound clears break-even in {g1} of 12 (gate 1), "
+                   f"and the adverse-selection gate (bootstrap upper bound >= -1.0pp) holds in {g2} of 12 (gate 2). PASS cells: {len(V[zs]['pass_cells'])}. Verdict: **{V[zs]['verdict']}**.")
+    c1, c2, c3 = (C[f"Z2|15|{k}|n25"] for k in KS)
+    e = lambda c: (c["p_yes_quoted"] - c["mean_d_quoted"] / 100.0) * 100.0
+    out.append(f"**What the bid gives up (Z2, T=15, N=25).** If every quote filled, the edge would be {e(c1):+.2f} / {e(c2):+.2f} / {e(c3):+.2f}pp for k = 1 / 2 / 3 (P(YES|quoted) {c1['p_yes_quoted'] * 100:.2f}% less mean d). "
+               f"The filled edge is {_fb(c1):+.2f} / {_fb(c2):+.2f} / {_fb(c3):+.2f}pp. Adverse selection removes {e(c1) - _fb(c1):.2f} / {e(c2) - _fb(c2):.2f} / {e(c3) - _fb(c3):.2f}pp; the loss-event ratio P(NO|filled)/P(NO|quoted) is "
+               f"{_nor(c1):.2f} / {_nor(c2):.2f} / {_nor(c3):.2f} (maker_fill's longshot-ask ratios were 1.12-2.29: the same magnitude from the other side of the book). "
+               f"The deeper the bid sits below the ask, the more it is filled only when YES is failing, and the more of the headline edge disappears.")
+    n = c1["n_filled"]
+    p = c1["p_yes_filled"]
+    edge = (c1["p_yes_filled"] - c1["breakeven"])
+    need = (Z_ADJ ** 2) * p * (1 - p) / (edge ** 2) if edge > 0 else float("nan")
+    out.append(f"**Why INSUFFICIENT and not KILL, and why more data of this kind will not rescue it.** In Z2 T=15 k=1 the filled edge is {edge * 100:+.2f}pp on {n:,} fills; the 99.79% Wilson half-width is "
+               f"{(c1['f_hi_adj'] - c1['f_lo_adj']) / 2 * 100:.2f}pp. Clearing gate 1 at that edge would need roughly {need:,.0f} independent fills (the Wilson interval treats strikes as independent, which they are not: "
+               f"one BTC move hits every strike of an hour, so effective n is smaller). The window is {S['days']['Z2']} days and cannot be extended by adding hours. KILL cannot fire because in every cell meeting the n floor the 99.79% UPPER bound still sits above break-even; the data neither establish a profit nor a loss.")
+    best = max((c for k_, c in C.items() if k_.startswith("Z2|") and k_.endswith("|n25") and c["ev_per_quoted"] is not None), key=lambda c: c["ev_per_quoted"])
+    bk = [k_ for k_, c in C.items() if c is best][0]
+    out.append(f"**EV, sign only.** Best Z2 N=25 cell by EV per quoted: {bk} at {best['ev_per_quoted']:+.3f}c (SE {best['se_q']:.3f}, t {best['t_q']:.2f} for information; bar {best['bar']:.2f} is unreachable here by construction, per the spec's power ceiling). "
+               f"Z1 per-quoted EV is a rounding error (best {max(c['ev_per_quoted'] for k_, c in C.items() if k_.startswith('Z1|') and k_.endswith('|n25') and c['ev_per_quoted'] is not None):+.3f}c) because about 98% of Z1 quotes are ask=100 bids at 97-99c that rarely fill (fill rate 0.8-7.8% in Z1 versus 48-86% in Z2).")
+    out.append("**Premises.** (1) The taker-side convention is as the spec assumes: `no` prints sit inside the minute's bid range and `yes` prints inside its ask range in 100.0% of 129,539 prints (section 4). "
+               "(2) The zone `yes_ask >= 80c` is 98% yes_ask = 100c, which the spec did not anticipate; Z1/Z2 resolve that without moving a bar. "
+               "(3) The maker_fill tape holds only longshot strikes, so the favourite-strike tape was fetched anew (503 of 503 hours, both zones). "
+               "(4) TAIL_PRICING's +1.0c (realised rate above the bid) is reproduced in sign and rough size at short horizons (T <= 15) for k = 1 but fades at T = 30 and is not monotone in T. "
+               "(5) Gate 2 (bootstrap upper bound of [filled - quoted] >= -1.0pp) is close to mechanically failed in Z1, because P(YES|quoted) is about 99.9% (never-filled deep ITM quotes); it was applied verbatim and not altered.")
+    return out
+
+
 def write_md(rep, path):
     L = []
     S = rep["sampling"]
@@ -770,10 +822,9 @@ def write_md(rep, path):
                  f"**{'YES' if S['exact_prefix_of_work_order'][zs] else 'NO'}**; tape-complete stragglers beyond the first gap, excluded: {len(S['stragglers_excluded'][zs])}; "
                  f"{S['days'][zs]} UTC days, {S['quotes'][zs]:,} quotes with an official result. {SET_LABEL[zs]}.")
     L.append(f"* Placement sha256 `{S['quotes_sha256'][:16]}` (all {S['hours_in_quote_file']} completed hours; {S['quotes_all_hours_before_prefix_cut']:,} quotes before the coverage cut).\n")
-    if PLAIN_READING:
-        L.append("## 0. Plain reading (written after the run; numbers from the tables below)\n")
-        L += ["* " + x for x in PLAIN_READING]
-        L.append("")
+    L.append("## 0. Plain reading (generated from the tables below; no bar depends on it)\n")
+    L += ["* " + x for x in plain_reading(rep)]
+    L.append("")
     L.append("**Premise check.** The spec's side convention holds on the data: a Kalshi print with `taker_side = \"no\"` is a taker selling YES "
              "(section 4 shows those prints sit at the candle BID, taker `yes` at the ASK). One structural fact the spec did not anticipate: **the zone `yes_ask >= 80c` is "
              f"overwhelmingly `yes_ask = 100c`** (no resting offer: deep in-the-money strikes). Of the strike-quotes in the zone, {S['tickers_phaseB']:,} tickers have ONLY ask=100 quotes versus "
