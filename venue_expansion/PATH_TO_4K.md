@@ -118,3 +118,65 @@ And the one thing that would change my assessment most is not another study: **t
 capital.** At $500k+, $4,000/month is a 10%/yr target and the right instrument is almost certainly
 not a prediction market. At $10k it is a 40%/month target and the answer is that it cannot be done —
 by me, by this repo, or by anyone selling a system that claims otherwise.
+
+---
+
+# UPDATE 2026-10-30 — the breadth lever is closed
+
+`WIDE_SPREAD_MAKER` returned **KILL**. Section 4 above identified **breadth** as the binding
+constraint on $4,000/month and named that study as its measurement. The measurement came back
+negative, and it closes the lever:
+
+- **Flow was never the problem** — pooled fill rates 63–84%, the 5% gate met in 172 of 176 cells. My
+  predicted "wide spread means thin flow" failure mode is **refuted**.
+- **Adverse selection is worse at wider spreads, not better.** All 38 floor-meeting cells fail, with
+  point estimates **5.4–27.1 percentage points on the losing side** — against ~1pp on BTC favourites.
+
+**The spread is the price of adverse selection, not revenue.** Measured at both ends of the liquidity
+spectrum, it is priced correctly. So the 11× breadth that $4k/month needs **does not exist at
+breakeven economics**, let alone profitable ones.
+
+## Revised probabilities
+
+| | before | now |
+|---|---|---|
+| edge survives the December re-run | ~15% | **~8%** |
+| breadth exists at 11× | ~40% | **~3%** (measured negative) |
+| survives live queue + size | ~30% | ~30% |
+| **joint, a few hundred $/month** | ~2% | **well under 1%** |
+
+The downgrade is driven by one specific thing: the `KXUFCROUNDS` squeak. Two cells cleared gate 1 on
+352 comparisons and dissolved on inspection — the quote population's base rate was simply off (67.5%
+YES at a 48% mean price). **The BTC-favourite +1.47c is the same kind of object: one positive cell
+among hundreds.** That is now a demonstrated failure mode in this program, not a hypothetical.
+
+## The one thing that cuts the other way
+
+Re-examining `FAVOURITE_MAKER`'s own numbers, the **k-gradient is structured where the T-gradient is
+not**:
+
+| k | edge per fill | adverse-selection gap | fill rate | EV/quoted |
+|---|---|---|---|---|
+| 1 | +1.47pp | −0.95pp | 83.0% | +1.223c |
+| 2 | +1.48pp | −3.06pp | 60.2% | +0.890c |
+
+**The edge per fill is essentially invariant in k (+1.47 vs +1.48pp); what varies is the fill rate.**
+Adverse selection worsening with k is *mechanistically required* — quoting deeper means you are filled
+only when the market moves to you — so this is structure, not fit. The non-monotone T-gradient
+(+2.11 → +1.47 → +0.12 → +0.75pp) remains evidence against.
+
+This implies the untested cell **k = 0 — join the touch rather than improve inside it** — should carry
+the highest fill rate at the same per-fill edge. **But k=0 puts you at the back of the queue at the
+best bid, so the answer is entirely determined by the queue position that every study has had to
+assume (`N ∈ {25, 100}`).** It cannot be answered without the depth data.
+
+## Where the target stands
+
+**$4,000/month is not reachable from anything measured, and the breadth path that was its best hope is
+now closed by measurement rather than by argument.** The remaining work is bounded and blocked:
+
+1. **Depth collection** (needs `main`) → decides k=0, which is the last motivated cell.
+2. **December re-run** at ≥130 days → decides whether the BTC-favourite edge exists at all.
+3. The **~50c pre-flight** → still worth doing regardless.
+
+Nothing else on this venue is untested that is also testable with available data.
