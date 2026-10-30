@@ -1,0 +1,219 @@
+<title>On-Call Recall</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: single reading column at reference-text density; the real knowledge card is the hero object. */
+  :root{
+    --paper:#fbfbfc; --surface:#ffffff; --ink:#15181d; --ink-soft:#4a525e; --ink-faint:#7b8694;
+    --rule:#dfe3e9; --trace:#0d7c94; --trace-soft:#e3f3f6; --warn:#8a5a00;
+    --serif:"Source Serif 4",Charter,Georgia,serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --paper:#0e1115; --surface:#161a20; --ink:#e8ebef; --ink-soft:#a8b2bf; --ink-faint:#78828f;
+    --rule:#262c35; --trace:#3fc3dd; --trace-soft:#13272d; --warn:#d9a73c; color-scheme:dark;}}
+  :root[data-theme="dark"]{
+    --paper:#0e1115; --surface:#161a20; --ink:#e8ebef; --ink-soft:#a8b2bf; --ink-faint:#78828f;
+    --rule:#262c35; --trace:#3fc3dd; --trace-soft:#13272d; --warn:#d9a73c; color-scheme:dark;}
+
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:2.5rem 4rem}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--warn);display:flex;align-items:center;gap:.5rem;margin:0 0 1.5rem}
+  .eyebrow::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:var(--warn);flex:none}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,6.4vw,3rem);line-height:1.1;
+    letter-spacing:-.015em;text-wrap:balance;margin:0 0 1rem}
+  h1 em{font-style:normal;color:var(--trace)}
+  .lede{font-size:1.09rem;color:var(--ink-soft);max-width:34rem;margin:0 0 2.5rem}
+  h2{font-family:var(--serif);font-weight:600;font-size:1.4rem;letter-spacing:-.01em;
+    text-wrap:balance;margin:0 0 .75rem}
+  p{margin:0 0 1rem}
+  section{border-top:1px solid var(--rule);padding-block:2.25rem 0;margin-block-start:2.25rem}
+  .label{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-faint);margin:0 0 .6rem}
+
+  /* the real knowledge point */
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+  .card-top{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;
+    padding:.7rem 1.1rem;border-bottom:1px solid var(--rule);background:var(--trace-soft)}
+  .chip{font-family:var(--mono);font-size:.66rem;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--trace);border:1px solid currentColor;border-radius:2px;padding:.1rem .4rem}
+  .card-body{padding:1.1rem}
+  .stem{font-family:var(--serif);font-size:1.12rem;line-height:1.45;margin:0 0 1.1rem}
+  .row{display:grid;grid-template-columns:5.2rem 1fr;gap:.3rem .9rem;margin-block:.65rem}
+  .row dt{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-faint);padding-top:.22rem}
+  .row dd{margin:0;min-width:0}
+  .answer{font-weight:600}
+  .cite{display:block;border-top:1px solid var(--rule);padding:.7rem 1.1rem;
+    font-family:var(--mono);font-size:.76rem;color:var(--ink-soft)}
+  .cite strong{color:var(--trace);font-weight:500}
+
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:1.5rem;margin:1.5rem 0 0}
+  .fact{min-width:0}
+  .fact b{display:block;font-family:var(--serif);font-size:1.9rem;line-height:1;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .fact span{display:block;font-size:.87rem;color:var(--ink-soft);margin-top:.35rem}
+
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  .scroll{overflow-x:auto}
+  th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-faint);font-weight:400}
+  td:first-child{font-weight:500}
+  .yes{color:var(--trace);font-family:var(--mono);font-size:.8rem}
+  .no{color:var(--ink-faint);font-family:var(--mono);font-size:.8rem}
+
+  ul{margin:0 0 1rem;padding-left:1.1rem}
+  li{margin-bottom:.4rem}
+
+  .cta{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:1.4rem;margin-top:1.5rem}
+  .price{font-family:var(--serif);font-size:1.6rem;font-variant-numeric:tabular-nums}
+  .price small{font-family:var(--sans);font-size:.9rem;color:var(--ink-soft);font-weight:400}
+  form{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.1rem}
+  input[type=email]{flex:1 1 14rem;min-width:0;font:inherit;padding:.6rem .7rem;color:var(--ink);
+    background:var(--paper);border:1px solid var(--rule);border-radius:2px}
+  input[type=email]:focus-visible,button:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
+  button{font:inherit;font-weight:500;padding:.6rem 1.2rem;border:1px solid var(--trace);
+    border-radius:2px;background:var(--trace);color:var(--paper);cursor:pointer}
+  button:hover{opacity:.9}
+  .note{font-size:.84rem;color:var(--ink-faint);margin:.8rem 0 0}
+  .ok{display:none;font-family:var(--mono);font-size:.85rem;color:var(--trace);margin-top:.9rem}
+  footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.5rem;
+    font-size:.82rem;color:var(--ink-faint)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Waitlist &middot; not yet released</p>
+
+  <h1>Every answer tells you <em>which page it came from</em>.</h1>
+  <p class="lede">A spaced-repetition deck for anesthesiology and internal medicine
+  residents, built on the board blueprint. 6,200 knowledge points, each one cited to a
+  specific page in a standard reference text. No generated prose you can't check.</p>
+
+  <p class="label">A card from the deck, unedited</p>
+  <div class="card">
+    <div class="card-top">
+      <span class="chip">Anesthesia</span>
+      <span class="chip">Tier 1</span>
+      <span class="chip">Critical care</span>
+      <span class="chip">Car-safe</span>
+    </div>
+    <div class="card-body">
+      <p class="stem">What two gastric parameters define the threshold at which a patient
+      is at high risk for aspiration pneumonitis?</p>
+      <dl class="row">
+        <dt>Answer</dt>
+        <dd class="answer">Gastric volume &gt;25&nbsp;mL (0.4&nbsp;mL/kg) <em>and</em> gastric pH &lt;2.5</dd>
+      </dl>
+      <dl class="row">
+        <dt>Why</dt>
+        <dd>Large volumes of acidic gastric contents cause severe chemical pneumonitis
+        (Mendelson syndrome) when aspirated.</dd>
+      </dl>
+    </div>
+    <span class="cite">Source &mdash; <strong>Morgan &amp; Mikhail, p.&nbsp;438</strong>
+      &nbsp;&middot;&nbsp; topic: Aspiration: prevention and management</span>
+  </div>
+  <p class="note">Citation shown as stored. Every card carries one; nothing is uncited.</p>
+
+  <section>
+    <h2>What's in it</h2>
+    <div class="facts">
+      <div class="fact"><b>6,200</b><span>knowledge points, each with a page citation</span></div>
+      <div class="fact"><b>1,214</b><span>curriculum topics across 29 domains</span></div>
+      <div class="fact"><b>2</b><span>disciplines: anesthesiology, internal medicine</span></div>
+    </div>
+    <p style="margin-top:1.5rem">The blueprint is the real one &mdash; airway, anesthetic
+    pharmacology, monitoring and equipment, cardiac, thoracic, neuro, obstetric, pediatric,
+    regional and neuraxial, pain, perioperative crises, preoperative evaluation, critical
+    care, patient safety &mdash; plus internal medicine by organ system.</p>
+    <p>Scheduling is FSRS, and it tracks calibration as well as accuracy: it separates the
+    facts you get right from the facts you're <em>confident</em> about. Those are different
+    problems and they need different review intervals.</p>
+  </section>
+
+  <section>
+    <h2>Starting with the 50 topics nobody teaches you</h2>
+    <p>The first release is the <strong>on-call and cross-cover</strong> set: the approach to
+    the acutely changing ward patient. Hypotension at 3&nbsp;a.m. Oxygen desaturation. The
+    potassium of 6.8. New confusion. Chest pain on the floor.</p>
+    <p>Board banks cover these badly because they aren't board questions &mdash; they're the
+    pages you'd want in your pocket on your first night of call, and that's exactly the set
+    to launch on.</p>
+  </section>
+
+  <section>
+    <h2>Where this actually stands</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Piece</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td>Knowledge-point catalog, cited</td><td class="yes">built &mdash; 6,200 points</td></tr>
+          <tr><td>Curriculum blueprint and priority ordering</td><td class="yes">built</td></tr>
+          <tr><td>FSRS scheduling with calibration tracking</td><td class="yes">built</td></tr>
+          <tr><td>Illness scripts, dosing drills, contrastive cases</td><td class="yes">built</td></tr>
+          <tr><td>Web app, accounts, your own review queue</td><td class="no">not built</td></tr>
+          <tr><td>Billing</td><td class="no">not built</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:1.1rem">The content exists and has for a while. What's missing is a
+    front door. That's the part worth building only if people actually want it, which is what
+    this page is for.</p>
+  </section>
+
+  <section>
+    <h2>Join the waitlist</h2>
+    <div class="cta">
+      <p class="price">$39<small> / month at launch</small></p>
+      <p style="margin:.5rem 0 0;color:var(--ink-soft);font-size:.95rem">No payment now and no
+      card. If enough residents sign up, it gets built and you get first access and the launch
+      price. If not enough do, I'll email you to say so and that will be the end of it.</p>
+      <form id="waitlist" novalidate>
+        <input id="email" type="email" name="email" required autocomplete="email"
+               placeholder="you@hospital.org" aria-label="Email address">
+        <button type="submit">Join waitlist</button>
+      </form>
+      <p class="ok" id="ok">Thanks &mdash; you're on the list.</p>
+      <p class="note">Email only. No specialty, no program, no marketing list, one message
+      either way.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>This is a study aid, not clinical guidance.</strong> Content is drawn from
+    standard reference texts for exam preparation and recall practice. It is not reviewed for
+    bedside decision-making, it is not a substitute for current guidelines, institutional
+    protocol, or attending judgment, and citation to a source is not endorsement by its
+    publisher. Verify dosing against your own formulary before acting on anything.</p>
+  </footer>
+</div>
+
+<script>
+  // DEPLOY: point this at your form endpoint (Formspree, Tally, Buttondown, your own handler).
+  // Left empty here so the page can be reviewed without wiring anything up.
+  var ENDPOINT = "";
+  document.getElementById("waitlist").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var input = document.getElementById("email");
+    if (!input.value || input.value.indexOf("@") < 1) { input.focus(); return; }
+    function done() {
+      document.getElementById("waitlist").hidden = true;
+      document.getElementById("ok").style.display = "block";
+    }
+    if (!ENDPOINT) { done(); return; }
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ email: input.value })
+    }).then(done).catch(done);
+  });
+</script>
