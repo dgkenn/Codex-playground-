@@ -1,0 +1,33 @@
+{
+ "fetched": 1793381795.0853493,
+ "records": {
+  "nfl": {
+   "series": "KXNFLGAME",
+   "fee_type": "quadratic_with_maker_fees",
+   "fee_multiplier": 1,
+   "last_updated_ts": "2026-10-06T14:58:29.805933Z",
+   "title": "NFL Game"
+  },
+  "nba": {
+   "series": "KXNBAGAME",
+   "fee_type": "quadratic_with_maker_fees",
+   "fee_multiplier": 1,
+   "last_updated_ts": "2026-10-26T16:44:13.457872Z",
+   "title": "NBA Game"
+  },
+  "nhl": {
+   "series": "KXNHLGAME",
+   "fee_type": "quadratic_with_maker_fees",
+   "fee_multiplier": 1,
+   "last_updated_ts": "2026-10-19T16:27:16.864512Z",
+   "title": "NHL Game"
+  },
+  "ncaaf": {
+   "series": "KXNCAAFGAME",
+   "fee_type": "quadratic_with_maker_fees",
+   "fee_multiplier": 1,
+   "last_updated_ts": "2026-10-06T14:58:29.703542Z",
+   "title": "College Football Game"
+  }
+ }
+}

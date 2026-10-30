@@ -1,0 +1,235 @@
+[
+ {
+  "id": 30,
+  "display_name": "Open",
+  "abbr": null,
+  "source_name": "open",
+  "meta": {
+   "logos": {},
+   "states": [],
+   "is_promoted": false,
+   "betsync_status": 0
+  },
+  "parent_name": null,
+  "book_parent_id": null,
+  "affiliate_id": null
+ },
+ {
+  "id": 68,
+  "display_name": "DK NJ",
+  "abbr": "DKNJ",
+  "source_name": "draftkings",
+  "meta": {
+   "logos": {
+    "promo": "https://assets.actionnetwork.com/206938_DK.png",
+    "primary": "https://assets.actionnetwork.com/128508_Primary1.png",
+    "thumbnail": "https://assets.actionnetwork.com/603379_Primary.png",
+    "brand_dark": "https://assets.actionnetwork.com/712152_DKBetSyncReplacement1.png",
+    "brand_light": "https://assets.actionnetwork.com/712152_DKBetSyncReplacement1.png",
+    "transparent": "",
+    "betslip_carousel": "https://assets.actionnetwork.com/314008_DraftkingsBetslipCarousel.png"
+   },
+   "states": [
+    "NJ"
+   ],
+   "website": "https://dksb.sng.link/As9kz/6g5k?_dl=https%3A%2F%2Fsportsbook.draftkings.com%2Fgateway%3Fs%3D629820557&pcid=98765&psn=The+Action+Network&pcn=%241%2C000SignUpBonus_PB",
+   "deeplink": {
+    "has_multi": false,
+    "is_supported": false
+   },
+   "is_legal": true,
+   "is_promoted": false,
+   "betsync_type": 3,
+   "is_preferred": false,
+   "primary_color": "5fb00c",
+   "betsync_status": 0,
+   "secondary_color": "f8f8f8",
+   "provider_type_id": 1,
+   "is_fastbet_enabled_app": true,
+   "is_fastbet_enabled_web": false
+  },
+  "parent_name": "DraftKings",
+  "book_parent_id": 10,
+  "affiliate_id": 2
+ },
+ {
+  "id": 71,
+  "display_name": "BetRivers NJ",
+  "abbr": "BR NJ",
+  "source_name": "njsugarhouse",
+  "meta": {
+   "logos": {
+    "promo": "",
+    "primary": "https://assets.actionnetwork.com/198613_Primary.png",
+    "thumbnail": "https://assets.actionnetwork.com/412669_Primary.png",
+    "brand_dark": "",
+    "brand_light": "",
+    "transparent": "",
+    "betslip_carousel": "https://assets.actionnetwork.com/412669_Primary.png"
+   },
+   "states": [
+    "NJ"
+   ],
+   "website": "http://wlsugarhouseaffiliates.adsrv.eacdn.com/C.ashx?btag=a_2762b_755c_&affid=834&siteid=2762&adid=755&c=",
+   "deeplink": {
+    "has_multi": true,
+    "is_supported": false
+   },
+   "is_legal": true,
+   "is_promoted": false,
+   "betsync_type": 3,
+   "is_preferred": false,
+   "primary_color": "18355e",
+   "betsync_status": 0,
+   "secondary_color": "000000",
+   "provider_type_id": 1,
+   "is_fastbet_enabled_app": false,
+   "is_fastbet_enabled_web": false
+  },
+  "parent_name": "BetRivers",
+  "book_parent_id": 5,
+  "affiliate_id": 106
+ },
+ {
+  "id": 15,
+  "display_name": "Consensus",
+  "abbr": null,
+  "source_name": "consensus",
+  "meta": {
+   "logos": {
+    "betslip_carousel": "https://assets.actionnetwork.com/492286_ActionConsensusBetslipCarousel.png"
+   },
+   "states": [],
+   "website": "https://www.actionnetwork.com",
+   "deeplink": {
+    "has_multi": false,
+    "is_supported": false
+   },
+   "is_legal": false,
+   "is_promoted": false,
+   "betsync_type": 1,
+   "is_preferred": false,
+   "primary_color": "1D1D25",
+   "betsync_status": 0,
+   "secondary_color": "00C358",
+   "provider_type_id": 1,
+   "is_fastbet_enabled_app": false,
+   "is_fastbet_enabled_web": false
+  },
+  "parent_name": "Consensus",
+  "book_parent_id": 18,
+  "affiliate_id": null
+ },
+ {
+  "id": 49,
+  "display_name": "Caesars NV",
+  "abbr": "WH NV",
+  "source_name": "willhill",
+  "meta": {
+   "logos": {
+    "promo": "https://assets.actionnetwork.com/244898_Caesars.png",
+    "primary": "https://assets.actionnetwork.com/256064_caesars_800x200.png",
+    "thumbnail": "https://assets.actionnetwork.com/463646_Caesars.png",
+    "brand_dark": "",
+    "brand_light": "",
+    "betslip_carousel": "https://assets.actionnetwork.com/463646_Caesars.png"
+   },
+   "states": [
+    "NV"
+   ],
+   "website": "https://wlwilliamhillus.adsrv.eacdn.com/C.ashx?btag=a_207b_19c_&affid=50&siteid=207&adid=19&c=",
+   "deeplink": {
+    "has_multi": false,
+    "is_supported": false
+   },
+   "is_legal": true,
+   "is_promoted": false,
+   "betsync_type": 1,
+   "is_preferred": false,
+   "primary_color": "173432",
+   "betsync_status": 0,
+   "secondary_color": "c5a459",
+   "provider_type_id": 1,
+   "is_fastbet_enabled_app": true,
+   "is_fastbet_enabled_web": true
+  },
+  "parent_name": "Caesars",
+  "book_parent_id": 2,
+  "affiliate_id": 8
+ },
+ {
+  "id": 69,
+  "display_name": "FanDuel NJ",
+  "abbr": "FDNJ",
+  "source_name": "fanduel",
+  "meta": {
+   "logos": {
+    "promo": "https://assets.actionnetwork.com/563580_FanDuelSportsBook.jpg",
+    "primary": "https://assets.actionnetwork.com/122955_FanDuelSportsBook@1x.jpg",
+    "thumbnail": "https://assets.actionnetwork.com/392973_FanDuel.png",
+    "brand_dark": "",
+    "brand_light": "",
+    "betslip_carousel": "https://assets.actionnetwork.com/392973_FanDuel.png"
+   },
+   "states": [
+    "NJ"
+   ],
+   "website": "http://wlfanduel.adsrv.eacdn.com/C.ashx?btag=a_16722b_1985c_&affid=11746&siteid=16722&adid=1985&c=",
+   "deeplink": {
+    "has_multi": true,
+    "is_supported": false
+   },
+   "is_legal": true,
+   "is_promoted": false,
+   "betsync_type": 3,
+   "is_preferred": false,
+   "primary_color": "0078ff",
+   "betsync_status": 0,
+   "secondary_color": "ffffff",
+   "provider_type_id": 1,
+   "is_fastbet_enabled_app": true,
+   "is_fastbet_enabled_web": true
+  },
+  "parent_name": "FanDuel",
+  "book_parent_id": 3,
+  "affiliate_id": 3
+ },
+ {
+  "id": 75,
+  "display_name": "BetMGM NJ",
+  "abbr": "MG",
+  "source_name": "njplaymgm",
+  "meta": {
+   "logos": {
+    "promo": "https://assets.actionnetwork.com/744974_MGMActionBS2.jpeg",
+    "primary": "https://assets.actionnetwork.com/779359_BetMGM800x200@1x.png",
+    "thumbnail": "https://assets.actionnetwork.com/582051_Primary.png",
+    "brand_dark": "https://assets.actionnetwork.com/240154_BetMGM.png",
+    "brand_light": "https://assets.actionnetwork.com/727862_BetMGM.png",
+    "transparent": "",
+    "betslip_carousel": "https://assets.actionnetwork.com/607000_Primary.png"
+   },
+   "states": [
+    "NJ"
+   ],
+   "website": "https://sports.nj.betmgm.com/en/sports",
+   "deeplink": {
+    "has_multi": true,
+    "is_supported": true
+   },
+   "is_legal": true,
+   "is_promoted": false,
+   "betsync_type": 2,
+   "is_preferred": true,
+   "primary_color": "ae9967",
+   "betsync_status": 0,
+   "secondary_color": null,
+   "provider_type_id": 1,
+   "is_fastbet_enabled_app": true,
+   "is_fastbet_enabled_web": true
+  },
+  "parent_name": "BetMGM",
+  "book_parent_id": 1,
+  "affiliate_id": 1
+ }
+]
