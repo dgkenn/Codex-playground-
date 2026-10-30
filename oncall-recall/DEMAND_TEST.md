@@ -9,17 +9,20 @@ temptation to re-read the threshold is overwhelming.
 
 ## Decision rule — frozen now
 
+**Superseded by `PRICE_RESOLUTION.md`** — the price moved to $29 and the threshold is now a formula,
+`signups = (4000/price)/0.35`, with the conversion assumption 0.35 frozen. At $29 that is **394
+signups**.
+
 | signups in 30 days | action |
 |---|---|
-| **≥ 100** | demand is real at 1.6% penetration. Build the 60 hours. |
-| 50–99 | re-test price ($29) and wedge before building. Do not build yet. |
-| **< 50** | **do not build.** 60 hours saved, and that is the test working. |
+| **≥ 394** | demand supports $4,000/month. Build the 60 hours. |
+| 150–393 | real interest, smaller business. Build only if a few hundred a month justifies 60 hours. |
+| 40–149 | niche. Not a $4,000/month path. |
+| **< 40** | **stop.** 8 hours spent instead of 60. |
 
-Rationale: $4,000/month is **68 subscribers at $59** (see `PREMISE_CHECK.md` — I originally priced at
-$39 against a mis-read competitor anchor; the incumbent's 30-day tier is $299, not an annual price).
-A waitlist converts at well under 100%, so 100 signups is **not** 100 subscribers — it is the minimum
-signal that 68 is reachable at all. Treating 100 signups as proof of $4,000/month would be the same
-error as reading one positive cell out of 352.
+Why the formula: I set the price three times in two turns ($39 → $59 → $29) as comparables came in,
+and a bare signup number silently tracks whichever price I last guessed. The formula does not. The
+conversion assumption and these four bands are fixed as of now, before any signup exists.
 
 ## Deploy — 30 minutes
 
