@@ -20,22 +20,36 @@ So an ask of **$40–80K outright** isn't greedy — it hands the buyer a 2–5�
 with citations already attached and the authoring risk already absorbed. That is the anchor, and it is
 defensible with the arithmetic above in the room.
 
-## And a royalty on someone else's distribution clears $4,000/month
+## RETRACTED: the royalty table I published an hour ago
 
-This is the part that actually satisfies your constraint. **AnkiHub already pays deck maintainers out
-of a $6–10/month subscription.** That royalty model is in production — you would not be inventing it.
+I wrote that **AnkiHub already pays deck maintainers out of its subscription**, and built a table off
+it showing $8,000/month at 20,000 subscribers. **I checked it. It is false.**
 
-| their subscribers | royalty | your monthly |
-|---:|---:|---:|
-| 5,000 | 5% | $2,000 |
-| **20,000** | **5%** | **$8,000** |
-| 50,000 | 3% | $12,000 |
+There is no documented AnkiHub maintainer-compensation program. AnkiHub's own position is that the
+subscription funds *the platform* — engineers, support staff — and that the deck itself is free. The
+decisive evidence against me is a community thread in which a maintainer argues that **maintainers are
+paying to contribute** and *proposes* a subscriber-based share for deck creators. You do not propose a
+program that exists.
 
-One negotiation, then income with no labour. **That is 100% passive and it reaches the target** — the
-only route found in fifteen rounds that does both.
+So the $8,000/month figure is withdrawn. It was my fourth wrong premise in this thread, after
+misreading a 30-day price as annual, anchoring to the wrong product category, and undervaluing the
+catalog. **The pattern is mine: I generate plausible mechanisms and they do not survive a search.**
+Which is the argument for searching before writing the table, not after.
 
-The catch, stated plainly: it depends on a platform agreeing, on their actual subscriber count, and on
-a rate you negotiate. Those numbers are illustrative of the structure, not a quote.
+## What the search did find, and it is better evidence
+
+**McGraw Hill has a content collaboration with AnkiHub** (announced 2025), linking its study content
+into the AnkiHub platform.
+
+That is the real precedent, and it reframes the whole approach: the counterparty for a content deal is
+not the *maintainer program* — it is **publishers and platforms licensing content from owners.** You
+would be approaching them as a content owner, which is what McGraw Hill is in that deal, not as a
+volunteer maintainer.
+
+**The honest consequence:** a content licence or sale is realistically a **lump sum or modest royalty**,
+not a $4,000/month annuity. Which means the catalog's role under your constraint is to **become
+capital** — and capital is the only recurring passive engine, exactly as `PASSIVE.md` concluded before
+I got distracted by a royalty table that did not exist.
 
 ## Who to approach, in order of fit
 
