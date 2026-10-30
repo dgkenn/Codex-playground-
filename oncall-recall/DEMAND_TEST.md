@@ -117,3 +117,55 @@ That is a real result and it cost 8 hours instead of 60. The content keeps its v
 your study tool, it is still cited, and it does not expire. Track D (the research portfolio) and Track
 B (capital, if the figure supports it) remain open, and the honest finding is that residents will not
 pay for this, which is worth knowing before a month of building rather than after.
+
+---
+
+# UPDATE — the demo changes the test, and improves it
+
+`demo.html` is built: **https://claude.ai/artifact/UZmXKHyRwy7nFnTbEZTz8Q** (private until shared).
+Fourteen real cards from the on-call set — three topics, every one carrying its citation — with
+reveal, four-button grading, keyboard shortcuts, a requeue on "Again", and an end-of-deck summary.
+No account, no server, no billing. Progress lives in the browser tab.
+
+**Why this is a better test than the landing page alone.** A landing page measures *stated* interest:
+someone reads a claim and types an email. A working demo measures *revealed* interest: someone does
+the thing, and then decides. Revealed interest converts several times better and, more importantly,
+it is much harder to fake yourself into believing.
+
+So the post stops asking "would you want this?" and starts saying **"here, try it."**
+
+## Revised lead for every venue
+
+Replace the Reddit/X opening with the demo link first and the waitlist second:
+
+> I got tired of board-bank explanations I couldn't trace, so I wrote the blueprint out as atomic
+> knowledge points where every answer carries the book and page it came from. 6,200 of them across
+> 1,214 topics, anesthesia and IM.
+>
+> **Here are fourteen of them, working, no signup:** [demo link]
+>
+> It's three topics from the on-call set — the acutely changing ward patient, which board banks cover
+> badly because they aren't board questions. The full set is 50 topics.
+>
+> There's no web app yet, so right now nobody but me can actually use it. Before I spend a month
+> building accounts and a review queue I want to know whether anyone else wants it: [waitlist link]
+>
+> And either way I'd like to know — would page-level citations change whether you trusted a deck?
+
+## Deploy both together
+
+The demo links to `index.html` with a relative href, so host the **whole `oncall-recall/` folder** and
+both pages work together. As separate artifacts that link is dead; as a deployed folder it is correct.
+Netlify Drop or Cloudflare Pages: drag the folder.
+
+## The decision rule does not change
+
+Still `signups = (4000/price)/0.35` → **394 at $29**, with the four bands as frozen. The demo should
+*raise* conversion, which means the same threshold is now a somewhat easier bar to clear — but the
+bar itself stays where it was written. Improving the instrument is legitimate; moving the line it
+measures against is not.
+
+**One new thing worth recording:** with a demo in play, watch the ratio of *demo opens to signups*. A
+high open rate with few signups says the product is interesting but the price or the promise is wrong.
+A low open rate says the post itself failed and the product was never tested. Those two failures look
+identical in a bare signup count and call for opposite fixes.

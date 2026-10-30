@@ -1,0 +1,287 @@
+<title>On-Call Deck</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one card at a time, full measure. Citation is always visible on reveal — it is the product. */
+  :root{
+    --paper:#fbfbfc; --surface:#ffffff; --ink:#15181d; --ink-soft:#4a525e; --ink-faint:#7b8694;
+    --rule:#dfe3e9; --trace:#0d7c94; --trace-soft:#e3f3f6; --warn:#8a5a00;
+    --again:#9c3b2a; --good:#0d7c94;
+    --serif:"Source Serif 4",Charter,Georgia,serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --paper:#0e1115; --surface:#161a20; --ink:#e8ebef; --ink-soft:#a8b2bf; --ink-faint:#78828f;
+    --rule:#262c35; --trace:#3fc3dd; --trace-soft:#13272d; --warn:#d9a73c;
+    --again:#e08a74; --good:#3fc3dd; color-scheme:dark;}}
+  :root[data-theme="dark"]{
+    --paper:#0e1115; --surface:#161a20; --ink:#e8ebef; --ink-soft:#a8b2bf; --ink-faint:#78828f;
+    --rule:#262c35; --trace:#3fc3dd; --trace-soft:#13272d; --warn:#d9a73c;
+    --again:#e08a74; --good:#3fc3dd; color-scheme:dark;}
+
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:40rem;margin:0 auto;
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:1.75rem 3rem}
+
+  header{display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline;
+    justify-content:space-between;margin-bottom:.5rem}
+  .brand{font-family:var(--serif);font-weight:600;font-size:1.15rem;letter-spacing:-.01em}
+  .counter{font-family:var(--mono);font-size:.74rem;letter-spacing:.07em;color:var(--ink-faint);
+    font-variant-numeric:tabular-nums}
+  .bar{height:3px;background:var(--rule);border-radius:2px;overflow:hidden;margin-bottom:1.5rem}
+  .bar i{display:block;height:100%;width:0;background:var(--trace);transition:width .25s ease}
+  @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem;padding:.65rem 1.1rem;
+    border-bottom:1px solid var(--rule);background:var(--trace-soft)}
+  .chip{font-family:var(--mono);font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--trace);border:1px solid currentColor;border-radius:2px;padding:.08rem .38rem}
+  .body{padding:1.15rem}
+  .topic{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-faint);margin:0 0 .7rem}
+  .stem{font-family:var(--serif);font-size:1.17rem;line-height:1.45;margin:0}
+  .reveal{border-top:1px solid var(--rule);padding:1.15rem}
+  dl{margin:0}
+  dt{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:.22rem}
+  dd{margin:0 0 1rem}
+  dd:last-child{margin-bottom:0}
+  .answer{font-weight:600}
+  .cite{display:block;border-top:1px solid var(--rule);padding:.7rem 1.1rem;
+    font-family:var(--mono);font-size:.74rem;color:var(--ink-soft)}
+  .cite strong{color:var(--trace);font-weight:500}
+
+  .actions{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.1rem}
+  button{font:inherit;font-weight:500;padding:.62rem 1.1rem;border-radius:2px;cursor:pointer;
+    border:1px solid var(--rule);background:var(--surface);color:var(--ink);flex:1 1 auto;min-width:0}
+  button:hover{border-color:var(--trace)}
+  button:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
+  .primary{background:var(--trace);border-color:var(--trace);color:var(--paper);flex:1 1 100%}
+  .primary:hover{opacity:.9}
+  .g-again{color:var(--again);border-color:currentColor}
+  .g-good{color:var(--good);border-color:currentColor}
+  .hint{font-family:var(--mono);font-size:.7rem;color:var(--ink-faint);margin:.75rem 0 0;
+    text-align:center}
+
+  .done{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:1.5rem}
+  .done h2{font-family:var(--serif);font-weight:600;font-size:1.45rem;margin:0 0 .6rem;
+    letter-spacing:-.01em}
+  .score{display:grid;grid-template-columns:repeat(auto-fit,minmax(6rem,1fr));gap:1.1rem;
+    margin:1.2rem 0}
+  .score div{min-width:0}
+  .score b{display:block;font-family:var(--serif);font-size:1.75rem;line-height:1;
+    font-variant-numeric:tabular-nums}
+  .score span{display:block;font-size:.82rem;color:var(--ink-soft);margin-top:.25rem}
+  .done p{margin:0 0 1rem}
+  .done a{color:var(--trace);font-weight:500}
+
+  footer{margin-top:2.25rem;padding-top:1.25rem;border-top:1px solid var(--rule);
+    font-size:.8rem;color:var(--ink-faint)}
+  footer p{margin:0 0 .6rem}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="brand">On-Call Deck</span>
+    <span class="counter" id="counter">card 1 of 14</span>
+  </header>
+  <div class="bar"><i id="bar"></i></div>
+
+  <div id="stage"></div>
+
+  <footer>
+    <p><strong>Demo.</strong> Fourteen cards from the on-call set. Nothing is saved to a server and
+    there is no account &mdash; progress lives in this browser tab only. The full set is 50 topics
+    across the acutely changing ward patient; the whole catalog is 6,200 cards over 1,214 topics.</p>
+    <p>A study aid, not clinical guidance. Not reviewed for bedside decisions, not a substitute for
+    current guidelines or attending judgment, and a citation is not endorsement by the publisher.
+    Verify dosing against your own formulary.</p>
+  </footer>
+</div>
+
+<script>
+var CARDS = [
+ {t:"Approach to Acute Anemia and Falling Hemoglobin",cc:1,tier:1,
+  s:"A post-op patient has a hemoglobin drop from 10 to 7 g/dL overnight. What does patient blood management (PBM) emphasize as the first step before considering transfusion?",
+  a:"Identify and treat the underlying cause (e.g. iron deficiency, surgical bleeding); preoperative correction with iron ± erythropoietin reduces transfusion need.",
+  r:"A higher presurgical hemoglobin level decreases intraoperative transfusion requirements and lowers overall morbidity and mortality.",
+  c:"Miller / Baby Miller, p. 474",b:"apply"},
+ {t:"Approach to Acute Anemia and Falling Hemoglobin",cc:1,tier:1,
+  s:"In a patient with sickle cell trait (HbAS) becoming anemic perioperatively, what distinguishes their risk profile from homozygous HbSS disease?",
+  a:"HbAS patients are generally not anemic, are asymptomatic, and have a normal life span; sickling requires extreme conditions unlike HbSS.",
+  r:"Sickle cell trait produces 55–60% HbA and 35–40% HbS; sickling occurs only under extreme conditions not typical in perioperative care.",
+  c:"Morgan & Mikhail, p. 1971",b:"analyze"},
+ {t:"Approach to Acute Anemia and Falling Hemoglobin",cc:1,tier:1,
+  s:"A patient with chronic kidney disease presents with worsening anemia. What additional hematologic finding should you expect on labs?",
+  a:"Prolonged bleeding time (platelet dysfunction) and increased susceptibility to infection (impaired white cell function).",
+  r:"Both platelet and white cell function are impaired in kidney failure, manifesting as prolonged bleeding time and infection susceptibility.",
+  c:"Morgan & Mikhail, p. 1111",b:"recall"},
+ {t:"Approach to Acute Anemia and Falling Hemoglobin",cc:1,tier:1,
+  s:"On visual estimation of blood loss in the OR, what is the main limitation of this technique for detecting acute anemia?",
+  a:"Visual estimation is the simplest but least accurate method; it systematically underestimates blood loss.",
+  r:"Blood mixing with irrigation fluid and surgical drapes makes visual estimation unreliable for quantifying true blood loss.",
+  c:"Miller / Baby Miller, p. 474",b:"recall"},
+ {t:"Approach to Acute Anemia and Falling Hemoglobin",cc:1,tier:1,
+  s:"In a patient with G6PD deficiency who develops hemolytic anemia, what is the primary management principle?",
+  a:"Management is primarily preventive — avoid factors known to promote hemolysis; preserve kidney function if hemoglobinuria develops.",
+  r:"G6PD deficiency is managed by avoiding triggers (certain drugs, infections, oxidants) rather than treating acute hemolysis after the fact.",
+  c:"Morgan & Mikhail, p. 1977",b:"apply"},
+ {t:"Approach to Acute Anemia and Falling Hemoglobin",cc:1,tier:1,
+  s:"Why do many CKD patients without symptomatic heart disease tolerate significant anemia better than expected?",
+  a:"Most tolerate it well; metabolic acidosis in CKD shifts the O₂–hemoglobin curve rightward, partially compensating.",
+  r:"Rightward shift of the hemoglobin–oxygen dissociation curve from CKD-associated metabolic acidosis increases oxygen delivery to tissues.",
+  c:"Morgan & Mikhail, p. 1111",b:"analyze"},
+ {t:"Approach to Acute Dyspnea",cc:1,tier:1,
+  s:"A hospitalized patient develops acute dyspnea. You suspect pulmonary embolism. What is the most critical first action before pursuing diagnostic workup?",
+  a:"Ensure hemodynamic stability and oxygenation first; then risk-stratify with pre-test probability scoring before imaging.",
+  r:"PE can cause obstructive shock; stabilization precedes diagnosis, and pre-test probability guides whether CT-PA or empiric anticoagulation is appropriate.",
+  c:"StatPearls — Pulmonary embolism: diagnosis and treatment",b:"apply"},
+ {t:"Approach to Acute Dyspnea",cc:1,tier:1,
+  s:"In hypoxemic respiratory failure, what advantage does high-flow nasal cannula have over standard oxygen therapy or NIPPV?",
+  a:"HFNC reduced mortality compared with standard oxygen therapy or NIPPV, though without a significant difference in intubation rate.",
+  r:"HFNC provides high-flow humidified oxygen with a low-level PEEP effect, improving oxygenation and comfort without the seal issues of masks.",
+  c:"Miller / Baby Miller, p. 767",b:"recall"},
+ {t:"Approach to Acute Dyspnea",cc:1,tier:1,
+  s:"A patient with acute dyspnea has diffuse 'velcro-like' crackles and worsening hypoxemia with exertion. What category of lung disease should be high on the differential?",
+  a:"Interstitial lung disease — progressive dyspnea, non-productive cough, hypoxemia especially with exercise, and velcro crackles.",
+  r:"ILD involves replacement of normal lung parenchyma with inflammation and fibrosis, causing restrictive physiology and impaired gas exchange.",
+  c:"MGH Housestaff Manual, p. 53",b:"apply"},
+ {t:"Approach to Acute Dyspnea",cc:1,tier:1,
+  s:"For a patient with a COPD exacerbation and severe dyspnea, what defines a severe exacerbation?",
+  a:"The patient requires hospitalization or an emergency room visit; it may be associated with acute respiratory failure.",
+  r:"Severity grading of COPD exacerbation is based on healthcare resource utilization, though this has recognized limitations due to global variability.",
+  c:"GOLD 2024 COPD Full Report, p. 112",b:"recall"},
+ {t:"Approach to Acute Dyspnea",cc:1,tier:1,
+  s:"In acute dyspnea from decompensated heart failure, which findings indicate severe decompensation rather than mild HFpEF?",
+  a:"Diaphoresis, tachycardia, tachypnea and hypoxia; the patient may be hypotensive from decreased peripheral tissue perfusion.",
+  r:"Mild HFpEF at baseline shows mild systolic hypertension; acute decompensation activates sympathetic compensatory mechanisms producing these signs.",
+  c:"StatPearls, p. 9",b:"apply"},
+ {t:"Approach to Acute Dyspnea",cc:1,tier:1,
+  s:"A patient on an ACE inhibitor develops dyspnea and a cough worsening over weeks. Which common cause should be considered first?",
+  a:"ACE-inhibitor-induced cough (upper airway cough syndrome); removing the offending agent is the key management step.",
+  r:"ACE inhibitors cause bradykinin accumulation leading to cough and potentially angioedema; discontinuation resolves symptoms.",
+  c:"MGH Housestaff Manual, p. 226",b:"apply"},
+ {t:"Approach to Acute Focal Neurologic Deficit",cc:1,tier:1,
+  s:"A ward patient develops sudden right-sided weakness and slurred speech. What is the most time-critical first step?",
+  a:"Activate the stroke response immediately; determine last known well time to assess eligibility for thrombolysis or thrombectomy.",
+  r:"Time-to-treatment is the dominant determinant of outcome in ischemic stroke; 'time is brain' mandates immediate activation of the stroke protocol.",
+  c:"StatPearls — Transient Ischemic Attack",b:"apply"},
+ {t:"Approach to Acute Focal Neurologic Deficit",cc:1,tier:1,
+  s:"A patient with a known hypercoagulable state develops progressive headache, papilledema and focal weakness over days, and the deficits do not localize cleanly. What must be considered?",
+  a:"Cerebral venous sinus thrombosis — focal deficits occur in up to 44% of cases, motor weakness is most frequent, and deficits do not follow arterial territories.",
+  r:"CVST causes venous congestion and edema in watershed areas, producing deficits that cross typical arterial boundaries.",
+  c:"StatPearls — Cerebral Venous Sinus Thrombosis, p. 4",b:"analyze"}
+];
+
+var queue = CARDS.map(function (c, i) { return i; });
+var seen = 0, again = 0, total = CARDS.length, revealed = false;
+var stage = document.getElementById("stage");
+var counter = document.getElementById("counter");
+var bar = document.getElementById("bar");
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, function (ch) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch];
+  });
+}
+
+function render() {
+  if (!queue.length) { return finish(); }
+  var c = CARDS[queue[0]];
+  counter.textContent = "card " + Math.min(seen + 1, total) + " of " + total +
+    (queue.length > total - seen ? " · " + (queue.length - (total - seen)) + " requeued" : "");
+  bar.style.width = Math.round((seen / total) * 100) + "%";
+
+  var html =
+    '<div class="card">' +
+      '<div class="chips">' +
+        '<span class="chip">On-call</span>' +
+        '<span class="chip">Tier ' + c.tier + '</span>' +
+        (c.cc ? '<span class="chip">Critical care</span>' : '') +
+        '<span class="chip">' + esc(c.b) + '</span>' +
+      '</div>' +
+      '<div class="body">' +
+        '<p class="topic">' + esc(c.t) + '</p>' +
+        '<p class="stem">' + esc(c.s) + '</p>' +
+      '</div>';
+
+  if (revealed) {
+    html +=
+      '<div class="reveal"><dl>' +
+        '<dt>Answer</dt><dd class="answer">' + esc(c.a) + '</dd>' +
+        '<dt>Why</dt><dd>' + esc(c.r) + '</dd>' +
+      '</dl></div>' +
+      '<span class="cite">Source — <strong>' + esc(c.c) + '</strong></span>';
+  }
+  html += '</div>';
+
+  html += revealed
+    ? '<div class="actions">' +
+        '<button class="g-again" data-grade="again">Again</button>' +
+        '<button data-grade="hard">Hard</button>' +
+        '<button class="g-good" data-grade="good">Good</button>' +
+        '<button data-grade="easy">Easy</button>' +
+      '</div><p class="hint">1 &middot; 2 &middot; 3 &middot; 4 to grade</p>'
+    : '<div class="actions"><button class="primary" data-act="show">Show answer</button></div>' +
+      '<p class="hint">space or enter</p>';
+
+  stage.innerHTML = html;
+}
+
+function grade(g) {
+  var idx = queue.shift();
+  seen++;
+  if (g === "again") { again++; queue.push(idx); }
+  revealed = false;
+  render();
+}
+
+function finish() {
+  bar.style.width = "100%";
+  counter.textContent = total + " of " + total;
+  var firstPass = total - again;
+  stage.innerHTML =
+    '<div class="done">' +
+      '<h2>Deck finished.</h2>' +
+      '<div class="score">' +
+        '<div><b>' + total + '</b><span>cards reviewed</span></div>' +
+        '<div><b>' + firstPass + '</b><span>kept on first pass</span></div>' +
+        '<div><b>' + again + '</b><span>sent back</span></div>' +
+      '</div>' +
+      '<p>In the real scheduler each card comes back on its own interval, and calibration is ' +
+      'tracked separately from accuracy — being right and being confident are different ' +
+      'problems and need different intervals.</p>' +
+      '<p>These fourteen cards are three topics. The on-call set is <strong>50</strong>, and the ' +
+      'full catalog is <strong>6,200</strong> cards across <strong>1,214</strong> topics, every ' +
+      'one cited.</p>' +
+      '<p><a href="index.html">Join the waitlist &rarr;</a></p>' +
+    '</div>';
+  try { localStorage.setItem("ocd_done", "1"); } catch (e) {}
+}
+
+document.addEventListener("click", function (e) {
+  var b = e.target.closest ? e.target.closest("button") : null;
+  if (!b) return;
+  if (b.dataset.act === "show") { revealed = true; render(); }
+  else if (b.dataset.grade) { grade(b.dataset.grade); }
+});
+
+document.addEventListener("keydown", function (e) {
+  if (!queue.length) return;
+  if (!revealed && (e.key === " " || e.key === "Enter")) {
+    e.preventDefault(); revealed = true; render(); return;
+  }
+  if (revealed) {
+    var map = { "1": "again", "2": "hard", "3": "good", "4": "easy" };
+    if (map[e.key]) { e.preventDefault(); grade(map[e.key]); }
+  }
+});
+
+render();
+</script>
