@@ -451,6 +451,22 @@ def analyze_universe(rows_all, snaps_by_lg, label, books):
         res["decomp_best_triples_median"] = {
             "kalshi_ask": statistics.median(v["ask"] for v in bv), "fee": statistics.median(v["fee_c"] for v in bv) / 100,
             "book_implied_opposing": statistics.median(v["p_book"] for v in bv), "cost": statistics.median(v["cost"] for v in bv)}
+    # venue-cost diagnostics: Kalshi overround of the two asks, book vig, both from the same (snapshot, game, book)
+    pr = {}
+    for r in rows:
+        pr.setdefault((r["snap"], r["game"], r["book"]), {})[r["pair"]] = r
+    kov, bvig = [], []
+    for v in pr.values():
+        if len(v) == 2:
+            a, b = v["kalshi_home+book_away"], v["kalshi_away+book_home"]
+            kov.append((a["ask"] + b["ask"] - 1) * 100)
+            bvig.append((a["p_book"] + b["p_book"] - 1) * 100)
+    exf = [(r["gap"] + r["fee_c"] / 100) * 100 for r in rows]
+    res["zero_fee_counterfactual"] = {"max_gap_pp_if_fee_were_zero": max(exf, default=None),
+                                      "n_obs_with_positive_gap_if_fee_were_zero": sum(1 for g in exf if g > 1e-9),
+                                      "n_distinct_games_with_such_obs": len({r["game"] for r in rows if (r["gap"] + r["fee_c"] / 100) > 1e-9})}
+    res["kalshi_ask_overround_pp"] = dist(kov)
+    res["book_vig_pp"] = dist(bvig)
     # --- arbitrage instances
     arb_rows = [r for r in rows if r["arb"]]
     res["n_arb_snapshot_observations"] = len(arb_rows)
@@ -763,15 +779,7 @@ def render_md(res):
     L.append(f"**Window:** {w['first_snapshot_utc']} to {w['last_snapshot_utc']} = {fmt(w['length_minutes'], 1)} min, "
              f"{w['n_snapshots_cached']} snapshots cached ({w['n_snapshots_scored_nfl']} scored for NFL), median cadence {fmt(w['median_cadence_s'], 1)} s.  "
              f"Every pre-game line; all games scored were scheduled and not started.\n")
-    L.append(f"## VERDICT: **{res['VERDICT']['verdict']}**  (NFL game winners x 5 executable books; spec-literal 7-id variant: "
-             f"{res['VERDICT']['spec_literal_7_ids_verdict']})\n")
-    L.append("| bar (frozen) | threshold | observed | met |\n|---|---:|---:|:---:|")
-    for b in res["VERDICT"]["bars"]:
-        L.append(f"| {b['bar']} | {b['frozen_threshold']} | {fmt(b['observed'], 4) if isinstance(b['observed'], float) else b['observed']} | {'yes' if b['met'] else 'NO'} |")
-    L.append("")
-    npath = os.path.join(CACHE, "notes.md")
-    if os.path.exists(npath):
-        L.append(open(npath).read())
+    L.append(f"**Verdict: {res['VERDICT']['verdict']}** (NFL game winners x 5 executable books; spec-literal 7-id variant: {res['VERDICT']['spec_literal_7_ids_verdict']}). Frozen-rule table with each bar is under "VERDICT" below; anchor (a) comes first.\n")
     # anchor a
     L.append("## (a) Gap distribution (`100% - combined cost`, percentage points; arb iff > 0)\n")
     L.append("Gap = 1.00 - (Kalshi yes_ask + fee + book implied prob of the opposing side).  Negative = no arb.  "
@@ -802,6 +810,13 @@ def render_md(res):
     d = P.get("decomp_best_triples_median", {})
     L.append(f"Median components of the best-reached pairing per (game, book, pairing): Kalshi ask {fmt(d.get('kalshi_ask'),3)} + fee {fmt(d.get('fee'),3)} + book implied "
              f"{fmt(d.get('book_implied_opposing'),3)} = cost {fmt(d.get('cost'),3)} (arb needs < 1.000).\n")
+    ko, bv = P["kalshi_ask_overround_pp"], P["book_vig_pp"]
+    L.append(f"Venue costs, same snapshots: Kalshi ask-pair overround (ask_home + ask_away - 1) median {fmt(ko.get('median'),2)} pp (p5 {fmt(ko.get('p5'),2)}, p95 {fmt(ko.get('p95'),2)}); "
+             f"sportsbook vig (p_home + p_away - 1) median {fmt(bv.get('median'),2)} pp (p5 {fmt(bv.get('p5'),2)}, p95 {fmt(bv.get('p95'),2)}).  "
+             f"Cost of a hedged pair = 1 + Kalshi overround/2-ish + fee + book vig/2-ish, i.e. roughly 4-5 pp over par before any disagreement.\n")
+    zf = P["zero_fee_counterfactual"]
+    L.append(f"Counterfactual (not a result): with Kalshi's fee set to ZERO the best NFL gap would be {fmt(zf['max_gap_pp_if_fee_were_zero'],2)} pp; "
+             f"{zf['n_obs_with_positive_gap_if_fee_were_zero']} observations across {zf['n_distinct_games_with_such_obs']} games would be positive.\n")
     L.append("## Arbitrage instances (fee-inclusive cost < 100%), NFL, executable books\n")
     L.append(f"Episodes (distinct game/book/pairing runs): **{P['n_arb_episodes']}**, across {P['n_distinct_games']} distinct games, "
              f"{P['n_distinct_triples']} distinct game/book/pairing triples; raw snapshot-level arb observations: {P['n_arb_snapshot_observations']}.\n")
@@ -821,6 +836,15 @@ def render_md(res):
              f"Episode survival rate: **{fmt(rc['survival_rate'],3)}**.  Snapshot-level: {json.dumps(P['recheck_snapshot_level'])}\n")
     L.append("## Concentration\n")
     L.append(f"By book: {json.dumps(P.get('by_book', {}))} (max share {fmt(P.get('max_book_share'),3)}).  By game: {json.dumps(P.get('by_game', {}))} (max share {fmt(P.get('max_game_share'),3)}).\n")
+    L.append(f"## VERDICT: **{res['VERDICT']['verdict']}**  (NFL game winners x 5 executable books; spec-literal 7-id variant: "
+             f"{res['VERDICT']['spec_literal_7_ids_verdict']})\n")
+    L.append("| bar (frozen) | threshold | observed | met |\n|---|---:|---:|:---:|")
+    for b in res["VERDICT"]["bars"]:
+        L.append(f"| {b['bar']} | {b['frozen_threshold']} | {fmt(b['observed'], 4) if isinstance(b['observed'], float) else b['observed']} | {'yes' if b['met'] else 'NO'} |")
+    L.append("")
+    npath = os.path.join(OUT, "cross_venue_notes.md")
+    if os.path.exists(npath):
+        L.append(open(npath).read())
     # variants
     L.append("## Variants (disclosed, not the verdict)\n")
     L.append("| universe | pair obs | best gap pp | arb episodes | games | median edge pp | median Kalshi $ | survival | verdict |\n|---|---:|---:|---:|---:|---:|---:|---:|---|")

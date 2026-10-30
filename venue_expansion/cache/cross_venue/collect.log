@@ -1,0 +1,26 @@
+collect start 2026-10-30T17:36:35.357942Z minutes=115.0 cadence=30.0
+snap 1 at 17:36:36Z nfl kalshi mkts=56 an games=14
+snap 11 at 17:41:37Z nfl kalshi mkts=56 an games=14
+snap 21 at 17:46:36Z nfl kalshi mkts=56 an games=14
+snap 31 at 17:51:37Z nfl kalshi mkts=56 an games=14
+snap 41 at 17:56:36Z nfl kalshi mkts=56 an games=14
+snap 51 at 18:01:36Z nfl kalshi mkts=56 an games=14
+snap 61 at 18:06:36Z nfl kalshi mkts=56 an games=14
+snap 71 at 18:11:37Z nfl kalshi mkts=56 an games=14
+snap 81 at 18:16:36Z nfl kalshi mkts=56 an games=14
+snap 91 at 18:21:36Z nfl kalshi mkts=56 an games=14
+snap 101 at 18:26:37Z nfl kalshi mkts=56 an games=14
+snap 111 at 18:31:36Z nfl kalshi mkts=56 an games=14
+snap 121 at 18:36:36Z nfl kalshi mkts=56 an games=14
+snap 131 at 18:41:36Z nfl kalshi mkts=56 an games=14
+snap 141 at 18:46:36Z nfl kalshi mkts=56 an games=14
+snap 151 at 18:51:37Z nfl kalshi mkts=56 an games=14
+snap 161 at 18:56:36Z nfl kalshi mkts=56 an games=14
+snap 171 at 19:01:37Z nfl kalshi mkts=56 an games=14
+snap 181 at 19:06:36Z nfl kalshi mkts=56 an games=14
+snap 191 at 19:11:36Z nfl kalshi mkts=56 an games=14
+snap 201 at 19:16:36Z nfl kalshi mkts=56 an games=14
+snap 211 at 19:21:36Z nfl kalshi mkts=56 an games=14
+snap 221 at 19:26:36Z nfl kalshi mkts=56 an games=14
+snap 231 at 19:31:36Z nfl kalshi mkts=56 an games=14
+collect done snapshots=231
