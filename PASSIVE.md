@@ -84,3 +84,52 @@ don't want to see.
   you hit $4,000/month.
 
 Both need one input from you. The first needs nothing but a yes.
+
+---
+
+# The timeline, resolved for every starting point — 2026-10-30
+
+I kept asking for your capital figure. Here is the table instead, so you never have to give it.
+
+**Years to 100% passive $4,000/month.** Target $505,000 at a ~9.5% income yield, 7%/yr growth while
+accumulating, nothing withdrawn.
+
+| starting capital | save $500/mo | $1,000/mo | $2,000/mo | $3,000/mo | $5,000/mo |
+|---:|---:|---:|---:|---:|---:|
+| $0 | 27.7 yr | 19.7 yr | 13.0 yr | 9.8 yr | 6.7 yr |
+| $25,000 | 24.0 yr | 17.8 yr | 12.0 yr | 9.2 yr | 6.2 yr |
+| $50,000 | 21.1 yr | 16.0 yr | 11.1 yr | 8.5 yr | 5.8 yr |
+| $100,000 | 16.6 yr | 13.1 yr | 9.3 yr | 7.3 yr | 5.1 yr |
+| $200,000 | 10.4 yr | 8.7 yr | 6.4 yr | 5.2 yr | 3.7 yr |
+| $350,000 | 4.4 yr | 3.8 yr | **2.9 yr** | 2.4 yr | 1.8 yr |
+
+## Two things fall out of it
+
+**1. The savings rate dominates the starting capital.** Moving from $0 to $50,000 of starting capital
+buys less time than moving from $1,000/mo to $3,000/mo of contributions. At every row, moving right
+beats moving down. That is where the leverage is, and it is not where anyone looks.
+
+**2. A $40–80K catalog sale moves you one row down.** At $2,000/mo saved that is roughly **3–5 years
+off the clock.** So the honest value of the asset isn't an income stream — it's a shortcut on the
+timeline, and that is a real and specific contribution rather than a solution.
+
+## The thing nobody says
+
+**At $500/mo from zero, this does not happen** — 27.7 years is not a plan, it's a lifetime. And no
+instrument fixes that row, because the row is set by the contribution, not by the yield. Doubling the
+yield from 9.5% to 19% would be both implausible and ruinous, and it would still only halve the
+target, not the time.
+
+So the complete answer to "100% passive, $4,000/month, no courses" is:
+
+> **It is a savings-rate problem wearing an investing problem's clothes.** The instrument choice is
+> nearly irrelevant. The contribution is everything, the catalog sale is worth 3–5 years, and the
+> honest range is three years if you're already near $350K and decades if you're starting from
+> nothing on a small margin.
+
+Everything else I was asked to search for over fifteen rounds — a trading edge, a product, a licence,
+a rebate — was an attempt to get around that sentence. The trading search was the most thorough: 56
+pre-registered studies, which is more rigour than the question deserved, and it returned $28/month.
+
+Not financial advice. Yields and growth rates are illustrative; everything above the Treasury line can
+lose principal, and a drawdown in year nine resets the clock.
