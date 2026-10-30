@@ -1,0 +1,212 @@
+<title>Fifty-Six Honest Closures</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a working-paper spine. Claim, then the evidence table that settles it. */
+  :root{
+    --page:#f7f7f5; --card:#ffffff; --ink:#1a1a1c; --ink-2:#55565c; --ink-3:#8a8c93;
+    --rule:#dcdcd8; --accent:#1d3f8f; --accent-wash:#e8ecf7; --kill:#8c2f1f;
+    --display:"Newsreader",Charter,Georgia,serif;
+    --body:"Archivo",-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+    --data:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --page:#131315; --card:#1b1c1f; --ink:#ececea; --ink-2:#a9abb1; --ink-3:#787a81;
+    --rule:#2b2c30; --accent:#8fa9e8; --accent-wash:#1a2135; --kill:#e0836f; color-scheme:dark;}}
+  :root[data-theme="dark"]{
+    --page:#131315; --card:#1b1c1f; --ink:#ececea; --ink-2:#a9abb1; --ink-3:#787a81;
+    --rule:#2b2c30; --accent:#8fa9e8; --accent-wash:#1a2135; --kill:#e0836f; color-scheme:dark;}
+
+  *{box-sizing:border-box}
+  body{background:var(--page);color:var(--ink);font-family:var(--body);line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:44rem;margin:0 auto;
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:3rem 4rem}
+
+  .kicker{font-family:var(--data);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 1.4rem}
+  h1{font-family:var(--display);font-weight:500;font-size:clamp(2.1rem,6.6vw,3.2rem);line-height:1.08;
+    letter-spacing:-.02em;text-wrap:balance;margin:0 0 1.1rem}
+  .standfirst{font-size:1.1rem;color:var(--ink-2);max-width:33rem;margin:0 0 2rem}
+  h2{font-family:var(--display);font-weight:500;font-size:1.55rem;letter-spacing:-.012em;
+    text-wrap:balance;margin:0 0 .2rem}
+  .case-no{font-family:var(--data);font-size:.7rem;letter-spacing:.12em;color:var(--accent);
+    margin:0 0 .5rem}
+  h3{font-family:var(--body);font-weight:600;font-size:1rem;margin:0 0 .4rem}
+  p{margin:0 0 .95rem}
+  section{border-top:1px solid var(--rule);margin-block-start:2.5rem;padding-block-start:2.2rem}
+
+  .headline{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:1.3rem;
+    background:var(--card);border:1px solid var(--rule);padding:1.3rem;margin:0 0 1rem}
+  .headline div{min-width:0}
+  .headline b{display:block;font-family:var(--display);font-size:2rem;line-height:1;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .headline span{display:block;font-size:.83rem;color:var(--ink-2);margin-top:.3rem}
+
+  .scroll{overflow-x:auto;margin:0 0 1rem}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th,td{text-align:left;padding:.5rem .65rem;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--data);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-3);font-weight:400}
+  td.n{font-family:var(--data);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .bad{color:var(--kill);font-weight:500}
+  .good{color:var(--accent);font-weight:500}
+
+  blockquote{margin:0 0 1rem;padding:.85rem 1.1rem;background:var(--accent-wash);
+    border-left:2px solid var(--accent);font-family:var(--display);font-size:1.05rem}
+  blockquote p{margin:0}
+  code{font-family:var(--data);font-size:.86em;background:var(--card);
+    border:1px solid var(--rule);padding:.08em .34em}
+  ul{margin:0 0 1rem;padding-left:1.15rem}
+  li{margin-bottom:.35rem}
+  .caveat{font-size:.88rem;color:var(--ink-2);border-left:2px solid var(--rule);
+    padding-left:.9rem;margin:0 0 1rem}
+  footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.6rem;
+    font-size:.88rem;color:var(--ink-2)}
+  footer strong{color:var(--ink)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="kicker">Quantitative research &middot; method and record</p>
+  <h1>Fifty-six studies. Fifty-six honest closures. No false positives.</h1>
+  <p class="standfirst">A pre-registered research program searching for a tradeable edge in
+  prediction markets. It did not find one. The useful part is how it kept from finding one
+  that wasn't there &mdash; including four times when my own frozen specification would have
+  manufactured a positive result.</p>
+
+  <div class="headline">
+    <div><b>56</b><span>studies, each pre-registered with frozen bars</span></div>
+    <div><b>5</b><span>defects caught in my own specs by the apparatus</span></div>
+    <div><b>0</b><span>findings that survived verification and later failed</span></div>
+  </div>
+  <p class="caveat">The program's commercial result was negative: the venue is efficient to
+  within its transaction costs. That is the honest outcome and it is the reason this page is
+  about method rather than returns.</p>
+
+  <section>
+    <p class="case-no">Case 01</p>
+    <h2>A frozen rule that would have reported 8,194 arbitrages</h2>
+    <p>The study looked for crossed quotes in a 188-strike ladder &mdash; buy the
+    higher-probability contract below the price of the lower-probability one and the payoff
+    is non-negative in every state. Profit without a forecast.</p>
+    <p>The data were one-minute candles, which report bid and ask as
+    <code>open/high/low/close</code>. Taking one strike's <em>bid high</em> against another's
+    <em>ask low</em> inside the same minute compares two different instants. The spec
+    forbade it in advance and required <code>close</code> for every leg:</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Reading</th><th>Raw crossings</th><th>Fee-clearing</th></tr></thead>
+      <tbody>
+        <tr><td><code>close</code>, same minute &mdash; the only eligible reading</td><td class="n">6</td><td class="n good">0</td></tr>
+        <tr><td>high/low &mdash; non-simultaneous, ineligible</td><td class="n">18,036</td><td class="n bad">8,194</td></tr>
+      </tbody>
+    </table></div>
+    <p>On the same minutes, <strong>98.9%</strong> of the high/low "opportunities" were
+    uncrossed by at least a cent at the close. All six real crossings were exactly 1&nbsp;c
+    against a 2&nbsp;c fee, so each lost money.</p>
+    <p>Then the microsecond trade tape showed what is really there: in a seeded sample,
+    <strong>27 of 250</strong> apparent opportunities were taken by someone within
+    100&nbsp;ms, several at the <em>same microsecond with equal sizes</em>. The arbitrage is
+    real, it is already harvested, and it lives three to six orders of magnitude below the
+    latency available to an outside participant.</p>
+  </section>
+
+  <section>
+    <p class="case-no">Case 02</p>
+    <h2>My own price rule, read literally, made every trade a winner</h2>
+    <p>A frozen specification said: <em>winner-side cost = ask if the contract settled yes,
+    otherwise 100 &minus; bid.</em> Read as written, that buys the correct side <em>after</em>
+    knowing the outcome &mdash; every fire a winner by construction, and a large, confident,
+    completely false pass.</p>
+    <blockquote><p>Two independent builds, blind to each other, both refused to implement it,
+    deviated with disclosure, and charged the real executable price instead.</p></blockquote>
+    <p>A third agent, paid only to attack both, hand-recomputed five fires from raw data
+    &mdash; timestamp, price, fee and P&amp;L matched 5/5 &mdash; and confirmed the forbidden
+    expression appeared nowhere. Subsequent specs carried an AST scan with
+    <strong>negative controls</strong>: doctored copies of the module that <em>must</em> raise.
+    In a later study all nine controls raised, including outcome leakage into two separate
+    functions, a mid price and the forbidden expression.</p>
+  </section>
+
+  <section>
+    <p class="case-no">Case 03</p>
+    <h2>Three of my KILL clauses could not fire. The apparatus found all three.</h2>
+    <p>A pre-registered study needs a rule for concluding failure, or it only ever concludes
+    "insufficient." Three of mine were unreachable, each for a different reason, and each was
+    caught and fixed rather than quietly tolerated:</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Clause</th><th>Why it could not fire</th></tr></thead>
+      <tbody>
+        <tr><td>EV upper bound &lt; threshold</td><td>with a 1:33 payoff the standard error never shrinks enough &mdash; the noisiest, least-tradeable cell had the <em>widest</em> bound and shielded the hypothesis from its own kill</td></tr>
+        <tr><td>Interval must contain the price both ways</td><td>spread and tick structure break containment automatically in the losing direction</td></tr>
+        <tr><td>Margin test on a bracket</td><td>arithmetically an empty set: the interval it required could not exist</td></tr>
+      </tbody>
+    </table></div>
+    <p>The rule that came out of it: <strong>write the failure condition on a quantity that
+    converges, as a one-sided failure-to-clear.</strong> The fourth spec's clause fired
+    correctly on the first run.</p>
+  </section>
+
+  <section>
+    <p class="case-no">Case 04</p>
+    <h2>The structural finding: the market forecasts, we were observing</h2>
+    <p>Forty-seven studies tried to know an outcome sooner or better than the market. The last
+    one built the strongest possible version &mdash; a signal on the settlement source's own
+    field, provably correct rather than inferred, available a median <strong>8.1 hours</strong>
+    before close. On 100% coverage of 6,231 instruments:</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Measure</th><th>Result</th><th>Bar</th></tr></thead>
+      <tbody>
+        <tr><td>False signals</td><td class="n good">0 of 2,850</td><td class="n">&le;2%</td></tr>
+        <tr><td>Tradeable</td><td class="n bad">8 of 2,850</td><td class="n">&ge;30%</td></tr>
+      </tbody>
+    </table></div>
+    <p>The signal was flawless and the trade did not exist: the market had already moved the
+    losing side to a zero bid, eight hours before the observation that proved it. Against the
+    incumbent rule on a faster feed, 67% of those instruments were already resolved a median
+    <strong>140 minutes earlier</strong>.</p>
+    <p>No amount of observation beats a forecast to a conclusion the forecast reached first.
+    That closed the question permanently rather than one variant at a time &mdash; which is
+    what a negative result is for.</p>
+  </section>
+
+  <section>
+    <h2>The method, in one list</h2>
+    <ul>
+      <li><strong>Pre-registration.</strong> Hypothesis, grid, entry rule, pass and kill bars, and the cluster unit are written and committed before any outcome is read. No bar moves afterwards, including when it is the bar that is wrong.</li>
+      <li><strong>Blind replication.</strong> Two builds from the specification text, neither reading the other's code, reconciled cell by cell. Disagreements are decomposed to their cause, not averaged.</li>
+      <li><strong>Adversarial verification.</strong> A third agent paid to break both, with authority to write an independent third implementation. It did, and reproduced one build exactly and the other to one record in 3,900.</li>
+      <li><strong>Negative controls.</strong> Every correctness assertion is itself tested against a deliberately broken copy that must fail. An assertion never shown to fail is not evidence.</li>
+      <li><strong>Executable prices only.</strong> Buy at the ask, sell at the bid, never the midpoint. This single discipline invalidated and corrected two earlier results in the same repository.</li>
+      <li><strong>Multiplicity taken seriously.</strong> Bonferroni over the full funnel. When one cell of 352 cleared its gate, it was examined and dissolved &mdash; the quote population's base rate was simply off &mdash; rather than reported.</li>
+      <li><strong>Power computed before freezing.</strong> After two specs ended power-bound, later ones derived the reachable sample size first and declined to freeze a gate that arithmetic showed could not be met.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What this is for</h2>
+    <p>This is the record of a research program whose job was to find an edge, and whose
+    value turned out to be the rigor that stopped it reporting one. If you are evaluating a
+    quantitative claim &mdash; a backtest, a model, an internal result that looks too good
+    &mdash; that is the same work.</p>
+    <p>Typical engagements: auditing a strategy or model before capital goes behind it;
+    designing pre-registered evaluations for a team that keeps finding results that do not
+    replicate; building verification harnesses with negative controls around AI-generated
+    analysis.</p>
+  </section>
+
+  <footer>
+    <p><strong>How this program was run, stated plainly.</strong> The studies were designed,
+    directed and adjudicated by me, and executed by AI agents under the discipline described
+    above &mdash; blind builds, frozen specifications, an adversarial verifier, negative
+    controls. Most of the defects listed on this page were defects in <em>my own</em>
+    specifications, caught because the apparatus was built to catch them. That combination
+    &mdash; running AI execution at research volume while keeping it from manufacturing
+    results &mdash; is the skill this page is describing, and it is not the same skill as
+    writing the analysis by hand.</p>
+    <p>Every figure here is drawn from a committed research log with reproducible scripts.
+    Specific studies, specifications and raw outputs available on request.</p>
+  </footer>
+</div>
