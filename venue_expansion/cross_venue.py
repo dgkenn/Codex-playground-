@@ -65,6 +65,8 @@ EXEC_BOOKS = (49, 68, 69, 71, 75)
 PSEUDO_BOOKS = (15, 30)
 BOOK_NAMES = {15: "Consensus", 30: "Open", 49: "Caesars", 68: "DraftKings", 69: "FanDuel", 71: "BetRivers", 75: "BetMGM"}
 SIM_LIMIT_S = 60.0
+ANOMALY_PP = 0.15
+UNFILTERED = [False]   # set True to score without the feed-integrity filter (disclosure run)
 RECHECK_MIN_S, RECHECK_MAX_S = 60.0, 90.0
 
 # frozen PASS / KILL bars (spec, 2026-10-30)
@@ -224,22 +226,26 @@ def team_keys(t):
     return ks
 
 
-def match_event(ev_markets, games):
-    """Return (game, {market_ticker: team_id}) or (None, reason).  Both Kalshi names must resolve to the two AN teams."""
-    names = [m["nm"] for m in ev_markets]
-    cands = []
-    for g in games:
-        tmap = {}
+def build_index(games):
+    """key -> list of (game index, team id) over the scheduled AN games of one league snapshot."""
+    idx = {}
+    for gi, g in enumerate(games):
         for tid, t in g["teams"].items():
             for k in team_keys(t):
-                tmap.setdefault(k, []).append(tid)
-        res = {}
-        for m in ev_markets:
-            hit = tmap.get(norm(m["nm"]), [])
-            if len(hit) == 1:
-                res[m["tk"]] = int(hit[0])
-        if len(res) == 2 and len(set(res.values())) == 2:
-            cands.append((g, res))
+                idx.setdefault(k, []).append((gi, tid))
+    return idx
+
+
+def match_event(ev_markets, games, idx):
+    """Return (game, {market_ticker: team_id}) or (None, reason).  Both Kalshi names must resolve to the two AN teams."""
+    per_game = {}
+    for m in ev_markets:
+        hits = idx.get(norm(m["nm"]), [])
+        if len(hits) != 1:
+            continue
+        gi, tid = hits[0]
+        per_game.setdefault(gi, {})[m["tk"]] = int(tid)
+    cands = [(games[gi], res) for gi, res in per_game.items() if len(res) == 2 and len(set(res.values())) == 2]
     if len(cands) == 1:
         return cands[0]
     return None, ("no_AN_game_with_both_names" if not cands else "ambiguous_multiple_AN_games")
@@ -293,13 +299,14 @@ def score_snapshot(snap, recs, excl, matched_log):
         games = [g for g in a["games"] if g["status"] == "scheduled" and parse_iso(g["start"] or "") and parse_iso(g["start"]) > t_ref]
         ex(f"{lg}:AN_game_not_pregame(status!=scheduled or started)", len(a["games"]) - len(games))
         evs = {}
+        idx = build_index(games)
         for m in k["markets"]:
             evs.setdefault(m["ev"], []).append(m)
         for evt, ms in evs.items():
             if len(ms) != 2:
                 ex(f"{lg}:kalshi_event_without_exactly_2_markets", 1)
                 continue
-            g, res = match_event(ms, games)
+            g, res = match_event(ms, games, idx)
             if g is None:
                 ex(f"{lg}:kalshi_event_unmatched:{res}")
                 matched_log.setdefault(lg, {}).setdefault("unmatched_events", {})[evt] = res
@@ -318,8 +325,23 @@ def score_snapshot(snap, recs, excl, matched_log):
             by_book = {}
             for x in g["ml"]:
                 by_book.setdefault(x["b"], []).append(x)
+            # FEED-INTEGRITY FILTER (added after an NHL BetMGM line appeared with both sides' odds swapped relative to every
+            # other book: a 28.9pp "arb" that is a labelling defect, not a price).  A book whose implied probability for the
+            # home team is > ANOMALY_PP from the median of the executable books is excluded and counted.  It can only remove
+            # candidate arbs, and is applied identically to every pairing; the unfiltered rows are reported as a disclosure.
+            home_p = {}
+            for b, xs in by_book.items():
+                for x in xs:
+                    if x["tid"] == tid_home and isinstance(x["odds"], int) and abs(x["odds"]) >= 100:
+                        home_p[b] = float(implied(x["odds"]))
+            ref = [home_p[b] for b in EXEC_BOOKS if b in home_p]
+            ref_med = statistics.median(ref) if len(ref) >= 3 else None
             for b, xs in by_book.items():
                 bad = None
+                if ref_med is not None and b in home_p and abs(home_p[b] - ref_med) > ANOMALY_PP:
+                    ex(f"{lg}:book{b}_excluded:feed_anomaly_gt_{int(ANOMALY_PP*100)}pp_from_cross_book_median")
+                    if not UNFILTERED[0]:
+                        continue
                 side = {}
                 for x in xs:
                     if x["tid"] not in (tid_home, tid_away):
@@ -451,6 +473,7 @@ def analyze_universe(rows_all, snaps_by_lg, label, books):
         t0 = f["t"]
         # recheck snapshot
         rj = None
+        detail = None
         for sn in sorted(ref_t):
             if sn > f["snap"] and RECHECK_MIN_S <= ref_t[sn] - t0 <= RECHECK_MAX_S:
                 rj = sn
@@ -463,6 +486,8 @@ def analyze_universe(rows_all, snaps_by_lg, label, books):
                 surv = "fail_gone"      # game started / book pulled / market closed
             else:
                 surv = "survive" if rr["arb"] else "fail_closed"
+                detail = {"ask_then": f["ask"], "ask_now": rr["ask"], "odds_then": f["odds"], "odds_now": rr["odds"],
+                          "asz_now": rr["asz"], "gap_now_pp": round(rr["gap"] * 100, 3)}
         ep_out.append({"game": f["teams"], "game_id": f["game"], "book": BOOK_NAMES.get(f["book"], f["book"]), "book_id": f["book"],
                        "pair": f["pair"], "first_snap": f["snap"], "n_snaps": len(run), "duration_s": run[-1]["t"] - f["t"],
                        "ask": f["ask"], "fee_c": f["fee_c"], "book_odds_other_side": f["odds"], "p_book": round(f["p_book"], 5),
@@ -472,7 +497,7 @@ def analyze_universe(rows_all, snaps_by_lg, label, books):
                        "two_leg_outlay_usd": round(f["asz"] * f["cost"], 2), "profit_usd": round(f["asz"] * f["gap"], 2),
                        "book_stake_needed_usd": round(f["asz"] * f["p_book"], 2),
                        "best_edge_pp_in_run": round(max(r["gap"] for r in run) * 100, 4), "recheck": surv,
-                       "recheck_snap": rj})
+                       "recheck_snap": rj, "recheck_detail": detail})
     ep_out.sort(key=lambda e: -e["edge_pp"])
     res["episodes"] = ep_out
     n = len(ep_out)
@@ -728,7 +753,9 @@ def render_md(res):
     for b in res["VERDICT"]["bars"]:
         L.append(f"| {b['bar']} | {b['frozen_threshold']} | {fmt(b['observed'], 4) if isinstance(b['observed'], float) else b['observed']} | {'yes' if b['met'] else 'NO'} |")
     L.append("")
-    L.append("__SUMMARY_PLACEHOLDER__")
+    npath = os.path.join(CACHE, "notes.md")
+    if os.path.exists(npath):
+        L.append(open(npath).read())
     # anchor a
     L.append("## (a) Gap distribution (`100% - combined cost`, percentage points; arb iff > 0)\n")
     L.append("Gap = 1.00 - (Kalshi yes_ask + fee + book implied prob of the opposing side).  Negative = no arb.  "
