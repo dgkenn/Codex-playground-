@@ -446,6 +446,11 @@ def analyze_universe(rows_all, snaps_by_lg, label, books):
         {"game": v["teams"], "book": BOOK_NAMES.get(v["book"], v["book"]), "pair": v["pair"], "gap_pp": round(v["gap"] * 100, 3),
          "ask": v["ask"], "fee_c": v["fee_c"], "book_odds_other_side": v["odds"], "p_book": round(v["p_book"], 4),
          "ask_size": v["asz"], "snap": v["snap"]} for v in sorted(best.values(), key=lambda v: -v["gap"])[:25]]
+    if best:
+        bv = list(best.values())
+        res["decomp_best_triples_median"] = {
+            "kalshi_ask": statistics.median(v["ask"] for v in bv), "fee": statistics.median(v["fee_c"] for v in bv) / 100,
+            "book_implied_opposing": statistics.median(v["p_book"] for v in bv), "cost": statistics.median(v["cost"] for v in bv)}
     # --- arbitrage instances
     arb_rows = [r for r in rows if r["arb"]]
     res["n_arb_snapshot_observations"] = len(arb_rows)
@@ -721,6 +726,17 @@ def analyze():
         for k in ("executable_books", "spec_literal_7_ids"):
             u = res["universes"][lg][k]
             u["verdict"], u["bars"] = verdict(u)
+    # disclosure: same scoring with the feed-integrity filter OFF
+    UNFILTERED[0] = True
+    rows_u = []
+    for s_ in snaps:
+        rows_u.extend(score_snapshot(s_, recs, {}, {}))
+    UNFILTERED[0] = False
+    res["unfiltered_disclosure"] = {}
+    for lg in LEAGUES:
+        ru = [r for r in rows_u if r["lg"] == lg and r["book"] in EXEC_BOOKS]
+        res["unfiltered_disclosure"][lg] = {"pair_observations": len(ru), "arb_observations": sum(1 for r in ru if r["arb"]),
+                                            "max_gap_pp": max((r["gap"] * 100 for r in ru), default=None)}
     primary = res["universes"][VERDICT_LEAGUE]["executable_books"]
     res["VERDICT"] = {"universe": "KXNFLGAME x 5 executable books", "verdict": primary["verdict"], "bars": primary["bars"],
                       "spec_literal_7_ids_verdict": res["universes"][VERDICT_LEAGUE]["spec_literal_7_ids"]["verdict"]}
@@ -783,6 +799,9 @@ def render_md(res):
         L.append(f"| {x['game']} | {x['book']} | {x['pair']} | {x['gap_pp']} | {x['ask']} | {x['fee_c']} | {x['odds']} | {x['ask_size']} |")
     L.append("")
     # instances
+    d = P.get("decomp_best_triples_median", {})
+    L.append(f"Median components of the best-reached pairing per (game, book, pairing): Kalshi ask {fmt(d.get('kalshi_ask'),3)} + fee {fmt(d.get('fee'),3)} + book implied "
+             f"{fmt(d.get('book_implied_opposing'),3)} = cost {fmt(d.get('cost'),3)} (arb needs < 1.000).\n")
     L.append("## Arbitrage instances (fee-inclusive cost < 100%), NFL, executable books\n")
     L.append(f"Episodes (distinct game/book/pairing runs): **{P['n_arb_episodes']}**, across {P['n_distinct_games']} distinct games, "
              f"{P['n_distinct_triples']} distinct game/book/pairing triples; raw snapshot-level arb observations: {P['n_arb_snapshot_observations']}.\n")
@@ -820,6 +839,13 @@ def render_md(res):
             for e in x["episodes"][:40]:
                 L.append(f"| {e['game']} | {e['book']} | {e['pair']} | {e['ask']} | {e['fee_c']} | {e['book_odds_other_side']} | {e['edge_pp']} | {e['ask_size_contracts']} | {e['kalshi_leg_usd']} | {e['profit_usd']} | {e['recheck']} |")
             L.append("")
+    L.append("## Feed-integrity filter and its unfiltered disclosure\n")
+    L.append("A book whose home-team implied probability is more than 15pp from the median of the executable books is excluded (counted in Exclusions). "
+             "It was added after BetMGM's NHL line for Winnipeg/Florida appeared with both teams' odds swapped relative to every other book (a 28.9pp fake arb). "
+             "It can only remove candidate arbs. Same scoring with the filter OFF (executable books):\n")
+    for lg, x in res["unfiltered_disclosure"].items():
+        L.append(f"- {lg}: {x['pair_observations']} pair observations, {x['arb_observations']} arb observations, max gap {fmt(x['max_gap_pp'],2)} pp")
+    L.append("")
     # anchors
     L.append("## (b) Simultaneity\n")
     s = res["simultaneity"]
