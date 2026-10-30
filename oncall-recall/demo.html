@@ -89,16 +89,16 @@
 <div class="wrap">
   <header>
     <span class="brand">On-Call Deck</span>
-    <span class="counter" id="counter">card 1 of 14</span>
+    <span class="counter" id="counter">card 1 of 31</span>
   </header>
   <div class="bar"><i id="bar"></i></div>
 
   <div id="stage"></div>
 
   <footer>
-    <p><strong>Demo.</strong> Fourteen cards from the on-call set. Nothing is saved to a server and
-    there is no account &mdash; progress lives in this browser tab only. The full set is 50 topics
-    across the acutely changing ward patient; the whole catalog is 6,200 cards over 1,214 topics.</p>
+    <p><strong>Demo.</strong> Thirty-one cards across seventeen of the fifty on-call topics. Nothing
+    is saved to a server and there is no account &mdash; progress lives in this browser tab only. The
+    whole catalog is 6,200 cards over 1,214 topics, anesthesiology and internal medicine.</p>
     <p>A study aid, not clinical guidance. Not reviewed for bedside decisions, not a substitute for
     current guidelines or attending judgment, and a citation is not endorsement by the publisher.
     Verify dosing against your own formulary.</p>
@@ -176,7 +176,92 @@ var CARDS = [
   s:"A patient with a known hypercoagulable state develops progressive headache, papilledema and focal weakness over days, and the deficits do not localize cleanly. What must be considered?",
   a:"Cerebral venous sinus thrombosis — focal deficits occur in up to 44% of cases, motor weakness is most frequent, and deficits do not follow arterial territories.",
   r:"CVST causes venous congestion and edema in watershed areas, producing deficits that cross typical arterial boundaries.",
-  c:"StatPearls — Cerebral Venous Sinus Thrombosis, p. 4",b:"analyze"}
+  c:"StatPearls — Cerebral Venous Sinus Thrombosis, p. 4",b:"analyze"},
+ {t:"Approach to Hypotension",cc:1,tier:1,
+  s:"In septic hypotension, what is the initial volume resuscitation approach?",
+  a:"500 mL crystalloid boluses every 30 minutes to the desired CVP; vasopressors are added if MAP does not reach target despite adequate volume.",
+  r:"Sepsis causes relative hypovolemia from capillary leak and vasodilation; crystalloid restores intravascular volume while vasopressors address the vasodilation.",
+  c:"Marino ICU Book, p. 544",b:"apply"},
+ {t:"Approach to Hypotension",cc:1,tier:1,
+  s:"Hypotension from tension pneumothorax or cardiac tamponade shares which common hemodynamic mechanism?",
+  a:"Impaired venous return to the right atrium (obstructive shock); treatment is immediate decompression, not fluids or vasopressors.",
+  r:"External compression prevents diastolic filling; decompression — needle or finger thoracostomy, or pericardiocentesis — is curative.",
+  c:"Morgan & Mikhail, p. 2116",b:"recall"},
+ {t:"Approach to Hyperkalemia",cc:1,tier:1,
+  s:"A patient has a potassium of 6.8 mEq/L with peaked T-waves on ECG. What is the first priority intervention?",
+  a:"IV calcium gluconate or chloride to stabilise the cardiac membrane. This does not lower potassium — it prevents fatal arrhythmia.",
+  r:"Calcium antagonises the membrane effects of hyperkalemia immediately; agents that shift K⁺ intracellularly and then remove total body K⁺ follow.",
+  c:"Stanford CA-1, p. 58",b:"apply"},
+ {t:"Approach to Hyperkalemia",cc:1,tier:1,
+  s:"What is the definitive treatment for removing excess total body potassium when kidney function is impaired?",
+  a:"Dialysis. Loop diuretics work only where renal function is adequate.",
+  r:"Dialysis is required when the kidneys cannot excrete the potassium load.",
+  c:"Morgan & Mikhail, p. 1887",b:"recall"},
+ {t:"Approach to Chest Pain",cc:1,tier:1,
+  s:"On cross-cover for a patient with new chest pain, what is the immediate first step before detailed workup?",
+  a:"Assess hemodynamic stability, get an ECG, and determine whether this is a STEMI or an unstable presentation needing emergent activation.",
+  r:"Life-threatening causes — STEMI, aortic dissection, tension pneumothorax, PE — must be excluded before any systematic workup.",
+  c:"Intern Notes / Survival Guide, p. 9",b:"apply"},
+ {t:"Approach to Altered Mental Status",cc:1,tier:1,
+  s:"In a patient with AMS and known diabetes, which two metabolic emergencies must be excluded at the bedside immediately?",
+  a:"Hypoglycemia and hyperosmolar hyperglycemic nonketotic coma. Both are reversible if caught early.",
+  r:"A glucose check is the most immediately actionable test in any AMS patient with diabetes — both extremes cause rapid neurologic deterioration.",
+  c:"Morgan & Mikhail, p. 351",b:"apply"},
+ {t:"Approach to Seizure",cc:1,tier:1,
+  s:"A patient seizes following elective surgery. What is the most important immediate metabolic check?",
+  a:"Blood glucose. Hypoglycemia is the most rapidly reversible cause and must be excluded at once.",
+  r:"Glucose is the brain's primary fuel; hypoglycemia-induced seizures reverse completely with prompt administration.",
+  c:"Morgan & Mikhail, p. 351",b:"apply"},
+ {t:"Approach to Hypoglycemia",cc:1,tier:1,
+  s:"What are the three components of Whipple's triad?",
+  a:"(1) Symptoms consistent with hypoglycemia; (2) a low measured glucose; (3) relief of symptoms on glucose administration.",
+  r:"Described in 1938 and still the clinical standard — it distinguishes true hypoglycemia from measurement artifact.",
+  c:"StatPearls — Hypoglycemia",b:"recall"},
+ {t:"Approach to Hypoxia and Desaturation",cc:1,tier:1,
+  s:"In ARDS, what two parameters define the lung-protective ventilation strategy?",
+  a:"Tidal volume ≤6 mL/kg predicted body weight AND plateau pressure <30 cm H₂O.",
+  r:"These prevent ventilator-induced lung injury by avoiding alveolar overdistension and high driving pressures.",
+  c:"StatPearls, p. 8",b:"recall"},
+ {t:"Approach to Acute Respiratory Failure",cc:1,tier:1,
+  s:"In acute respiratory failure, when is sodium bicarbonate indicated?",
+  a:"Consider small-dose bicarbonate in severe metabolic acidosis, then repeat pH and hemodynamic assessment before any further dosing.",
+  r:"Bicarbonate can worsen intracellular acidosis by generating CO₂; a cautious titrated approach limits that risk.",
+  c:"Miller / Baby Miller, p. 431",b:"apply"},
+ {t:"Approach to Acute GI Bleed",cc:1,tier:1,
+  s:"A patient presents with hematemesis and a BUN/Cr ratio of 38. What does this suggest, and how reliable is it?",
+  a:"BUN/Cr >30 carries a +LR of 7.5 for upper GI bleed; a ratio >35 is 100% specific for an upper source.",
+  r:"Blood in the upper GI tract is digested and absorbed, raising BUN disproportionately to creatinine.",
+  c:"MGH Housestaff Manual, p. 70",b:"apply"},
+ {t:"Approach to Delirium in the Elderly",cc:1,tier:1,
+  s:"Which subtype of postoperative delirium carries the worst prognosis?",
+  a:"Hypoactive delirium — and it is the one most often missed, because it presents as lethargy and withdrawal rather than agitation.",
+  r:"Delayed recognition means delayed intervention, which drives the worse morbidity and mortality.",
+  c:"Miller / Baby Miller, p. 682",b:"recall"},
+ {t:"Approach to Delirium in the Elderly",cc:1,tier:1,
+  s:"An 80-year-old post-op patient becomes acutely confused. Which validated tool formally diagnoses delirium?",
+  a:"The Confusion Assessment Method (CAM). The Riker Sedation-Agitation Scale is used in ICU settings.",
+  r:"CAM identifies the four key features: acute onset with fluctuating course, inattention, disorganised thinking, altered level of consciousness.",
+  c:"Miller / Baby Miller, p. 682",b:"recall"},
+ {t:"Approach to Hypertensive Emergency",cc:1,tier:1,
+  s:"In hypertensive emergency with acute ischemic stroke, why is rapid blood-pressure lowering potentially harmful?",
+  a:"It can extend the ischemic penumbra — autoregulation is impaired and lowering BP reduces perfusion to at-risk tissue.",
+  r:"Autoregulation shifts rightward in chronic hypertension; abrupt reduction below the new floor worsens penumbral ischemia.",
+  c:"StatPearls — Hypertensive Urgency and Emergency",b:"analyze"},
+ {t:"Approach to Bradycardia",cc:1,tier:1,
+  s:"In a patient with aortic stenosis, why is bradycardia particularly dangerous?",
+  a:"Cardiac output is rate-dependent in a fixed obstructive lesion — slow rates cut output, fast rates impair filling. Both extremes are hazardous.",
+  r:"AS patients have fixed outflow obstruction, so there is an optimal heart rate rather than a safe direction to err in.",
+  c:"Morgan & Mikhail, p. 761",b:"analyze"},
+ {t:"Approach to Alcohol Withdrawal",cc:1,tier:1,
+  s:"What is the typical time course for major alcohol withdrawal seizures after the last drink?",
+  a:"Withdrawal seizures typically occur 6–48 hours after the last drink; delirium tremens peaks at 48–72 hours.",
+  r:"The timeline guides monitoring intensity — patients admitted electively may withdraw without having disclosed a history.",
+  c:"MGH Housestaff Manual, p. 212",b:"recall"},
+ {t:"Approach to Aspiration Event",cc:1,tier:1,
+  s:"Following an aspiration event in a patient with OSA, what additional monitoring consideration applies?",
+  a:"OSA markedly raises the risk of post-event hypoxia; monitor oxygenation and airway patency closely.",
+  r:"OSA patients are already prone to upper airway obstruction after sedation; aspiration compounds it.",
+  c:"Miller / Baby Miller, p. 887",b:"apply"}
 ];
 
 var queue = CARDS.map(function (c, i) { return i; });
@@ -257,9 +342,9 @@ function finish() {
       '<p>In the real scheduler each card comes back on its own interval, and calibration is ' +
       'tracked separately from accuracy — being right and being confident are different ' +
       'problems and need different intervals.</p>' +
-      '<p>These fourteen cards are three topics. The on-call set is <strong>50</strong>, and the ' +
-      'full catalog is <strong>6,200</strong> cards across <strong>1,214</strong> topics, every ' +
-      'one cited.</p>' +
+      '<p>These thirty-one cards cover seventeen topics. The on-call set is <strong>50</strong>, and ' +
+      'the full catalog is <strong>6,200</strong> cards across <strong>1,214</strong> topics, every ' +
+      'one cited to a page.</p>' +
       '<p><a href="index.html">Join the waitlist &rarr;</a></p>' +
     '</div>';
   try { localStorage.setItem("ocd_done", "1"); } catch (e) {}
