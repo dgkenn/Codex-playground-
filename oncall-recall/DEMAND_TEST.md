@@ -15,9 +15,11 @@ temptation to re-read the threshold is overwhelming.
 | 50–99 | re-test price ($29) and wedge before building. Do not build yet. |
 | **< 50** | **do not build.** 60 hours saved, and that is the test working. |
 
-Rationale: $4,000/month is 103 subscribers at $39. A waitlist converts at well under 100%, so 100
-signups is **not** 100 subscribers — it is the minimum signal that 103 is reachable at all. Treating
-100 signups as proof of $4,000/month would be the same error as reading one positive cell out of 352.
+Rationale: $4,000/month is **68 subscribers at $59** (see `PREMISE_CHECK.md` — I originally priced at
+$39 against a mis-read competitor anchor; the incumbent's 30-day tier is $299, not an annual price).
+A waitlist converts at well under 100%, so 100 signups is **not** 100 subscribers — it is the minimum
+signal that 68 is reachable at all. Treating 100 signups as proof of $4,000/month would be the same
+error as reading one positive cell out of 352.
 
 ## Deploy — 30 minutes
 
