@@ -83,6 +83,12 @@
   button{font:inherit;font-weight:500;padding:.6rem 1.2rem;border:1px solid var(--trace);
     border-radius:2px;background:var(--trace);color:var(--paper);cursor:pointer}
   button:hover{opacity:.9}
+  .btn{display:inline-block;font-weight:500;text-decoration:none;padding:.65rem 1.3rem;
+    border:1px solid var(--trace);border-radius:2px;background:var(--trace);color:var(--paper)}
+  .btn:hover{opacity:.9}
+  .btn.ghost{background:transparent;color:var(--trace)}
+  .btn:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
+  .btnrow{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.1rem}
   .note{font-size:.84rem;color:var(--ink-faint);margin:.8rem 0 0}
   .ok{display:none;font-family:var(--mono);font-size:.85rem;color:var(--trace);margin-top:.9rem}
   footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.5rem;
@@ -123,6 +129,9 @@
       &nbsp;&middot;&nbsp; topic: Aspiration: prevention and management</span>
   </div>
   <p class="note">Citation shown as stored. Every card carries one; nothing is uncited.</p>
+  <div class="btnrow">
+    <a class="btn ghost" href="demo.html">Try 31 cards &mdash; no signup &rarr;</a>
+  </div>
 
   <section>
     <h2>What's in it</h2>
@@ -178,12 +187,10 @@
       standard anesthesia question bank is $299 for thirty days. No payment now and no card. If
       enough residents sign up, it gets built and you get first access and the launch price. If
       not enough do, I'll email you to say so and that will be the end of it.</p>
-      <form id="waitlist" novalidate>
-        <input id="email" type="email" name="email" required autocomplete="email"
-               placeholder="you@hospital.org" aria-label="Email address">
-        <button type="submit">Join waitlist</button>
-      </form>
-      <p class="ok" id="ok">Thanks &mdash; you're on the list.</p>
+      <div class="btnrow">
+        <a class="btn" id="joinlink" href="https://REPLACE-WITH-YOUR-FORM-URL">Join the waitlist &rarr;</a>
+        <a class="btn ghost" href="demo.html">Try the cards first</a>
+      </div>
       <p class="note">Email only. No specialty, no program, no marketing list, one message
       either way.</p>
     </div>
@@ -202,7 +209,8 @@
   // DEPLOY: point this at your form endpoint (Formspree, Tally, Buttondown, your own handler).
   // Left empty here so the page can be reviewed without wiring anything up.
   var ENDPOINT = "";
-  document.getElementById("waitlist").addEventListener("submit", function (e) {
+  var _f = document.getElementById("waitlist");
+  if (_f) _f.addEventListener("submit", function (e) {
     e.preventDefault();
     var input = document.getElementById("email");
     if (!input.value || input.value.indexOf("@") < 1) { input.focus(); return; }
