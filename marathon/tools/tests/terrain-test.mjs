@@ -118,3 +118,57 @@ const north = (m) => [42.325 + m / 111195, -71.0569];
 
 assert.match(elevationUrl([[42.3, -71.05]]), /^https:\/\/api\.open-meteo\.com\/v1\/elevation\?latitude=42\.30000&longitude=-71\.05000$/);
 console.log('\nAll terrain tests passed.');
+
+// --- lidar ---------------------------------------------------------------------------------------
+
+{
+  const { LidarPath, repairBridges, PathGrade, BRIDGE_MAX_M } = await import('../terrain.js');
+
+  // Fetched once per 8 m cell, remembered across instances, and "no data" kept as a fact.
+  const store = new Map(), asked = [];
+  const st = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
+  const world = (lat, lon) => (lon > 0 ? -1000000 : 5 + (lat - 42.33) * 111320 * 0.03);
+  const fetchJson = async url => { const q = new URL(url).searchParams; asked.push(url);
+    return { value: String(world(Number(q.get('y')), Number(q.get('x')))) }; };
+  const lp = new LidarPath({ fetchJson, store: st });
+  lp.ensure(42.33, -71.05); lp.ensure(42.33, -71.05);
+  await new Promise(r => setTimeout(r, 0));
+  assert.equal(asked.length, 1, 'one request per cell');
+  assert.ok(Math.abs(lp.elevationAt(42.33, -71.05) - 5) < 0.2);
+  const again = new LidarPath({ fetchJson, store: st });
+  again.ensure(42.33, -71.05);
+  assert.equal(asked.length, 1, 'remembered on the phone');
+  lp.ensure(10, 10); await new Promise(r => setTimeout(r, 0));
+  assert.equal(lp.elevationAt(10, 10), null); assert.equal(lp.status().noData, 1);
+  console.log('  ok  lidar is asked once per 8 m cell, kept on the phone, and "no data" is remembered');
+
+  // Bridges: 1 November's overpass, every ~20 m. Road up to 8.3 m, deck removed (the tracks at 2 m,
+  // a pier at 8), far edge at 7.2 m, down to 3.9.
+  const prof = [[530, 3.7], [571, 4.3], [620, 5.3], [661, 6.2], [701, 7.2], [725, 8.3], [747, 2.0], [775, 5.4],
+                [797, 8.0], [825, 2.0], [849, 2.1], [869, 2.2], [892, 7.2], [928, 5.3], [949, 3.9], [972, 4.0]]
+    .map(([d, e]) => ({ d, e }));
+  const fixed = repairBridges(prof).pts;
+  const deck = fixed.filter(p => p.d > 725 && p.d < 892);
+  assert.ok(deck.every(p => p.e > 7.1 && p.e < 8.3), `a deck from edge to edge: ${deck.map(p => p.e.toFixed(1))}`);
+  assert.deepEqual(fixed.filter(p => p.d >= 892).map(p => p.e), [7.2, 5.3, 3.9, 4.0], 'the real descent stays');
+  // An underpass is a real dip (ramps under 10%): not filled.
+  const under = [0, 20, 40, 60, 80, 100, 120, 140, 160].map((d, i) => ({ d, e: 10 - 5 * Math.sin(Math.PI * i / 8) }));
+  assert.deepEqual(repairBridges(under).pts.map(p => p.e), under.map(p => p.e));
+  // A drop with no far edge yet: on the deck, held level, and said so.
+  const onDeck = repairBridges(prof.filter(p => p.d <= 825));
+  assert.equal(onDeck.open, true);
+  assert.ok(onDeck.pts.filter(p => p.d > 725).every(p => p.e === 8.3));
+  // A drop with no far edge within BRIDGE_MAX_M is real.
+  const cliff = [{ d: 0, e: 10 }, { d: 20, e: 4 }, { d: BRIDGE_MAX_M + 40, e: 4 }];
+  assert.equal(repairBridges(cliff).open, false);
+  console.log('  ok  a bridge the lidar removed is filled as a deck; an underpass and a real drop are left alone');
+
+  // PathGrade reads elevations when they arrive, not when the point was passed.
+  const g = new PathGrade();
+  const known = new Map();
+  for (let d = 0; d <= 90; d += 15) g.add(d, 42 + d * 1e-5, -71);
+  assert.equal(g.grade((la, lo) => known.get(la) ?? null), null, 'nothing known yet');
+  for (let d = 0; d <= 90; d += 15) known.set(42 + d * 1e-5, 3 + 0.04 * d);
+  assert.ok(Math.abs(g.grade((la) => known.get(la) ?? null) - 0.04) < 1e-9);
+  console.log('  ok  path grade is fitted over the last 45 m as lidar answers arrive (4%)');
+}

@@ -245,3 +245,181 @@ export class HillCues {
       : { kind: 'down', grade, text: 'Downhill. Short, quick steps. Do not let it run away with you.' };
   }
 }
+
+// =================================================================================================
+// Lidar: the hills the 90 m model cannot see
+//
+// 1 November ended over the rail overpass on Dorchester Avenue: about 3.7 m of road rising to a deck
+// near 8 m and dropping back, the descent at 3-5%. The 90 m model above read it as a 1% bump, because
+// a 90 m cell is longer than the ramp. In the US the USGS 3DEP lidar is 1 m, served one point at a
+// time by the Elevation Point Query Service (CORS-open, no key). So where it answers, elevation comes
+// from it, sampled along the path actually run (an 8 m cell per point, kept on the phone so a route
+// run again costs nothing), and the grade is fitted over 45 m instead of 100.
+//
+// It is a BARE-EARTH model: bridges are removed, so on a bridge it reads the ground underneath (the
+// rail tracks, 2 m, under a deck at 8 m). PathGrade below repairs that.
+// =================================================================================================
+
+export const LIDAR_API = 'https://epqs.nationalmap.gov/v1/json';
+export const LidarDefaults = {
+  cellM: 8,
+  /// Cells per stored block side: one localStorage entry per ~100 m square.
+  blockCells: 12,
+  maxInFlight: 2,
+  retryAfterMs: 60000,
+};
+const M_PER_DEG = 111320;
+
+export function lidarUrl(lat, lon) {
+  return `${LIDAR_API}?x=${lon.toFixed(6)}&y=${lat.toFixed(6)}&wkid=4326&units=Meters&includeDate=false`;
+}
+
+/** Lidar elevation per 8 m cell, fetched on demand and remembered. `elevationAt` is null until known. */
+export class LidarPath {
+  constructor({ fetchJson, store = null, now = () => Date.now(), ...opts } = {}) {
+    this.cfg = { ...LidarDefaults, ...opts };
+    Object.assign(this, { fetchJson, store, now });
+    this.blocks = new Map();       // block key -> {cellKey: elevation | null (no data)}
+    this.pending = new Set();
+    this.failedAt = new Map();
+    this.requests = 0;
+    this.noData = 0;
+    this.lastError = null;
+  }
+
+  _cell(lat, lon) {
+    const dLat = this.cfg.cellM / M_PER_DEG;
+    // Longitude cells sized for the whole-degree band, so a cell's key never depends on the exact point.
+    const dLon = dLat / Math.cos(Math.round(lat) * Math.PI / 180);
+    return { i: Math.floor(lat / dLat), j: Math.floor(lon / dLon), dLat, dLon };
+  }
+
+  _block(i, j) {
+    const n = this.cfg.blockCells, key = `lidar.v1.${Math.floor(i / n)}/${Math.floor(j / n)}`;
+    if (!this.blocks.has(key)) {
+      let obj = {};
+      if (this.store) { try { obj = JSON.parse(this.store.getItem(key) || '{}') || {}; } catch { obj = {}; } }
+      this.blocks.set(key, obj);
+    }
+    return { key, obj: this.blocks.get(key) };
+  }
+
+  /** Fetch the cell under this point if it is not known, not in flight, and not recently failed. */
+  ensure(lat, lon) {
+    if (lat == null || lon == null || !this.fetchJson) return;
+    const c = this._cell(lat, lon), ck = `${c.i}/${c.j}`;
+    const { key, obj } = this._block(c.i, c.j);
+    if (ck in obj || this.pending.has(ck) || this.pending.size >= this.cfg.maxInFlight) return;
+    const failed = this.failedAt.get(ck);
+    if (failed != null && this.now() - failed < this.cfg.retryAfterMs) return;
+    this.pending.add(ck);
+    this.requests += 1;
+    const lat0 = (c.i + 0.5) * c.dLat, lon0 = (c.j + 0.5) * c.dLon;
+    let p;
+    try { p = Promise.resolve(this.fetchJson(lidarUrl(lat0, lon0))); } catch (e) { p = Promise.reject(e); }
+    p.then(json => {
+      const v = Number(json && json.value);
+      if (!Number.isFinite(v)) throw new Error('unexpected lidar response');
+      // The service answers -1000000 outside its coverage: a fact about the place, kept as such.
+      const val = v < -1000 ? null : Math.round(v * 100) / 100;
+      if (val == null) this.noData += 1;
+      obj[ck] = val;
+      if (this.store) { try { this.store.setItem(key, JSON.stringify(obj)); } catch { /* full */ } }
+    }).catch(e => {
+      this.failedAt.set(ck, this.now());
+      this.lastError = String(e && e.message || e);
+    }).finally(() => { this.pending.delete(ck); });
+  }
+
+  /** Metres, or null: not fetched yet, or no lidar here. */
+  elevationAt(lat, lon) {
+    if (lat == null || lon == null) return null;
+    const c = this._cell(lat, lon);
+    const v = this._block(c.i, c.j).obj[`${c.i}/${c.j}`];
+    return v == null ? null : v;
+  }
+
+  status() {
+    return { requests: this.requests, pending: this.pending.size, noData: this.noData,
+             failures: this.failedAt.size, lastError: this.lastError };
+  }
+}
+
+/// A step between two path samples steeper than this is not road: it is the edge of a bridge the
+/// bare-earth model removed (a deck edge to the tracks below reads 30%+ over one sample). Real roads,
+/// underpass ramps included, stay under about 10%.
+export const BRIDGE_WALL = 0.15;
+/// A bridge's far edge must come within this much path; past it, the drop is taken as real. The
+/// Dorchester Avenue deck over the rail yard is about 170 m.
+export const BRIDGE_MAX_M = 250;
+
+/**
+ * Bridge holes in a bare-earth profile, filled. `pts` is `[{d, e}]` in path order (e may be null).
+ * A sharp drop and, within BRIDGE_MAX_M, a sharp rise back to within 1.5 m of the first edge: the
+ * points between are replaced by the straight line from edge to edge (a deck). Returns
+ * `{pts, open}`: `open` is true when the last stretch is a drop with no far edge yet -- the runner is
+ * on a bridge whose end has not been sampled.
+ */
+export function repairBridges(pts) {
+  const out = pts.map(p => ({ ...p }));
+  const known = out.filter(p => p.e != null);
+  let open = false;
+  for (let a = 0; a < known.length - 1; a++) {
+    const p = known[a], q = known[a + 1];
+    if ((q.e - p.e) / Math.max(1, q.d - p.d) > -BRIDGE_WALL) continue;
+    // A drop from p. Find the far edge: a rise steeper than the wall, back near p's height.
+    let b = -1;
+    for (let k = a + 1; k < known.length && known[k].d - p.d <= BRIDGE_MAX_M; k++) {
+      const r = known[k - 1], s = known[k];
+      if ((s.e - r.e) / Math.max(1, s.d - r.d) >= BRIDGE_WALL && s.e >= p.e - 1.5) { b = k; break; }
+    }
+    if (b < 0) {
+      if (known[known.length - 1].d - p.d <= BRIDGE_MAX_M) {
+        open = true;
+        for (let k = a + 1; k < known.length; k++) known[k].e = p.e;   // on the deck: hold its height
+      }
+      break;
+    }
+    const s = known[b];
+    for (let k = a + 1; k < b; k++) known[k].e = p.e + (s.e - p.e) * (known[k].d - p.d) / (s.d - p.d);
+    a = b - 1;
+  }
+  return { pts: out, open };
+}
+
+/**
+ * Grade from points along the path, with elevations looked up when they are known rather than when
+ * the point was passed (a lidar answer arrives a second or two after the request). Least-squares
+ * slope over the last `runM` of path with elevations, after bridge repair; null with less than
+ * `minRunM` covered. `onBridge` says the last grade was taken on an unfinished bridge.
+ */
+export class PathGrade {
+  constructor({ runM = 45, minRunM = 25, keepM = 300, maxGrade = 0.15 } = {}) {
+    Object.assign(this, { runM, minRunM, keepM, maxGrade });
+    this.pts = [];
+    this.onBridge = false;
+  }
+
+  add(distM, lat, lon) {
+    if (distM == null || lat == null || lon == null) return;
+    const last = this.pts[this.pts.length - 1];
+    if (last && distM < last.d) this.pts = [];
+    this.pts.push({ d: distM, lat, lon });
+    while (this.pts.length > 2 && distM - this.pts[0].d > this.keepM) this.pts.shift();
+  }
+
+  /** `elevationAt(lat, lon)` is the lidar lookup. */
+  grade(elevationAt) {
+    if (this.pts.length < 2) return null;
+    const { pts, open } = repairBridges(this.pts.map(p => ({ d: p.d, e: elevationAt(p.lat, p.lon) })));
+    this.onBridge = open;
+    const end = pts[pts.length - 1].d;
+    const win = pts.filter(p => p.e != null && end - p.d <= this.runM);
+    if (win.length < 2 || win[win.length - 1].d - win[0].d < this.minRunM) return null;
+    const md = win.reduce((s, p) => s + p.d, 0) / win.length, me = win.reduce((s, p) => s + p.e, 0) / win.length;
+    let sde = 0, sdd = 0;
+    for (const p of win) { sde += (p.d - md) * (p.e - me); sdd += (p.d - md) ** 2; }
+    const g = sdd > 0 ? sde / sdd : 0;
+    return Math.max(-this.maxGrade, Math.min(this.maxGrade, g));
+  }
+}

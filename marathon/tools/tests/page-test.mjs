@@ -63,6 +63,15 @@ await page.route(/api\.open-meteo\.com\/v1\/elevation/, route => {
                   headers: { 'access-control-allow-origin': '*' },
                   body: JSON.stringify({ elevation: la.map((x, i) => terrainWorld(x, lo[i])) }) });
 });
+// The lidar (terrain.js LidarPath) from the same world, one point per request as the USGS serves it.
+const lidarAsked = [];
+await page.route(/epqs\.nationalmap\.gov\/v1\/json/, route => {
+  const q = new URL(route.request().url()).searchParams;
+  lidarAsked.push(1);
+  route.fulfill({ status: 200, contentType: 'application/json',
+                  headers: { 'access-control-allow-origin': '*' },
+                  body: JSON.stringify({ value: String(terrainWorld(Number(q.get('y')), Number(q.get('x')))) }) });
+});
 
 const errors = [];
 page.on('pageerror', e => errors.push('pageerror: ' + e.message));
@@ -1428,6 +1437,7 @@ async function openAll(page) {
   await page.click('#go');
   await page.waitForTimeout(200);
   assert.ok(terrainAsked.length > 0 && terrainAsked.every(n => n <= 100), `terrain asked by block: ${terrainAsked}`);
+  assert.ok(lidarAsked.length > 3, `and lidar asked along the path: ${lidarAsked.length}`);
   assert.match(grade, /^[5-7]%$/, `a 6% road reads about 6%: "${grade}"`);
   const hill = lines.filter(l => /uphill \d+%/.test(l));
   assert.match(hill[0] || "", /uphill [5-7]%/, `and announced at the grade it is: ${hill[0]}`);

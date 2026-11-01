@@ -422,6 +422,15 @@
       nearest ~100 m square, once per square kilometre) to open-meteo.com, and keeps the answers on
       this phone. Off: no grade is used at all.</p>
     <label class="check" style="margin-top:.7rem">
+      <input type="checkbox" id="lidar">
+      <span>Precise hills from lidar (US)</span>
+    </label>
+    <p class="note" style="margin-top:.4rem">The terrain map is 90 m squares, which turns a short climb
+      like an overpass ramp into a 1% bump. The USGS lidar is 1 m. It sends each point of your route,
+      to about 8 m, to the USGS elevation service (epqs.nationalmap.gov), once per point: answers are
+      kept on this phone. Bridges, which lidar leaves out, are filled in as flat decks. Off, or outside
+      the US: the terrain map alone.</p>
+    <label class="check" style="margin-top:.7rem">
       <input type="checkbox" id="bandmemory">
       <span>Band records heart rate to its own memory during runs</span>
     </label>
@@ -1359,6 +1368,24 @@ function terrainGrid() {
   }
   return terrainGridInst;
 }
+/// Lidar elevations along the path (terrain.js LidarPath), created on first use. Where it answers,
+/// grade comes from it; the terrain grid above is the fallback.
+let lidarInst = null;
+function lidarOn() {
+  try { return terrainOn() && localStorage.getItem('band.lidar') !== '0'; } catch { return true; }
+}
+function lidarPath() {
+  if (!lidarInst) {
+    lidarInst = new LidarPath({
+      fetchJson: url => fetch(url).then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))),
+      store: {
+        getItem: k => { try { return localStorage.getItem(k); } catch { return null; } },
+        setItem: (k, v) => { try { localStorage.setItem(k, v); } catch { /* full */ } },
+      },
+    });
+  }
+  return lidarInst;
+}
 /**
  * The run-block pace learned from his own HR-governed sessions: the median of the last three
  * sessions' comfortable pace (see hr-blocks.js comfortableRunPace). Null until one exists, and then
@@ -1412,7 +1439,11 @@ const fusedPace = () => { const v = fusedSpeed(); return v != null && v > 0.6 ? 
 const fusedDistance = () => (S.fusion ? S.fusion.distanceM : S.track.distanceFromSpeedM);
 
 /** Grade over the last 100 m from the terrain map, or null when it is not known. Never GPS altitude. */
-const currentGrade = () => (S.grades ? S.grades.grade : null);
+// Lidar first (a short ramp is a ramp), the 90 m terrain grid where lidar has nothing yet.
+const currentGrade = () => {
+  const g = S.pathGrade && lidarOn() ? S.pathGrade.grade((la, lo) => lidarPath().elevationAt(la, lo)) : null;
+  return g != null ? g : (S.grades ? S.grades.grade : null);
+};
 /**
  * Whether the run is still inside the bone window: the first twenty weeks of running, counted from
  * where the athlete was when the plan was generated plus the weeks of plan since.
@@ -4572,6 +4603,10 @@ $('bandmemory').onchange = e => {
   log(e.target.checked ? 'the band will record heart rate to its memory during runs'
                        : 'the band will not record to its memory during runs', 'dim');
 };
+$('lidar').checked = lidarOn();
+$('lidar').onchange = e => {
+  try { localStorage.setItem('band.lidar', e.target.checked ? '1' : '0'); } catch { /* blocked */ }
+};
 $('terrain').checked = terrainOn();
 $('terrain').onchange = e => {
   try { localStorage.setItem('band.terrain', e.target.checked ? '1' : '0'); } catch { /* blocked */ }
@@ -4759,7 +4794,7 @@ $('go').onclick = () => {
   Object.assign(S, { running: true, startedAt: Date.now(), samples: [], tones: 0,
                      governedBy: 'pace', batteryWarned: false, hrLostAnnounced: false,
                      track: new GpsTrack(), trackState: [],
-                     grades: new GradeTrack(), hillCues: new HillCues(), gradeAt: null, gradeDistM: 0,
+                     grades: new GradeTrack(), pathGrade: new PathGrade(), hillCues: new HillCues(), gradeAt: null, gradeDistM: 0,
                      walkRun: null, ranInWalksS: 0, lastTickT: null, pausedS: 0, resumedAt: 0, accShedRun: false,
                      fusion: S.mode === 'rehearse' ? null : new SpeedFusion({ saved: loadFusion() }),
                      fused: null,
@@ -4806,6 +4841,14 @@ $('go').onclick = () => {
           S.gradeDistM += step;
           S.gradeAt = here;
           S.grades.add(S.gradeDistM, tg.elevationAt(c.latitude, c.longitude));
+          if (lidarOn()) {
+            S.pathGrade.add(S.gradeDistM, c.latitude, c.longitude);
+            // This point, and any recent one still without an answer (two requests at a time).
+            const lp = lidarPath();
+            for (const p of S.pathGrade.pts.slice(-6).reverse()) {
+              if (lp.elevationAt(p.lat, p.lon) == null) lp.ensure(p.lat, p.lon);
+            }
+          }
         }
       }
     }, e => {
@@ -5351,6 +5394,7 @@ $('diag').onclick = async () => {
                        : { saved: loadFusion() },
       // Whether grade is known at all, and why not if it is not.
       terrain: terrainOn() ? (terrainGridInst ? terrainGridInst.status() : 'not used yet') : 'off',
+      lidar: lidarOn() ? (lidarInst ? lidarInst.status() : 'not used yet') : 'off',
       grade: currentGrade(),
     },
     plan: { phase: prog.phase, week: prog.week, done: Object.keys(prog.done).length },
