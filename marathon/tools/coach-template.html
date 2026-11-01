@@ -1084,6 +1084,8 @@ const S = {
 let lastLogMsg = null, lastLogRow = null, lastLogCount = 1;
 /// Seconds without heart rate before the athlete is told: longer than the link supervisor's repairs.
 const HR_LOST_SAY_S = 20;
+/// Seconds of page pauses, in all, past which a session is not evidence for the ladder.
+const PAUSE_LIMIT_S = 120;
 const SESSION_LOG_MAX = 400;
 
 function log(msg, cls) {
@@ -2502,6 +2504,7 @@ async function connectArmband({ acceptAll = false } = {}) {
       onReconnect: onArmbandReconnected,
       onNeedsTap: armbandNeedsTap,
       store: btStore,
+      accShed: !!(S.running && S.accShedRun),
     });
     S.sensor.urgent = !!(S.running || S.check);
     // Nothing remembered (known from the last look), or the last tap's permission lapsed before the
@@ -2933,6 +2936,7 @@ async function autoConnectArmband(why) {
     onReconnect: onArmbandReconnected,
     onNeedsTap: armbandNeedsTap,
     store: btStore,
+    accShed: !!(S.running && S.accShedRun),
   });
   sensor.urgent = !!(S.running || S.check);
   S.sensor = sensor;
@@ -3360,7 +3364,8 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
   // is over rather than merely absent from a file you read later.
   // Not for a blip: the link supervisor repairs a pause in 4-10 s, and on 26 October three such
   // pauses each said "Armband lost ... for the rest of this run" out loud, then "reporting again".
-  const quietS = sn && sn.hrAt ? (Date.now() - sn.hrAt) / 1000 : 0;
+  // Measured from the later of the last reading and the page waking: a frozen page is not a lost band.
+  const quietS = sn && sn.hrAt ? (Date.now() - Math.max(sn.hrAt, S.resumedAt || 0)) / 1000 : 0;
   if (sn && !fresh && sn.hrCount > 0 && quietS >= HR_LOST_SAY_S && !S.hrLostAnnounced) {
     S.hrLostAnnounced = true;
     log(`no heart rate for ${Math.round(quietS)} s — reconnecting; pacing from GPS until it is back`, 'stop');
@@ -3981,7 +3986,7 @@ function talkAnswers() {
  */
 function renderTalkQuestion(stats, startedAt) {
   const box = $('talkq');
-  if (!stats.hrBlocks || !talkTestApplies(stats.hrBlocks) || (stats.pausedS || 0) > 120) {
+  if (!stats.hrBlocks || !talkTestApplies(stats.hrBlocks) || (stats.pausedS || 0) > PAUSE_LIMIT_S) {
     box.classList.add('hide'); return;
   }
   const at = new Date(startedAt).toISOString();
@@ -4093,6 +4098,8 @@ function enableMotion() {
  */
 function retireSensor() {
   if (!S.sensor) return;
+  // A motion stream shed during this run stays shed on the sensor that replaces this one.
+  if (S.running && S.sensor.accShed) S.accShedRun = true;
   S.linkHistory = [...(S.linkHistory || []), ...S.sensor.events];
   S.sensor.events = [];                                 // moved, not copied: linkRecord reads both
   S.sensor.dispose();
@@ -4280,10 +4287,15 @@ function tickRehearse() {
  */
 function onResumeAfterPause(gapS) {
   S.pausedS = (S.pausedS || 0) + gapS;
+  S.resumedAt = Date.now();
   if (S.hrBlocks) S.hrBlocks.shift(gapS);
   const mins = Math.round(gapS / 60);
+  // The ladder ignores a session paused for more than PAUSE_LIMIT_S in all (see showStats), and only
+  // then. 1 November was told "will not move the ladder" after 51 s, and was judged as usual.
+  const counts = S.pausedS <= PAUSE_LIMIT_S;
   log(`the app was paused for ${mins || '<1'} min — another app was in front or the screen locked. `
-      + 'That time is not recorded, and this session will not move the ladder.', 'stop');
+      + (counts ? 'That time is not recorded; the session still counts for the ladder.'
+                : 'That time is not recorded, and this session will not move the ladder.'), 'stop');
   say('The app was paused. Keep it on screen to record.');
 }
 
@@ -4340,7 +4352,8 @@ function tick() {
     walkRunCheck(t);
     if (S.hrBlocks && S.ivPhase === 'walk' && voiceCoaching && S.voice && !speechBusy()) {
       const sn = S.sensor;
-      const w = S.voice.walkUpdate(t, sn && sn.hrFresh() ? sn.hr : null);
+      const w = S.voice.walkUpdate(t, sn && sn.hrFresh() ? sn.hr : null,
+                                   { speed: fusedTrusted() ? fusedSpeed() : null });
       if (w) { say(w.text); log(`“${w.text}”`, 'fast'); }
     }
     while (S.trackState.length < S.track.path.length) S.trackState.push(S.monitor.state);
@@ -4725,7 +4738,7 @@ $('go').onclick = () => {
                      governedBy: 'pace', batteryWarned: false, hrLostAnnounced: false,
                      track: new GpsTrack(), trackState: [],
                      grades: new GradeTrack(), hillCues: new HillCues(), gradeAt: null, gradeDistM: 0,
-                     walkRun: null, ranInWalksS: 0, lastTickT: null, pausedS: 0,
+                     walkRun: null, ranInWalksS: 0, lastTickT: null, pausedS: 0, resumedAt: 0, accShedRun: false,
                      fusion: S.mode === 'rehearse' ? null : new SpeedFusion({ saved: loadFusion() }),
                      fused: null,
                      ivPhase: null, ivRep: 0, ivUntil: 0,
@@ -5049,13 +5062,14 @@ function showStats(stats, prevStats, ctx = { mode: S.mode, startedAt: S.startedA
   // run/walk mode only; HR-governed sessions are judged by heart rate or not at all; and a clock
   // session must have got past the warm-up and lasted ten minutes before it counts as evidence.
   // A session the phone was not recording for minutes of is not evidence about anything.
-  const interrupted = (stats.pausedS || 0) > 120;
+  const interrupted = (stats.pausedS || 0) > PAUSE_LIMIT_S;
   const rw = !interrupted && ctx.mode === 'intervals' && ctx.runWalk;
   const clockEvidence = stats.durationS >= 600 && (stats.runningS || 0) >= 60;
   const judged = !rw ? null
     : stats.hrBlocks
       ? judgeHrSession({ blocks: rw.reps, blockS: rw.runMin * 60 }, stats.hrBlocks,
-                       recoveryBaseline(recoveryHistory({ excludeAt: new Date(ctx.startedAt).toISOString() })))
+                       recoveryBaseline(recoveryHistory({ excludeAt: new Date(ctx.startedAt).toISOString() }),
+                                        { ceilingBpm: stats.hrBlocks.ceilingBpm }))
       : (clockEvidence ? judgeSession(rw, stats) : null);
   // And it is applied, not merely announced. This is the line that turns a schedule into a
   // controller; everything it needs has existed and been tested for weeks.

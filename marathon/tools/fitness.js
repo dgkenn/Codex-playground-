@@ -72,16 +72,23 @@ export function aerobicIndex(samples, { tauS = FIT_TAU_S, delayS = FIT_DELAY_S, 
   if (runAt == null) return none('no running');
   const from = runAt - 60, to = runAt + windowS;
 
-  // Lagged effort at every sample: first-order filter, restarted after a gap in the recording.
+  // Lagged effort at every sample: a first-order filter carried straight across any gap. It was
+  // restarted at the effort after a gap, which on 1 November set "walking, fully recovered" at the
+  // end of a 51 s pause that came 30 s after a 168 bpm block: the next minute read 39 bpm off and
+  // the whole session was refused. Carried across, the decay through the gap is about right (the
+  // gap is usually spent walking), and the minute after a gap is not scored either way.
   const lagged = [];
+  const gapEnds = [];
   let x = null, prevT = null;
   for (const s of ss) {
     const p = metabolicPower(s.speed_m_s, s.grade);
     const dt = prevT == null ? 0 : s.t_s - prevT;
-    x = (x == null || dt > 30) ? p : x + (p - x) * (1 - Math.exp(-dt / tauS));
+    if (dt > 30) gapEnds.push(s.t_s);
+    x = x == null ? p : x + (p - x) * (1 - Math.exp(-dt / tauS));
     lagged.push([s.t_s, x]);
     prevT = s.t_s;
   }
+  const justAfterGap = t => gapEnds.some(g => t >= g && t < g + 60);
   const effortAt = t => {
     let lo = 0, hi = lagged.length - 1;
     if (t < lagged[0][0]) return null;
@@ -99,7 +106,7 @@ export function aerobicIndex(samples, { tauS = FIT_TAU_S, delayS = FIT_DELAY_S, 
   let runningS = 0;
   for (const s of inWin) {
     if (s.speed_m_s >= GAIT_MS) runningS += step;
-    if (s.hr_bpm == null || !(s.hr_bpm > 0)) continue;
+    if (s.hr_bpm == null || !(s.hr_bpm > 0) || justAfterGap(s.t_s)) continue;
     const e = effortAt(s.t_s - delayS);
     if (e != null) res.push(s.hr_bpm - gain * e);
   }

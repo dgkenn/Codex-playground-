@@ -105,6 +105,9 @@ export const WALK_DROP_BPM = 5;
 /// slow for the speed check to call it running), hit its time cap unrecovered and ended the running.
 export const WALK_RISE_BPM = 8;
 
+/// Below this a walk is already slow: "slow right down" has nothing left to ask for.
+export const SLOW_WALK_MS = 1.4;
+
 /// Quiet mode: how long a pace that is still out of band waits before it is said again.
 export const QUIET_REPEAT_S = 60;
 
@@ -270,9 +273,13 @@ export class PaceVoice {
    * and because the block controller will hold the walk until the floor is reached regardless --
    * this line is the explanation for why it is taking so long.
    */
-  walkUpdate(tS, hr) {
+  walkUpdate(tS, hr, { speed = null } = {}) {
     const w = this.walk;
     if (!w || hr == null || w.startHr == null) return null;
+    // The walk's own peak: heart rate keeps climbing for 20-30 s after a block ends, so on 1 November
+    // a walk from 158 that peaked at 163 and was at 154 a minute in -- 9 down, recovering -- read as
+    // "4 below where it started" and was told to slow right down.
+    w.peak = Math.max(w.peak ?? w.startHr, hr);
     // Lowest point so far, from the first 30 s on (before that the heart rate is still climbing out
     // of the block, which says nothing about the walk).
     if (tS - w.startT >= 30) w.low = w.low == null ? hr : Math.min(w.low, hr);
@@ -284,9 +291,11 @@ export class PaceVoice {
     }
     if (w.said) return null;
     if (tS - w.startT < WALK_CHECK_S) return null;
-    if (w.startHr - hr >= WALK_DROP_BPM) { w.said = true; return null; }   // it is working; stay quiet
+    if (w.peak - hr >= WALK_DROP_BPM) { w.said = true; return null; }   // it is working; stay quiet
     w.said = true;
-    return { text: 'Slow right down. Let it come down.', kind: 'walk', hr, dropBpm: w.startHr - hr };
+    // Already walking slowly (or stood at a crossing): there is nothing to slow down, so nothing to say.
+    if (speed != null && speed < SLOW_WALK_MS) return null;
+    return { text: 'Slow right down. Let it come down.', kind: 'walk', hr, dropBpm: w.peak - hr };
   }
 
   /** Quiet, heart rate governing: "Ease off" once a block, as it comes within the margin. */

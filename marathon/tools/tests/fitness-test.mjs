@@ -82,3 +82,15 @@ const truth = base => Math.round(base + FIT_GAIN * metabolicPower(REF_SPEED_MS, 
 }
 
 console.log('\nAll fitness tests passed.');
+
+{
+  // 1 November: a 51 s pause 30 s after a block. The effort model is carried across the gap and the
+  // minute after it is not scored, so the session reads like the same session without the pause.
+  const whole = session({ base: 60 });
+  const end = whole.find((s, i) => s.label === 'walk' && whole[i - 1] && whole[i - 1].label === 'run' && s.t_s > 600).t_s;
+  const paused = whole.filter(s => !(s.t_s > end + 30 && s.t_s <= end + 81));
+  const a = aerobicIndex(whole), b = aerobicIndex(paused);
+  assert.ok(b.ok, JSON.stringify(b));
+  assert.ok(Math.abs(a.hrAtRef - b.hrAtRef) <= 1, `${a.hrAtRef} vs ${b.hrAtRef}`);
+  console.log(`  ok  a pause straight after a block does not spoil the session (${b.hrAtRef})`);
+}

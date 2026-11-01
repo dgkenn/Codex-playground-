@@ -418,3 +418,23 @@ console.log('\nAll progression tests passed.');
   assert.equal(stepLadder(st, ADVANCE, { ...opts, headroom: false }).to, 3);
   console.log('  ok  a step is skipped with room under the ceiling on green, once a week, never past the spike cap');
 }
+
+{
+  // Recovery compared like for like: walks from the ceiling, against sessions at the same ceiling.
+  // 1 November (four blocks cut at 170, 146 s) against 26-28 October (155/165 ceilings, or no cuts).
+  const hist = [
+    { ceilingBpm: 165, toFloorMedianS: 113, toFloorFromCeilingMedianS: 110 },
+    { ceilingBpm: 170, toFloorMedianS: 61, toFloorFromCeilingMedianS: null },
+    { ceilingBpm: 155, toFloorMedianS: 70 },
+  ];
+  assert.equal(recoveryBaseline(hist, { ceilingBpm: 170 }), null, 'no like-for-like history yet');
+  assert.ok(recoveryBaseline(hist) != null, 'the old pooled baseline still answers when asked without a ceiling');
+  const same = [130, 140, 150].map(v => ({ ceilingBpm: 170, toFloorFromCeilingMedianS: v }));
+  assert.equal(recoveryBaseline(same, { ceilingBpm: 171 }), 140);
+  const nov1 = { governedBy: 'hr', blocksPlanned: 6, blocksFull: 3, blocksCut: 4, runBlocks: 8, runningS: 1036,
+                 runningTargetS: 1080, toFloorMedianS: 146, toFloorFromCeilingMedianS: 150, endedBy: 'athlete', ceilingBpm: 170 };
+  assert.equal(judgeHrSession({ blocks: 6, blockS: 180 }, nov1, recoveryBaseline(hist, { ceilingBpm: 170 })).verdict, ADVANCE,
+    'no like-for-like baseline: judged on the dose');
+  assert.equal(judgeHrSession({ blocks: 6, blockS: 180 }, nov1, 100).verdict, REPEAT, 'slower than a true baseline: repeat');
+  console.log('  ok  recovery is compared walk-from-ceiling to walk-from-ceiling, at the same ceiling');
+}

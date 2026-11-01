@@ -930,3 +930,23 @@ const until = async (cond, ms = 2000) => { const t0 = Date.now(); while (!cond()
 }
 
 console.log('\nAll sensor tests passed.');
+
+{
+  // A frozen page: 50 s with no supervisor tick reads as the page asleep, not the band, and neither a
+  // re-subscribe nor a rebuild follows on waking. A new sensor told the motion stream was shed keeps
+  // it off.
+  const { band, st } = stagedBand();
+  const s = new VeritySensor({ timing: FAST });
+  s.device = band; await s._finishConnect();
+  clearInterval(s._stallTimer);                           // stop the real timer; drive it by hand
+  const t = Date.now();
+  s.hrNotifyAt = t; s.hrAt = t; s.hrCount = 10; s._lastSuperviseAt = t;
+  const connects = st.connects;
+  assert.equal(s._supervise(t + 50000), null, 'waking is not a stall');
+  assert.ok(s.events.some(e => e.kind === 'page-woke'));
+  assert.equal(st.connects, connects);
+  s.dispose();
+  const fresh = new VeritySensor({ timing: FAST, accShed: true });
+  assert.equal(fresh.accShed, true);
+  console.log('  ok  a frozen page is not a stalled band; a motion stream shed this run stays shed');
+}

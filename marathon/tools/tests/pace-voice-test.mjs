@@ -291,6 +291,21 @@ function session(voice, paceOf, { reps = 7, runS = 120, walkS = 120 } = {}) {
   assert.equal(ok.walkUpdate(61, 149), null, 'a 9 bpm drop in a minute is the walk doing its job');
   assert.equal(ok.walkUpdate(120, 140), null, 'and it is not re-judged later in the same walk');
   console.log('  ok  a walk that is not bringing heart rate down gets one line, a working one gets none');
+
+  // 1 November: heart rate climbed after the block (158 -> 163) and was 154 a minute in -- down 9
+  // from the walk's peak, recovering. Not a walk to correct.
+  const lag = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile });
+  lag.beginWalk(0, 158);
+  [[10, 158], [20, 162], [30, 163], [45, 158]].forEach(([s, h]) => lag.walkUpdate(s, h));
+  assert.equal(lag.walkUpdate(60, 154), null, 'measured from the walk\'s own peak');
+  // Not coming down, but already walking slowly: nothing to slow down.
+  const slow = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile });
+  slow.beginWalk(0, 165);
+  assert.equal(slow.walkUpdate(61, 165, { speed: 1.1 }), null);
+  const brisk = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile });
+  brisk.beginWalk(0, 172);
+  assert.match(brisk.walkUpdate(61, 172, { speed: 1.6 }).text, /Slow right down/);
+  console.log('  ok  the walk is judged from its own peak, and a walk already slow is not told to slow down');
 }
 
 {

@@ -254,7 +254,10 @@ export function judgeHrSession(target, summary, recoveryBaseline) {
   // test every session. A quarter slower than his own recent median is fatigue accumulating, not
   // fitness improving -- the reading a coach takes from a rising resting heart rate, available every
   // session without a device this athlete does not have.
-  const rec = summary.toFloorMedianS;
+  // Like for like when the session carries it: walks from the ceiling only (hr-blocks.js), compared
+  // with a baseline built the same way at the same ceiling -- see recoveryBaseline.
+  const rec = summary.toFloorFromCeilingMedianS !== undefined ? summary.toFloorFromCeilingMedianS
+                                                              : summary.toFloorMedianS;
   if (recoveryBaseline != null && rec != null && rec > recoveryBaseline * RECOVERY_SLOW_FRACTION) {
     return {
       verdict: REPEAT, evidence,
@@ -333,8 +336,14 @@ export function judgeHrSession(target, summary, recoveryBaseline) {
  * doing". Requires at least three sessions before answering anything: a baseline built from one or
  * two is a guess wearing a number, and a guess that can gate REPEAT vs ADVANCE is worse than none.
  */
-export function recoveryBaseline(history) {
-  const vals = (history || []).map(h => h && h.toFloorMedianS).filter(v => v != null);
+export function recoveryBaseline(history, { ceilingBpm = null } = {}) {
+  // With a ceiling: only sessions at that ceiling (within 3 bpm), and only their walks from it. A
+  // walk from 170 to 133 is not the same test as one from 155, and neither is a walk after a block
+  // that ended below the ceiling.
+  const vals = ceilingBpm == null
+    ? (history || []).map(h => h && h.toFloorMedianS).filter(v => v != null)
+    : (history || []).filter(h => h && h.ceilingBpm != null && Math.abs(h.ceilingBpm - ceilingBpm) <= 3)
+        .map(h => h.toFloorFromCeilingMedianS).filter(v => v != null);
   const recent = vals.slice(-5);
   if (recent.length < 3) return null;
   const sorted = recent.slice().sort((a, b) => a - b);

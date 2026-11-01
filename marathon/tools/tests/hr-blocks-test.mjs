@@ -500,3 +500,20 @@ console.log('\nAll hr-blocks tests passed.');
   assert.equal(b.summary().peakRunHr, 138);
   console.log('  ok  the summary reports the peak heart rate inside the run blocks (138)');
 }
+
+{
+  // Only walks that start from a block the ceiling ended feed toFloorFromCeilingMedianS.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 90, walkS: 120, reps: 4 });
+  let walkT = null;
+  drive(b, 2400, (t, phase) => {
+    if (phase === Phase.RUN) { walkT = null; return b.rep % 2 ? 140 : CEIL; }   // odd blocks run full, even ones hit the ceiling
+    if (phase !== Phase.WALK) return 110;
+    if (walkT == null) walkT = t;
+    return Math.max(FLOOR - 1, 150 - (t - walkT) / 2);                           // 2 s per beat down
+  });
+  b.finish(2400);                                                                 // closes the cool-down's recovery
+  const s = b.summary();
+  assert.ok(s.toFloorFromCeilingMedianS != null && s.toFloorMedianS != null, JSON.stringify(s));
+  assert.equal(b.recoveries.filter(r => r.fromCeiling).length, 2);
+  console.log(`  ok  recoveries from the ceiling are told apart (${b.recoveries.filter(r => r.fromCeiling).length} of ${b.recoveries.length})`);
+}

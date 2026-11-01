@@ -427,6 +427,8 @@ export class HrBlocks {
     if (previous === BlockPhase.RUN) {
       this._trace = [];
       this._trace.startT = tS;
+      // Whether this walk starts from the ceiling: only those recoveries are the same test each time.
+      this._trace.fromCeiling = closeReason === 'ceiling' || closeReason === 'well over the ceiling';
     }
     this.phase = next;
     this.phaseStartT = tS;
@@ -505,7 +507,7 @@ export class HrBlocks {
       if (later && peak[1] - later[1] > 0) hrr60 = peak[1] - later[1];
     }
     this.recoveries.push({ atT: tr.startT, peakHr: peak ? peak[1] : null,
-                           toFloorS: floorAt ? floorAt[0] : null, hrr60 });
+                           toFloorS: floorAt ? floorAt[0] : null, hrr60, fromCeiling: !!tr.fromCeiling });
   }
 
   /** What the session amounted to, for the progression decision and for the athlete. */
@@ -552,6 +554,11 @@ export class HrBlocks {
       // Seconds from the ceiling back down to the floor, median over the session's walks. The
       // recovery number the judge trends -- see _closeRecovery.
       toFloorMedianS: med(toFloor),
+      // The same, over walks that started from a block the ceiling ended. A block that ran its full
+      // length ended lower, so its walk is shorter: on 28 October none was cut and the median was
+      // 61 s; on 1 November four were cut at 170 and it was 146 s -- not fatigue, a different test.
+      // This is the number the judge compares across sessions (with the same ceiling).
+      toFloorFromCeilingMedianS: med(this.recoveries.filter(r => r.fromCeiling).map(r => r.toFloorS).filter(v => v != null)),
       recoveries: this.recoveries.length,
       // Whether this session is evidence at all. A session run on the clock because the armband was
       // flat says nothing about fitness, and must not be allowed to advance or retreat the ladder.

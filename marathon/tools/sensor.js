@@ -202,6 +202,9 @@ export const RECONNECT_ATTEMPT_MS = 8000;
  * intervals during a morning check -- and the page is told, so it can check what only it knows
  * about (the band's own memory recording, see polar-offline.js).
  */
+/// A gap this long between two supervisor ticks (every 2 s) means the page was frozen, not the band.
+export const FREEZE_GAP_MS = 15000;
+
 export const LinkTiming = {
   superviseMs: 2000,
   hrQuietMs: 8000,
@@ -383,7 +386,8 @@ export const bluetoothAvailable = () =>
  */
 export class VeritySensor {
   constructor({ onLog = () => {}, onChange = () => {}, onStep = () => {}, store = null,
-                onAcc = null, onReconnect = () => {}, onNeedsTap = () => {}, timing = {} } = {}) {
+                onAcc = null, onReconnect = () => {}, onNeedsTap = () => {}, timing = {},
+                accShed = false } = {}) {
     this.onLog = onLog;
     this.timing = { ...LinkTiming, ...timing };
     /// Called after every automatic reconnect, once the streams are back.
@@ -452,7 +456,9 @@ export class VeritySensor {
     /// Link history, for the session record: why it dropped, and how long it took to come back.
     this.events = [];
     this._losses = [];
-    this.accShed = false;
+    /// True from the start when the page already shed the motion stream this run on an earlier
+    /// sensor: on 1 November a reconnect after a pause built a new sensor and motion came back.
+    this.accShed = !!accShed;
     this.hrZeros = 0;
     this.acquiringUntil = 0;
     /// Characteristic objects already listened to. A browser can hand back the SAME object after a
@@ -762,6 +768,14 @@ export class VeritySensor {
   /** One look at every stream; the smallest repair for whatever is wrong. Exposed for testing. */
   _supervise(now = Date.now()) {
     if (this._disposed || !this.device) return null;
+    // A frozen page (another app in front, the screen locked) runs no timers. Waking, every stream
+    // looks silent for as long as the page was asleep -- 52 s on 1 November, which rebuilt a link that
+    // was fine and told the athlete heart rate was lost. Quiet is measured from the wake instead.
+    if (this._lastSuperviseAt && now - this._lastSuperviseAt > FREEZE_GAP_MS) {
+      this.wokeAt = now;
+      this._event('page-woke', { gapMs: now - this._lastSuperviseAt }, now);
+    }
+    this._lastSuperviseAt = now;
     // A disconnect the browser never announced. Seen from bridges that drop the event: the link is
     // down and nothing would ever say so.
     if (this.connected && this.device.gatt && this.device.gatt.connected === false) {
@@ -780,7 +794,7 @@ export class VeritySensor {
     }
     if (!this.connected) return null;
     if (this.checkStall(now)) return 'rebuild';
-    const hrQuiet = now - Math.max(this.hrNotifyAt, this.connectedAt || 0);
+    const hrQuiet = now - Math.max(this.hrNotifyAt, this.connectedAt || 0, this.wokeAt || 0);
     if (this.hrCount && hrQuiet >= this.timing.hrQuietMs && !this._resubbing
         && now - (this._resubAt || 0) >= this.timing.hrQuietMs) {
       this._resubscribeHr(now);
@@ -875,7 +889,7 @@ export class VeritySensor {
    */
   checkStall(now = Date.now()) {
     if (this._disposed || !this.connected || this.reconnecting) return false;
-    const last = Math.max(this.hrNotifyAt, this.hrAt, this.connectedAt || 0);
+    const last = Math.max(this.hrNotifyAt, this.hrAt, this.connectedAt || 0, this.wokeAt || 0);
     if (!this.hrCount || now - last < this.timing.hrStallMs) return false;
     this.onLog(`no heart rate for ${Math.round((now - last) / 1000)} s while connected — `
                + 'reconnecting', 'bad');
