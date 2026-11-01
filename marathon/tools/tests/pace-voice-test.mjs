@@ -367,3 +367,14 @@ console.log('\nAll pace-voice tests passed.');
   assert.match(said.at(-1).text, /On pace\.$/);
   console.log(`  ok  quiet mode on pace: ${said.length} lines in ${400 / 60 | 0} min — out of band, a reminder a minute, back in`);
 }
+
+{
+  // "Ease off" is judged on where heart rate is heading (the armband reports late) and speaks the
+  // reading: 160 shown, 166 ahead, 170 ceiling.
+  const v = new PaceVoice({ targetSecKm: TARGET, formatPace: perMile, quiet: true });
+  v.begin(0);
+  assert.equal(v.update(5, 440, { hr: 160, ceilingBpm: 170 }), null, 'the reading alone is 10 under');
+  const ev = v.update(6, 440, { hr: 160, hrAhead: 166, ceilingBpm: 170 });
+  assert.equal(ev && ev.text, 'Ease off. Heart rate 160.');
+  console.log('  ok  "Ease off" comes on the heart rate ahead of the reading, and says the reading');
+}

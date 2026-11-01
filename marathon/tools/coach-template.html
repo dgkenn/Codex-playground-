@@ -421,6 +421,14 @@
       from a flat street, so grade comes from a terrain map instead. Sends your rough location (to the
       nearest ~100 m square, once per square kilometre) to open-meteo.com, and keeps the answers on
       this phone. Off: no grade is used at all.</p>
+    <label class="check" style="margin-top:.7rem">
+      <input type="checkbox" id="bandmemory">
+      <span>Band records heart rate to its own memory during runs</span>
+    </label>
+    <p class="note" style="margin-top:.4rem">Fills heart-rate gaps afterwards from the band. Since it
+      started (24 October) the armband's heart rate has run about 10 s late and paused in the first
+      minutes of runs; untick for a run to test whether this is why. The coach already allows for the
+      10 s either way.</p>
     <p class="note" id="btnote" style="margin-top:.7rem"></p>
     <details style="margin-top:.7rem">
       <summary>Connection trouble</summary>
@@ -1084,6 +1092,9 @@ const S = {
 let lastLogMsg = null, lastLogRow = null, lastLogCount = 1;
 /// Seconds without heart rate before the athlete is told: longer than the link supervisor's repairs.
 const HR_LOST_SAY_S = 20;
+/// The armband's reporting delay the block calls allow for (hr-blocks.js lagS): the median measured
+/// on this athlete's runs since 24 October. Each run's own measurement is in its summary.
+const ARMBAND_DELAY_S = 10;
 /// Seconds of page pauses, in all, past which a session is not evidence for the ladder.
 const PAUSE_LIMIT_S = 120;
 const SESSION_LOG_MAX = 400;
@@ -2813,6 +2824,7 @@ function savePending(xs) { try { localStorage.setItem(BACKFILL_KEY, JSON.stringi
 
 async function startBandRecording() {
   if (!S.running || S.bandRecording || !(S.sensor && S.sensor.connected)) return;
+  if (!bandMemoryOn()) return;
   const startedAt = new Date(S.startedAt).toISOString();
   try {
     const r = await withTimeout((async () => startOfflineHr(await S.sensor.pmdPort()))(), 15000,
@@ -3416,6 +3428,7 @@ function tickCoach(t, pace, trusted, { running = true, govern = null } = {}) {
     const v = S.voice.update(t, pace, {
       running, trusted,
       hr: (S.hrBlocks && fresh) ? sn.hr : null,
+      hrAhead: (S.hrBlocks && fresh) ? S.hrBlocks.hrAhead : null,
       ceilingBpm: S.hrBlocks ? S.hrBlocks.ceilingBpm : null,
     });
     if (v) { say(v.text); log(`“${v.text}”`, v.kind === 'in' ? 'on' : 'fast'); }
@@ -4552,6 +4565,13 @@ $('hrceil').addEventListener('change', e => {
   log(`run ceiling: ${aerobicCeilingBpm().bpm} bpm (${aerobicCeilingBpm().source})`, 'on');
   renderPlan(); renderToday();
 });
+const bandMemoryOn = () => { try { return localStorage.getItem('band.bandmemory') !== '0'; } catch { return true; } };
+$('bandmemory').checked = bandMemoryOn();
+$('bandmemory').onchange = e => {
+  try { localStorage.setItem('band.bandmemory', e.target.checked ? '1' : '0'); } catch { /* blocked */ }
+  log(e.target.checked ? 'the band will record heart rate to its memory during runs'
+                       : 'the band will not record to its memory during runs', 'dim');
+};
 $('terrain').checked = terrainOn();
 $('terrain').onchange = e => {
   try { localStorage.setItem('band.terrain', e.target.checked ? '1' : '0'); } catch { /* blocked */ }
@@ -4707,6 +4727,8 @@ $('go').onclick = () => {
       extraBlocks: ['suppressed', 'strained'].includes(todayReadiness().band) ? 0 : HrBlockDefaults.extraBlocks,
       // Walk steep descents while bone is still catching up; see hr-blocks.js steepDownGrade.
       steepDownGrade: inBoneWindow() ? HrBlockDefaults.steepDownGrade : null,
+      // Decide on the heart rate the armband has not reported yet (hr-blocks.js lagS).
+      lagS: ARMBAND_DELAY_S,
     });
     // Held, not logged here: the log is cleared a few lines further down, and this line was being
     // written and then wiped in the same tap. It is emitted after the clear, so the athlete actually
@@ -4987,6 +5009,7 @@ function showStats(stats, prevStats, ctx = { mode: S.mode, startedAt: S.startedA
       tile(`Back to ${recoveryFloorBpm()}`, mmss(stats.hrBlocks.toFloorMedianS));
     }
     if (stats.hrBlocks.hrr60Median != null) tile('HRR60', `-${Math.round(stats.hrBlocks.hrr60Median)}`);
+    if (stats.hrBlocks.peakDelayMedianS != null) tile('HR delay', `${Math.round(stats.hrBlocks.peakDelayMedianS)} s`);
   }
   tile('Cues', `${stats.tones} (${stats.tonesPerMin.toFixed(2)}/min)`);
   // Chronic load, from every session on the phone rather than from this one. Shown only once there

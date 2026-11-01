@@ -517,3 +517,41 @@ console.log('\nAll hr-blocks tests passed.');
   assert.equal(b.recoveries.filter(r => r.fromCeiling).length, 2);
   console.log(`  ok  recoveries from the ceiling are told apart (${b.recoveries.filter(r => r.fromCeiling).length} of ${b.recoveries.length})`);
 }
+
+{
+  // The armband reports 10 s late. True heart rate climbs 1 bpm/s in a block from 125, so it reaches
+  // the 150 ceiling 25 s in -- but minRunS holds the block to 30 s -- and the reading reaches 150 at
+  // 35 s. Use a slower climb so minRunS is not what decides: 0.4 bpm/s, true crossing at 62 s, reported
+  // at 72 s. Carried 10 s ahead along its trend, the block ends within a few seconds of the true one.
+  const run = lagS => {
+    const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 180, walkS: 120, reps: 1, lagS });
+    let start = null;
+    const ev = drive(b, 700, (t, phase) => {
+      if (phase === Phase.RUN && start == null) start = t;
+      if (phase !== Phase.RUN || start == null) return 120;
+      const trueAt = s => 125 + 0.4 * Math.max(0, s);
+      return Math.round(trueAt(t - start - 10));                    // what the armband says: 10 s old
+    });
+    const end = ev.find(e => e.previous === Phase.RUN);
+    return end.t - start;
+  };
+  const raw = run(0), ahead = run(10);
+  assert.ok(raw >= 72 && raw <= 74, `on the reading: ${raw} s`);
+  assert.ok(ahead >= 60 && ahead <= 66, `carried ahead: ${ahead} s (true crossing 62 s)`);
+  console.log(`  ok  blocks end on the heart rate the armband has not reported yet (${ahead} s vs ${raw} s; true 62 s)`);
+}
+
+{
+  // And the measured delay is kept: the reported peak after each block, median.
+  const b = new HrBlocks({ ceilingBpm: CEIL, floorBpm: FLOOR, runBlockS: 60, walkS: 60, reps: 2 });
+  let walkT = null;
+  drive(b, 1200, (t, phase) => {
+    if (phase === Phase.RUN) { walkT = null; return 140; }
+    if (phase !== Phase.WALK) return 110;
+    if (walkT == null) walkT = t;
+    const s = t - walkT;
+    return s < 12 ? 140 + s : 152 - (s - 12);                     // reported peak 12 s into the walk
+  });
+  assert.ok(Math.abs(b.summary().peakDelayMedianS - 12) <= 1, String(b.summary().peakDelayMedianS));
+  console.log('  ok  the armband delay after each block is measured and kept (12 s)');
+}

@@ -132,6 +132,19 @@ export const HrBlockDefaults = {
   /// ...levelled off meaning no more than `plateauRangeBpm` of movement over this many seconds.
   plateauS: 30,
   plateauRangeBpm: 2,
+  /// The armband's reporting delay, in seconds: blocks end on the heart rate this far ahead of the
+  /// reading (its trend over `trendS`), not on the reading itself. 0 is the reading as reported.
+  ///
+  /// Measured on this athlete's sessions from 24 October on: after he slows to a walk the reported
+  /// heart rate goes on rising for a median 10 s (up to 20 s on 1 November), and at the start of a
+  /// block it turns upward 10 s after he does. Real heart rate turns within a few seconds either way
+  /// (it falls as soon as running stops: Imai et al. 1994), so the rest is the armband's averaging --
+  /// and blocks were ending ten seconds after the real heart rate reached the ceiling, walks ten
+  /// seconds after it reached the floor. The page sets this; the default keeps the reading as is.
+  lagS: 0,
+  trendS: 12,
+  /// The trend is clamped to this many bpm per second, so one odd reading cannot end a block.
+  maxTrendBpmS: 1.5,
 };
 
 /**
@@ -242,6 +255,8 @@ export class HrBlocks {
     /// One entry per run->walk (or run->cool-down) transition: {atT, peakHr, toFloorS, hrr60}.
     this.recoveries = [];
     this._trace = null;          // [secondsIntoWalk, hr] for the walk in progress
+    this._recent = [];           // [t, hr] over the last trendS, for the trend
+    this.hrAhead = null;         // the last heart rate carried forward by lagS (see ahead)
     this._runGrades = [];        // [t, grade] for the run block in progress
     this._heldS = 0;             // seconds of the current walk held on a steep descent
     this._pausedS = 0;           // seconds the page was frozen (see shift)
@@ -278,6 +293,12 @@ export class HrBlocks {
 
     const hr = (hrFresh && hrBpm != null && hrBpm > 0) ? hrBpm : null;
     if (hr != null) this._lastFreshT = tS;
+    if (hr != null) {
+      this._recent.push([tS, hr]);
+      while (this._recent.length && this._recent[0][0] < tS - this.cfg.trendS) this._recent.shift();
+    }
+    // What the decisions use: the reading carried forward by the armband's delay (see lagS).
+    const hrAhead = hr == null ? null : this.ahead(hr);
     if (hr != null && (this._peakHr == null || hr > this._peakHr)) this._peakHr = hr;
     if (this._trace && hr != null) this._trace.push([tS - this._trace.startT, hr]);
     if (this.phase === BlockPhase.RUN && grade != null) this._runGrades.push([tS, grade]);
@@ -307,7 +328,7 @@ export class HrBlocks {
       // waits forever for a floor the athlete cannot reach while walking is a session that never
       // starts, which is the same failure as a coach that never speaks.
       if (el < this.cfg.warmupS || steepDown) return null;
-      const ready = !live || hr <= this.floorBpm || el >= this.cfg.warmupS + this.cfg.walkExtraS;
+      const ready = !live || (hr != null && hrAhead <= this.floorBpm) || el >= this.cfg.warmupS + this.cfg.walkExtraS;
       return ready ? this._to(BlockPhase.RUN, tS, 'warm-up done', live) : null;
     }
 
@@ -328,7 +349,7 @@ export class HrBlocks {
         if (hr >= this.ceilingBpm + this.cfg.hardOverBpm) {
           return this._endRun(tS, 'well over the ceiling', true);
         }
-        if (el >= this.cfg.minRunS && hr >= this.ceilingBpm) {
+        if (el >= this.cfg.minRunS && hr != null && hrAhead >= this.ceilingBpm) {
           return this._endRun(tS, 'ceiling', true);
         }
         if (el >= this.cfg.maxRunS) return this._endRun(tS, 'long enough', true);
@@ -345,7 +366,7 @@ export class HrBlocks {
     if (steepDown) { this._heldS += 1; return null; }
     const walkEl = el - this._heldS;
     if (live) {
-      if (el >= this.cfg.minWalkS && (hr <= this.floorBpm || this._levelledNearFloor(hr))) {
+      if (el >= this.cfg.minWalkS && hr != null && (hrAhead <= this.floorBpm || this._levelledNearFloor(hr))) {
         this.stalls = 0;
         return this._to(BlockPhase.RUN, tS, 'recovered', true);
       }
@@ -460,6 +481,21 @@ export class HrBlocks {
     return block;
   }
 
+  /**
+   * The reading carried `lagS` seconds forward along its recent trend: where the heart rate already
+   * is, if the armband reports it `lagS` late. With lagS 0, or under half the trend window of
+   * readings, the reading itself. Also kept as `hrAhead` for the voice.
+   */
+  ahead(hr) {
+    const lag = this.cfg.lagS, r = this._recent;
+    if (!(lag > 0) || r.length < 2 || r[r.length - 1][0] - r[0][0] < this.cfg.trendS / 2) return (this.hrAhead = hr);
+    const n = r.length, mt = r.reduce((a, p) => a + p[0], 0) / n, mh = r.reduce((a, p) => a + p[1], 0) / n;
+    let sxy = 0, sxx = 0;
+    for (const [t, h] of r) { sxy += (t - mt) * (h - mh); sxx += (t - mt) ** 2; }
+    const slope = sxx > 0 ? Math.max(-this.cfg.maxTrendBpmS, Math.min(this.cfg.maxTrendBpmS, sxy / sxx)) : 0;
+    return (this.hrAhead = Math.round(hr + slope * lag));
+  }
+
   /** Heart rate within `plateauBpm` of the floor and flat over the last `plateauS` of this walk. */
   _levelledNearFloor(hr) {
     const tr = this._trace;
@@ -506,7 +542,7 @@ export class HrBlocks {
       // walk was run (9 October: the last "walk" was five more minutes of running, HRR60 -3).
       if (later && peak[1] - later[1] > 0) hrr60 = peak[1] - later[1];
     }
-    this.recoveries.push({ atT: tr.startT, peakHr: peak ? peak[1] : null,
+    this.recoveries.push({ atT: tr.startT, peakHr: peak ? peak[1] : null, peakAtS: peak ? peak[0] : null,
                            toFloorS: floorAt ? floorAt[0] : null, hrr60, fromCeiling: !!tr.fromCeiling });
   }
 
@@ -554,6 +590,9 @@ export class HrBlocks {
       // Seconds from the ceiling back down to the floor, median over the session's walks. The
       // recovery number the judge trends -- see _closeRecovery.
       toFloorMedianS: med(toFloor),
+      // How long after a block ended the reported heart rate peaked, median: the armband's delay plus
+      // a few seconds of real physiology. Kept per session so a change in the delay shows up.
+      peakDelayMedianS: med(this.recoveries.map(r => r.peakAtS).filter(v => v != null)),
       // The same, over walks that started from a block the ceiling ended. A block that ran its full
       // length ended lower, so its walk is shorter: on 28 October none was cut and the median was
       // 61 s; on 1 November four were cut at 170 and it was 146 s -- not fatigue, a different test.

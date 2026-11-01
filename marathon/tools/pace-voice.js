@@ -181,10 +181,10 @@ export class PaceVoice {
    *
    * `kind` is for the page's own log colouring and for tests: `fast`, `slow`, `in`, or `lost`.
    */
-  update(tS, paceSecKm, { running = true, trusted = true, hr = null, ceilingBpm = null } = {}) {
+  update(tS, paceSecKm, { running = true, trusted = true, hr = null, hrAhead = null, ceilingBpm = null } = {}) {
     if (!running || this.targetSecKm == null) { this.standDown(); return null; }
     if (this.nextAt == null) this.begin(tS);
-    if (this.quiet && hr != null && ceilingBpm != null) return this._quietHr(tS, paceSecKm, trusted, hr, ceilingBpm);
+    if (this.quiet && hr != null && ceilingBpm != null) return this._quietHr(tS, paceSecKm, trusted, hr, ceilingBpm, hrAhead);
 
     if (!trusted || !(paceSecKm > 0)) {
       this.window = [];
@@ -299,8 +299,10 @@ export class PaceVoice {
   }
 
   /** Quiet, heart rate governing: "Ease off" once a block, as it comes within the margin. */
-  _quietHr(tS, paceSecKm, trusted, hr, ceilingBpm) {
-    const margin = ceilingBpm - hr;
+  _quietHr(tS, paceSecKm, trusted, hr, ceilingBpm, hrAhead = null) {
+    // Judged on where heart rate is heading when the controller supplies it (the armband reports
+    // late), spoken as the reading the athlete can see.
+    const margin = ceilingBpm - (hrAhead ?? hr);
     if (this.easedThisBlock || margin > HR_MARGIN_EASE_BPM || margin <= 0) return null;
     this.easedThisBlock = true;
     this.spoken += 1;
