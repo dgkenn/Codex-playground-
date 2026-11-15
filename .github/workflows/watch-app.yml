@@ -1,0 +1,91 @@
+# The Apple Watch coach, built on a GitHub Mac (there is no Mac in this project).
+#
+# Every push that touches marathon/watch: the shared logic's tests (swift test), then the iPhone app
+# and its watch app built for the simulators -- which proves the code compiles. When the App Store
+# Connect secrets below are set, the same run also archives, signs (Apple-managed cloud signing via
+# the API key) and uploads the build to TestFlight.
+#
+# Repository secrets:  ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the .p8 file's whole text)
+# Repository variables: APPLE_TEAM_ID (10 characters), BUNDLE_PREFIX (optional, default com.dgkenn)
+name: watch-app
+
+on:
+  push:
+    paths:
+      - 'marathon/watch/**'
+      - '.github/workflows/watch-app.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      PREFIX: ${{ vars.BUNDLE_PREFIX || 'com.dgkenn' }}
+    defaults:
+      run:
+        working-directory: marathon/watch
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Newest Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          xcodebuild -version
+          xcrun simctl list runtimes | grep -E 'iOS|watchOS' || true
+
+      - name: Shared logic tests
+        working-directory: marathon/watch/CoachCore
+        run: swift test
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen xcbeautify
+          xcodegen generate
+
+      - name: Build the watch app (simulator)
+        run: |
+          xcodebuild -project PaceCoach.xcodeproj -scheme PaceCoachWatch \
+            -destination 'generic/platform=watchOS Simulator' \
+            PC_BUNDLE_PREFIX="$PREFIX" CODE_SIGNING_ALLOWED=NO build | xcbeautify || exit ${PIPESTATUS[0]}
+
+      - name: Build the iPhone app with the watch app inside (simulator)
+        run: |
+          xcodebuild -project PaceCoach.xcodeproj -scheme PaceCoach \
+            -destination 'generic/platform=iOS Simulator' \
+            PC_BUNDLE_PREFIX="$PREFIX" CODE_SIGNING_ALLOWED=NO build | xcbeautify || exit ${PIPESTATUS[0]}
+
+      - name: Archive, sign and upload to TestFlight
+        if: env.ASC_KEY_ID != '' && env.TEAM_ID != ''
+        run: |
+          KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          printf '%s' "$ASC_KEY_P8" > "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY"
+                -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          xcodebuild archive -project PaceCoach.xcodeproj -scheme PaceCoach \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/PaceCoach.xcarchive" \
+            "${AUTH[@]}" DEVELOPMENT_TEAM="$TEAM_ID" PC_BUNDLE_PREFIX="$PREFIX" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" | xcbeautify || exit ${PIPESTATUS[0]}
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/PaceCoach.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            "${AUTH[@]}" | xcbeautify || exit ${PIPESTATUS[0]}
+          rm -f "$KEY"
+
+      - name: Signing not set up yet
+        if: env.ASC_KEY_ID == '' || env.TEAM_ID == ''
+        run: echo "::notice::Built and tested; not uploaded. Add the App Store Connect secrets to send builds to TestFlight (marathon/watch/README.md)."
