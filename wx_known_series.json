@@ -397,7 +397,7 @@
    "first_seen": "2026-07-19"
   },
   "KXLOWTMIN": {
-   "title": "Low  temperature Minnesota",
+   "title": "Low temperature Minneapolis",
    "status": "active",
    "first_seen": "2026-07-19"
   },
@@ -462,7 +462,7 @@
    "first_seen": "2026-08-17"
   },
   "KXLOWTSDF": {
-   "title": "Lowest Temperature SDX",
+   "title": "Lowest Temperature SDF",
    "status": "active",
    "first_seen": "2026-08-31"
   },
